@@ -12,7 +12,7 @@ const options = {
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT || 3000}`, // Dynamic port
+        url: `http://localhost:${process.env.PORT}`, // Dynamic port
         description: 'Local Dev Server',
       },
     ],
