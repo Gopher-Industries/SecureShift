@@ -358,5 +358,4 @@ router.patch('/:id/deactivate', authenticateToken, async (req, res) => {
     });
   }
 });
-
 export default router;
