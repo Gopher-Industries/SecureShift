@@ -1,5 +1,9 @@
+// src/swagger.js
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+
+// Use a default port fallback if .env does not set PORT
+const PORT = process.env.PORT || 3000;
 
 const options = {
   definition: {
@@ -11,11 +15,21 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:5000',
+        url: `http://localhost:${PORT}`,
+        description: 'Local development server',
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
   },
-  apis: ['./routes/*.js'], // Adjust if routes are in another folder
+  apis: ['./src/routes/*.js', './src/models/*.js'], // Update paths as needed
 };
 
 const swaggerSpec = swaggerJsdoc(options);
@@ -24,4 +38,5 @@ const setupSwagger = (app) => {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };
 
+export { swaggerSpec }; // Optional: useful if you want to expose it separately
 export default setupSwagger;
