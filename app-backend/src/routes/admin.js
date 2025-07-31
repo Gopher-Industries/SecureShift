@@ -1,6 +1,14 @@
 import express from 'express';
-import User from '../models/User.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
+import {
+  getUsersList,
+  getUserById,
+  updateUserRole,
+  toggleUserStatus,
+  deleteUser,
+  getUserStats
+} from '../controllers/adminController.js';
+
 const router = express.Router();
 
 // Apply authentication and admin role check to all admin routes
@@ -126,73 +134,7 @@ router.use(requireAdmin);
  *       500:
  *         description: Server error
  */
-router.get('/users', async (req, res) => {
-  try {
-    const {
-      page = 1,
-      limit = 10,
-      role,
-      isActive,
-      search,
-      sortBy = 'createdAt',
-      sortOrder = 'desc'
-    } = req.query;
-
-    // Build filter object
-    const filter = {};
-    
-    if (role) filter.role = role;
-    if (isActive !== undefined) filter.isActive = isActive === 'true';
-    
-    if (search) {
-      filter.$or = [
-        { username: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    // Build sort object
-    const sort = {};
-    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
-    // Calculate pagination
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-    const skip = (pageNum - 1) * limitNum;
-
-    // Execute queries
-    const [users, totalUsers] = await Promise.all([
-      User.find(filter)
-        .sort(sort)
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-      User.countDocuments(filter)
-    ]);
-
-    const totalPages = Math.ceil(totalUsers / limitNum);
-
-    res.json({
-      users,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total: totalUsers,
-        pages: totalPages
-      },
-      filters: {
-        role: role || null,
-        isActive: isActive !== undefined ? isActive === 'true' : null,
-        search: search || null
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Failed to retrieve users', 
-      error: error.message 
-    });
-  }
-});
+router.get('/users', getUsersList);
 
 /**
  * @swagger
@@ -228,25 +170,7 @@ router.get('/users', async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get('/users/:id', async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ user });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    res.status(500).json({ 
-      message: 'Failed to retrieve user', 
-      error: error.message 
-    });
-  }
-});
+router.get('/users/:id', getUserById);
 
 /**
  * @swagger
@@ -292,54 +216,7 @@ router.get('/users/:id', async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch('/users/:id/role', async (req, res) => {
-  try {
-    const { role } = req.body;
-    const userId = req.params.id;
-
-    // Validate role
-    const validRoles = ['user', 'admin', 'moderator'];
-    if (!role || !validRoles.includes(role)) {
-      return res.status(400).json({ 
-        message: 'Invalid role. Must be one of: ' + validRoles.join(', ')
-      });
-    }
-
-    // Prevent admin from changing their own role
-    if (userId === req.user._id.toString()) {
-      return res.status(403).json({ message: 'Cannot change your own role' });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { role },
-      { new: true, runValidators: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({
-      message: `User role updated to ${role}`,
-      user
-    });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        message: 'Validation error',
-        errors: Object.values(error.errors).map(e => e.message)
-      });
-    }
-    res.status(500).json({ 
-      message: 'Failed to update user role', 
-      error: error.message 
-    });
-  }
-});
+router.patch('/users/:id/role', updateUserRole);
 
 /**
  * @swagger
@@ -377,37 +254,7 @@ router.patch('/users/:id/role', async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch('/users/:id/toggle-status', async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    // Prevent admin from deactivating themselves
-    if (userId === req.user._id.toString()) {
-      return res.status(403).json({ message: 'Cannot change your own account status' });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    user.isActive = !user.isActive;
-    await user.save();
-
-    res.json({
-      message: `User account ${user.isActive ? 'activated' : 'deactivated'}`,
-      user
-    });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    res.status(500).json({ 
-      message: 'Failed to update user status', 
-      error: error.message 
-    });
-  }
-});
+router.patch('/users/:id/toggle-status', toggleUserStatus);
 
 /**
  * @swagger
@@ -445,35 +292,7 @@ router.patch('/users/:id/toggle-status', async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.delete('/users/:id', async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    // Prevent admin from deleting themselves
-    if (userId === req.user._id.toString()) {
-      return res.status(403).json({ message: 'Cannot delete your own account' });
-    }
-
-    const user = await User.findByIdAndDelete(userId);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ 
-      message: 'User deleted successfully',
-      deletedUser: user
-    });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    res.status(500).json({ 
-      message: 'Failed to delete user', 
-      error: error.message 
-    });
-  }
-});
+router.delete('/users/:id', deleteUser);
 
 /**
  * @swagger
@@ -516,46 +335,6 @@ router.delete('/users/:id', async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get('/stats', async (req, res) => {
-  try {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const [
-      totalUsers,
-      activeUsers,
-      inactiveUsers,
-      usersByRole,
-      recentRegistrations
-    ] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ isActive: true }),
-      User.countDocuments({ isActive: false }),
-      User.aggregate([
-        { $group: { _id: '$role', count: { $sum: 1 } } }
-      ]),
-      User.countDocuments({ createdAt: { $gte: sevenDaysAgo } })
-    ]);
-
-    // Format role statistics
-    const roleStats = { user: 0, admin: 0, moderator: 0 };
-    usersByRole.forEach(item => {
-      roleStats[item._id] = item.count;
-    });
-
-    res.json({
-      totalUsers,
-      activeUsers,
-      inactiveUsers,
-      usersByRole: roleStats,
-      recentRegistrations
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Failed to retrieve statistics', 
-      error: error.message 
-    });
-  }
-});
+router.get('/stats', getUserStats);
 
 export default router;

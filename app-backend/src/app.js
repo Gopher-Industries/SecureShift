@@ -4,13 +4,13 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import connectDB from './config/db.js'; // ✅ Use centralized DB config
+import connectDB from './config/connectDB.js'; // ✅ Use centralized DB config
 import router from './routes/index.js';
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import userRoutes from './routes/user.js';
 import errorHandler from './middleware/errorHandler.js';
-import setupSwagger from '../swagger.js';
+import setupSwagger from './config/swagger.js';
 
 dotenv.config();
 

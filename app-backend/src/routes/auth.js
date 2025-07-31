@@ -1,8 +1,13 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-
+import {
+  registerUser,
+  loginUser,
+  getCurrentUser,
+  refreshToken,
+  logoutUser,
+  validateToken
+} from '../controllers/authController.js';
 
 const router = express.Router();
 
@@ -76,6 +81,20 @@ const router = express.Router();
  *           username: "johndoe"
  *           email: "john@example.com"
  *           role: "user"
+ *     
+ *     TokenResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *         token:
+ *           type: string
+ *         expiresIn:
+ *           type: string
+ *       example:
+ *         message: "Token refreshed successfully"
+ *         token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *         expiresIn: "24h"
  */
 
 /**
@@ -106,50 +125,16 @@ const router = express.Router();
  *               properties:
  *                 message:
  *                   type: string
+ *                 field:
+ *                   type: string
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: string
  *       500:
  *         description: Server error
  */
-router.post('/register', async (req, res) => {
-  try {
-    const { username, email, password, role = 'user' } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ 
-        message: existingUser.email === email ? 'Email already registered' : 'Username already taken'
-      });
-    }
-
-    // Create new user
-    const user = new User({ username, email, password, role });
-    await user.save();
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      token,
-      user
-    });
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        message: 'Validation error',
-        errors: Object.values(error.errors).map(e => e.message)
-      });
-    }
-    res.status(500).json({ message: 'Registration failed', error: error.message });
-  }
-});
+router.post('/register', registerUser);
 
 /**
  * @swagger
@@ -170,51 +155,14 @@ router.post('/register', async (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Missing required fields
  *       401:
  *         description: Invalid credentials or account deactivated
  *       500:
  *         description: Server error
  */
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Find user and include password for comparison
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    // Check if account is active
-    if (!user.isActive) {
-      return res.status(401).json({ message: 'Account is deactivated' });
-    }
-
-    // Verify password
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
-
-    // Remove password from response
-    user.password = undefined;
-
-    res.json({
-      message: 'Login successful',
-      token,
-      user
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Login failed', error: error.message });
-  }
-});
+router.post('/login', loginUser);
 
 /**
  * @swagger
@@ -236,14 +184,10 @@ router.post('/login', async (req, res) => {
  *                   $ref: '#/components/schemas/User'
  *       401:
  *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Server error
  */
-router.get('/me', authenticateToken, async (req, res) => {
-  try {
-    res.json({ user: req.user });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to get user profile', error: error.message });
-  }
-});
+router.get('/me', authenticateToken, getCurrentUser);
 
 /**
  * @swagger
@@ -259,31 +203,64 @@ router.get('/me', authenticateToken, async (req, res) => {
  *         content:
  *           application/json:
  *             schema:
+ *               $ref: '#/components/schemas/TokenResponse'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Server error
+ */
+router.post('/refresh', authenticateToken, refreshToken);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user (client-side token removal)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
  *               type: object
  *               properties:
  *                 message:
  *                   type: string
- *                 token:
+ *       500:
+ *         description: Server error
+ */
+router.post('/logout', authenticateToken, logoutUser);
+
+/**
+ * @swagger
+ * /api/auth/validate:
+ *   get:
+ *     summary: Validate JWT token
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Token is valid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 message:
  *                   type: string
  *       401:
  *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Server error
  */
-router.post('/refresh', authenticateToken, async (req, res) => {
-  try {
-    // Generate new token
-    const token = jwt.sign(
-      { userId: req.user._id, role: req.user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
-
-    res.json({
-      message: 'Token refreshed successfully',
-      token
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Token refresh failed', error: error.message });
-  }
-});
+router.get('/validate', authenticateToken, validateToken);
 
 export default router;

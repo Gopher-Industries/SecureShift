@@ -1,5 +1,11 @@
+// routes/user.js
 import express from 'express';
-import User from '../models/User.js';
+import {
+  getUserProfile,
+  updateUserProfile,
+  changeUserPassword,
+  deactivateUserAccount
+} from '../controllers/userController.js';
 import { authenticateToken, requireOwnershipOrAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -79,25 +85,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/:id', authenticateToken, requireOwnershipOrAdmin, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ user });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    res.status(500).json({ 
-      message: 'Failed to retrieve user profile', 
-      error: error.message 
-    });
-  }
-});
+router.get('/:id', authenticateToken, requireOwnershipOrAdmin, getUserProfile);
 
 /**
  * @swagger
@@ -143,61 +131,7 @@ router.get('/:id', authenticateToken, requireOwnershipOrAdmin, async (req, res) 
  *       500:
  *         description: Server error
  */
-router.put('/:id', authenticateToken, requireOwnershipOrAdmin, async (req, res) => {
-  try {
-    const { username, email } = req.body;
-    const userId = req.params.id;
-
-    // Check for existing username/email (excluding current user)
-    if (username || email) {
-      const existingUser = await User.findOne({
-        _id: { $ne: userId },
-        $or: [
-          ...(username ? [{ username }] : []),
-          ...(email ? [{ email }] : [])
-        ]
-      });
-
-      if (existingUser) {
-        const field = existingUser.username === username ? 'Username' : 'Email';
-        return res.status(400).json({ message: `${field} already in use` });
-      }
-    }
-
-    const updateData = {};
-    if (username !== undefined) updateData.username = username;
-    if (email !== undefined) updateData.email = email;
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({
-      message: 'Profile updated successfully',
-      user
-    });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        message: 'Validation error',
-        errors: Object.values(error.errors).map(e => e.message)
-      });
-    }
-    res.status(500).json({ 
-      message: 'Failed to update profile', 
-      error: error.message 
-    });
-  }
-});
+router.put('/:id', authenticateToken, requireOwnershipOrAdmin, updateUserProfile);
 
 /**
  * @swagger
@@ -241,58 +175,7 @@ router.put('/:id', authenticateToken, requireOwnershipOrAdmin, async (req, res) 
  *       500:
  *         description: Server error
  */
-router.patch('/:id/password', authenticateToken, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    const userId = req.params.id;
-
-    // Only users can change their own password (not even admin can change others' passwords)
-    if (userId !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Can only change your own password' });
-    }
-
-    // Validate input
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: 'Current password and new password are required' });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'New password must be at least 6 characters long' });
-    }
-
-    // Get user with password
-    const user = await User.findById(userId).select('+password');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // Verify current password
-    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
-    if (!isCurrentPasswordValid) {
-      return res.status(400).json({ message: 'Current password is incorrect' });
-    }
-
-    // Update password
-    user.password = newPassword;
-    await user.save();
-
-    res.json({ message: 'Password changed successfully' });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ 
-        message: 'Validation error',
-        errors: Object.values(error.errors).map(e => e.message)
-      });
-    }
-    res.status(500).json({ 
-      message: 'Failed to change password', 
-      error: error.message 
-    });
-  }
-});
+router.patch('/:id/password', authenticateToken, changeUserPassword);
 
 /**
  * @swagger
@@ -328,35 +211,6 @@ router.patch('/:id/password', authenticateToken, async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.patch('/:id/deactivate', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    // Only users can deactivate their own account
-    if (userId !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Can only deactivate your own account' });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { isActive: false },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    res.json({ message: 'Account deactivated successfully' });
-  } catch (error) {
-    if (error.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid user ID format' });
-    }
-    res.status(500).json({ 
-      message: 'Failed to deactivate account', 
-      error: error.message 
-    });
-  }
-});
+router.patch('/:id/deactivate', authenticateToken, deactivateUserAccount);
 
 export default router;

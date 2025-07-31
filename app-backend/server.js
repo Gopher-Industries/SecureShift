@@ -1,14 +1,23 @@
+// server.js
 import dotenv from 'dotenv';
+import connectDB from './src/config/connectDB.js';
+import app from './src/app.js';
+
 dotenv.config();
 
-import app from './src/app.js';
-import connectDB from './src/config/db.js';
+const PORT = process.env.PORT || 5000;
 
-const PORT = process.env.PORT;
-
-connectDB().then(() => {
-    app.listen(PORT, () => {
-    console.log(`SecureShift API running on port ${PORT}`);
-    console.log(`📘 Swagger UI available at: http://localhost:${PORT}/api-docs`);
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📘 Swagger UI: http://localhost:${PORT}/api-docs`);
     });
-});
+  } catch (err) {
+    console.error('❌ Failed to start server:', err.message);
+    process.exit(1);
+  }
+};
+
+startServer();
