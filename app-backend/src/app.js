@@ -10,7 +10,7 @@ import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import userRoutes from './routes/user.js';
 import errorHandler from './middleware/errorHandler.js';
-import setupSwagger from '../swagger.js';
+import setupSwagger from './config/swagger.js';
 
 dotenv.config();
 
