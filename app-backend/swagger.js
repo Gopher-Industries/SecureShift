@@ -1,3 +1,4 @@
+// src/swagger.js (or wherever your swagger.js is located)
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
@@ -11,11 +12,21 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:5000',
+        url: `http://localhost:${process.env.PORT}`, // Dynamic port
+        description: 'Local Dev Server',
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
   },
-  apis: ['./routes/*.js'], // Adjust if routes are in another folder
+  apis: ['./src/routes/*.js', './src/models/*.js'], // Adjust path as needed
 };
 
 const swaggerSpec = swaggerJsdoc(options);
