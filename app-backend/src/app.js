@@ -4,7 +4,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import router from './routes/index.js';
 import errorHandler from './middleware/errorHandler.js';
-import setupSwagger from '../swagger.js'; // ✅ now using ES module import
+import setupSwagger from './config/swagger.js'; // ✅ now using ES module import
 
 const app = express();
 
