@@ -34,7 +34,7 @@ app.use('/api/users', userRoutes);
 // Swagger Docs
 setupSwagger(app);
 
-// Health Check
+// Health Checks
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
