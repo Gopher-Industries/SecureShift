@@ -56,7 +56,7 @@ Create a `.env` file in the root:
 
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/secureshift
+MONGODB_URI=mongodb+srv://secure_user:1234@securecluster.mvm6x0m.mongodb.net/
 JWT_SECRET=your_jwt_secret
 ```
 
@@ -84,6 +84,12 @@ docker run -p 5000:5000 --env-file .env musahx/secureshift-backend
 ### Push to Docker Hub
 ```bash
 docker push musahx/secureshift-backend
+```
+
+### Run Docker Compose
+```bash
+docker compose build
+docker compose up
 ```
 
 > Replace `musahx` with your DockerHub username.
