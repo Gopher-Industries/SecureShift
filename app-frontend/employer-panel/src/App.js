@@ -3,7 +3,6 @@ import Login from './pages/Login';
 import EmployerDashboard from './pages/EmployerDashboard'; 
 import CreateShift from './pages/createShift';
 
-
 function App() {
   return (
     <Router>

@@ -1,9 +1,9 @@
 {
   "name": "secureshift-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "SecureShift Backend API (Guards ↔ Employers ↔ Admin)",
   "main": "server.js",
-  "type": "module",
   "engines": {
     "node": ">=18"
   },
