@@ -52,8 +52,4 @@ export default function Login() {
             {error && <p style={{ color: "red" }}>{error}</p>}
         </div>
     );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 887f9649beeb00846147ca10a83ef082034f3e2a
