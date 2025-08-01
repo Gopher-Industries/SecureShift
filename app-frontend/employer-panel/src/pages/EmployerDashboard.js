@@ -1,5 +1,4 @@
 import React from "react";
-import "./EmployerDashboard.css";
 
 export default function EmployerDashboard() {
   return (
