@@ -15,7 +15,7 @@ const options = {
       },
     ],
   },
-  apis: ['./routes/*.js'], // Adjust if routes are in another folder
+  apis: ['./src/routes/*.js'], // Adjust if routes are in another folder
 };
 
 const swaggerSpec = swaggerJsdoc(options);
