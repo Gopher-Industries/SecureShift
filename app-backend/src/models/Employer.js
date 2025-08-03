@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const User = require('./User'); // Import the base User model
+import mongoose from 'mongoose';
+import User from './User.js'; // Import the base User model
 
 // Additional fields for the 'employer' role
 const employerSchema = new mongoose.Schema(
@@ -22,4 +22,4 @@ const employerSchema = new mongoose.Schema(
 );
 
 const Employer = User.discriminator('employer', employerSchema);
-module.exports = Employer;
+export default Employer;
