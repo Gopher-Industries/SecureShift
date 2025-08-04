@@ -90,7 +90,7 @@ const sendMessage = async (req, res, next) => {
 const getInboxMessages = async (req, res, next) => {
   try {
     //todo: use req.user.id once auth handler is updated
-    const userId = req.params.id;
+    const userId = "688a0add689e5c96dfaf09ca"; // For testing purposes, replace with actual user ID from req.user.id
 
     // Get messages received by the user
     const messages = await Message.find({ receiver: userId })
@@ -138,11 +138,7 @@ const getSentMessages = async (req, res, next) => {
       message: 'Sent messages retrieved successfully',
       data: {
         messages,
-        pagination: {
-          currentPage: page,
-          totalMessages: messages.length,
-
-        }
+        totalMessages: messages.length
       }
     });
 

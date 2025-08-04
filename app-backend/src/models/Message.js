@@ -87,7 +87,7 @@ messageSchema.statics.markAsRead = function(receiverId, senderId) {
 };
 
 // Static method to get unread message count
-messageSchema.statics.getUnreadCount = (userId) => {
+messageSchema.statics.getUnreadCount = function(userId)  {
   return this.countDocuments({
     receiver: userId,
     isRead: false

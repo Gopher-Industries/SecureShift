@@ -12,7 +12,6 @@ const router = Router();
 
 // Apply authentication to all routes
 //router.use(authenticateToken);
-//router.use(requireRole(['guard', 'employer'])); // moderator = guard?, employer = employer
 
 
 /**
@@ -90,7 +89,7 @@ const router = Router();
  *       401:
  *         description: Unauthorized - Invalid or missing token
  */
-router.post('/',sendMessage);
+router.post('/', sendMessage);
 
 /**
  * @swagger
@@ -101,22 +100,6 @@ router.post('/',sendMessage);
  *     tags: [Messages]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *           default: 1
- *         description: Page number for pagination
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *           default: 20
- *         description: Number of messages per page
  *     responses:
  *       200:
  *         description: Inbox messages retrieved successfully
