@@ -29,6 +29,7 @@ The backend service for **SecureShift**, a shift management platform connecting 
 ├── config/             # DB and env setup
 ├── swagger.js          # Swagger UI setup
 ├── Dockerfile          # Container setup
+├── docker-compose.yml    # Defines and manages multi-container services 
 ├── .dockerignore       # Docker exclusions
 ├── .env                # Environment variables (ignored)
 ├── server.js           # Entry point
