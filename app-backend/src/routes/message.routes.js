@@ -11,7 +11,7 @@ import { authenticateToken, requireRole } from '../middleware/auth.js';
 const router = Router();
 
 // Apply authentication to all routes
-//router.use(authenticateToken);
+router.use(authenticateToken);
 
 
 /**
