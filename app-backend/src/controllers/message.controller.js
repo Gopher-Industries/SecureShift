@@ -18,7 +18,8 @@ const sendMessage = async (req, res, next) => {
     }
 
     const { receiverId, content } = req.body;
-    const senderId = req.user.id;
+    //const senderId = req.user.id;
+    const senderId = "688a0add689e5c96dfaf09ca"; // For testing purposes, replace with actual user ID from req.user.id
 
     // Prevent sending message to self
     if (senderId === receiverId) {
