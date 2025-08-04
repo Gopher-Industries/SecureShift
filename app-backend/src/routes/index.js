@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import healthRoutes from './health.routes.js';
+import healthRoutes from './health.js';
 import authRoutes   from './auth.js';
-import shiftRoutes  from './shift.routes.js';
+import shiftRoutes  from './shift.js';
 
 const router = Router();
 
