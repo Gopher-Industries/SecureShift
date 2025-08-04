@@ -18,8 +18,7 @@ const sendMessage = async (req, res, next) => {
     }
 
     const { receiverId, content } = req.body;
-    //const senderId = req.user.id;
-    const senderId = "688a0add689e5c96dfaf09ca"; // For testing purposes, replace with actual user ID from req.user.id
+    const senderId = req.user.id;
 
     // Prevent sending message to self
     if (senderId === receiverId) {
@@ -29,26 +28,26 @@ const sendMessage = async (req, res, next) => {
     }
 
     // ToDo: Validate receiver exists and has appropriate role
-    // const receiver = await User.findById(receiverId);
-    // if (!receiver) {
-    //   const error = new Error('Receiver not found' + receiverId);
-    //   error.status = 404;
-    //   throw error;
-    // }
+    const receiver = await User.findById(receiverId);
+    if (!receiver) {
+      const error = new Error('Receiver not found' + receiverId);
+      error.status = 404;
+      throw error;
+    }
 
-    // Ensure communication is only between guards and employers
-    // const senderRole = req.user.role;
-    // const receiverRole = receiver.role;
+    //Ensure communication is only between guards and employers
+    const senderRole = req.user.role;
+    const receiverRole = receiver.role;
     
-    // const validCommunication = 
-    //   (senderRole === 'guard' && receiverRole === 'employer') ||
-    //   (senderRole === 'employer' && receiverRole === 'guard');
+    const validCommunication = 
+      (senderRole === 'guard' && receiverRole === 'employer') ||
+      (senderRole === 'employer' && receiverRole === 'guard');
 
-    // if (!validCommunication) {
-    //   const error = new Error('Messages can only be sent between guards and employers');
-    //   error.status = 403;
-    //   throw error;
-    // }
+    if (!validCommunication) {
+      const error = new Error('Messages can only be sent between guards and employers');
+      error.status = 403;
+      throw error;
+    }
 
     // Create and save the message
     const message = new Message({
@@ -90,7 +89,7 @@ const sendMessage = async (req, res, next) => {
 const getInboxMessages = async (req, res, next) => {
   try {
     //todo: use req.user.id once auth handler is updated
-    const userId = "688a0add689e5c96dfaf09ca"; // For testing purposes, replace with actual user ID from req.user.id
+    const userId = req.user.id;
 
     // Get messages received by the user
     const messages = await Message.find({ receiver: userId })
@@ -119,7 +118,6 @@ const getInboxMessages = async (req, res, next) => {
 /**
  * Get sent messages (sent by logged-in user)
  * @route GET /api/v1/messages/sent
- * @access Private (Guards & Employers)
  */
 const getSentMessages = async (req, res, next) => {
   try {
@@ -150,7 +148,6 @@ const getSentMessages = async (req, res, next) => {
 /**
  * Get conversation between two users
  * @route GET /api/v1/messages/conversation/:userId
- * @access Private (Guards & Employers)
  */
 const getConversation = async (req, res, next) => {
   try {
@@ -179,8 +176,7 @@ const getConversation = async (req, res, next) => {
           participant: {
             id: otherUser._id,
             name: otherUser.name,
-            email: otherUser.email,
-            role: otherUser.role
+            email: otherUser.email
           },
           messages: messages.reverse() // Reverse to show oldest first
         }
@@ -195,7 +191,6 @@ const getConversation = async (req, res, next) => {
 /**
  * Mark message as read
  * @route PATCH /api/v1/messages/:messageId/read
- * @access Private (Guards & Employers)
  */
 const markMessageAsRead = async (req, res, next) => {
   try {
@@ -236,7 +231,6 @@ const markMessageAsRead = async (req, res, next) => {
 /**
  * Get message statistics for the user
  * @route GET /api/v1/messages/stats
- * @access Private (Guards & Employers)
  */
 const getMessageStats = async (req, res, next) => {
   try {

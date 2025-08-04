@@ -4,22 +4,29 @@ import {
   getInboxMessages,
   getSentMessages,
   getConversation,
+  markMessageAsRead,
+  getMessageStats
 } from "../controllers/message.controller.js";
 
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
-// Apply authentication to all routes
-//router.use(authenticateToken);
+//Todo: Uncomment the line below once authentication middleware is ready
+// router.use(authenticateToken);
 
+/**
+ * @swagger
+ * tags:
+ *   name: Messages
+ *   description: Messaging endpoints between guards and employers
+ */
 
 /**
  * @swagger
  * /api/v1/messages:
  *   post:
  *     summary: Send a message
- *     description: Send a message from guard to employer or employer to guard
  *     tags: [Messages]
  *     security:
  *       - bearerAuth: []
@@ -28,66 +35,42 @@ const router = Router();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/MessageRequest'
- *           examples:
- *             guardToEmployer:
- *               summary: Guard sending message to employer
- *               value:
- *                 receiverId: "60d5ecb74b24a42b34d8e8f2"
- *                 content: "Hello, I'm interested in the security position you posted."
- *             employerToGuard:
- *               summary: Employer responding to guard
- *               value:
- *                 receiverId: "60d5ecb74b24a42b34d8e8f1"
- *                 content: "Thank you for your interest. When are you available for an interview?"
+ *             type: object
+ *             required:
+ *               - receiverId
+ *               - content
+ *             properties:
+ *               receiverId:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *           example:
+ *             receiverId: "64ddf8411e72cd4b70586c30"
+ *             content: "Hello, I'm interested in the security role."
  *     responses:
  *       201:
  *         description: Message sent successfully
  *         content:
  *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/MessageResponse'
  *             example:
  *               success: true
- *               message: "Message sent successfully"
  *               data:
- *                 messageId: "60d5ecb74b24a42b34d8e8f3"
+ *                 messageId: "64f5261b63d4b9e3d4e3021a"
  *                 sender:
- *                   _id: "60d5ecb74b24a42b34d8e8f1"
- *                   name: "John Doe"
- *                   email: "john@example.com"
- *                   role: "guard"
+ *                   email: "guard1@example.com"
  *                 receiver:
- *                   _id: "60d5ecb74b24a42b34d8e8f2"
- *                   name: "Jane Smith"
- *                   email: "jane@company.com"
- *                   role: "employer"
- *                 content: "Hello, I'm interested in the security position you posted."
- *                 timestamp: "2024-08-01T10:30:00.000Z"
- *                 conversationId: "60d5ecb74b24a42b34d8e8f1_60d5ecb74b24a42b34d8e8f2"
+ *                   email: "employer1@example.com"
+ *                 content: "Hello, I'm interested in the security role."
+ *                 timestamp: "2025-08-04T11:22:10.000Z"
+ *                 isRead: false
  *       400:
- *         description: Validation error or invalid request
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Validation errors"
- *                 errors:
- *                   type: array
- *                   items:
- *                     type: object
+ *         description: Validation error
  *       403:
- *         description: Unauthorized - Messages only allowed between guards and employers
+ *         description: Forbidden
  *       404:
  *         description: Receiver not found
  *       401:
- *         description: Unauthorized - Invalid or missing token
+ *         description: Unauthorized
  */
 router.post('/', sendMessage);
 
@@ -96,47 +79,31 @@ router.post('/', sendMessage);
  * /api/v1/messages/inbox:
  *   get:
  *     summary: Get inbox messages
- *     description: Retrieve all messages received by the logged-in user, sorted by timestamp (newest first)
  *     tags: [Messages]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Inbox messages retrieved successfully
+ *         description: Inbox retrieved
  *         content:
  *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/MessageListResponse'
  *             example:
  *               success: true
  *               message: "Inbox messages retrieved successfully"
  *               data:
  *                 messages:
- *                   - _id: "60d5ecb74b24a42b34d8e8f3"
+ *                   - _id: "64f5261b63d4b9e3d4e3021a"
  *                     sender:
- *                       _id: "60d5ecb74b24a42b34d8e8f1"
- *                       name: "John Doe"
- *                       email: "john@example.com"
- *                       role: "guard"
+ *                       email: "guard1@example.com"
  *                     receiver:
- *                       _id: "60d5ecb74b24a42b34d8e8f2"
- *                       name: "Jane Smith"
- *                       email: "jane@company.com"
- *                       role: "employer"
- *                     content: "Hello, I'm interested in the security position."
- *                     timestamp: "2024-08-01T10:30:00.000Z"
+ *                       email: "employer1@example.com"
+ *                     content: "Hello, I'm interested in the security role."
+ *                     timestamp: "2025-08-04T11:22:10.000Z"
  *                     isRead: false
- *                     conversationId: "60d5ecb74b24a42b34d8e8f1_60d5ecb74b24a42b34d8e8f2"
- *                 pagination:
- *                   currentPage: 1
- *                   totalPages: 5
- *                   totalMessages: 89
- *                   messagesPerPage: 20
- *                   hasNextPage: true
- *                   hasPrevPage: false
- *                 unreadCount: 12
+ *                 totalMessages: 1
+ *                 unreadCount: 1
  *       401:
- *         description: Unauthorized - Invalid or missing token
+ *         description: Unauthorized
  */
 router.get('/inbox', getInboxMessages);
 
@@ -145,74 +112,32 @@ router.get('/inbox', getInboxMessages);
  * /api/v1/messages/sent:
  *   get:
  *     summary: Get sent messages
- *     description: Retrieve all messages sent by the logged-in user, sorted by timestamp (newest first)
  *     tags: [Messages]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *           default: 1
- *         description: Page number for pagination
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *           default: 20
- *         description: Number of messages per page
  *     responses:
  *       200:
- *         description: Sent messages retrieved successfully
+ *         description: Sent messages retrieved
  *         content:
  *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/MessageListResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: object
- *                       properties:
- *                         messages:
- *                           type: array
- *                           items:
- *                             $ref: '#/components/schemas/Message'
- *                         pagination:
- *                           $ref: '#/components/schemas/Pagination'
  *             example:
  *               success: true
  *               message: "Sent messages retrieved successfully"
  *               data:
  *                 messages:
- *                   - _id: "60d5ecb74b24a42b34d8e8f4"
+ *                   - _id: "64f5261b63d4b9e3d4e3021a"
  *                     sender:
- *                       _id: "60d5ecb74b24a42b34d8e8f2"
- *                       name: "Jane Smith"
- *                       email: "jane@company.com"
- *                       role: "employer"
+ *                       email: "guard1@example.com"
  *                     receiver:
- *                       _id: "60d5ecb74b24a42b34d8e8f1"
- *                       name: "John Doe"
- *                       email: "john@example.com"
- *                       role: "guard"
- *                     content: "Thank you for your interest. When are you available?"
- *                     timestamp: "2024-08-01T11:00:00.000Z"
- *                     isRead: true
- *                     conversationId: "60d5ecb74b24a42b34d8e8f1_60d5ecb74b24a42b34d8e8f2"
+ *                       email: "employer1@example.com"
+ *                     content: "Hello, I'm interested in the security role."
+ *                     timestamp: "2025-08-04T11:22:10.000Z"
+ *                     isRead: false
  *                 pagination:
  *                   currentPage: 1
- *                   totalPages: 3
- *                   totalMessages: 45
- *                   messagesPerPage: 20
- *                   hasNextPage: true
- *                   hasPrevPage: false
+ *                   totalMessages: 1
  *       401:
- *         description: Unauthorized - Invalid or missing token
+ *         description: Unauthorized
  */
 router.get('/sent', getSentMessages);
 
@@ -221,53 +146,42 @@ router.get('/sent', getSentMessages);
  * /api/v1/messages/conversation/{userId}:
  *   get:
  *     summary: Get conversation with specific user
- *     description: Retrieve conversation history between logged-in user and specified user
  *     tags: [Messages]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: userId
+ *       - name: userId
+ *         in: path
  *         required: true
  *         schema:
  *           type: string
- *         description: ID of the other user in the conversation
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *           default: 50
- *         description: Number of messages to retrieve
  *     responses:
  *       200:
- *         description: Conversation retrieved successfully
+ *         description: Conversation retrieved
  *         content:
  *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     conversation:
- *                       type: object
- *                       properties:
- *                         participant:
- *                           $ref: '#/components/schemas/UserBasic'
- *                         messages:
- *                           type: array
- *                           items:
- *                             $ref: '#/components/schemas/Message'
+ *             example:
+ *               success: true
+ *               message: "Conversation retrieved successfully"
+ *               data:
+ *                 conversation:
+ *                   participant:
+ *                     id: "64ddf8411e72cd4b70586c30"
+ *                     name: "Jane Smith"
+ *                     email: "jane@example.com"
+ *                     role: "employer"
+ *                   messages:
+ *                     - content: "Hello"
+ *                       sender:
+ *                         email: "guard@example.com"
+ *                       receiver:
+ *                         email: "jane@example.com"
+ *                       timestamp: "2025-08-04T12:00:00.000Z"
+ *                       isRead: true
  *       404:
  *         description: User not found
  *       401:
- *         description: Unauthorized - Invalid or missing token
+ *         description: Unauthorized
  */
 router.get('/conversation/:userId', getConversation);
 
@@ -275,40 +189,60 @@ router.get('/conversation/:userId', getConversation);
  * @swagger
  * /api/v1/messages/{messageId}/read:
  *   patch:
- *     summary: Mark message as read
- *     description: Mark a specific message as read (only by the receiver)
+ *     summary: Mark a message as read
  *     tags: [Messages]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: messageId
+ *       - name: messageId
+ *         in: path
  *         required: true
  *         schema:
  *           type: string
- *         description: ID of the message to mark as read
  *     responses:
  *       200:
- *         description: Message marked as read successfully
+ *         description: Message marked as read
  *         content:
  *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Message marked as read"
- *                 data:
- *                   type: object
- *                   properties:
- *                     messageId:
- *                       type: string
- *                     isRead:
- *                       type: boolean
- *                       example: true
+ *             example:
+ *               success: true
+ *               message: "Message marked as read"
+ *               data:
+ *                 messageId: "64f5261b63d4b9e3d4e3021a"
+ *                 isRead: true
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Message not found
+ *       401:
+ *         description: Unauthorized
  */
+router.patch('/:messageId/read', markMessageAsRead);
+
+/**
+ * @swagger
+ * /api/v1/messages/stats:
+ *   get:
+ *     summary: Get message statistics
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Stats retrieved
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Message statistics retrieved successfully"
+ *               data:
+ *                 unreadMessages: 3
+ *                 sentMessages: 10
+ *                 receivedMessages: 15
+ *                 totalMessages: 25
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/stats', getMessageStats);
 
 export default router;
