@@ -8,7 +8,7 @@ import {
   getMessageStats
 } from "../controllers/message.controller.js";
 
-import { authenticateToken, requireRole } from '../middleware/auth.js';
+//import { authenticateToken, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
