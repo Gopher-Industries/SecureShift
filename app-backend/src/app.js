@@ -14,7 +14,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // API routes
-app.use('/api', router);
+app.use('/api/v1', router);
 
 // Swagger docs
 setupSwagger(app);
