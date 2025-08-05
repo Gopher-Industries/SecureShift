@@ -58,5 +58,4 @@ function GuardProfiles() {
     </div>
   );
 }
-
 export default GuardProfiles;
