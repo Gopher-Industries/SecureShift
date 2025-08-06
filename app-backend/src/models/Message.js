@@ -65,8 +65,8 @@ messageSchema.statics.getConversation = function(userId1, userId2, limit = 50){
   const conversationId = `${ids[0]}_${ids[1]}`;
   
   return this.find({ conversationId })
-    .populate('sender', userId1)
-    .populate('receiver', userId2)
+    .populate('sender', 'email name role')
+    .populate('receiver', 'email name role')
     .sort({ timestamp: -1 })
     .limit(limit);
 };

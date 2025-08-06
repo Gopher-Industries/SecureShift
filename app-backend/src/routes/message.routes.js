@@ -8,12 +8,10 @@ import {
   getMessageStats
 } from "../controllers/message.controller.js";
 
-//import { authenticateToken, requireRole } from '../middleware/auth.js';
-
+import auth from '../middleware/auth.js';
 const router = Router();
 
-//Todo: Uncomment the line below once authentication middleware is ready
-// router.use(authenticateToken);
+router.use(auth);
 
 /**
  * @swagger

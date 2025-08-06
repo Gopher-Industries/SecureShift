@@ -1,5 +1,5 @@
-import Message from "../models/Message.js";
 import User from "../models/User.js";
+import Message from "../models/Message.js";
 import { validationResult } from "express-validator";
 /**
  * Send a new message
@@ -27,10 +27,10 @@ const sendMessage = async (req, res, next) => {
       throw error;
     }
 
-    // ToDo: Validate receiver exists and has appropriate role
+    // Validate receiver exists
     const receiver = await User.findById(receiverId);
     if (!receiver) {
-      const error = new Error('Receiver not found' + receiverId);
+      const error = new Error('Receiver not found ' + receiverId);
       error.status = 404;
       throw error;
     }
@@ -60,8 +60,8 @@ const sendMessage = async (req, res, next) => {
 
     // Populate sender and receiver details for response
     await message.populate([
-      { path: 'sender', select: 'email' },
-      { path: 'receiver', select: 'email' }
+      { path: 'sender', select: 'email name role' },
+      { path: 'receiver', select: 'email name role' }
     ]);
 
     res.status(201).json({
@@ -88,13 +88,12 @@ const sendMessage = async (req, res, next) => {
  */
 const getInboxMessages = async (req, res, next) => {
   try {
-    //todo: use req.user.id once auth handler is updated
     const userId = req.user.id;
 
     // Get messages received by the user
     const messages = await Message.find({ receiver: userId })
-      .populate('sender', 'email')
-      .populate('receiver', 'email')
+      .populate('sender', 'email name role')
+      .populate('receiver', 'email name role')
       .sort({ timestamp: -1 })
 
     // Get unread count
@@ -125,8 +124,8 @@ const getSentMessages = async (req, res, next) => {
 
     // Get messages sent by the user
     const messages = await Message.find({ sender: userId })
-      .populate('sender', 'email')
-      .populate('receiver', 'email')
+      .populate('sender', 'email name role')
+      .populate('receiver', 'email name role')
       .sort({ timestamp: -1 });
 
 
