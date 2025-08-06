@@ -2,21 +2,6 @@
 
 This is the mobile frontend for the SecureShift Guard App, developed using React Native with Expo and TypeScript. It allows licensed security guards to log in, manage their profile, view available shifts, and apply for them.
 
-## Project Structure
-
-guard-app/
-├── App.tsx # Entry point
-├── app.json # Expo project config
-├── index.ts # App bootstrap
-├── package.json # Dependencies and scripts
-├── tsconfig.json # TypeScript config
-├── .gitignore # Files to exclude from Git
-├── /assets # Static assets (images, icons)
-└── /src
-├── /screens # Profile, Login, Dashboard etc.
-├── /components # Reusable UI components
-├── /navigation # React Navigation setup
-└── /utils # Helper functions and config
 
 ## Prerequisites
 
