@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login } from '../controllers/auth.controller.js';
+import { register, login, verifyOTP } from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
@@ -104,5 +104,31 @@ router.post('/register', register);
  *         description: Invalid credentials
  */
 router.post('/login', login);
+
+/**
+ * @swagger
+ * /api/v1/auth/verify-otp:
+ *   post:
+ *     summary: Verify OTP and get JWT token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, otp]
+ *             properties:
+ *               email:
+ *                 type: string
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: JWT token issued
+ *       401:
+ *         description: Invalid or expired OTP
+ */
+router.post('/verify-otp', verifyOTP);
 
 export default router;
