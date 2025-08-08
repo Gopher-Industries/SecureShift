@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 
 const ManageShift = () => {
+    const navigate = useNavigate();
     const [currentPage, setCurrentPage] = useState(1);
     const cardsPerPage = 8;
     const totalPages = Math.ceil(dummyShifts.length / cardsPerPage);
@@ -56,6 +59,10 @@ const ManageShift = () => {
                     Next
                 </button>
             </div>
+            <button onClick={() => setCurrentPage(1) || window.location.assign('/employer-dashboard')} style={{ marginTop: '30px' }}>
+  ← Back to Dashboard
+</button>
+
         </div>
     );
 };
