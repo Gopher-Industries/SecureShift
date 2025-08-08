@@ -1,4 +1,6 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
 
 const guardData = [
   {
@@ -42,6 +44,8 @@ const containerStyle = {
 };
 
 function GuardProfiles() {
+    const navigate = useNavigate();
+
   return (
     <div>
       <h2 style={{ textAlign: 'center', marginTop: '1rem' }}>Guard Profiles</h2>
@@ -55,6 +59,10 @@ function GuardProfiles() {
           </div>
         ))}
       </div>
+      <button onClick={() => navigate('/employer-dashboard')} style={{ display: 'block', margin: '2rem auto' }}>
+  ← Back to Dashboard
+</button>
+
     </div>
   );
 }

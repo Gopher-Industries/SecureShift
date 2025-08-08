@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const CreateShift = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
     location: '',
@@ -87,6 +89,11 @@ const CreateShift = () => {
 
         <button type="submit">Submit</button>
       </form>
+
+       <button onClick={() => navigate('/employer-dashboard')} style={{ marginTop: '20px' }}>
+        ← Back to Dashboard
+      </button>
+
     </div>
   );
 };
