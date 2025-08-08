@@ -12,7 +12,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000', // Update for prod if needed
+        url: 'http://localhost:3000/', // Update for prod if needed
         description: 'Local server',
       },
     ],
