@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import User from '../models/User.js';
+import { sendOTP } from '../utils/sendEmail.js';
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -9,13 +11,16 @@ const generateToken = (user) => {
   );
 };
 
+const generateOTP = () => {
+  return crypto.randomInt(100000, 999999).toString(); // 6-digit OTP
+};
+
 // @desc Register a new user (Guard, Employer, Admin)
-// @route POST /api/auth/register
+// @route POST /api/v1/auth/register
 export const register = async (req, res) => {
   const { name, email, password, role, phone, address } = req.body;
 
   try {
-    // Check for duplicate
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
@@ -30,20 +35,51 @@ export const register = async (req, res) => {
   }
 };
 
-// @desc Login and get JWT token
-// @route POST /api/auth/login
+// @desc Step 1: Login and trigger OTP
+// @route POST /api/v1/auth/login
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Include password explicitly
     const user = await User.findOne({ email }).select('+password');
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
-    // Update last login
+    // Generate OTP and expiry
+    const otp = generateOTP();
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
+
+    user.otp = otp;
+    user.otpExpiresAt = expiry;
+    await user.save();
+
+    await sendOTP(user.email, otp);
+
+    res.status(200).json({ message: 'OTP sent to your email' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc Step 2: Verify OTP and return JWT
+// @route POST /api/v1/auth/verify-otp
+export const verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    const user = await User.findOne({ email }).select('+otp +otpExpiresAt');
+    if (!user) return res.status(401).json({ message: 'Invalid email or OTP' });
+
+    const now = new Date();
+    if (user.otp !== otp || now > user.otpExpiresAt) {
+      return res.status(401).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // OTP is valid — clear it and generate token
+    user.otp = undefined;
+    user.otpExpiresAt = undefined;
     user.lastLogin = new Date();
     await user.save();
 
