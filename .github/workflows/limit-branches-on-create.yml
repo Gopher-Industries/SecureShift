@@ -1,0 +1,45 @@
+name: Enforce 2 branches per contributor (on create)
+
+on:
+  create:
+    branches: ['**']
+
+permissions:
+  contents: write
+
+jobs:
+  enforce:
+    if: ${{ github.ref_type == 'branch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce naming and 2-branch limit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const refName = process.env.GITHUB_REF_NAME;   // e.g. musa/feature/shift-accept
+            const user = process.env.GITHUB_ACTOR;         // branch creator
+            const pattern = new RegExp(`^${user}\\/(feature|fix|hotfix|release)\\/[-a-z0-9._]+$`);
+
+            // 1) Naming rule
+            if (!pattern.test(refName)) {
+              core.setFailed(`Branch '${refName}' must match: ${user}/(feature|fix|hotfix|release)/short-slug`);
+              return;
+            }
+
+            // 2) Count existing branches owned by this user (username-prefixed)
+            const res = await github.rest.git.listMatchingRefs({
+              owner, repo,
+              ref: `heads/${user}/`
+            });
+            const count = res.data.length;
+            core.info(`Existing branches for ${user}: ${count}`);
+
+            if (count > 2) {
+              // Delete the just-created branch to enforce the cap
+              await github.rest.git.deleteRef({
+                owner, repo,
+                ref: `heads/${refName}`
+              });
+              core.setFailed(`You already have ${count-1} active branches. Limit is 2. Deleted '${refName}'. Merge or delete old branches.`);
+            }
