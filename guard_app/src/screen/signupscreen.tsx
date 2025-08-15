@@ -62,7 +62,6 @@ export default function SignupScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {/* Header: logo, title, subtitle */}
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
-        <Text style={styles.title}>Secure Shift</Text>
         <Text style={styles.subtitle}>Create an account and start looking for your shift</Text>
 
 
@@ -191,14 +190,37 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: 24, paddingTop: 36, paddingBottom: 24 },
 
 
-  logo: { width: 150, height: 150, alignSelf: 'center', resizeMode: 'contain', marginBottom: 12 },
+  logo: {
+  width: 150,
+  height: 150,
+  alignSelf: 'center',
+  resizeMode: 'contain',
+ },
 
-  title: { fontSize: 26, fontWeight: '700', color: '#111827', textAlign: 'center' },
-  subtitle: { marginTop: 6, textAlign: 'center', color: '#6B7280', marginBottom: 18 },
+  title: {
+  fontSize: 26,
+  fontWeight: '700',
+  color: '#111827',
+  textAlign: 'center' },
 
-  error: { color: '#B00020', textAlign: 'center', marginTop: 10, marginBottom: 4, fontWeight: '600' },
+  subtitle: { 
+  marginTop: 6,
+  textAlign: 'center',
+  color: '#6B7280',
+  marginBottom: 18 },
 
-  label: { marginTop: 16, marginBottom: 8, color: '#111827', fontWeight: '600' },
+  error: { 
+  color: '#B00020',
+  textAlign: 'center',
+  marginTop: 10,
+  marginBottom: 4,
+  fontWeight: '600' },
+
+  label: {
+  marginTop: 16,
+  marginBottom: 8,
+  color: '#111827',
+  fontWeight: '600' },
 
   inputWrap: {
     backgroundColor: '#FFFFFF',
