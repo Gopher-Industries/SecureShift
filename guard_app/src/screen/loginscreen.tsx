@@ -53,7 +53,6 @@ export default function LoginScreen({ navigation }: any) {
 
 
         {/* Title + subtitle */}
-        <Text style={styles.title}>Secure Shift</Text>
         <Text style={styles.subtitle}>Login with your email and password</Text>
 
 
@@ -139,7 +138,6 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     alignSelf: 'center',
-    marginBottom: 12,
     resizeMode: 'contain',
   },
   title: {
