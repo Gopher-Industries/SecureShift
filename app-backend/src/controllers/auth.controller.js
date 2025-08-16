@@ -46,7 +46,10 @@ export const login = async (req, res) => {
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
-
+    // Check if user is an Admin
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Admins must use a different login method' });
+    }
     // Generate OTP and expiry
     const otp = generateOTP();
     const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
