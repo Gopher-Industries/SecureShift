@@ -55,9 +55,13 @@ npm install
 Create a `.env` file in the root:
 
 ```env
-PORT=5000
-MONGODB_URI=mongodb+srv://secure_user:1234@securecluster.mvm6x0m.mongodb.net/
-JWT_SECRET=your_jwt_secret
+MONGO_URI=
+JWT_SECRET=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_SECURE=
+SMTP_USER=
+SMTP_PASS=
 ```
 
 ### 4. Start the server
