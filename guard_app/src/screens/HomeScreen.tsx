@@ -1,260 +1,272 @@
-// src/screens/HomeScreen.tsx
+// screens/HomeScreen.tsx
+// Dashboard-only — matches your 390×849 Figma
+
 import React from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
+import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
-/** Brand (inline so we only touch this file) */
-const COLORS = {
-  primary: "#274b93",
-  secondary: "#072261",
-  background: "#fafafa",
-  textDark: "#15202B",
-  textMuted: "#5A6B7A",
-  divider: "#E9EEF3",
-  cardBg: "#ffffff",
-  rateGreen: "#1AAE5B",
-  pendingBg: "#FFF7E6",
-  pendingText: "#A56600",
-  confirmedBg: "#E8F8EE",
-  confirmedText: "#1F8D4D",
-  rejectedBg: "#FDECEC",
-  rejectedText: "#B00020",
-};
+const NAVY = "#244B7A";
+const BORDER = "#E7EBF2";
+const MUTED = "#5C667A";
 
-/** Types + mock data (inline, static) */
-type Shift = {
-  id: string;
-  company: string;
-  role: string;
-  hourlyRate: string; // "$55 p/h" or "$120"
-  date: string;       // "03-08-2025"
-  startTime: string;  // "6:00 pm"
-  endTime: string;    // "11:00 pm"
-  address: string;
-  distance?: string;  // "1.2 km"
-  status?: "available" | "applied" | "pending" | "confirmed" | "rejected";
-};
+const DEVICE_W = Dimensions.get("window").width;
+const CANVAS = Math.min(390, DEVICE_W); // lock to Figma width
+const P = 24; // page padding
 
-const MOCK_SHIFTS: Shift[] = [
-  // Available (button)
-  {
-    id: "s1",
-    company: "Melbourne Central",
-    role: "Retail Security",
-    hourlyRate: "$120",
-    date: "03-08-2025",
-    startTime: "6:00 pm",
-    endTime: "11:00 pm",
-    address: "Swanston St, Melbourne VIC",
-    distance: "1.2 km",
-    status: "available",
-  },
-  {
-    id: "s2",
-    company: "Highpoint",
-    role: "Retail Security",
-    hourlyRate: "$150",
-    date: "03-08-2025",
-    startTime: "5:00 pm",
-    endTime: "10:00 pm",
-    address: "Maribyrnong VIC",
-    distance: "6.1 km",
-    status: "available",
-  },
-  // Applied/Pending (yellow pill)
-  {
-    id: "s3",
-    company: "Chadstone",
-    role: "Retail Security",
-    hourlyRate: "$160",
-    date: "03-08-2025",
-    startTime: "8:00 pm",
-    endTime: "11:00 pm",
-    address: "Chadstone VIC",
-    distance: "7.1 km",
-    status: "pending",
-  },
-  // Confirmed (green pill)
-  {
-    id: "s4",
-    company: "DFO South Wharf",
-    role: "Retail Security",
-    hourlyRate: "$180",
-    date: "04-08-2025",
-    startTime: "6:00 pm",
-    endTime: "11:00 pm",
-    address: "South Wharf VIC",
-    distance: "3 km",
-    status: "confirmed",
-  },
-];
-
-/** Inline card component to avoid creating extra files */
-const ShiftCard = ({
-  shift,
-  onApply,
+const StatCard = ({
+  icon,
+  label,
+  value,
+  tint,
 }: {
-  shift: Shift;
-  onApply: (id: string) => void;
-}) => {
-  const pill =
-    shift.status === "confirmed"
-      ? { bg: COLORS.confirmedBg, color: COLORS.confirmedText, label: "Shift Confirmed" }
-      : shift.status === "pending" || shift.status === "applied"
-      ? { bg: COLORS.pendingBg, color: COLORS.pendingText, label: "Application Pending" }
-      : shift.status === "rejected"
-      ? { bg: COLORS.rejectedBg, color: COLORS.rejectedText, label: "Rejected" }
-      : null;
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.company}>{shift.company}</Text>
-          <Text style={styles.role}>{shift.role}</Text>
-        </View>
-        <Text style={styles.rate}>{shift.hourlyRate}</Text>
-      </View>
-
-      <View style={styles.row}>
-        <Text style={styles.icon}>📅</Text>
-        <Text style={styles.meta}>{shift.date}</Text>
-        <Text style={styles.dot}>•</Text>
-        <Text style={styles.meta}>
-          {shift.startTime} – {shift.endTime}
-        </Text>
-      </View>
-
-      <View style={styles.row}>
-        <Text style={styles.icon}>📍</Text>
-        <Text style={styles.meta}>{shift.address}</Text>
-        {shift.distance ? <Text style={styles.distance}>  ·  {shift.distance}</Text> : null}
-      </View>
-
-      {pill ? (
-        <View style={[styles.pillBanner, { backgroundColor: pill.bg }]}>
-          <Text style={[styles.pillBannerText, { color: pill.color }]}>{pill.label}</Text>
-        </View>
-      ) : (
-        <TouchableOpacity style={styles.applyBtn} onPress={() => onApply(shift.id)}>
-          <Text style={styles.applyText}>Apply for shift</Text>
-        </TouchableOpacity>
-      )}
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  tint: string;
+}) => (
+  <View style={[styles.statCard, { backgroundColor: tint }]}>
+    <View style={styles.statTop}>
+      <View style={styles.statIcon}>{icon}</View>
+      <Text style={styles.statValue}>{value}</Text>
     </View>
-  );
-};
+    <Text style={styles.statLabel}>{label}</Text>
+  </View>
+);
 
-const HomeScreen: React.FC = () => {
-  const onApply = (id: string) => console.log("Apply:", id);
+const RowItem = ({
+  title,
+  time,
+  amount,
+  highlight,
+}: {
+  title: string;
+  time: string;
+  amount?: string;
+  highlight?: boolean;
+}) => (
+  <View style={[styles.rowItem, highlight && styles.rowItemHL]}>
+    <View style={{ flex: 1 }}>
+      <Text style={styles.rowTitle}>{title}</Text>
+      <Text style={styles.rowSub}>{time}</Text>
+    </View>
+    {amount ? <Text style={styles.rowAmt}>{amount}</Text> : null}
+  </View>
+);
 
-  // Group to match the UI: Available → Applied/Pending → Confirmed
-  const available = MOCK_SHIFTS.filter(s => s.status === "available");
-  const pending = MOCK_SHIFTS.filter(s => s.status === "pending" || s.status === "applied");
-  const confirmed = MOCK_SHIFTS.filter(s => s.status === "confirmed");
-
-  const sections: { title: string; data: Shift[] }[] = [
-    { title: "Available Shifts", data: available },
-    { title: "Applied Shifts", data: pending },
-    { title: "Confirmed Shifts", data: confirmed },
-  ];
-
+export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      {/* Top bar with Filter/Sort placeholders (non-functional) */}
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Top blue strip */}
       <View style={styles.topBar}>
-        <Text style={styles.title}>Your Shifts</Text>
-        <View style={styles.topActions}>
-          <TouchableOpacity style={styles.topPill}><Text style={styles.topPillText}>Filter</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.topPill}><Text style={styles.topPillText}>Sort</Text></TouchableOpacity>
+        <View />
+        <View style={styles.topIcons}>
+          <Ionicons name="notifications-outline" size={18} color="#fff" />
+          <Ionicons name="settings-outline" size={18} color="#fff" style={{ marginLeft: 16 }} />
         </View>
       </View>
 
-      {/* Sectioned lists */}
-      <FlatList
-        data={sections}
-        keyExtractor={(sec) => sec.title}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item: sec }) => (
-          <View style={{ marginBottom: 20 }}>
-            <Text style={styles.sectionTitle}>{sec.title}</Text>
-            {sec.data.map(shift => (
-              <ShiftCard key={shift.id} shift={shift} onApply={onApply} />
-            ))}
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={{ width: CANVAS }}>
+          {/* Heading */}
+          <View style={{ paddingHorizontal: P, paddingTop: 18, alignItems: "center" }}>
+            <Text style={styles.h1}>Welcome back, Alex!</Text>
+            <Text style={styles.h2}>Here’s your dashboard</Text>
           </View>
-        )}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+
+          {/* Metrics */}
+          <View style={styles.grid}>
+            <StatCard
+              icon={<Ionicons name="calendar-outline" size={18} color="#3E63DD" />}
+              label="Confirmed shifts"
+              value="3"
+              tint="#EEF2FF"
+            />
+            <StatCard
+              icon={<Ionicons name="time-outline" size={18} color="#C99A06" />}
+              label="Pending Applications"
+              value="2"
+              tint="#FFF4C8"
+            />
+            <StatCard
+              icon={<Feather name="dollar-sign" size={18} color="#1A936F" />}
+              label="Today’s Earning"
+              value="$260"
+              tint="#EAF7EF"
+            />
+            <StatCard
+              icon={<MaterialCommunityIcons name="trending-up" size={18} color="#7C5CFC" />}
+              label="Current Rating"
+              value="4.9"
+              tint="#ECEBFF"
+            />
+          </View>
+
+          {/* Today’s Schedule */}
+          <View style={styles.card}>
+            <View style={styles.cardHead}>
+              <View style={styles.cardHeadLeft}>
+                <Feather name="calendar" size={16} color={MUTED} />
+                <Text style={styles.cardHeadTxt}>Today’s Schedule</Text>
+              </View>
+            </View>
+            <RowItem title="Shopping Center" time="9:00 AM – 5:00" amount="$100" highlight />
+          </View>
+
+          {/* Upcoming Shifts */}
+          <View style={styles.card}>
+            <View style={styles.cardHead}>
+              <View style={styles.cardHeadLeft}>
+                <Feather name="clock" size={16} color={MUTED} />
+                <Text style={styles.cardHeadTxt}>Upcoming Shifts</Text>
+              </View>
+              <TouchableOpacity>
+                <Text style={styles.viewAll}>View All ›</Text>
+              </TouchableOpacity>
+            </View>
+            <RowItem title="Hospital Complex" time="10-08-2025, 9:00 AM – 5:00 PM" amount="$200" />
+            <RowItem title="Woolworths" time="12-08-2025, 9:00 AM – 5:00 PM" amount="$170" />
+          </View>
+
+          <View style={{ height: 88 }} />
+        </View>
+      </ScrollView>
+
+      {/* Bottom tabs (visual) */}
+      <View style={styles.tabBar}>
+        <View style={styles.tabActive}>
+          <Ionicons name="home" size={20} color="#0F172A" />
+          <Text style={styles.tabTextActive}>Home</Text>
+        </View>
+        <View style={styles.tab}>
+          <Ionicons name="briefcase-outline" size={20} color="#9AA3AF" />
+          <Text style={styles.tabText}>Shifts</Text>
+        </View>
+        <View style={styles.tab}>
+          <Ionicons name="person-outline" size={20} color="#9AA3AF" />
+          <Text style={styles.tabText}>Profile</Text>
+        </View>
+      </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+
   topBar: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    height: 48,
+    backgroundColor: NAVY,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
   },
-  title: { fontSize: 20, fontWeight: "800", color: COLORS.textDark },
-  topActions: { flexDirection: "row" },
-  topPill: {
-    backgroundColor: "#E7EEF6",
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginLeft: 8,
+  topIcons: { flexDirection: "row", alignItems: "center" },
+
+  scroll: { alignItems: "center" },
+
+  // Headings
+  h1: { fontSize: 28, fontWeight: "800", color: "#0F172A", letterSpacing: 0.2, textAlign: "center" },
+  h2: { fontSize: 14, color: "#6B7280", marginTop: 6, textAlign: "center" },
+
+  // Metrics grid
+  grid: {
+    paddingHorizontal: P,
+    marginTop: 18,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
-  topPillText: { fontWeight: "700", color: COLORS.textDark },
-
-  listContent: { paddingHorizontal: 16, paddingBottom: 24, paddingTop: 8 },
-
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: COLORS.textDark,
-    marginBottom: 8,
-    marginTop: 6,
+  statCard: {
+    width: (CANVAS - P * 2 - 12) / 2,
+    borderRadius: 22,
+    padding: 16,
+    marginBottom: 12,
   },
-
-  card: {
-    backgroundColor: COLORS.cardBg,
-    borderRadius: 16,
-    padding: 14,
-    marginVertical: 8,
-    elevation: 3,
+  statTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: "#000",
     shadowOpacity: 0.06,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2,
   },
-  headerRow: { flexDirection: "row", alignItems: "center" },
-  company: { fontSize: 16, fontWeight: "700", color: COLORS.textDark },
-  role: { marginTop: 2, fontSize: 13, color: COLORS.textMuted },
-  rate: { fontSize: 15, fontWeight: "800", color: COLORS.rateGreen },
+  statValue: { fontSize: 20, fontWeight: "800", color: "#0F172A" },
+  statLabel: { marginTop: 10, fontSize: 12, color: "#6B7280" },
 
-  row: { marginTop: 10, flexDirection: "row", alignItems: "center", flexWrap: "wrap" },
-  icon: { fontSize: 13, marginRight: 6 },
-  meta: { fontSize: 13.5, color: COLORS.textDark },
-  dot: { marginHorizontal: 6, color: COLORS.textMuted },
-  distance: { fontSize: 13.5, color: COLORS.textMuted },
+  // Outer white cards
+  card: {
+    marginHorizontal: P,
+    marginTop: 18,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  cardHead: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  cardHeadLeft: { flexDirection: "row", alignItems: "center" },
+  cardHeadTxt: { marginLeft: 8, fontSize: 16, color: MUTED, fontWeight: "700" },
+  viewAll: { fontSize: 15, color: "#3E63DD", fontWeight: "700" },
 
-  applyBtn: {
+  // Inner pills
+  rowItem: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 18,
+    padding: 16,
     marginTop: 12,
-    backgroundColor: COLORS.primary,
-    paddingVertical: 10,
-    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
     alignItems: "center",
   },
-  applyText: { color: "#fff", fontWeight: "700" },
+  rowItemHL: { backgroundColor: "#EAF7EF", borderColor: "#D4F0DC" },
+  rowTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
+  rowSub: { fontSize: 13, color: "#6B7280", marginTop: 6 },
+  rowAmt: { fontSize: 16, fontWeight: "900", color: "#1A936F", paddingLeft: 10 },
 
-  pillBanner: {
-    marginTop: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+  // Bottom tabs
+  tabBar: {
+    height: 64,
+    borderTopWidth: 1,
+    borderTopColor: "#EDF1F6",
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-around",
+    paddingBottom: 8,
   },
-  pillBannerText: { fontWeight: "700" },
+  tab: { alignItems: "center", justifyContent: "center" },
+  tabActive: { alignItems: "center", justifyContent: "center" },
+  tabText: { fontSize: 12, color: "#9AA3AF", marginTop: 4 },
+  tabTextActive: { fontSize: 12, color: "#17223B", fontWeight: "800", marginTop: 4 },
 });
-
-export default HomeScreen;
