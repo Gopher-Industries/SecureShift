@@ -181,7 +181,11 @@ router
  * @swagger
  * /api/v1/shifts/{id}/rate:
  *   patch:
- *     summary: Submit a rating (Guard/Employer) — only after completion
+ *     summary: Submit a rating (role-aware)
+ *     description: |
+ *       • Guard: Only the **assignedGuard** can rate. Updates **guardRating** (one time, tracked by `ratedByGuard`).  
+ *       • Employer: Only the **creator (employer)** can rate. Updates **employerRating** (one time, tracked by `ratedByEmployer`).  
+ *       • Ratings are allowed **only after** the shift status is `completed`.
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
@@ -205,11 +209,16 @@ router
  *                 maximum: 5
  *                 example: 5
  *     responses:
- *       200: { description: Rating saved }
- *       400: { description: Invalid state or duplicate rating }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- *       404: { description: Shift not found }
+ *       200:
+ *         description: Rating saved (guardRating or employerRating based on role)
+ *       400:
+ *         description: Invalid state (not completed) or duplicate rating
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (only assigned guard or employer/creator may rate)
+ *       404:
+ *         description: Shift not found
  */
 router
   .route('/:id/rate')
