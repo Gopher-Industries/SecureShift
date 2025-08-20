@@ -1,102 +1,23 @@
 import mongoose from 'mongoose';
 
-const shiftSchema = new mongoose.Schema(
-    {
-        title: {
-            type: String,
-            required: true,
-            trim: true,
-            minlength: 3,
-            validate: {
-                validator: function (value) {
-                    return /^[A-Za-z0-9\s\-]+$/.test(value);
-                },
-                message: 'Title must only contain letters, numbers, spaces, and dashes.',
-            },
-        },
+const shiftSchema = new mongoose.Schema({
+  title:      { type: String, required: true, trim: true },
+  date:       { type: Date,   required: true },            // shift calendar date
+  startTime:  { type: Date,   required: true },            // store as Date (your file shows Date)
+  endTime:    { type: Date,   required: true },
+  createdBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
 
-        date: {
-            type: Date,
-            required: true,
-            validate: {
-                validator: function (value) {
-                    const inputDate = new Date(value);
-                    const today = new Date();
+  applicants:   [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  assignedGuard:{ type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 
-                    inputDate.setHours(0, 0, 0, 0);
-                    today.setHours(0, 0, 0, 0);
+  status: { type: String, enum: ['open', 'applied', 'assigned', 'completed'], default: 'open', index: true },
 
-                    return inputDate >= today;
-                },
-                message: 'Shift date must be today or a future date.',
-            },
-        },
+  guardRating:     { type: Number, min: 1, max: 5 },
+  employerRating:  { type: Number, min: 1, max: 5 },
+  ratedByGuard:    { type: Boolean, default: false },
+  ratedByEmployer: { type: Boolean, default: false },
+}, { timestamps: true });
 
-        startTime: {
-            type: String,
-            required: true,
-            validate: {
-                validator: function (value) {
-                    return /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
-                },
-                message: 'Start time must be in 24-hour HH:MM format.',
-            },
-        },
-
-        endTime: {
-            type: String,
-            required: true,
-            validate: {
-                validator: function (value) {
-                    return /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
-                },
-                message: 'End time must be in 24-hour HH:MM format.',
-            },
-        },
-
-        location: {
-            street: { type: String, trim: true },
-            suburb: { type: String, trim: true },
-            state: { type: String, trim: true },
-            postcode: {
-                type: String,
-                validate: {
-                    validator: function (value) {
-                        return /^\d{4}$/.test(value); // Australian postcode: exactly 4 digits
-                    },
-                    message: 'Postcode must be a 4-digit number.',
-                },
-            },
-        },
-        
-        status: {
-            type: String,
-            enum: ['open', 'assigned', 'completed'],
-            default: 'open',
-        },
-
-        createdBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User', // should be an employer
-            required: true,
-        },
-
-        urgency: {
-            type: String,
-            enum: ['normal', 'priority', 'last-minute'],
-            default: 'normal',
-        },
-
-        acceptedBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User', // should be a guard
-            default: null,
-        },
-    },
-    {
-        timestamps: true,
-    }
-);
 
 const Shift = mongoose.model('Shift', shiftSchema);
 export default Shift;
