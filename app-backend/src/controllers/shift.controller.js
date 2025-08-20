@@ -158,13 +158,16 @@ export const rateShift = async (req, res) => {
       return res.status(400).json({ message: 'Ratings allowed only after completion' });
 
     if (req.user.role === 'guard') {
-      const isGuard =
-        String(shift.assignedGuard) === String(req.user._id) ||
-        shift.applicants.some(a => String(a) === String(req.user._id));
-      if (!isGuard) return res.status(403).json({ message: 'Not allowed' });
-      if (shift.ratedByGuard) return res.status(400).json({ message: 'Already rated by guard' });
+      const isAssigned = String(shift.assignedGuard) === String(req.user._id);
+      if (!isAssigned) {
+        return res.status(403).json({ message: 'Only the assigned guard can rate this shift' });
+      }
+      if (shift.ratedByGuard) {
+        return res.status(400).json({ message: 'Guard has already submitted a rating' });
+      }
       shift.guardRating = rating;
       shift.ratedByGuard = true;
+
     } else if (req.user.role === 'employer') {
       const isOwner = String(shift.createdBy) === String(req.user._id);
       if (!isOwner) return res.status(403).json({ message: 'Not allowed' });
