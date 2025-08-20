@@ -19,7 +19,6 @@ const locationSchema = new Schema(
   },
   { _id: false }
 );
-
 const shiftSchema = new Schema(
   {
     // Core details
