@@ -1,26 +1,71 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
 
+// Helpers
+const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
+const isValidHHMM = (s) => typeof s === 'string' && HHMM.test(s);
+
+// Returns true if now is at/after the shift start datetime
+const isInPastOrStarted = (shift) => {
+  try {
+    const [sh, sm] = String(shift.startTime).split(':').map(Number);
+    const start = new Date(shift.date);
+    start.setHours(sh, sm, 0, 0);
+    return new Date() >= start;
+  } catch {
+    return false;
+  }
+};
+
 /**
  * POST /api/v1/shifts  (employer only)
  */
 export const createShift = async (req, res) => {
   try {
     const { title, date, startTime, endTime, location, urgency, field } = req.body;
+
     if (!title || !date || !startTime || !endTime) {
       return res.status(400).json({ message: 'title, date, startTime, endTime are required' });
     }
+
+    // date must be a valid Date; schema also enforces today/future
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) {
+      return res.status(400).json({ message: 'date must be a valid date (YYYY-MM-DD)' });
+    }
+
+    // Times must match schema: "HH:MM" 24h
+    if (!isValidHHMM(startTime) || !isValidHHMM(endTime)) {
+      return res.status(400).json({ message: 'startTime/endTime must be HH:MM (24h)' });
+    }
+
+    // Optional structured location object; leave undefined if not provided
+    let loc;
+    if (location && typeof location === 'object') {
+      const { street, suburb, state, postcode } = location;
+      loc = {
+        street: typeof street === 'string' ? street.trim() : undefined,
+        suburb: typeof suburb === 'string' ? suburb.trim() : undefined,
+        state: typeof state === 'string' ? state.trim() : undefined,
+        postcode, // schema regex will validate if provided
+      };
+    }
+
     const shift = await Shift.create({
       title,
-      date: new Date(date),
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
+      date: d,            // Date only; schema validates not in the past
+      startTime,          // "HH:MM"
+      endTime,            // "HH:MM" (schema validates end > start)
       createdBy: req.user._id,
-      // optional info:
-      location, urgency, field
+      location: loc,
+      urgency,            // enum validated by schema
+      field,              // now supported in schema
     });
-    res.status(201).json(shift);
-  } catch (e) { res.status(500).json({ message: e.message }); }
+
+    return res.status(201).json(shift);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
 };
 
 /**
@@ -33,8 +78,12 @@ export const applyForShift = async (req, res) => {
 
     const shift = await Shift.findById(id);
     if (!shift) return res.status(404).json({ message: 'Shift not found' });
-    if (['assigned','completed'].includes(shift.status)) {
+
+    if (['assigned', 'completed'].includes(shift.status)) {
       return res.status(400).json({ message: `Cannot apply; shift is ${shift.status}` });
+    }
+    if (isInPastOrStarted(shift)) {
+      return res.status(400).json({ message: 'Cannot apply; shift already started or in the past' });
     }
     if (String(shift.createdBy) === String(req.user._id)) {
       return res.status(400).json({ message: 'Employer cannot apply to own shift' });
@@ -46,8 +95,10 @@ export const applyForShift = async (req, res) => {
     shift.applicants.push(req.user._id);
     if (shift.status === 'open') shift.status = 'applied';
     await shift.save();
-    res.json({ message: 'Application submitted', shift });
-  } catch (e) { res.status(500).json({ message: e.message }); }
+    return res.json({ message: 'Application submitted', shift });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
 };
 
 /**
@@ -68,21 +119,25 @@ export const approveShift = async (req, res) => {
     const isAdmin = req.user.role === 'admin';
     if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Not allowed' });
 
-    if (['assigned','completed'].includes(shift.status)) {
+    if (['assigned', 'completed'].includes(shift.status)) {
       return res.status(400).json({ message: `Already ${shift.status}` });
     }
-
+    if (isInPastOrStarted(shift)) {
+      return res.status(400).json({ message: 'Cannot approve; shift already started or in the past' });
+    }
     if (!shift.applicants.some(a => String(a) === String(guardId))) {
       return res.status(400).json({ message: 'Guard did not apply for this shift' });
     }
 
-    shift.assignedGuard = guardId;
+    shift.assignedGuard = guardId; // virtual -> acceptedBy
     shift.status = 'assigned';
     if (!keepOthers) shift.applicants = [guardId];
 
     await shift.save();
-    res.json({ message: 'Guard approved', shift });
-  } catch (e) { res.status(500).json({ message: e.message }); }
+    return res.json({ message: 'Guard approved', shift });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
 };
 
 /**
@@ -105,8 +160,10 @@ export const completeShift = async (req, res) => {
 
     shift.status = 'completed';
     await shift.save();
-    res.json({ message: 'Shift completed', shift });
-  } catch (e) { res.status(500).json({ message: e.message }); }
+    return res.json({ message: 'Shift completed', shift });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
 };
 
 /**
@@ -136,8 +193,10 @@ export const getMyShifts = async (req, res) => {
       .populate('assignedGuard', 'name email')
       .populate('applicants', 'name email');
 
-    res.json(shifts);
-  } catch (e) { res.status(500).json({ message: e.message }); }
+    return res.json(shifts);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
 };
 
 /**
@@ -149,13 +208,17 @@ export const rateShift = async (req, res) => {
     const { id } = req.params;
     const { rating } = req.body;
     if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: 'Invalid id' });
-    if (!(Number(rating) >= 1 && Number(rating) <= 5))
+
+    const r = Math.round(Number(rating));
+    if (!(r >= 1 && r <= 5)) {
       return res.status(400).json({ message: 'rating must be 1–5' });
+    }
 
     const shift = await Shift.findById(id);
     if (!shift) return res.status(404).json({ message: 'Shift not found' });
-    if (shift.status !== 'completed')
+    if (shift.status !== 'completed') {
       return res.status(400).json({ message: 'Ratings allowed only after completion' });
+    }
 
     if (req.user.role === 'guard') {
       const isAssigned = String(shift.assignedGuard) === String(req.user._id);
@@ -165,20 +228,23 @@ export const rateShift = async (req, res) => {
       if (shift.ratedByGuard) {
         return res.status(400).json({ message: 'Guard has already submitted a rating' });
       }
-      shift.guardRating = rating;
+      shift.guardRating = r;
       shift.ratedByGuard = true;
 
     } else if (req.user.role === 'employer') {
       const isOwner = String(shift.createdBy) === String(req.user._id);
       if (!isOwner) return res.status(403).json({ message: 'Not allowed' });
       if (shift.ratedByEmployer) return res.status(400).json({ message: 'Already rated by employer' });
-      shift.employerRating = rating;
+      shift.employerRating = r;
       shift.ratedByEmployer = true;
+
     } else {
       return res.status(403).json({ message: 'Only guard/employer can rate' });
     }
 
     await shift.save();
-    res.json({ message: 'Rating saved', shift });
-  } catch (e) { res.status(500).json({ message: e.message }); }
+    return res.json({ message: 'Rating saved', shift });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
 };
