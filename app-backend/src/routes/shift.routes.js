@@ -46,10 +46,16 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *             properties:
  *               title:      { type: string, example: "Night Patrol" }
  *               date:       { type: string, format: date, example: "2025-08-25" }
- *               startTime:  { type: string, example: "2025-08-25T20:00:00Z" }
- *               endTime:    { type: string, example: "2025-08-26T04:00:00Z" }
- *               location:   { type: string, example: "Depot A" }
- *               urgency:    { type: string, example: "normal" }
+ *               startTime:  { type: string, example: "20:00", description: "HH:MM (24h)" }
+ *               endTime:    { type: string, example: "23:00", description: "HH:MM (24h), must be after startTime (same day)" }
+ *               location:
+ *                 type: object
+ *                 properties:
+ *                   street:   { type: string, example: "10 Dock Rd" }
+ *                   suburb:   { type: string, example: "Port Melbourne" }
+ *                   state:    { type: string, example: "VIC" }
+ *                   postcode: { type: string, example: "3207", description: "4 digits (AU)" }
+ *               urgency:    { type: string, enum: [normal, priority, last-minute], example: "normal" }
  *               field:      { type: string, example: "warehouse" }
  *     responses:
  *       201:
