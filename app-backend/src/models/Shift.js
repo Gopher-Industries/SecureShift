@@ -15,7 +15,7 @@ const locationSchema = new Schema(
     street:   { type: String, trim: true },
     suburb:   { type: String, trim: true },
     state:    { type: String, trim: true },
-    postcode: { type: String, match: /^\d{4}$/ }, // 4 digits
+    postcode: { type: String, match: /^\d{4}$/ }, // 4 digits (AU)
   },
   { _id: false }
 );
@@ -46,7 +46,7 @@ const shiftSchema = new Schema(
       },
     },
 
-    // Times as HH:MM strings (original behavior)
+    // Times as HH:MM strings (same-day; end > start)
     startTime: {
       type: String,
       required: true,
@@ -68,6 +68,9 @@ const shiftSchema = new Schema(
 
     // Location (street/suburb/state/postcode)
     location: locationSchema,
+
+    // Optional domain field (mentioned by controller/docs)
+    field: { type: String, trim: true, maxlength: 50 },
 
     // Urgency enum
     urgency: {
