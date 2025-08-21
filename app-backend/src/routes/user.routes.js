@@ -39,7 +39,21 @@ const router = express.Router();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: John Doe
+ *               email:
+ *                 type: string
+ *                 example: john.doe@example.com
+ *               password:
+ *                 type: string
+ *                 example: newPassword123
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *                 example: user
  *     responses:
  *       200:
  *         description: Successfully updated profile.
@@ -103,7 +117,21 @@ router
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Jane Smith
+ *               email:
+ *                 type: string
+ *                 example: jane.smith@example.com
+ *               password:
+ *                 type: string
+ *                 example: AdminUpdated123
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin]
+ *                 example: admin
  *     responses:
  *       200:
  *         description: Successfully updated user.
