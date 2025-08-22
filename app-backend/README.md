@@ -132,6 +132,12 @@ You can explore, test, and understand the structure of all API endpoints there.
 npm run test
 ```
 
+Generate coverage reports:
+
+```bash
+npm run test:cov
+```
+
 Unit and integration tests are managed via Jest (or Mocha/Chai if used).
 
 ---
