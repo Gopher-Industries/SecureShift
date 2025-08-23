@@ -28,11 +28,12 @@ const shiftSchema = new Schema(
       required: true,
       trim: true,
       minlength: 3,
-      match: /^[A-Za-z0-9\s-]+$/,
+      // allow common punctuation: hyphen, comma, ampersand, dot, apostrophe, slash, parentheses
+      match: /^[\w\s\-&,.'()/]+$/u,
       index: true,
     },
 
-    // Date must be today or future
+    // Date must be today or future (date of shift start)
     date: {
       type: Date,
       required: true,
@@ -46,7 +47,7 @@ const shiftSchema = new Schema(
       },
     },
 
-    // Times as HH:MM strings (same-day; end > start)
+    // Times as HH:MM strings; end may wrap past midnight
     startTime: {
       type: String,
       required: true,
@@ -59,17 +60,23 @@ const shiftSchema = new Schema(
       validate: {
         validator: function (v) {
           const start = hhmmToMinutes(this.startTime);
-          const end = hhmmToMinutes(v);
-          return !Number.isNaN(start) && !Number.isNaN(end) && end > start;
+          const end   = hhmmToMinutes(v);
+          if (Number.isNaN(start) || Number.isNaN(end)) return false;
+          // duration in minutes, allowing wrap past midnight; must be > 0 and < 24h
+          const duration = (end - start + 1440) % 1440;
+          return duration > 0;
         },
-        message: 'End time must be after start time',
+        message: 'End time must be after start time (same day or next day)',
       },
     },
+
+    // Convenience flag (computed in pre-validate)
+    spansMidnight: { type: Boolean, default: false },
 
     // Location (street/suburb/state/postcode)
     location: locationSchema,
 
-    // Optional domain field (mentioned by controller/docs)
+    // Optional domain field
     field: { type: String, trim: true, maxlength: 50 },
 
     // Urgency enum
@@ -87,7 +94,14 @@ const shiftSchema = new Schema(
       index: true,
     },
 
-    applicants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    applicants: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
+      validate: {
+        validator: (arr) => Array.isArray(arr) && arr.every(Boolean),
+        message: 'Applicants cannot contain null/undefined',
+      },
+    },
 
     // Canonical historical name
     acceptedBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
@@ -103,6 +117,27 @@ const shiftSchema = new Schema(
   },
   { timestamps: true }
 );
+
+// Compute spansMidnight
+shiftSchema.pre('validate', function (next) {
+  const s = hhmmToMinutes(this.startTime);
+  const e = hhmmToMinutes(this.endTime);
+  if (!Number.isNaN(s) && !Number.isNaN(e)) {
+    // if end <= start, it wraps past midnight
+    this.spansMidnight = e <= s;
+  }
+  next();
+});
+
+// Clean applicants to avoid nulls sneaking in
+shiftSchema.pre('save', function (next) {
+  if (Array.isArray(this.applicants)) {
+    this.applicants = this.applicants.filter(Boolean);
+  } else {
+    this.applicants = [];
+  }
+  next();
+});
 
 // Virtual alias: assignedGuard <-> acceptedBy (keeps new code working)
 shiftSchema
