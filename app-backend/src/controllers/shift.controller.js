@@ -28,18 +28,21 @@ export const createShift = async (req, res) => {
       return res.status(400).json({ message: 'title, date, startTime, endTime are required' });
     }
 
-    // date must be a valid Date; schema also enforces today/future
+    // pick up user id from either _id or id
+    const creatorId = req.user?._id || req.user?.id;
+    if (!creatorId) {
+      return res.status(401).json({ message: 'Authenticated user id missing from context' });
+    }
+
     const d = new Date(date);
     if (Number.isNaN(d.getTime())) {
       return res.status(400).json({ message: 'date must be a valid date (YYYY-MM-DD)' });
     }
 
-    // Times must match schema: "HH:MM" 24h
     if (!isValidHHMM(startTime) || !isValidHHMM(endTime)) {
       return res.status(400).json({ message: 'startTime/endTime must be HH:MM (24h)' });
     }
 
-    // Optional structured location object; leave undefined if not provided
     let loc;
     if (location && typeof location === 'object') {
       const { street, suburb, state, postcode } = location;
@@ -47,24 +50,98 @@ export const createShift = async (req, res) => {
         street: typeof street === 'string' ? street.trim() : undefined,
         suburb: typeof suburb === 'string' ? suburb.trim() : undefined,
         state: typeof state === 'string' ? state.trim() : undefined,
-        postcode, // schema regex will validate if provided
+        postcode,
       };
     }
 
     const shift = await Shift.create({
       title,
-      date: d,            // Date only; schema validates not in the past
-      startTime,          // "HH:MM"
-      endTime,            // "HH:MM" (schema validates end > start)
-      createdBy: req.user._id,
+      date: d,
+      startTime,
+      endTime,
+      createdBy: creatorId,
       location: loc,
-      urgency,            // enum validated by schema
-      field,              // now supported in schema
+      urgency,
+      field,
     });
 
     return res.status(201).json(shift);
   } catch (e) {
     return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * GET /api/v1/shifts  (dynamic by role)
+ * Guard → available (open/applied) future/today not created by guard
+ * Employer → own shifts waiting for approval (status: applied)
+ * Admin → all shifts waiting for approval (status: applied)
+ * Optional query params: ?q=&urgency=&limit=&page=
+ */
+export const listAvailableShifts = async (req, res) => {
+  try {
+    const role = req.user?.role;
+    const uid  = req.user?._id || req.user?.id;
+    if (!role || !uid) return res.status(401).json({ message: 'Unauthorized' });
+
+    const page  = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const skip  = (page - 1) * limit;
+
+    const { q, urgency } = req.query;
+    const withApplicantsOnly = String(req.query.withApplicantsOnly) === 'true';
+
+    let query = {};
+    if (role === 'guard') {
+      const today = new Date(); today.setHours(0,0,0,0);
+      query = {
+        status: { $in: ['open', 'applied'] },
+        createdBy: { $ne: uid },
+        date: { $gte: today },
+      };
+    } else if (role === 'employer') {
+      // show ALL my shifts; optionally filter to only those with applicants
+      query = { createdBy: uid };
+      if (withApplicantsOnly) query['applicants.0'] = { $exists: true };
+    } else if (role === 'admin') {
+      query = {};
+      if (withApplicantsOnly) query['applicants.0'] = { $exists: true };
+    } else {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    if (q) {
+      query.$or = [
+        { title: { $regex: q, $options: 'i' } },
+        { field: { $regex: q, $options: 'i' } },
+      ];
+    }
+    if (urgency && ['normal','priority','last-minute'].includes(urgency)) {
+      query.urgency = urgency;
+    }
+
+    const findQ = Shift.find(query)
+      .sort({ date: role === 'guard' ? 1 : -1, startTime: role === 'guard' ? 1 : -1, createdAt: -1 })
+      .skip(skip).limit(limit)
+      .populate('createdBy', 'name');
+
+    if (role === 'employer' || role === 'admin') {
+      findQ.populate('applicants', 'name email');
+    }
+
+    const [docs, total] = await Promise.all([findQ.lean(), Shift.countDocuments(query)]);
+
+    const items = (role === 'employer' || role === 'admin')
+      ? docs.map(d => ({
+          ...d,
+          applicantCount: Array.isArray(d.applicants) ? d.applicants.length : 0,
+          hasApplicants: Array.isArray(d.applicants) && d.applicants.length > 0,
+        }))
+      : docs;
+
+    res.json({ page, limit, total, items });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
   }
 };
 
@@ -76,6 +153,11 @@ export const applyForShift = async (req, res) => {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: 'Invalid id' });
 
+    const userId = req.user?._id || req.user?.id;
+    if (!userId || !mongoose.isValidObjectId(String(userId))) {
+      return res.status(401).json({ message: 'Authenticated user id missing from context' });
+    }
+
     const shift = await Shift.findById(id);
     if (!shift) return res.status(404).json({ message: 'Shift not found' });
 
@@ -85,21 +167,26 @@ export const applyForShift = async (req, res) => {
     if (isInPastOrStarted(shift)) {
       return res.status(400).json({ message: 'Cannot apply; shift already started or in the past' });
     }
-    if (String(shift.createdBy) === String(req.user._id)) {
+    if (String(shift.createdBy) === String(userId)) {
       return res.status(400).json({ message: 'Employer cannot apply to own shift' });
     }
-    if (shift.applicants.some(a => String(a) === String(req.user._id))) {
+
+    // sanitize & dedupe
+    shift.applicants = (shift.applicants || []).filter(Boolean);
+    if (shift.applicants.some(a => String(a) === String(userId))) {
       return res.status(400).json({ message: 'Already applied' });
     }
 
-    shift.applicants.push(req.user._id);
+    shift.applicants.push(userId);
     if (shift.status === 'open') shift.status = 'applied';
+
     await shift.save();
     return res.json({ message: 'Application submitted', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
 };
+
 
 /**
  * PUT /api/v1/shifts/:id/approve  (employer/admin)
@@ -180,7 +267,7 @@ export const getMyShifts = async (req, res) => {
 
     let query = {};
     if (role === 'guard') {
-      query = { $or: [{ applicants: uid }, { assignedGuard: uid }] };
+      query = { $or: [{ applicants: uid }, { acceptedBy: uid }] };
     } else if (role === 'employer') {
       query = { createdBy: uid };
     } // admin sees all
@@ -190,7 +277,7 @@ export const getMyShifts = async (req, res) => {
     const shifts = await Shift.find(query)
       .sort({ date: -1, createdAt: -1 })
       .populate('createdBy', 'name email')
-      .populate('assignedGuard', 'name email')
+      .populate('acceptedBy', 'name email')
       .populate('applicants', 'name email');
 
     return res.json(shifts);
