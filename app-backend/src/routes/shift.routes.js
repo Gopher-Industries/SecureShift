@@ -7,6 +7,7 @@ import {
   completeShift,
   getMyShifts,
   rateShift,
+  listAvailableShifts, // dynamic by role
 } from '../controllers/shift.controller.js';
 
 const router = express.Router();
@@ -31,6 +32,50 @@ const authorizeRole = (...allowed) => (req, res, next) => {
 /**
  * @swagger
  * /api/v1/shifts:
+ *   get:
+ *     summary: List shifts (dynamic by role)
+ *     description: |
+ *       • **Guard** → Available shifts (`open`/`applied`) not created by the guard, date ≥ today.  
+ *       • **Employer** → Your shifts with applicants waiting for approval (`status: applied`).  
+ *       • **Admin** → All shifts with applicants waiting for approval (`status: applied`).  
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Case-insensitive search in title/field
+ *       - in: query
+ *         name: urgency
+ *         schema:
+ *           type: string
+ *           enum: [normal, priority, last-minute]
+ *         required: false
+ *         description: Filter by urgency
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         required: false
+ *         description: Page number (pagination)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 20
+ *         required: false
+ *         description: Page size (pagination)
+ *     responses:
+ *       200: { description: Paged list of shifts per role rules }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
  *   post:
  *     summary: Create a shift (Employer only)
  *     tags: [Shifts]
@@ -44,10 +89,21 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *             type: object
  *             required: [title, date, startTime, endTime]
  *             properties:
- *               title:      { type: string, example: "Night Patrol" }
- *               date:       { type: string, format: date, example: "2025-08-25" }
- *               startTime:  { type: string, example: "20:00", description: "HH:MM (24h)" }
- *               endTime:    { type: string, example: "23:00", description: "HH:MM (24h), must be after startTime (same day)" }
+ *               title:
+ *                 type: string
+ *                 example: "Night Patrol"
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-08-25"
+ *               startTime:
+ *                 type: string
+ *                 example: "20:00"
+ *                 description: "HH:MM (24h)"
+ *               endTime:
+ *                 type: string
+ *                 example: "23:00"
+ *                 description: "HH:MM (24h), must be after startTime (same day)"
  *               location:
  *                 type: object
  *                 properties:
@@ -55,20 +111,22 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *                   suburb:   { type: string, example: "Port Melbourne" }
  *                   state:    { type: string, example: "VIC" }
  *                   postcode: { type: string, example: "3207", description: "4 digits (AU)" }
- *               urgency:    { type: string, enum: [normal, priority, last-minute], example: "normal" }
- *               field:      { type: string, example: "warehouse" }
+ *               urgency:
+ *                 type: string
+ *                 enum: [normal, priority, last-minute]
+ *                 example: "normal"
+ *               field:
+ *                 type: string
+ *                 example: "warehouse"
  *     responses:
- *       201:
- *         description: Shift created
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
+ *       201: { description: Shift created }
+ *       400: { description: Validation error }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
  */
 router
   .route('/')
+  .get(protect, authorizeRole('guard', 'employer', 'admin'), listAvailableShifts)
   .post(protect, authorizeRole('employer'), createShift);
 
 /**
@@ -83,7 +141,8 @@ router
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: string }
+ *         schema:
+ *           type: string
  *         description: Shift ID
  *     responses:
  *       200: { description: Application submitted }
@@ -108,7 +167,8 @@ router
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: string }
+ *         schema:
+ *           type: string
  *         description: Shift ID
  *     requestBody:
  *       required: true
@@ -118,8 +178,12 @@ router
  *             type: object
  *             required: [guardId]
  *             properties:
- *               guardId:   { type: string, description: "User ID of guard" }
- *               keepOthers:{ type: boolean, default: false }
+ *               guardId:
+ *                 type: string
+ *                 description: "User ID of guard"
+ *               keepOthers:
+ *                 type: boolean
+ *                 default: false
  *     responses:
  *       200: { description: Guard approved and shift assigned }
  *       400: { description: Guard not in applicants or invalid state }
@@ -143,7 +207,8 @@ router
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: string }
+ *         schema:
+ *           type: string
  *         description: Shift ID
  *     responses:
  *       200: { description: Shift marked as completed }
@@ -172,7 +237,9 @@ router
  *     parameters:
  *       - in: query
  *         name: status
- *         schema: { type: string, enum: [past] }
+ *         schema:
+ *           type: string
+ *           enum: [past]
  *         required: false
  *         description: Filter completed shifts
  *     responses:
@@ -199,7 +266,8 @@ router
  *       - in: path
  *         name: id
  *         required: true
- *         schema: { type: string }
+ *         schema:
+ *           type: string
  *         description: Shift ID
  *     requestBody:
  *       required: true
