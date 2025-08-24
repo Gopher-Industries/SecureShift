@@ -1,0 +1,71 @@
+.submission-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f2f2f2;
+  padding: 20px;
+}
+
+.submission-card {
+  display: flex;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  max-width: 900px;
+  width: 100%;
+}
+
+.submission-left {
+  flex: 1;
+  padding: 40px;
+}
+
+.brand-title {
+  font-size: 18px;
+  color: #333;
+}
+
+.confirmation-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 15px 0;
+}
+
+.support-email {
+  font-weight: bold;
+  color: #444;
+}
+
+.login-btn {
+  margin-top: 25px;
+  background: #0d2c73;
+  color: #fff;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.login-btn:hover {
+  background: #153d99;
+}
+
+.submission-right {
+  background: #0d2c73;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  flex: 0.6;
+}
+
+.logo {
+  max-width: 220px;
+  height: auto;
+
+
+}
