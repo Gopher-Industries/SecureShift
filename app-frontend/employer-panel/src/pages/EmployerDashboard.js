@@ -29,6 +29,11 @@ export default function EmployerDashboard() {
           <p>Browse and shortlist guards based on experience.</p>
           <button onClick={() => navigate("/guard-profiles")}>View</button>
         </div>
+        <div className="dashboard-card">
+          <h2>Company Profiles</h2>
+          <p>Browse and manage company profiles.</p>
+          <button onClick={() => navigate("/company-profile")}>View</button>
+        </div>
       </div>
     </div>
   );
