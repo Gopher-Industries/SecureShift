@@ -36,15 +36,23 @@ body {
 .ss-logo {height:34px;}
 .ss-brand {font-weight:700;font-size:18px;}
 .ss-nav {display:flex;align-items:center;gap:16px;}
+/* Navigation buttons (Home, Jobs, Applications) */
 .ss-nav__btn {
-  background:none;
-  border:none;
-  color:#fff;
-  font-weight:600;
-  cursor:pointer;
-  font-size:15px;
+  background: #274b93;      /* deep blue */
+  color: #fff;              /* white text */
+  border: none;
+  padding: 6px 14px;
+  border-radius: 999px;     /* pill shape */
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
-.ss-nav__btn:hover {text-decoration:underline;}
+
+.ss-nav__btn:hover {
+  background: #1f3d78;      /* slightly darker blue on hover */
+}
+
+
 .ss-avatar {
   width:36px;height:36px;border-radius:50%;
   background:#1f3d7a;display:grid;place-items:center;color:#b8c2db;
@@ -86,10 +94,22 @@ body {
   gap: 10px; /* space between button and toggle */
 }
 
+.ss-primary--wide {
+  display: inline-flex;         /* flex keeps icon + text aligned */
+  align-items: center;          /* vertical centering */
+  gap: 6px;                     /* space between icon and text */
+  padding: 8px 20px;
+  font-size: 15px;
+  white-space: nowrap;         
+}
 
+.ss-plus {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;               
+}
 
-
-/* Grey grid panel (unchanged except no controls inside) */
+/* Grey grid panel*/
 .ss-panel {
   flex:1;
   background:var(--ss-panel);
@@ -99,7 +119,7 @@ body {
   overflow:hidden;
 }
 
-/* Footer updated */
+Footer updated
 .ss-footer {
   margin-top:40px;
   padding-top:14px;
@@ -206,6 +226,30 @@ body {
 }
 .ss-secondary:hover{background:var(--ss-blue-700);}
 .ss-avatar--lg{width:44px;height:44px;background:#f0f2f7;border-radius:50%;display:grid;place-items:center;}
+/* -------- Reviews -------- */
+.ss-reviews {
+  display: flex;
+  align-items: stretch;   /* cards stretch vertically too */
+  margin-top: 16px;
+}
+
+.ss-reviews__track {
+  flex: 1;
+  display: grid;                         /* grid instead of flex for even layout */
+  grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+  gap: 16px;
+  overflow: hidden;                      /* no more horizontal scroll */
+}
+
+.ss-reviewcard {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  height: 100%;        /* stretch evenly */
+}
+
+
 
 /* -------- Footer -------- */
 .ss-footer{margin-top:40px;background:var(--ss-blue-900);color:#fff;text-align:center;padding:14px;}
@@ -232,19 +276,22 @@ body {
   display: flex;
   gap: 12px;
 }
-.ss-footer-btn {
-  background: #fff;
-  color: var(--ss-blue-900);
-  border: none;
+/* Footer top buttons (Expression of Interest, Login) */
+.ss-footer-btn,
+.ss-footer-btn.secondary {
+  background: #274b93;      /* deep blue */
+  color: #fff;              /* white text */
+  border: none;             
   padding: 6px 14px;
   border-radius: 20px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
-.ss-footer-btn.secondary {
-  background: transparent;
-  border: 1px solid #fff;
-  color: #fff;
+
+.ss-footer-btn:hover,
+.ss-footer-btn.secondary:hover {
+  background: #1f3d78;      
 }
 
 /* Create Shift Card */
@@ -275,5 +322,6 @@ body {
   justify-content:flex-start;
   padding-left:20px;
 }
+
 
 
