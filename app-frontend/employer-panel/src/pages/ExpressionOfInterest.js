@@ -1,6 +1,5 @@
 import React, { useRef, useState } from "react";
 
-
 export default function ExpressionOfInterest() {
   const [form, setForm] = useState({
     companyName: "",
@@ -42,29 +41,9 @@ export default function ExpressionOfInterest() {
     setFile(f);
   };
 
-  const onDrop = (e) => {
-    e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if (!f) return;
-    const err = validateFile(f);
-    if (err) {
-      alert(err);
-      return;
-    }
-    setFile(f);
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (
-      !form.companyName ||
-      !form.abnAcn ||
-      !form.contactPerson ||
-      !form.contactEmail ||
-      !form.phoneNumber ||
-      !form.description
-    ) {
+    if (!form.companyName || !form.abnAcn || !form.contactPerson || !form.contactEmail || !form.phoneNumber || !form.description) {
       alert("Please fill in all fields.");
       return;
     }
@@ -76,105 +55,170 @@ export default function ExpressionOfInterest() {
       alert("Please confirm that the information provided is accurate.");
       return;
     }
-
-    const data = new FormData();
-    Object.entries(form).forEach(([k, v]) => data.append(k, v));
-    data.append("document", file);
-
-    console.log("Form ready to submit:", Object.fromEntries(data.entries()));
-    alert("Submitted! (Demo)");
+    alert("Form Submitted! (Demo)");
   };
 
   return (
-    <div className="page">
-      {/* Top-right buttons */}
-      <div className="top-buttons">
-        <a href="/expression" className="top-btn">Expression of Interest</a>
-        <a href="/login" className="top-btn">Log In</a>
+    <div style={{ fontFamily: "Poppins, sans-serif", background: "#fafafa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      
+      {/* HEADER */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#072261", padding: "12px 30px" }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <img src="logo.svg" alt="logo" style={{ height: "30px", marginRight: "10px" }} />
+          <span style={{ color: "#fff", fontWeight: "600", fontSize: "18px" }}>Secure Shift</span>
+        </div>
+        <div>
+          <button style={{ marginRight: "10px", padding: "8px 18px", borderRadius: "20px", border: "none", background: "#274b93", color: "#fff", cursor: "pointer" }}>Expression of Interest</button>
+          <button style={{ padding: "8px 18px", borderRadius: "20px", border: "none", background: "#274b93", color: "#fff", cursor: "pointer" }}>Log In</button>
+        </div>
       </div>
 
-      {/* Form + Logo */}
-      <div className="content">
-        {/* Form */}
-        <div className="form-container">
-          <h3 className="brand">Secure Shift</h3>
-          <h1 className="title">Expression of interest</h1>
-          <p className="subtitle">
-            Only licensed and verified security companies may apply. All EOIs
-            will be reviewed by our admin team before access is granted.
+      {/* CONTENT */}
+      <div style={{ flex: 1, display: "flex" }}>
+        {/* LEFT FORM */}
+        <div style={{ width: "50%", background: "#fff", padding: "40px 60px" }}>
+          <h1 style={{ fontSize: "32px", fontWeight: "600", marginBottom: "10px" }}>Expression of interest</h1>
+          <p style={{ fontSize: "14px", color: "#1e1e1e", marginBottom: "20px" }}>
+            Only licensed and verified security companies may apply. All EOIs will be reviewed by our admin team before access is granted
           </p>
 
           <form onSubmit={handleSubmit}>
-            <label>Company Name</label>
-            <input type="text" name="companyName" placeholder="YourCompany..."
-              value={form.companyName} onChange={handleChange} />
+            {[
+              { label: "Company Name", name: "companyName", placeholder: "YourCompany..." },
+              { label: "ABN/ ACN", name: "abnAcn", placeholder: "YourABN/ACN..." },
+              { label: "Contact Person", name: "contactPerson", placeholder: "FirstName LastName" },
+              { label: "Contact email", name: "contactEmail", placeholder: "example@mail.com" },
+              { label: "Phone Number", name: "phoneNumber", placeholder: "Your Number..." },
+            ].map((field, i) => (
+              <div key={i} style={{ marginBottom: "18px" }}>
+                <label style={{ display: "block", fontWeight: "600", marginBottom: "6px" }}>{field.label}</label>
+                <input
+                  type="text"
+                  name={field.name}
+                  placeholder={field.placeholder}
+                  value={form[field.name]}
+                  onChange={handleChange}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    borderRadius: "25px",
+                    border: "1px solid #ababab",
+                    background: "#ababab",
+                    color: "#fff",
+                  }}
+                />
+              </div>
+            ))}
 
-            <label>ABN/ ACN</label>
-            <input type="text" name="abnAcn" placeholder="YourABN/ACN..."
-              value={form.abnAcn} onChange={handleChange} />
+            <label style={{ display: "block", fontWeight: "600", marginBottom: "6px" }}>Brief Description of Services</label>
+            <textarea
+              name="description"
+              placeholder="Your Description..."
+              value={form.description}
+              onChange={handleChange}
+              rows={5}
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "1px solid #ababab",
+                background: "#ababab",
+                marginBottom: "16px",
+                color: "#fff",
+              }}
+            />
 
-            <label>Contact Person</label>
-            <input type="text" name="contactPerson" placeholder="FirstName LastName"
-              value={form.contactPerson} onChange={handleChange} />
-
-            <label>Contact email</label>
-            <input type="email" name="contactEmail" placeholder="example@mail.com"
-              value={form.contactEmail} onChange={handleChange} />
-
-            <label>Phone Number</label>
-            <input type="tel" name="phoneNumber" placeholder="Your Number..."
-              value={form.phoneNumber} onChange={handleChange} />
-
-            <label>Brief Description of Services</label>
-            <textarea name="description" placeholder="Your Description..."
-              value={form.description} onChange={handleChange} rows={5} />
-
-            <p className="file-note">
-              Please upload a valid business license, security certification, and/or relevant documentation.  
-              PDF format only. This will be used to verify your eligibility as a licensed security company.
+            <p style={{ fontSize: "12px", fontWeight: "600", marginBottom: "12px" }}>
+              Please upload a valid business license, security certification, and/or relevant documentation. PDF format only.
             </p>
 
-            <div className="file-drop" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
-              <div>Select a file or drag and drop here</div>
-              <div>JPG, PNG or PDF, file size no more than 10MB</div>
-              {file && <div>Selected: {file.name}</div>}
+            {/* FILE UPLOAD */}
+            <div
+              style={{
+                border: "2px dashed #ababab",
+                padding: "20px",
+                textAlign: "center",
+                borderRadius: "8px",
+                marginBottom: "16px",
+              }}
+            >
+              <div style={{ fontWeight: "600" }}>Select a file or drag and drop here</div>
+              <div style={{ fontSize: "12px", color: "#6c6c6c" }}>JPG, PNG or PDF, file size no more than 10MB</div>
+              {file && <div style={{ marginTop: "10px", fontSize: "12px", color: "#274b93" }}>Selected: {file.name}</div>}
               <br />
-              <button className="file-button" type="button" onClick={() => fileInputRef.current?.click()}>
-                Select File
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #274b93",
+                  background: "#fff",
+                  color: "#274b93",
+                  cursor: "pointer",
+                }}
+              >
+                SELECT FILE
               </button>
-              <input ref={fileInputRef} type="file"
-                accept="application/pdf,image/jpeg,image/png"
-                onChange={onSelectFile} style={{ display: "none" }} />
+              <input ref={fileInputRef} type="file" style={{ display: "none" }} onChange={onSelectFile} />
             </div>
 
-            <div className="checkbox">
-              <input type="checkbox" name="confirmAccurate"
-                checked={form.confirmAccurate} onChange={handleChange} />
+            {/* CHECKBOX */}
+            <div style={{ marginBottom: "20px" }}>
+              <input
+                type="checkbox"
+                name="confirmAccurate"
+                checked={form.confirmAccurate}
+                onChange={handleChange}
+                style={{ marginRight: "8px" }}
+              />
               I confirm that the information provided is accurate
             </div>
 
-            <button type="submit" className="submit-btn">Submit</button>
+            {/* SUBMIT BUTTON */}
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                padding: "14px",
+                borderRadius: "25px",
+                background: "#072261",
+                color: "#fff",
+                fontSize: "18px",
+                fontWeight: "600",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Submit
+            </button>
 
-            <p><a href="/login" className="login-link">Already have an account? Log In!</a></p>
+            <p style={{ marginTop: "10px", fontSize: "12px", textAlign: "center" }}>
+              <a href="/login" style={{ color: "#aa0028", textDecoration: "none" }}>
+                Already have an account? Log In!
+              </a>
+            </p>
           </form>
         </div>
 
-        {/* Logo */}
-        <div className="logo-container">
-          <img src="secure-shift-logo.png" alt="Secure Shift Logo" />
+        {/* RIGHT LOGO PANEL */}
+        <div style={{ width: "50%", background: "#072261", display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <img src="logo.svg" alt="Secure Shift Logo" style={{ width: '400px', height: 'auto' }} />
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="footer">
-        <div className="footer-left">
-          <img src="secure-shift-logo.png" alt="logo" /> Secure Shift
+      {/* FOOTER */}
+      <div style={{ background: "#072261", borderTop: "4x solid white", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#fff" }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <img src="logo.svg" alt="logo" style={{ height: "30px", marginRight: "10px" }} />
+          Secure Shift
         </div>
-        <div className="footer-links">
-          <a href="/privacy">Privacy policy</a>
-          <a href="/terms">Terms and Conditions</a>
-          <a href="/faqs">FAQ's</a>
-          <a href="/contact">Contact Us</a>
+        <div>
+          
+        </div>
+        <div>
+          <button style={{ marginRight: "10px", padding: "6px 14px", borderRadius: "20px", border: "none", background: "#274b93", color: "#fff" }}>Expression of Interest</button>
+          <button style={{ padding: "6px 14px", borderRadius: "20px", border: "none", background: "#274b93", color: "#fff" }}>Log In</button>
         </div>
       </div>
     </div>
