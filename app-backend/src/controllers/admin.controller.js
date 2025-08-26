@@ -34,7 +34,7 @@ export const adminLogin = async (req, res) => {
 
     user.lastLogin = new Date();
     await user.save();
-
+    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "ADMIN_LOGIN" });
     const token = generateToken(user);
 
     res.status(200).json({
@@ -57,6 +57,7 @@ export const getAllUsers = async (req, res) => {
   try {
     // Fetch all users, exclude passwords for security
     const users = await User.find().select('-password');
+    await req.audit.log(req.user.id, ACTIONS.USERS_VIEWED, { totalUsers: users.length });
     res.status(200).json({ users });
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve users', error: error.message });
@@ -74,7 +75,7 @@ export const getAllShifts = async (req, res) => {
     const shifts = await Shift.find()
       .populate('createdBy', 'name email role')  // populate employer info
       .populate('acceptedBy', 'name email role'); // populate guard info
-
+    await req.audit.log(req.user.id, ACTIONS.SHIFTS_VIEWED, { totalShifts: shifts.length });
     res.status(200).json({ shifts });
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve shifts', error: error.message });

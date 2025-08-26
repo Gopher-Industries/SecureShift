@@ -62,6 +62,12 @@ export const createShift = async (req, res) => {
       field,              // now supported in schema
     });
 
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
+      shiftId: shift._id,
+      title: shift.title,
+      date: shift.date
+    });
+    
     return res.status(201).json(shift);
   } catch (e) {
     return res.status(500).json({ message: e.message });
@@ -95,6 +101,9 @@ export const applyForShift = async (req, res) => {
     shift.applicants.push(req.user._id);
     if (shift.status === 'open') shift.status = 'applied';
     await shift.save();
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, {
+      shiftId: shift._id
+    });
     return res.json({ message: 'Application submitted', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
@@ -134,6 +143,12 @@ export const approveShift = async (req, res) => {
     if (!keepOthers) shift.applicants = [guardId];
 
     await shift.save();
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPROVED, {
+      shiftId: shift._id,
+      approvedGuardId: guardId,
+      keepOthers
+    });
+
     return res.json({ message: 'Guard approved', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
@@ -160,6 +175,10 @@ export const completeShift = async (req, res) => {
 
     shift.status = 'completed';
     await shift.save();
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, {
+     shiftId: shift._id 
+    });
+
     return res.json({ message: 'Shift completed', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
@@ -243,6 +262,12 @@ export const rateShift = async (req, res) => {
     }
 
     await shift.save();
+    await req.audit.log(req.user._id, ACTIONS.RATINGS_SUBMITTED, {
+      shiftId: shift._id,
+      rating: r,
+      role: req.user.role
+    });
+
     return res.json({ message: 'Rating saved', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
