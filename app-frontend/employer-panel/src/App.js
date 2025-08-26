@@ -4,26 +4,22 @@ import EmployerDashboard from './pages/EmployerDashboard';
 import CreateShift from './pages/createShift';
 import ManageShift from './pages/ManageShift';
 import GuardProfiles from './pages/GuardProfile';
+import Header from './components/Header';
+import Footer from './components/Footer';
 
 function App() {
   return (
     <Router>
-      { <nav style={{ padding: '1rem', borderBottom: '1px solid #ccc' }}>
-        <Link to="/login" style={{ marginRight: '1rem' }}>Login</Link>
-        <Link to="/employer-dashboard">Dashboard</Link>
-        {/* <Link to="/create-shift" style={{ marginLeft: '1rem' }}>Create Shift</Link>
-        <Link to="/manage-shift" style={{ marginLeft: '1rem' }}>Manage Shift</Link>
-        <Link to="/guard-profiles" style={{ marginLeft: '1rem'}}>Guard Profile</Link> */}
-      </nav> }
-
+      <Header />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/employer-dashboard" element={<EmployerDashboard />} />
         <Route path="/create-shift" element={<CreateShift />} />
         <Route path="/manage-shift" element={<ManageShift />} />
-        <Route path="/guard-profiles" element={<GuardProfiles/>}>
+        <Route path="/guard-profiles" element={<GuardProfiles />}>
         </Route>
       </Routes>
+      <Footer />
     </Router>
   );
 }
