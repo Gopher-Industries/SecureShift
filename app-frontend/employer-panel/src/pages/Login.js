@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../logo.png";
+import logo from "../logo.png"
 
 const mockUsers = [
     { email: "demo@example.com", password: "password123" },
@@ -176,15 +176,16 @@ const styles = {
         border: '1px solid #fecaca'
     },
     loginButton: {
-        width: '100%',
+        width: '60%',
         backgroundColor: '#072261',
         color: 'white',
-        padding: '0.75rem 1rem',
+        padding: '0.5rem 1rem',
         border: 'none',
         borderRadius: '0.5rem',
         fontWeight: '500',
         cursor: 'pointer',
         fontSize: '1rem',
+        margin: '0 auto'
     },
     partnerLink: {
         marginTop: '2rem',
