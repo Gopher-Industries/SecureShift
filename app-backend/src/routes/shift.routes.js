@@ -11,9 +11,7 @@ import {
 
 const router = express.Router();
 
-/**
- * Inline role guards (same pattern as authorizeAdmin in users.route)
- */
+// Inline role guard
 const authorizeRole = (...allowed) => (req, res, next) => {
   if (!req.user || !allowed.includes(req.user.role)) {
     return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
@@ -44,19 +42,41 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *             type: object
  *             required: [title, date, startTime, endTime]
  *             properties:
- *               title:      { type: string, example: "Night Patrol" }
- *               date:       { type: string, format: date, example: "2025-08-25" }
- *               startTime:  { type: string, example: "20:00", description: "HH:MM (24h)" }
- *               endTime:    { type: string, example: "23:00", description: "HH:MM (24h), must be after startTime (same day)" }
+ *               title:
+ *                 type: string
+ *                 example: "Night Patrol"
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-08-25"
+ *               startTime:
+ *                 type: string
+ *                 example: "20:00"
+ *               endTime:
+ *                 type: string
+ *                 example: "23:00"
  *               location:
  *                 type: object
  *                 properties:
- *                   street:   { type: string, example: "10 Dock Rd" }
- *                   suburb:   { type: string, example: "Port Melbourne" }
- *                   state:    { type: string, example: "VIC" }
- *                   postcode: { type: string, example: "3207", description: "4 digits (AU)" }
- *               urgency:    { type: string, enum: [normal, priority, last-minute], example: "normal" }
- *               field:      { type: string, example: "warehouse" }
+ *                   street:
+ *                     type: string
+ *                     example: "10 Dock Rd"
+ *                   suburb:
+ *                     type: string
+ *                     example: "Port Melbourne"
+ *                   state:
+ *                     type: string
+ *                     example: "VIC"
+ *                   postcode:
+ *                     type: string
+ *                     example: "3207"
+ *               urgency:
+ *                 type: string
+ *                 enum: [normal, priority, last-minute]
+ *                 example: "normal"
+ *               field:
+ *                 type: string
+ *                 example: "warehouse"
  *     responses:
  *       201:
  *         description: Shift created
@@ -67,9 +87,7 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *       403:
  *         description: Forbidden
  */
-router
-  .route('/')
-  .post(protect, authorizeRole('employer'), createShift);
+router.post('/', protect, authorizeRole('employer'), createShift);
 
 /**
  * @swagger
@@ -92,9 +110,7 @@ router
  *       403: { description: Forbidden }
  *       404: { description: Shift not found }
  */
-router
-  .route('/:id/apply')
-  .put(protect, authorizeRole('guard'), applyForShift);
+router.put('/:id/apply', protect, authorizeRole('guard'), applyForShift);
 
 /**
  * @swagger
@@ -118,8 +134,12 @@ router
  *             type: object
  *             required: [guardId]
  *             properties:
- *               guardId:   { type: string, description: "User ID of guard" }
- *               keepOthers:{ type: boolean, default: false }
+ *               guardId:
+ *                 type: string
+ *                 description: User ID of guard
+ *               keepOthers:
+ *                 type: boolean
+ *                 default: false
  *     responses:
  *       200: { description: Guard approved and shift assigned }
  *       400: { description: Guard not in applicants or invalid state }
@@ -127,9 +147,7 @@ router
  *       403: { description: Forbidden }
  *       404: { description: Shift not found }
  */
-router
-  .route('/:id/approve')
-  .put(protect, authorizeRole('employer', 'admin'), approveShift);
+router.put('/:id/approve', protect, authorizeRole('employer', 'admin'), approveShift);
 
 /**
  * @swagger
@@ -152,20 +170,13 @@ router
  *       403: { description: Forbidden }
  *       404: { description: Shift not found }
  */
-router
-  .route('/:id/complete')
-  .put(protect, authorizeRole('employer', 'admin'), completeShift);
+router.put('/:id/complete', protect, authorizeRole('employer', 'admin'), completeShift);
 
 /**
  * @swagger
  * /api/v1/shifts/myshifts:
  *   get:
  *     summary: Get shifts for the logged-in user
- *     description: |
- *       Guard → applied/assigned/past  
- *       Employer → created  
- *       Admin → all  
- *       Use `?status=past` to return only completed shifts.
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
@@ -179,19 +190,13 @@ router
  *       200: { description: List of shifts }
  *       401: { description: Unauthorized }
  */
-router
-  .route('/myshifts')
-  .get(protect, getMyShifts);
+router.get('/myshifts', protect, getMyShifts);
 
 /**
  * @swagger
  * /api/v1/shifts/{id}/rate:
  *   patch:
  *     summary: Submit a rating (role-aware)
- *     description: |
- *       • Guard: Only the **assignedGuard** can rate. Updates **guardRating** (one time, tracked by `ratedByGuard`).  
- *       • Employer: Only the **creator (employer)** can rate. Updates **employerRating** (one time, tracked by `ratedByEmployer`).  
- *       • Ratings are allowed **only after** the shift status is `completed`.
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
@@ -215,19 +220,12 @@ router
  *                 maximum: 5
  *                 example: 5
  *     responses:
- *       200:
- *         description: Rating saved (guardRating or employerRating based on role)
- *       400:
- *         description: Invalid state (not completed) or duplicate rating
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden (only assigned guard or employer/creator may rate)
- *       404:
- *         description: Shift not found
+ *       200: { description: Rating saved }
+ *       400: { description: Invalid state or duplicate rating }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ *       404: { description: Shift not found }
  */
-router
-  .route('/:id/rate')
-  .patch(protect, authorizeRole('guard', 'employer'), rateShift);
+router.patch('/:id/rate', protect, authorizeRole('guard', 'employer'), rateShift);
 
 export default router;
