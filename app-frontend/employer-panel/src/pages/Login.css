@@ -1,0 +1,226 @@
+ .loginContainer {
+    min-height: 100vh;
+    display: flex;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    flex-direction: row;
+  }
+  
+  .loginFormSection {
+    width: 60%;
+    background-color: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  
+  .formContainer {
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .headerSection {
+    margin-bottom: 2rem;
+  }
+  
+  .employerText {
+    color: #6b7280;
+    font-size: 2rem;
+    margin: 0;
+  }
+  
+  .loginTitle {
+    font-size: 3.5rem;
+    font-weight: bold;
+    color: #000000;
+    margin: 0;
+  }
+  
+  .welcomeText {
+    color: #374151;
+  }
+  
+  .loginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .inputGroup {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .inputLabel {
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  
+  .formInput {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #d1d5db;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    outline: none;
+    font-size: 1rem;
+  }
+  
+  .forgotPassword {
+    text-align: right;
+    margin-top: 0.5rem;
+  }
+  
+  .forgotLink {
+    color: #ef4444;
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+  
+  .errorMessage {
+    color: #ef4444;
+    font-size: 0.875rem;
+    background-color: #fef2f2;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #fecaca;
+  }
+  
+  .loginButton {
+    width: 35%;
+    min-width: 120px;
+    max-width: 200px;
+    background-color: #072261;
+    color: white;
+    padding: 1rem 1.5rem;
+    border: none;
+    border-radius: 80px;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 1.5rem;
+    margin: 0 auto;
+    transition: width 0.2s;
+  }
+  
+  .partnerLink {
+    margin-top: 1rem;
+    text-align: center;
+  }
+  
+  .partnerText {
+    color: #ef4444;
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+  
+  .brandSection {
+    width: 40%;
+    background: #072261;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  
+  .logoContainer {
+    text-align: center;
+  }
+  
+  .logoImage {
+    width: 400px;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    transition: width 0.2s;
+  }
+  
+  /* --- Responsive Media Queries --- */
+  @media (max-width: 1200px) {
+    .loginButton {
+      width: 160px;
+      font-size: 1.2rem;
+      border-radius: 40px;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+    }
+    .loginFormSection {
+      padding: 2rem 2rem;
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .loginContainer {
+      flex-direction: column;
+      padding: 0 0.5rem; 
+    }
+    .loginFormSection {
+      width: 100%;
+      min-height: 60vh;
+      padding: 2rem 1.2rem;
+    }
+    .brandSection {
+      width: 100%;
+      padding: 1rem 0;
+      min-height: 40vh;
+      background: #072261;
+      justify-content: center;
+      align-items: center;
+    }
+    .logoImage {
+      width: 220px;
+      margin: 2rem auto 1rem auto;
+    }
+    .loginButton {
+      width: 160px;
+      font-size: 1.15rem;
+      border-radius: 40px;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .formContainer {
+      max-width: 95vw;
+      padding: 0 0.4rem;
+    }
+    .loginTitle {
+      font-size: 2.2rem;
+    }
+    .employerText {
+      font-size: 1.1rem;
+    }
+    .logoImage {
+      width: 140px;
+    }
+    .inputLabel {
+      font-size: 0.85rem;
+    }
+    .loginFormSection {
+      padding: 1.2rem 0.6rem;
+    }
+    .loginButton {
+        width: 140px;  
+        font-size: 1rem;
+      }
+  }
+  
+  @media (max-width: 400px) {
+    .loginTitle {
+      font-size: 1.3rem;
+    }
+    .formInput {
+      font-size: 0.92rem;
+      padding: 0.55rem 0.7rem;
+    }
+    .loginFormSection {
+      padding: 0.4rem;
+    }
+    .logoImage {
+      width: 90px;
+    }
+  }
+  *, *:before, *:after {
+    box-sizing: border-box;
+  }
