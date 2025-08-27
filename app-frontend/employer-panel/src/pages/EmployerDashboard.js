@@ -1,25 +1,50 @@
 import React, { useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";   // ✅ Import useNavigate
 import "./EmployerDashboard.css";
 import Logo from "./logo.png";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
-  <svg viewBox="0 0 24 24" {...props}><rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2"/></svg>
+  <svg viewBox="0 0 24 24" {...props}>
+    <rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2"/>
+    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
+    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2"/>
+    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2"/>
+  </svg>
 );
 const IconClock = (props) => (
-  <svg viewBox="0 0 24 24" {...props}><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2"/><line x1="12" y1="6" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="12" y1="12" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+  <svg viewBox="0 0 24 24" {...props}>
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2"/>
+    <line x1="12" y1="6" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <line x1="12" y1="12" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
 );
 const IconPlus = (props) => (
-  <svg viewBox="0 0 24 24" {...props}><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+  <svg viewBox="0 0 24 24" {...props}>
+    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
 );
 const IconGrid = (props) => (
-  <svg viewBox="0 0 24 24" {...props}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+  <svg viewBox="0 0 24 24" {...props}>
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/>
+  </svg>
 );
 const IconList = (props) => (
-  <svg viewBox="0 0 24 24" {...props}><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10.5" width="18" height="3" rx="1"/><rect x="3" y="17" width="18" height="3" rx="1"/></svg>
+  <svg viewBox="0 0 24 24" {...props}>
+    <rect x="3" y="4" width="18" height="3" rx="1"/>
+    <rect x="3" y="10.5" width="18" height="3" rx="1"/>
+    <rect x="3" y="17" width="18" height="3" rx="1"/>
+  </svg>
 );
 const IconUser = (props) => (
-  <svg viewBox="0 0 24 24" {...props}><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 20c0-4.4183 3.5817-8 8-8s8 3.5817 8 8" fill="currentColor"/></svg>
+  <svg viewBox="0 0 24 24" {...props}>
+    <circle cx="12" cy="8" r="4" fill="currentColor"/>
+    <path d="M4 20c0-4.4183 3.5817-8 8-8s8 3.5817 8 8" fill="currentColor"/>
+  </svg>
 );
 const Star = ({ filled }) => (
   <svg viewBox="0 0 24 24" className={`star ${filled ? "filled" : ""}`}>
@@ -31,6 +56,7 @@ export default function EmployerDashboard() {
   const [view, setView] = useState("grid");
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
+  const navigate = useNavigate();   // ✅ Hook for routing
 
   const shifts = useMemo(() => [
     { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Confirmed", tone: "confirmed" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
@@ -58,10 +84,13 @@ export default function EmployerDashboard() {
           <span className="ss-brand">Secure Shift</span>
         </div>
         <nav className="ss-nav">
-          <button className="ss-nav__btn" onClick={() => (window.location.href="/home")}>Home</button>
-          <button className="ss-nav__btn" onClick={() => (window.location.href="/jobs")}>Jobs</button>
-          <button className="ss-nav__btn" onClick={() => (window.location.href="/applications")}>Applications</button>
-          <div className="ss-avatar"><IconUser /></div>
+          <button className="ss-nav__btn" onClick={() => navigate("/home")}>Home</button>
+          <button className="ss-nav__btn" onClick={() => navigate("/jobs")}>Jobs</button>
+          <button className="ss-nav__btn" onClick={() => navigate("/applications")}>Applications</button>
+          {/* ✅ Avatar navigates to Company Profile */}
+          <div className="ss-avatar" onClick={() => navigate("/company-profile")} style={{ cursor: "pointer" }}>
+            <IconUser />
+          </div>
         </nav>
       </header>
 
@@ -69,44 +98,41 @@ export default function EmployerDashboard() {
       <main className="ss-main">
         <h2 className="ss-h1">Overview</h2>
 
-       {/* Controls ABOVE grey grid */}
-<div className="ss-controls">
-  <div className="ss-controls-right">
-    <button
-      className="ss-primary ss-primary--wide"
-      onClick={() => (window.location.href = "/create-shift")}
-    >
-      <IconPlus className="ss-plus" /> Create Shift
-    </button>
-    <div className="ss-viewtoggle">
-      <button
-        className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
-        onClick={() => setView("grid")}
-      >
-        <IconGrid />
-      </button>
-      <button
-        className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`}
-        onClick={() => setView("list")}
-      >
-        <IconList />
-      </button>
-    </div>
-  </div>
-</div>
-
-
-
+        {/* Controls ABOVE grey grid */}
+        <div className="ss-controls">
+          <div className="ss-controls-right">
+            <button
+              className="ss-primary ss-primary--wide"
+              onClick={() => navigate("/create-shift")}
+            >
+              <IconPlus className="ss-plus" /> Create Shift
+            </button>
+            <div className="ss-viewtoggle">
+              <button
+                className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
+                onClick={() => setView("grid")}
+              >
+                <IconGrid />
+              </button>
+              <button
+                className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`}
+                onClick={() => setView("list")}
+              >
+                <IconList />
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Grey Grid */}
         <div className="ss-overview">
           <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(overviewScroller, -320)}>‹</button>
           <div className="ss-panel">
             <div ref={overviewScroller} className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}>
-              
+
               {/* Create Shift Card (only in grid view) */}
               {view === "grid" && (
-                <div className="ss-card ss-card--create" onClick={() => (window.location.href="/create-shift")}>
+                <div className="ss-card ss-card--create" onClick={() => navigate("/create-shift")}>
                   <div className="ss-card__createicon"><IconPlus /></div>
                   <div className="ss-card__createtext">Create Shift</div>
                 </div>
@@ -180,7 +206,7 @@ export default function EmployerDashboard() {
           </div>
           <div className="ss-footer-right">
             <button className="ss-footer-btn">Expression of Interest</button>
-            <button className="ss-footer-btn secondary" onClick={() => (window.location.href="/login")}>Log In</button>
+            <button className="ss-footer-btn secondary" onClick={() => navigate("/login")}>Log In</button>
           </div>
         </div>
         <div className="ss-footer__line"></div>

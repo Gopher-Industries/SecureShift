@@ -5,6 +5,7 @@ import CreateShift from './pages/createShift';
 import ManageShift from './pages/ManageShift';
 import GuardProfiles from './pages/GuardProfile';
 import SubmissionConfirmation from './pages/SubmissionConfirmation';
+import CompanyProfile from './pages/CompanyProfile';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
 
         {/* New route */}
         <Route path="/submission" element={<SubmissionConfirmation />} />
+        <Route path="/company-profile" element={<CompanyProfile />} />
       </Routes>
     </Router>
   );
