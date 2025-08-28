@@ -22,43 +22,6 @@ body {
   color:var(--ss-text);
 }
 
-/* -------- Header -------- */
-.ss-header {
-  height:64px;
-  background:var(--ss-blue-900);
-  color:#fff;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:0 20px;
-}
-.ss-header__left {display:flex;align-items:center;gap:10px;}
-.ss-logo {height:34px;}
-.ss-brand {font-weight:700;font-size:18px;}
-.ss-nav {display:flex;align-items:center;gap:16px;}
-/* Navigation buttons (Home, Jobs, Applications) */
-.ss-nav__btn {
-  background: #274b93;      /* deep blue */
-  color: #fff;              /* white text */
-  border: none;
-  padding: 6px 14px;
-  border-radius: 999px;     /* pill shape */
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.ss-nav__btn:hover {
-  background: #1f3d78;      /* slightly darker blue on hover */
-}
-
-
-.ss-avatar {
-  width:36px;height:36px;border-radius:50%;
-  background:#1f3d7a;display:grid;place-items:center;color:#b8c2db;
-}
-.ss-avatar svg{width:22px;height:22px}
-
 /* -------- Main -------- */
 .ss-main {padding:34px 36px;}
 .ss-h1 {
@@ -119,31 +82,7 @@ body {
   overflow:hidden;
 }
 
-Footer updated
-.ss-footer {
-  margin-top:40px;
-  padding-top:14px;
-  color:#fff;
-  background:var(--ss-blue-900);
-  text-align:center;
-}
-.ss-footer__line {
-  border-top:1px solid #3b4c74;
-  margin-bottom:10px;
-}
-.ss-footer__links {
-  display:flex;
-  justify-content:left;
-  gap:20px;
-  font-size:14px;
-}
-.ss-footer__links a {
-  color:#fff;
-  text-decoration:none;
-}
-.ss-footer__links a:hover {
-  text-decoration:underline;
-}
+
 
 .ss-primary {
   display:inline-flex;align-items:center;gap:6px;
@@ -179,6 +118,12 @@ Footer updated
   box-shadow:var(--shadow-soft);
   display:flex;flex-direction:column;gap:8px;
 }
+/* Move status to the left in card view */
+.ss-card .ss-status {
+  text-align: left;     /* aligns text to the left */
+  margin-top: 0;        /* optional, remove any top spacing */
+}
+
 .ss-card__head{display:flex;justify-content:space-between;font-weight:600;}
 .ss-role{font-weight:700;font-size:16px;}
 .ss-rate{color:var(--ss-green);font-weight:700;}
@@ -249,50 +194,67 @@ Footer updated
   height: 100%;        /* stretch evenly */
 }
 
-
-
-/* -------- Footer -------- */
-.ss-footer{margin-top:40px;background:var(--ss-blue-900);color:#fff;text-align:center;padding:14px;}
-.ss-footer__line{border-top:1px solid #3b4c74;margin-bottom:10px;}
-.ss-footer__links{display:flex;justify-content:center;gap:12px;font-size:14px;}
-.ss-footer__links a{color:#fff;text-decoration:none;}
-.ss-footer__links a:hover{text-decoration:underline;}
-
-/* Footer top row */
-.ss-footer-top {
+/* -------- LIST VIEW -------- */
+.ss-shifts--list {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-}
-.ss-footer-left {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
-  font-weight: 600;
-  font-size: 16px;
-}
-.ss-footer-right {
-  display: flex;
-  gap: 12px;
-}
-/* Footer top buttons (Expression of Interest, Login) */
-.ss-footer-btn,
-.ss-footer-btn.secondary {
-  background: #274b93;      /* deep blue */
-  color: #fff;              /* white text */
-  border: none;             
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
 }
 
-.ss-footer-btn:hover,
-.ss-footer-btn.secondary:hover {
-  background: #1f3d78;      
+.ss-row {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr 1fr 1.2fr 1.5fr 1.5fr; /* equal spacing across row */
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 15px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid #e0e4eb;
 }
+
+.ss-cell {
+  padding: 0 6px;
+}
+
+.ss-role {
+  font-weight: 700;
+  color: #222;
+}
+
+.ss-company {
+  font-size: 14px;
+  color: #444;
+}
+
+.ss-rate {
+  font-weight: 700;
+  color: var(--ss-green);
+  text-align: center;
+}
+
+.ss-date, .ss-time {
+  font-size: 14px;
+  color: #333;
+  text-align: center;
+}
+
+.ss-status {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.ss-status--confirmed { color: var(--ss-green); }
+.ss-status--pending { color: var(--ss-orange); }
+.ss-status--rejected { color: var(--ss-red); }
+
+/* status colors */
+.ss-status--confirmed { color: var(--ss-green); }
+.ss-status--pending { color: var(--ss-orange); }
+.ss-status--rejected { color: var(--ss-red); }
+.ss-status--completed { color: var(--ss-blue-700); }
+
 
 /* Create Shift Card */
 .ss-card--create {
@@ -315,10 +277,4 @@ Footer updated
 }
 .ss-card__createtext {
   font-weight:600;
-}
-
-/* Footer links aligned left */
-.ss-footer__links {
-  justify-content:flex-start;
-  padding-left:20px;
 }
