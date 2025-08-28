@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";   // ✅ Import useNavigate
+import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
-import Logo from "./logo.png";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -53,15 +52,17 @@ const Star = ({ filled }) => (
 );
 
 export default function EmployerDashboard() {
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState("list"); // default list view
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
-  const navigate = useNavigate();   // ✅ Hook for routing
+  const navigate = useNavigate();   
 
   const shifts = useMemo(() => [
     { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Confirmed", tone: "confirmed" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
     { role: "Shopping Centre Security", company: "Vicinity Centres", venue: "Chadstone Shopping Centre", rate: 75, status: { text: "Pending", tone: "pending" }, date: "03-08-2025", time: "1:00 pm - 9:00 pm" },
     { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Rejected", tone: "rejected" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Unrated)", tone: "completed" }, date: "01-08-2025", time: "5:00 pm - 1:00 am" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Rated)", tone: "completed" }, date: "31-07-2025", time: "5:00 pm - 1:00 am" },
   ], []);
 
   const reviews = useMemo(() => [
@@ -77,23 +78,7 @@ export default function EmployerDashboard() {
 
   return (
     <div className="ss-page">
-      {/* -------- Header -------- */}
-      <header className="ss-header">
-        <div className="ss-header__left">
-          <img src={Logo} alt="Secure Shift" className="ss-logo" />
-          <span className="ss-brand">Secure Shift</span>
-        </div>
-        <nav className="ss-nav">
-          <button className="ss-nav__btn" onClick={() => navigate("/home")}>Home</button>
-          <button className="ss-nav__btn" onClick={() => navigate("/jobs")}>Jobs</button>
-          <button className="ss-nav__btn" onClick={() => navigate("/applications")}>Applications</button>
-          {/* ✅ Avatar navigates to Company Profile */}
-          <div className="ss-avatar" onClick={() => navigate("/company-profile")} style={{ cursor: "pointer" }}>
-            <IconUser />
-          </div>
-        </nav>
-      </header>
-
+  
       {/* -------- Overview -------- */}
       <main className="ss-main">
         <h2 className="ss-h1">Overview</h2>
@@ -154,16 +139,18 @@ export default function EmployerDashboard() {
                   </div>
                 ) : (
                   <div className="ss-row" key={idx}>
-                    <div className="ss-row__role">
-                      <div className="ss-chip">{s.role}</div>
-                      <div className="ss-row__sub">{s.company}<br />{s.venue}</div>
+                    <div className="ss-col ss-role">{s.role}</div>
+                    <div className="ss-col ss-company">{s.company} — {s.venue}</div>
+                    <div className="ss-col ss-rate">${s.rate} p/h</div>
+                    <div className="ss-col ss-date">
+                      <IconCalendar className="ss-ico" /> {s.date}
                     </div>
-                    <div className="ss-row__rate">${s.rate} p/h</div>
-                    <div className="ss-row__when">
-                      <span className="ss-when__item"><IconCalendar className="ss-ico" />{s.date}</span>
-                      <span className="ss-when__item"><IconClock className="ss-ico" />{s.time}</span>
+                    <div className="ss-col ss-time">
+                      <IconClock className="ss-ico" /> {s.time}
                     </div>
-                    <div className={`ss-row__status ss-status--${s.status.tone}`}>Status: {s.status.text}</div>
+                    <div className={`ss-col ss-status ss-status--${s.status.tone}`}>
+                      Status: {s.status.text}
+                    </div>
                   </div>
                 )
               )}
@@ -196,26 +183,6 @@ export default function EmployerDashboard() {
           <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(reviewScroller, 300)}>›</button>
         </div>
       </main>
-
-      {/* -------- Footer -------- */}
-      <footer className="ss-footer">
-        <div className="ss-footer-top">
-          <div className="ss-footer-left">
-            <img src={Logo} alt="Secure Shift" className="ss-logo" />
-            <span className="ss-brand">Secure Shift</span>
-          </div>
-          <div className="ss-footer-right">
-            <button className="ss-footer-btn">Expression of Interest</button>
-            <button className="ss-footer-btn secondary" onClick={() => navigate("/login")}>Log In</button>
-          </div>
-        </div>
-        <div className="ss-footer__line"></div>
-        <div className="ss-footer__links ss-footer__links--left">
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/terms">Terms and Conditions</a>
-          <a href="/contact">Contact Us</a>
-        </div>
-      </footer>
     </div>
   );
 }
