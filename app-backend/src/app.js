@@ -14,11 +14,13 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(auditMiddleware);
 
+// Swagger docs
+setupSwagger(app);
+
 // API routes
 app.use('/api/v1', router);
 
-// Swagger docs
-setupSwagger(app);
+
 
 // Global error handler
 app.use(errorHandler);
