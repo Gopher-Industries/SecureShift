@@ -1,12 +1,19 @@
+// src/navigation/AppNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from '../screen/loginscreen';
+
+import LoginScreen from '../screen/loginscreen';      // keep your current casing/paths
 import SignupScreen from '../screen/signupscreen';
 import AppTabs from './AppTabs';
 import SettingsScreen from '../screen/SettingsScreen';
 
+export type RootStackParamList = {
+  Login: undefined;
+  Signup: undefined;
+  AppTabs: undefined;
+  Settings: undefined;
+};
 
-export type RootStackParamList = { Login: undefined; Signup: undefined; AppTabs: undefined; Settings: undefined;  };
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
@@ -19,3 +26,4 @@ export default function AppNavigator() {
     </Stack.Navigator>
   );
 }
+ 
