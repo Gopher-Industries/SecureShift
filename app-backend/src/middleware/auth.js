@@ -29,11 +29,13 @@ const auth = (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const uid = decoded.id || decoded._id; // whatever you encoded in the JWT
+  req.user = {
+   _id: uid,
+    id: uid,
+    role: decoded.role,
+};
 
-    req.user = {
-      id: decoded.id,
-      role: decoded.role,
-    };
 
     next();
   } catch (error) {

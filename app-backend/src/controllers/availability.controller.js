@@ -39,7 +39,7 @@ export const createOrUpdateAvailability = async (req, res) => {
       if (!mongoose.Types.ObjectId.isValid(bodyUserId)) {
         return res.status(400).json({ message: 'Invalid user id provided.' });
       }
-      if (requester.role === 'Admin') {
+      if (requester.role === 'admin') {
         targetUserId = bodyUserId;
       } else if (bodyUserId !== requester.id) {
         return res.status(403).json({
@@ -140,7 +140,7 @@ export const getAvailability = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    if (requester.role !== 'Admin' && requester.id !== userId) {
+    if (requester.role !== 'admin' && requester.id !== userId) {
       return res.status(403).json({ message: 'Forbidden: cannot access other user availability.' });
     }
 
