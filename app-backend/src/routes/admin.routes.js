@@ -78,10 +78,10 @@ router.get('/shifts', auth, adminOnly, getAllShifts);
 
 /**
  * @swagger
- * /api/v1/audit-logs:
+ * /api/v1/admin/audit-logs:
  *   get:
  *     summary: Retrieve audit logs (admin only)
- *     tags: [AuditLogs]
+ *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -142,7 +142,7 @@ router.get('/audit-logs', auth, adminOnly, getAuditLogs);
  * /api/v1/admin/audit-logs/purge:
  *   delete:
  *     summary: Purge audit logs older than a given number of days (Admin only)
- *     tags: [AuditLogs]
+ *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -151,7 +151,7 @@ router.get('/audit-logs', auth, adminOnly, getAuditLogs);
  *         schema:
  *           type: integer
  *         example: 30
- *         description: Purge logs older than this many days (default: 30)
+ *         description: "Purge logs older than this many days (default: 30)"
  *     responses:
  *       200:
  *         description: Purge successful
