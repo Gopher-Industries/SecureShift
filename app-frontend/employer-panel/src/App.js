@@ -4,18 +4,17 @@ import EmployerDashboard from './pages/EmployerDashboard';
 import CreateShift from './pages/createShift';
 import ManageShift from './pages/ManageShift';
 import GuardProfiles from './pages/GuardProfile';
+import SubmissionConfirmation from './pages/SubmissionConfirmation';
 import CompanyProfile from './pages/CompanyProfile';
 
 function App() {
   return (
     <Router>
-      {<nav style={{ padding: '1rem', borderBottom: '1px solid #ccc' }}>
+      <nav style={{ padding: '1rem', borderBottom: '1px solid #ccc' }}>
         <Link to="/login" style={{ marginRight: '1rem' }}>Login</Link>
-        <Link to="/employer-dashboard">Dashboard</Link>
-        {/* <Link to="/create-shift" style={{ marginLeft: '1rem' }}>Create Shift</Link>
-        <Link to="/manage-shift" style={{ marginLeft: '1rem' }}>Manage Shift</Link>
-        <Link to="/guard-profiles" style={{ marginLeft: '1rem'}}>Guard Profile</Link> */}
-      </nav>}
+        <Link to="/employer-dashboard" style={{ marginRight: '1rem' }}>Dashboard</Link>
+        <Link to="/submission">Submission</Link>
+      </nav>
 
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -23,6 +22,9 @@ function App() {
         <Route path="/create-shift" element={<CreateShift />} />
         <Route path="/manage-shift" element={<ManageShift />} />
         <Route path="/guard-profiles" element={<GuardProfiles />} />
+
+        {/* New route */}
+        <Route path="/submission" element={<SubmissionConfirmation />} />
         <Route path="/company-profile" element={<CompanyProfile />} />
       </Routes>
     </Router>
