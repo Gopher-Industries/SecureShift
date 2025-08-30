@@ -30,16 +30,17 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const handleLogin = () => {
-    const msg = validate();
-    if (msg) {
-      setError(msg);
-      Alert.alert('Invalid input', msg);
-      return;
-    }
-    setError(null);
-    Alert.alert('Success', 'Logged in (demo).');
-    // navigation.navigate('Dashboard');
-  };
+  const msg = validate();
+  if (msg) {
+    setError(msg);
+    Alert.alert('Invalid input', msg);
+    return;
+  }
+  setError(null);
+  // Go to the bottom tabs after successful login
+  navigation.replace('AppTabs');
+};
+
 
 
   return (
