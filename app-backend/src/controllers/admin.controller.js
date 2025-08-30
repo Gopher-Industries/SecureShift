@@ -1,5 +1,7 @@
 import User from '../models/User.js';
-import Shift from '../models/Shift.js';  // import your Shift model
+import Shift from '../models/Shift.js';
+import AuditLog from '../models/AuditLogs.js';
+
 import jwt from 'jsonwebtoken';
 
 /**
@@ -34,7 +36,7 @@ export const adminLogin = async (req, res) => {
 
     user.lastLogin = new Date();
     await user.save();
-
+    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "ADMIN_LOGIN" });
     const token = generateToken(user);
 
     res.status(200).json({
@@ -57,6 +59,7 @@ export const getAllUsers = async (req, res) => {
   try {
     // Fetch all users, exclude passwords for security
     const users = await User.find().select('-password');
+    await req.audit.log(req.user.id, ACTIONS.USERS_VIEWED, { totalUsers: users.length });
     res.status(200).json({ users });
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve users', error: error.message });
@@ -74,9 +77,51 @@ export const getAllShifts = async (req, res) => {
     const shifts = await Shift.find()
       .populate('createdBy', 'name email role')  // populate employer info
       .populate('acceptedBy', 'name email role'); // populate guard info
-
+    await req.audit.log(req.user.id, ACTIONS.SHIFTS_VIEWED, { totalShifts: shifts.length });
     res.status(200).json({ shifts });
   } catch (error) {
     res.status(500).json({ message: 'Failed to retrieve shifts', error: error.message });
+  }
+};
+
+
+export const getAuditLogs = async (req, res) => {
+  try {
+    const { page = 1, limit = 50, userId, action, role, from, to } = req.query;
+
+    const query = {};
+    if (userId) query.user = userId;
+    if (action) query.action = action;
+    if (role) query.role = role;
+    if (from || to) query.timestamp = {};
+    if (from) query.timestamp.$gte = new Date(from);
+    if (to) query.timestamp.$lte = new Date(to);
+
+    const logs = await AuditLog.find(query)
+      .sort({ timestamp: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit))
+      .populate('user', 'name email role'); // populate user info
+
+    res.status(200).json({ logs });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+
+  
+};
+
+/**
+ * @desc Purge audit logs older than a given number of days
+ * @route DELETE /api/v1/admin/audit-logs/purge?days=30
+ * @access Admin only
+ */
+export const purgeAuditLogs = async (req, res) => {
+  const days = parseInt(req.query.days, 10) || 30;
+  try {
+    const result = await AuditLog.purgeOldLogs(days);
+    res.status(200).json({ message: `Purged logs older than ${days} days`, deletedCount: result.deletedCount });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to purge audit logs', error: err.message });
   }
 };
