@@ -101,7 +101,12 @@ export const createOrUpdateAvailability = async (req, res) => {
       'user',
       'name email role' // optional fields if User has these
     );
-
+    await req.audit.log(req.user.id, ACTIONS.AVAILABILITY_UPDATED, {
+      availabilityId: availability._id,
+      targetUserId: targetUserId,
+      days,
+      timeSlots
+    });
     return res.status(200).json({
       message: 'Availability saved.',
       availability,
