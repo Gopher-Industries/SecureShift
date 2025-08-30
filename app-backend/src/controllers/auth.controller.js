@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import { sendOTP } from '../utils/sendEmail.js';
+import { ACTIONS } from "../middleware/logger.js";
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -28,7 +29,7 @@ export const register = async (req, res) => {
 
     const newUser = new User({ name, email, password, role, phone, address });
     await newUser.save();
-
+    await req.audit.log(newUser._id, ACTIONS.PROFILE_CREATED, { registered: true });
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -59,7 +60,7 @@ export const login = async (req, res) => {
     await user.save();
 
     await sendOTP(user.email, otp);
-
+    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
     res.status(200).json({ message: 'OTP sent to your email' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -87,6 +88,7 @@ export const verifyOTP = async (req, res) => {
     await user.save();
 
     const token = generateToken(user);
+    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_VERIFIED" });
     res.status(200).json({
       token,
       role: user.role,
