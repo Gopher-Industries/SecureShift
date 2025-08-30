@@ -1,0 +1,105 @@
+.submission-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #e0e4e8;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  font-weight: 400; /* ensure uniform font weight */
+}
+
+
+.submission-card {
+  display: flex;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  max-width: 900px;
+  width: 100%;
+  margin: 20px auto;
+  position: relative;
+  z-index: 1;
+}
+
+.submission-left {
+  flex: 1;
+  padding: 40px;
+}
+
+.confirmation-title {
+  font-size: 32px;   /* bigger */
+  font-weight: 700;  /* bold */
+  margin: 15px 0;
+  color: #000;
+}
+
+.login-btn {
+  margin-top: 25px;
+  background: #0d2c73;
+  color: #fff;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.login-btn:hover {
+  background: #153d99;
+}
+
+.submission-right {
+  background: #0d2c73;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  flex: 0.6;
+}
+
+.logo {
+  max-width: 220px;
+  height: auto;
+}
+
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+  .submission-card {
+    flex-direction: column;
+    max-width: 100%;
+    padding: 20px;
+  }
+  .submission-left, .submission-right {
+    padding: 20px;
+    flex: 1;
+  }
+  .logo {
+    max-width: 150px;
+  }
+  .confirmation-title {
+    font-size: 24px;
+  }
+  .brand-title {
+    font-size: 16px;
+  }
+  .header, .footer-top {
+    flex-direction: column;
+    text-align: center;
+  }
+  .header-nav, .footer-nav {
+    margin-top: 10px;
+  }
+  .footer-divider {
+    margin: 10px 0;
+  }
+  .footer-bottom {
+    text-align: center; /* fallback to center for small screens */
+  }
+}
