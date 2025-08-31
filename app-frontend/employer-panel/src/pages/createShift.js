@@ -268,29 +268,7 @@ profileIcon: {
         </div>
       </div>
 
-      {/* Footer */}
-<div style={styles.footer}>
-  {/* Left side: logo + Secure Shift */}
-  <div style={styles.footerLeft}>
-    <img src="logo.svg" alt="Logo" style={styles.footerLogo} />
-    <span>Secure Shift</span>
-  </div>
-
-  {/* Right side: nav buttons + profile */}
-  <div style={styles.footerLinks}>
-    <button style={styles.footerBtn}>Home</button>
-    <button style={styles.footerBtn}>Jobs</button>
-    <button style={styles.footerBtn}>Applications</button>
-    <div style={styles.profileIcon}>
-      <img src="profile.png" alt="Profile" style={{ 
-      width: '100%', 
-      height: '100%', 
-      borderRadius: '50%', 
-      objectFit: 'cover' 
-    }}  />
-    </div>
-  </div>
-</div>
+     
     </div>
     );
 };
