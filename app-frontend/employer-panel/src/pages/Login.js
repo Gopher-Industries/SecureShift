@@ -3,30 +3,36 @@ import { useNavigate } from "react-router-dom";
 import logo from "../logo.png";
 import "./Login.css";
 
-const mockUsers = [
-  { email: "demo@example.com", password: "password123" },
-  { email: "user@test.com", password: "testpass" },
-];
-
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    // Simulate a login check against mock users Start
-    //TODO: Replace this with actual authentication logic
-    const user = mockUsers.find((u) => u.email === email);
-    if (!user || user.password !== password) {
-      setError("Either email or password is incorrect.");
-    } else {
-      setError("");
-      navigate("/dashboard");
+    try {
+      const res = await fetch("http://localhost:5000/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Login failed");
+
+      // ✅ Login succeeded → redirect to OTP page
+      navigate("/2fa", { state: { email } });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    // Simulate a login check against mock users END
   };
 
   return (
@@ -63,22 +69,18 @@ export default function Login() {
                 required
                 className="formInput"
               />
-              <div className="forgotPassword">
-                <a href="#" className="forgotLink">
-                  Forgot Password?
-                </a>
-              </div>
             </div>
 
             {error && <div className="errorMessage">{error}</div>}
+            {loading && <div className="loadingMessage">Sending OTP...</div>}
 
-            <button type="submit" className="loginButton">
-              Log In
+            <button type="submit" className="loginButton" disabled={loading}>
+              {loading ? "Please wait..." : "Log In"}
             </button>
           </form>
 
           <div className="partnerLink">
-            <a href="#" className="partnerText">
+            <a href="/expression-of-interest" className="partnerText">
               Want to partner with us? Submit an expression of interest!
             </a>
           </div>
