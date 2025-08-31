@@ -61,18 +61,6 @@ export default function ExpressionOfInterest() {
   return (
     <div style={{ fontFamily: "Poppins, sans-serif", background: "#fafafa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       
-      {/* HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#072261", padding: "12px 30px" }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <img src="logo.svg" alt="logo" style={{ height: "30px", marginRight: "10px" }} />
-          <span style={{ color: "#fff", fontWeight: "600", fontSize: "18px" }}>Secure Shift</span>
-        </div>
-        <div>
-          <button style={{ marginRight: "10px", padding: "8px 18px", borderRadius: "20px", border: "none", background: "#274b93", color: "#fff", cursor: "pointer" }}>Expression of Interest</button>
-          <button style={{ padding: "8px 18px", borderRadius: "20px", border: "none", background: "#274b93", color: "#fff", cursor: "pointer" }}>Log In</button>
-        </div>
-      </div>
-
       {/* CONTENT */}
       <div style={{ flex: 1, display: "flex" }}>
         {/* LEFT FORM */}
@@ -84,7 +72,7 @@ export default function ExpressionOfInterest() {
 
           <form onSubmit={handleSubmit}>
             {[
-              { label: "Company Name", name: "companyName", placeholder: "YourCompany..." },
+              { label: "Company Name", name: "companyName", placeholder: "YourCompany" },
               { label: "ABN/ ACN", name: "abnAcn", placeholder: "YourABN/ACN..." },
               { label: "Contact Person", name: "contactPerson", placeholder: "FirstName LastName" },
               { label: "Contact email", name: "contactEmail", placeholder: "example@mail.com" },
@@ -204,21 +192,6 @@ export default function ExpressionOfInterest() {
         {/* RIGHT LOGO PANEL */}
         <div style={{ width: "50%", background: "#072261", display: "flex", justifyContent: "center", alignItems: "center" }}>
           <img src="logo.svg" alt="Secure Shift Logo" style={{ width: '400px', height: 'auto' }} />
-        </div>
-      </div>
-
-      {/* FOOTER */}
-      <div style={{ background: "#072261", borderTop: "4x solid white", padding: "12px 30px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#fff" }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <img src="logo.svg" alt="logo" style={{ height: "30px", marginRight: "10px" }} />
-          Secure Shift
-        </div>
-        <div>
-          
-        </div>
-        <div>
-          <button style={{ marginRight: "10px", padding: "6px 14px", borderRadius: "20px", border: "none", background: "#274b93", color: "#fff" }}>Expression of Interest</button>
-          <button style={{ padding: "6px 14px", borderRadius: "20px", border: "none", background: "#274b93", color: "#fff" }}>Log In</button>
         </div>
       </div>
     </div>

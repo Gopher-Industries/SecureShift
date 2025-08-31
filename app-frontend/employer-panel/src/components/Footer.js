@@ -35,8 +35,8 @@ export default function Footer() {
 
     const buttonList = [
         {
-            title: 'Express of Interest',
-            link: '/'
+            title: 'Expression of Interest',  // fixed title
+            link: '/expression-of-interest'   // ✅ now routes correctly
         },
         {
             title: 'Login',
@@ -81,7 +81,6 @@ export default function Footer() {
                             {button.title}
                         </Link>
                     ))}
-
                 </div>
             </div>
             <div style={footerNavListStyle}>
