@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ExpressionOfInterest from './pages/ExpressionOfInterest';
 import Login from './pages/Login';
+import TwoFA from './pages/2FA';
 import EmployerDashboard from './pages/EmployerDashboard';
 import CreateShift from './pages/createShift';
 import ManageShift from './pages/ManageShift';
@@ -19,6 +20,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/2fa" element={<TwoFA />} /> {/* ✅ new 2FA route */}
             <Route path="/employer-dashboard" element={<EmployerDashboard />} />
             <Route path="/create-shift" element={<CreateShift />} />
             <Route path="/manage-shift" element={<ManageShift />} />
