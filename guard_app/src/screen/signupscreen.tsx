@@ -13,6 +13,9 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
+
+const USER_KEY = 'DEMO_USER';
 
 export default function SignupScreen({ navigation }: any) {
 
@@ -38,7 +41,7 @@ export default function SignupScreen({ navigation }: any) {
     return null;
   };
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const msg = validate();
     if (msg) {
       setError(msg);
@@ -46,8 +49,21 @@ export default function SignupScreen({ navigation }: any) {
       return;
     }
     setError(null);
-    navigation.replace('Login');
+
+    try {
+      await SecureStore.setItemAsync(
+        USER_KEY,
+        JSON.stringify({ email: email.trim(), password })
+      );
+    } catch (e) {
+      // SecureStore can fail on web/permissions
+      console.warn('SecureStore error:', e);
+    } finally {
+      // Always navigate, even if storage failed
+      navigation.replace('Login');
+    }
   };
+
 
   const ctaDisabled =
     !email.trim() || !fullName.trim() || !password || !confirm || password.length < 6;

@@ -13,14 +13,20 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function LoginScreen({ navigation }: any) {
+import * as SecureStore from 'expo-secure-store';
 
+import { useAuth } from '../context/Auth';
+
+const USER_KEY = 'DEMO_USER';
+
+export default function LoginScreen({ navigation }: any) {
+  const { login } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [submitting, setSubmitting] = useState(false);
 
   const validate = () => {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -29,17 +35,61 @@ export default function LoginScreen({ navigation }: any) {
     return null;
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const msg = validate();
     if (msg) {
       setError(msg);
       Alert.alert('Invalid input', msg);
       return;
     }
+
+    setSubmitting(true);
     setError(null);
-    Alert.alert('Success', 'Logged in (demo).');
-    // navigation.navigate('Dashboard');
+
+    try {
+      if (Platform.OS === 'web') {
+        // On web, just skip SecureStore checks and go straight to Home
+        const jwt = 'demo.jwt.token';
+        await login(jwt);
+        console.log("Login success on web, JWT stored:", jwt);
+        navigation.replace('HomeScreen');
+        return;
+      }
+
+      // Load the saved demo account
+      const saved = await SecureStore.getItemAsync(USER_KEY);
+
+      if (!saved) {
+        setError('No account found. Please sign up first.');
+        Alert.alert('Error', 'No account found. Please sign up first.');
+        return;
+      }
+
+      const { email: savedEmail, password: savedPass } = JSON.parse(saved);
+
+      if (email.trim() !== savedEmail || password !== savedPass) {
+        setError('Email or password is incorrect.');
+        Alert.alert('Error', 'Email or password is incorrect.');
+        return;
+      }
+
+      // Demo auth
+      const jwt = 'demo.jwt.token';
+      await login(jwt);
+
+      console.log("Login success on native, JWT stored:", jwt);
+
+      navigation.replace('HomeScreen');
+    } catch (e: any) {
+      // If SecureStore doesn't work
+      setError('Login failed. Please try again.');
+      Alert.alert('Error', e?.message || 'Login failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+
 
 
   return (

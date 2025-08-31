@@ -12,6 +12,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuth } from "../context/Auth";
 
 const NAVY = "#244B7A";
 const BORDER = "#E7EBF2";
@@ -61,7 +62,13 @@ const RowItem = ({
   </View>
 );
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }: any) {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+  };
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
@@ -72,6 +79,14 @@ export default function HomeScreen() {
         <View style={styles.topIcons}>
           <Ionicons name="notifications-outline" size={18} color="#fff" />
           <Ionicons name="settings-outline" size={18} color="#fff" style={{ marginLeft: 16 }} />
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={{ marginLeft: 16 }}
+            accessibilityRole="button"
+            accessibilityLabel="Logout"
+          >
+            <Ionicons name="log-out-outline" size={18} color="#fff" />
+          </TouchableOpacity>
         </View>
       </View>
 
