@@ -46,7 +46,8 @@ export default function SignupScreen({ navigation }: any) {
       return;
     }
     setError(null);
-    navigation.replace('Login');
+navigation.replace('Login');
+
   };
 
   const ctaDisabled =
