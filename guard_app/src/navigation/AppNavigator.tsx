@@ -2,7 +2,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import LoginScreen from '../screen/loginscreen';      // keep your current casing/paths
+import LoginScreen from '../screen/loginscreen'; // keep your current casing/paths
 import SignupScreen from '../screen/signupscreen';
 import AppTabs from './AppTabs';
 import SettingsScreen from '../screen/SettingsScreen';
@@ -29,4 +29,3 @@ export default function AppNavigator() {
     </Stack.Navigator>
   );
 }
- 

@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
@@ -25,7 +19,7 @@ export default function ProfileScreen() {
         {/* Performance Summary */}
         <View style={[styles.card, styles.performanceCard]}>
           <Text style={styles.cardTitle}>
-            <Text style={styles.icon}>⭐</Text>  Performance Summary
+            <Text style={styles.icon}>⭐</Text> Performance Summary
           </Text>
 
           <View style={styles.statsRow}>
@@ -70,14 +64,14 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   //main screen container
   container: {
-    flex: 1,
     backgroundColor: '#f9f9f9',
+    flex: 1,
   },
   // Padding around scroll view content
   scrollContent: {
-    paddingTop: 100, 
-    paddingHorizontal: 20,
     paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 100,
   },
   // Container for avatar
   avatarContainer: {
@@ -86,35 +80,35 @@ const styles = StyleSheet.create({
   },
   // Avatar circle with icon inside
   avatar: {
-    backgroundColor: '#1E3A8A',
-    height: 100,
-    width: 100,
-    borderRadius: 50,
     alignItems: 'center',
+    backgroundColor: '#1E3A8A',
+    borderRadius: 50,
+    height: 100,
     justifyContent: 'center',
+    width: 100,
   },
   // Name text below avatar
   name: {
     fontSize: 20,
     fontWeight: '600',
-    textAlign: 'center',
     marginBottom: 20,
+    textAlign: 'center',
   },
   // Reusable card style
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
     elevation: 1,
+    marginBottom: 15,
+    padding: 15,
   },
   performanceCard: {
-    backgroundColor: '#EEF2FF', 
+    backgroundColor: '#EEF2FF',
   },
   // Card title style
   cardTitle: {
-    fontWeight: 'bold',
     fontSize: 15,
+    fontWeight: 'bold',
     marginBottom: 10,
   },
   statsRow: {
@@ -131,13 +125,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   statLabel: {
-    fontSize: 12,
     color: '#555',
+    fontSize: 12,
     marginTop: 2,
   },
   infoText: {
-    fontSize: 14,
     color: '#333',
+    fontSize: 14,
   },
   badgesRow: {
     flexDirection: 'row',
@@ -148,14 +142,14 @@ const styles = StyleSheet.create({
   badge: {
     backgroundColor: '#e0e7ff',
     borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginRight: 8,
     marginBottom: 8,
+    marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   badgeText: {
-    fontSize: 12,
     color: '#1E3A8A',
+    fontSize: 12,
   },
   icon: {
     fontSize: 16,

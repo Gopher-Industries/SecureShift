@@ -26,8 +26,8 @@ export default function AppTabs() {
             route.name === 'Home'
               ? ('home-outline' as const)
               : route.name === 'Shifts'
-              ? ('briefcase-outline' as const)
-              : ('person-outline' as const);
+                ? ('briefcase-outline' as const)
+                : ('person-outline' as const);
           return <Ionicons name={name} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#1E3A8A',
@@ -40,4 +40,3 @@ export default function AppTabs() {
     </Tab.Navigator>
   );
 }
- 
