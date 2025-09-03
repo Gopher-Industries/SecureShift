@@ -14,13 +14,10 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function LoginScreen({ navigation }: any) {
-
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
 
   const validate = () => {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -30,18 +27,16 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const handleLogin = () => {
-  const msg = validate();
-  if (msg) {
-    setError(msg);
-    Alert.alert('Invalid input', msg);
-    return;
-  }
-  setError(null);
-  // Go to the bottom tabs after successful login
-  navigation.replace('AppTabs');
-};
-
-
+    const msg = validate();
+    if (msg) {
+      setError(msg);
+      Alert.alert('Invalid input', msg);
+      return;
+    }
+    setError(null);
+    // Go to the bottom tabs after successful login
+    navigation.replace('AppTabs');
+  };
 
   return (
     <KeyboardAvoidingView
@@ -52,11 +47,8 @@ export default function LoginScreen({ navigation }: any) {
         {/* Logo */}
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
 
-
         {/* Title + subtitle */}
         <Text style={styles.subtitle}>Login with your email and password</Text>
-
-
 
         {/* Email */}
         <Text style={styles.label}>Email*</Text>
@@ -70,7 +62,7 @@ export default function LoginScreen({ navigation }: any) {
             value={email}
             onChangeText={(t) => {
               setEmail(t);
-              if (error) setError(null); 
+              if (error) setError(null);
             }}
             autoCorrect={false}
             textContentType="emailAddress"
@@ -88,7 +80,7 @@ export default function LoginScreen({ navigation }: any) {
             value={password}
             onChangeText={(t) => {
               setPassword(t);
-              if (error) setError(null); 
+              if (error) setError(null);
             }}
             textContentType="password"
           />
@@ -124,87 +116,86 @@ export default function LoginScreen({ navigation }: any) {
   );
 }
 
-
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: '#F5F6FA',
+  button: {
+    alignItems: 'center',
+    backgroundColor: '#274289',
+    borderRadius: 999,
+    height: 58,
+    justifyContent: 'center',
+    marginTop: 28,
   },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   container: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 80,
   },
-  logo: {
-    width: 150,
-    height: 150,
-    alignSelf: 'center',
-    resizeMode: 'contain',
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#1F2937',
-  },
-  subtitle: {
-    marginTop: 6,
-    textAlign: 'center',
-    color: '#6B7280',
-  },
   error: {
     color: '#B00020',
-    textAlign: 'center',
+    fontWeight: '600',
     marginTop: 12,
-    fontWeight: '600',
+    textAlign: 'center',
   },
-  label: {
-    marginTop: 24,
-    marginBottom: 8,
-    color: '#111827',
-    fontWeight: '600',
-  },
-  mt16: { marginTop: 16 },
-  inputWrap: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 14,
+  eye: {
     height: 56,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  input: {
-    fontSize: 16,
-    color: '#111827',
-  },
-  padRight: { paddingRight: 44 },
-  eye: {
     position: 'absolute',
     right: 14,
-    height: 56,
-    justifyContent: 'center',
-  },
-  button: {
-    marginTop: 28,
-    height: 58,
-    borderRadius: 999,
-    backgroundColor: '#274289',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  footerText: {
-    textAlign: 'center',
-    marginTop: 22,
-    color: '#111827',
   },
   footerLink: {
     fontWeight: '700',
+  },
+  footerText: {
+    color: '#111827',
+    marginTop: 22,
+    textAlign: 'center',
+  },
+  input: {
+    color: '#111827',
+    fontSize: 16,
+  },
+  inputWrap: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    borderWidth: 1,
+    elevation: 1,
+    height: 56,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+  },
+  label: {
+    color: '#111827',
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 24,
+  },
+  logo: {
+    alignSelf: 'center',
+    height: 150,
+    resizeMode: 'contain',
+    width: 150,
+  },
+  mt16: { marginTop: 16 },
+  padRight: { paddingRight: 44 },
+  safe: {
+    backgroundColor: '#F5F6FA',
+    flex: 1,
+  },
+  subtitle: {
+    color: '#6B7280',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  title: {
+    color: '#1F2937',
+    fontSize: 26,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
