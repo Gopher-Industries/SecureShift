@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
+import ShiftScreen from '../screen/ShiftScreen';
 
 export type AppTabParamList = {
   Home: undefined;
@@ -14,14 +15,6 @@ export type AppTabParamList = {
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
-
-function ShiftsScreen() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Shifts coming soon…</Text>
-    </View>
-  );
-}
 
 export default function AppTabs() {
   return (
@@ -42,7 +35,7 @@ export default function AppTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Shifts" component={ShiftsScreen} />
+      <Tab.Screen name="Shifts" component={ShiftScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
