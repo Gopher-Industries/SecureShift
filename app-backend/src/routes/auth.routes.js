@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
+import { MongoClient, GridFSBucket } from 'mongodb';
 import path from 'path';
-import fs from 'fs';
 import { register, login, verifyOTP, submitEOI } from '../controllers/auth.controller.js';
 
 const router = express.Router();
@@ -134,38 +134,37 @@ router.post('/login', login);
  */
 router.post('/verify-otp', verifyOTP);
 
-// ---------------- EOI Upload Config ----------------
-
-// Ensure upload directory exists
-const uploadDir = path.join(process.cwd(), 'uploads/eoi-documents');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+// ---------------- EOI Upload Config using MemoryStorage ----------------
+const storage = multer.memoryStorage(); // store files in memory temporarily
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext === '.pdf') cb(null, true);
+    else cb(new Error('Only PDF files are allowed'), false);
   },
 });
 
-const fileFilter = (req, file, cb) => {
-  if (path.extname(file.originalname).toLowerCase() === '.pdf') {
-    cb(null, true);
-  } else {
-    cb(new Error('Only PDF files are allowed'), false);
-  }
-};
+// ---------------- MongoDB GridFS Setup ----------------
+const mongoUri = process.env.MONGO_URI; // e.g., mongodb://localhost:27017/secureShift
+let dbClient;
+let gridFSBucket;
 
-const upload = multer({ storage, fileFilter });
-
+MongoClient.connect(mongoUri)
+  .then(client => {
+    dbClient = client;
+    const db = client.db(); // default DB from URI
+    gridFSBucket = new GridFSBucket(db, { bucketName: 'eoiDocuments' });
+    console.log('Connected to MongoDB GridFS for EOI uploads');
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+  });
 /**
  * @swagger
  * /api/v1/auth/eoi:
  *   post:
- *     summary: Submit an Expression of Interest (EOI)
+ *     summary: Submit an Expression of Interest (EOI) with PDF documents
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -177,7 +176,7 @@ const upload = multer({ storage, fileFilter });
  *             properties:
  *               companyName:
  *                 type: string
- *                 example: YourCompany
+ *                 example: SecureShift Pty Ltd
  *               abnAcn:
  *                 type: string
  *                 example: 12345678901
@@ -186,22 +185,93 @@ const upload = multer({ storage, fileFilter });
  *                 example: John Doe
  *               contactEmail:
  *                 type: string
- *                 example: example@mail.com
+ *                 example: johndoe@example.com
  *               phone:
  *                 type: string
  *                 example: "+61400123456"
  *               description:
  *                 type: string
- *                 example: "We provide licensed security services."
+ *                 example: Security company providing professional guard services
  *               documents:
- *                 type: string
- *                 format: binary
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Up to 5 PDF files
  *     responses:
  *       201:
  *         description: EOI submitted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: EOI submitted successfully
+ *                 files:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       filename:
+ *                         type: string
+ *                         example: company-profile.pdf
+ *                       id:
+ *                         type: string
+ *                         example: 64f1c6a3b5e18f9b9a3d52f77
  *       400:
- *         description: Invalid input or missing documents
+ *         description: No documents uploaded
+ *       500:
+ *         description: Server error while uploading EOI
  */
-router.post('/eoi', upload.array('documents', 5), submitEOI);
+
+// ---------------- EOI Route ----------------
+router.post('/eoi', upload.array('documents', 5), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No documents uploaded' });
+    }
+
+    // store each file in GridFS
+const fileInfos = await Promise.all(req.files.map(file => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = gridFSBucket.openUploadStream(file.originalname, {
+      contentType: file.mimetype, // use actual mimetype
+    });
+
+    uploadStream.end(file.buffer);
+    uploadStream.on('finish', () => {
+      resolve({
+        filename: uploadStream.filename,
+        id: uploadStream.id,
+      });
+    });
+    uploadStream.on('error', reject);
+  });
+}));
+
+
+    // You can also save other EOI info in MongoDB collection
+    const eoiData = {
+      companyName: req.body.companyName,
+      abnAcn: req.body.abnAcn,
+      contactPerson: req.body.contactPerson,
+      contactEmail: req.body.contactEmail,
+      phone: req.body.phone,
+      description: req.body.description,
+      documents: fileInfos,
+      createdAt: new Date(),
+    };
+
+    // Use your submitEOI controller to store eoiData in a collection
+    await submitEOI(eoiData);
+
+    res.status(201).json({ message: 'EOI submitted successfully', files: fileInfos });
+  } catch (err) {
+    console.error('EOI upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 export default router;
