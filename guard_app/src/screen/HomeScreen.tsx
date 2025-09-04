@@ -15,6 +15,7 @@ import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator"; // adjust if path differs
+import { useAuth } from "../context/Auth";
 
 const NAVY = "#244B7A";
 const BORDER = "#E7EBF2";
@@ -66,6 +67,24 @@ const RowItem = ({
 
 export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Login" }],
+          });
+        },
+      },
+    ]);
+  };
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -73,9 +92,14 @@ export default function HomeScreen() {
       headerStyle: { backgroundColor: NAVY },
       headerTintColor: "#fff",
       headerRight: () => (
-        <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
-          <Ionicons name="settings-outline" size={22} color="#fff" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+            <Ionicons name="settings-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation]);

@@ -12,9 +12,14 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '../context/Auth';
+
+const USER_KEY = 'DEMO_USER';
 
 export default function LoginScreen({ navigation }: any) {
 
+  const { login } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,17 +34,46 @@ export default function LoginScreen({ navigation }: any) {
     return null;
   };
 
-  const handleLogin = () => {
-  const msg = validate();
-  if (msg) {
-    setError(msg);
-    Alert.alert('Invalid input', msg);
-    return;
-  }
-  setError(null);
-  // Go to the bottom tabs after successful login
-  navigation.replace('AppTabs');
-};
+  const handleLogin = async () => {
+    const msg = validate();
+    if (msg) {
+      setError(msg);
+      Alert.alert('Invalid input', msg);
+      return;
+    }
+
+    setError(null);
+
+    try {
+      if (Platform.OS === 'web') {
+        const jwt = 'demo.jwt.token';
+        await login(jwt);
+        navigation.replace('AppTabs');
+        return;
+      }
+
+      const saved = await SecureStore.getItemAsync(USER_KEY);
+
+      if (!saved) {
+        Alert.alert('Error', 'No account found. Please sign up first.');
+        return;
+      }
+
+      const { email: savedEmail, password: savedPass } = JSON.parse(saved);
+
+      if (email.trim() !== savedEmail || password !== savedPass) {
+        Alert.alert('Error', 'Email or password is incorrect.');
+        return;
+      }
+
+      const jwt = 'demo.jwt.token';
+      await login(jwt);
+      console.log("Login success on native, JWT stored:", jwt);
+      navigation.replace('AppTabs');
+    } catch (e: any) {
+      Alert.alert('Login Error', e?.message || 'Login failed. Please try again.');
+    }
+  };
 
 
 

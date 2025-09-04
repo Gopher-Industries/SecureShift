@@ -13,9 +13,11 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
+
+const USER_KEY = 'DEMO_USER';
 
 export default function SignupScreen({ navigation }: any) {
-
 
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -38,16 +40,21 @@ export default function SignupScreen({ navigation }: any) {
     return null;
   };
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const msg = validate();
     if (msg) {
       setError(msg);
       Alert.alert('Invalid input', msg);
       return;
     }
-    setError(null);
-navigation.replace('Login');
 
+    try {
+      const payload = { email: email.trim(), fullName: fullName.trim(), password };
+      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(payload));
+      navigation.replace('Login');
+    } catch (e: any) {
+      Alert.alert('Signup Error', e?.message || 'Something went wrong. Try again.');
+    }
   };
 
   const ctaDisabled =

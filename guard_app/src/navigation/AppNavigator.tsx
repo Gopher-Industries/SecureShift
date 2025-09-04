@@ -6,10 +6,12 @@ import LoginScreen from '../screen/loginscreen';      // keep your current casin
 import SignupScreen from '../screen/signupscreen';
 import AppTabs from './AppTabs';
 import SettingsScreen from '../screen/SettingsScreen';
+import HomeScreen from '../screen/HomeScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
+  HomeScreen: undefined;
   AppTabs: undefined;
   Settings: undefined;
 };
@@ -21,9 +23,9 @@ export default function AppNavigator() {
     <Stack.Navigator initialRouteName="Login">
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Signup" component={SignupScreen} options={{ title: 'Sign Up' }} />
+      <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AppTabs" component={AppTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Stack.Navigator>
   );
 }
- 
