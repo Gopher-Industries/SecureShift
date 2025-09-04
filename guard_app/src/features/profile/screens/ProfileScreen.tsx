@@ -7,8 +7,10 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useProfile } from '../hooks/useProfile';
 
 export default function ProfileScreen() {
+  const { data, loading, error } = useProfile();
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -20,7 +22,11 @@ export default function ProfileScreen() {
         </View>
 
         {/* Name */}
-        <Text style={styles.name}>Alex Johnson</Text>
+        {loading || error ? (
+          <Text style={styles.name}>---</Text>
+        ) : (
+          <Text style={styles.name}>{data?.name || '—'}</Text>
+        )}
 
         {/* Performance Summary */}
         <View style={[styles.card, styles.performanceCard]}>
@@ -47,8 +53,8 @@ export default function ProfileScreen() {
         {/* Contact Info */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
-          <Text style={styles.infoText}>Email: alex.johnson@gmail.com</Text>
-          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: +61 123456789</Text>
+          <Text style={styles.infoText}>Email: {data?.email || '—'}</Text>
+          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: {data?.phone || '—'}</Text>
         </View>
 
         {/* Certifications */}
