@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 // Import the app's navigation param list from the App entry to keep types aligned
 // Note: We import type-only to avoid circular runtime deps
-import type { RootStackParamList } from '../../App';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 

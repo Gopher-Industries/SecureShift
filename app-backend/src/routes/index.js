@@ -10,7 +10,6 @@ import adminRoutes from './admin.routes.js';
 
 import availabilityRoutes from './availability.routes.js'; 
 
-
 const router = Router();
 
 router.use('/health', healthRoutes);
@@ -21,7 +20,6 @@ router.use('/messages', messageRoutes);
 router.use('/admin', adminRoutes);
 
 router.use('/availability', availabilityRoutes); 
-
 router.use ('/messages', messageRoutes);
 
 router.use('/users', userRoutes);  
