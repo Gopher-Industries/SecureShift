@@ -1,5 +1,8 @@
 import express from 'express';
-import { register, login, verifyOTP } from '../controllers/auth.controller.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { register, login, verifyOTP, submitEOI } from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
@@ -130,5 +133,75 @@ router.post('/login', login);
  *         description: Invalid or expired OTP
  */
 router.post('/verify-otp', verifyOTP);
+
+// ---------------- EOI Upload Config ----------------
+
+// Ensure upload directory exists
+const uploadDir = path.join(process.cwd(), 'uploads/eoi-documents');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (path.extname(file.originalname).toLowerCase() === '.pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed'), false);
+  }
+};
+
+const upload = multer({ storage, fileFilter });
+
+/**
+ * @swagger
+ * /api/v1/auth/eoi:
+ *   post:
+ *     summary: Submit an Expression of Interest (EOI)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [companyName, abnAcn, contactPerson, contactEmail, phone, description, documents]
+ *             properties:
+ *               companyName:
+ *                 type: string
+ *                 example: YourCompany
+ *               abnAcn:
+ *                 type: string
+ *                 example: 12345678901
+ *               contactPerson:
+ *                 type: string
+ *                 example: John Doe
+ *               contactEmail:
+ *                 type: string
+ *                 example: example@mail.com
+ *               phone:
+ *                 type: string
+ *                 example: "+61400123456"
+ *               description:
+ *                 type: string
+ *                 example: "We provide licensed security services."
+ *               documents:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: EOI submitted successfully
+ *       400:
+ *         description: Invalid input or missing documents
+ */
+router.post('/eoi', upload.array('documents', 5), submitEOI);
 
 export default router;

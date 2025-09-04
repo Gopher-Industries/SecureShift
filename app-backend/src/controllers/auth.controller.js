@@ -3,6 +3,8 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 import { sendOTP } from '../utils/sendEmail.js';
 import { ACTIONS } from "../middleware/logger.js";
+import EOI from '../models/eoi.js';
+import path from 'path';
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -95,6 +97,38 @@ export const verifyOTP = async (req, res) => {
       id: user._id,
       name: user.name,
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc Submit Expression of Interest (EOI)
+// @route POST /api/v1/auth/eoi
+export const submitEOI = async (req, res) => {
+  try {
+    const { companyName, abnAcn, contactPerson, contactEmail, phone, description } = req.body;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'At least one PDF document is required' });
+    }
+
+    const documents = req.files.map((file) => ({
+      fileName: file.originalname,
+      filePath: file.path,
+    }));
+
+    const newEOI = new EOI({
+      companyName,
+      abnAcn,
+      contactPerson,
+      contactEmail,
+      phone,
+      description,
+      documents,
+    });
+
+    await newEOI.save();
+    res.status(201).json({ message: 'EOI submitted successfully, pending admin review' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
