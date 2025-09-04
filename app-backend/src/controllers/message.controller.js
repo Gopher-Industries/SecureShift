@@ -63,6 +63,11 @@ const sendMessage = async (req, res, next) => {
       { path: 'sender', select: 'email name role' },
       { path: 'receiver', select: 'email name role' }
     ]);
+    await req.audit.log(req.user.id, ACTIONS.MESSAGE_SENT, {
+      messageId: message._id,
+      receiverId: receiverId,
+      contentSnippet: message.content.slice(0, 50) // optional short preview
+    });
 
     res.status(201).json({
       success: true,
@@ -212,6 +217,11 @@ const markMessageAsRead = async (req, res, next) => {
 
     message.isRead = true;
     await message.save();
+
+    await req.audit.log(req.user.id, ACTIONS.MESSAGE_READ, {
+      messageId: message._id,
+      senderId: message.sender
+    });
 
     res.status(200).json({
       success: true,

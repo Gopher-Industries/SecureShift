@@ -48,4 +48,14 @@ Contributor Setup Checklist
 
 +> Clone the full SecureShift repository.
 
-+> Navigate to app-frontend/guard-app, install dependencies, and run the project.
++> Navigate to `app-frontend/guard-app`.
+
++> Install dependencies:
+
+   ```bash
+   npm install
+   
+   npx expo install react-native-gesture-handler react-native-reanimated react-native-screens react-native-safe-area-context
+   
+   npm install @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs
+
