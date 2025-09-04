@@ -1,26 +1,36 @@
 import React, { useRef, useState } from "react";
 
+// Expression of Interest form component
 export default function ExpressionOfInterest() {
+  // Form state to hold all input values
   const [form, setForm] = useState({
     companyName: "",
     abnAcn: "",
     contactPerson: "",
     contactEmail: "",
-    phoneNumber: "",
+    phone: "",
     description: "",
-    confirmAccurate: false,
+    confirmAccurate: false, // checkbox state
   });
+
+  // State for uploaded file
   const [file, setFile] = useState(null);
+
+  // Ref to access the hidden file input element
   const fileInputRef = useRef(null);
 
+  // Handle text, email, phone, and checkbox changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    // Update form values (checkbox stores boolean instead of string)
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
 
+  // Allowed file types and max size (10MB)
   const acceptTypes = ["application/pdf", "image/jpeg", "image/png"];
   const maxBytes = 10 * 1024 * 1024;
 
+  // Validate uploaded file
   const validateFile = (f) => {
     if (!f) return "Please choose a file.";
     if (!acceptTypes.includes(f.type)) return "Upload JPG, PNG, or PDF only.";
@@ -28,22 +38,26 @@ export default function ExpressionOfInterest() {
     return "";
   };
 
+  // Handle file selection
   const onSelectFile = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
     const err = validateFile(f);
     if (err) {
-      alert(err);
-      e.target.value = "";
+      alert(err); // show error to user
+      e.target.value = ""; // clear file input
       setFile(null);
       return;
     }
-    setFile(f);
+    setFile(f); // valid file
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!form.companyName || !form.abnAcn || !form.contactPerson || !form.contactEmail || !form.phoneNumber || !form.description) {
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // prevent page refresh
+
+    // Frontend validation
+    if (!form.companyName || !form.abnAcn || !form.contactPerson || !form.contactEmail || !form.phone || !form.description) {
       alert("Please fill in all fields.");
       return;
     }
@@ -55,31 +69,97 @@ export default function ExpressionOfInterest() {
       alert("Please confirm that the information provided is accurate.");
       return;
     }
-    alert("Form Submitted! (Demo)");
+
+    try {
+      // Build multipart form data
+      const formData = new FormData();
+      Object.keys(form).forEach((key) => formData.append(key, form[key]));
+      formData.append("documents", file);
+
+      // POST request to backend API
+      const response = await fetch("http://localhost:5000/api/v1/auth/eoi", {
+        method: "POST",
+        body: formData,
+      });
+
+      // Handle response safely (JSON or non-JSON fallback)
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error("Non-JSON response from server:", text);
+        throw new Error("Server returned non-JSON response" + text);
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to submit EOI");
+      }
+
+      // Success
+      alert("EOI submitted successfully!");
+      console.log("Server response:", data);
+
+      // Reset form fields
+      setForm({
+        companyName: "",
+        abnAcn: "",
+        contactPerson: "",
+        contactEmail: "",
+        phone: "",
+        description: "",
+        confirmAccurate: false,
+      });
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = null;
+    } catch (err) {
+      // Error handling
+      console.error(err);
+      alert(err.message || "Error submitting EOI.");
+    }
   };
 
   return (
-    <div style={{ fontFamily: "Poppins, sans-serif", background: "#fafafa", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      
-      {/* CONTENT */}
+    <div
+      style={{
+        fontFamily: "Poppins, sans-serif",
+        background: "#fafafa",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <div style={{ flex: 1, display: "flex" }}>
-        {/* LEFT FORM */}
+        {/* LEFT PANEL - FORM */}
         <div style={{ width: "50%", background: "#fff", padding: "40px 60px" }}>
-          <h1 style={{ fontSize: "32px", fontWeight: "600", marginBottom: "10px" }}>Expression of interest</h1>
+          <h1 style={{ fontSize: "32px", fontWeight: "600", marginBottom: "10px" }}>
+            Expression of interest
+          </h1>
           <p style={{ fontSize: "14px", color: "#1e1e1e", marginBottom: "20px" }}>
-            Only licensed and verified security companies may apply. All EOIs will be reviewed by our admin team before access is granted
+            Only licensed and verified security companies may apply. All EOIs will be
+            reviewed by our admin team before access is granted
           </p>
 
           <form onSubmit={handleSubmit}>
+            {/* Map through text input fields */}
             {[
               { label: "Company Name", name: "companyName", placeholder: "YourCompany" },
               { label: "ABN/ ACN", name: "abnAcn", placeholder: "YourABN/ACN..." },
               { label: "Contact Person", name: "contactPerson", placeholder: "FirstName LastName" },
               { label: "Contact email", name: "contactEmail", placeholder: "example@mail.com" },
-              { label: "Phone Number", name: "phoneNumber", placeholder: "Your Number..." },
+              { label: "Phone Number", name: "phone", placeholder: "Your Number..." },
             ].map((field, i) => (
               <div key={i} style={{ marginBottom: "18px" }}>
-                <label style={{ display: "block", fontWeight: "600", marginBottom: "6px" }}>{field.label}</label>
+                <label
+                  style={{
+                    display: "block",
+                    fontWeight: "600",
+                    marginBottom: "6px",
+                  }}
+                >
+                  {field.label}
+                </label>
                 <input
                   type="text"
                   name={field.name}
@@ -98,7 +178,10 @@ export default function ExpressionOfInterest() {
               </div>
             ))}
 
-            <label style={{ display: "block", fontWeight: "600", marginBottom: "6px" }}>Brief Description of Services</label>
+            {/* Description textarea */}
+            <label style={{ display: "block", fontWeight: "600", marginBottom: "6px" }}>
+              Brief Description of Services
+            </label>
             <textarea
               name="description"
               placeholder="Your Description..."
@@ -116,11 +199,13 @@ export default function ExpressionOfInterest() {
               }}
             />
 
+            {/* File upload instructions */}
             <p style={{ fontSize: "12px", fontWeight: "600", marginBottom: "12px" }}>
-              Please upload a valid business license, security certification, and/or relevant documentation. PDF format only.
+              Please upload a valid business license, security certification, and/or
+              relevant documentation. PDF, JPG, PNG only.
             </p>
 
-            {/* FILE UPLOAD */}
+            {/* FILE UPLOAD SECTION */}
             <div
               style={{
                 border: "2px dashed #ababab",
@@ -130,10 +215,25 @@ export default function ExpressionOfInterest() {
                 marginBottom: "16px",
               }}
             >
-              <div style={{ fontWeight: "600" }}>Select a file or drag and drop here</div>
-              <div style={{ fontSize: "12px", color: "#6c6c6c" }}>JPG, PNG or PDF, file size no more than 10MB</div>
-              {file && <div style={{ marginTop: "10px", fontSize: "12px", color: "#274b93" }}>Selected: {file.name}</div>}
+              <div style={{ fontWeight: "600" }}>
+                Select a file or drag and drop here
+              </div>
+              <div style={{ fontSize: "12px", color: "#6c6c6c" }}>
+                JPG, PNG or PDF, max 10MB
+              </div>
+              {file && (
+                <div
+                  style={{
+                    marginTop: "10px",
+                    fontSize: "12px",
+                    color: "#274b93",
+                  }}
+                >
+                  Selected: {file.name}
+                </div>
+              )}
               <br />
+              {/* Trigger hidden file input */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -148,10 +248,15 @@ export default function ExpressionOfInterest() {
               >
                 SELECT FILE
               </button>
-              <input ref={fileInputRef} type="file" style={{ display: "none" }} onChange={onSelectFile} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                style={{ display: "none" }}
+                onChange={onSelectFile}
+              />
             </div>
 
-            {/* CHECKBOX */}
+            {/* Confirm checkbox */}
             <div style={{ marginBottom: "20px" }}>
               <input
                 type="checkbox"
@@ -163,7 +268,7 @@ export default function ExpressionOfInterest() {
               I confirm that the information provided is accurate
             </div>
 
-            {/* SUBMIT BUTTON */}
+            {/* Submit button */}
             <button
               type="submit"
               style={{
@@ -181,6 +286,7 @@ export default function ExpressionOfInterest() {
               Submit
             </button>
 
+            {/* Link to login */}
             <p style={{ marginTop: "10px", fontSize: "12px", textAlign: "center" }}>
               <a href="/login" style={{ color: "#aa0028", textDecoration: "none" }}>
                 Already have an account? Log In!
@@ -189,9 +295,21 @@ export default function ExpressionOfInterest() {
           </form>
         </div>
 
-        {/* RIGHT LOGO PANEL */}
-        <div style={{ width: "50%", background: "#072261", display: "flex", justifyContent: "center", alignItems: "center" }}>
-          <img src="logo.svg" alt="Secure Shift Logo" style={{ width: '400px', height: 'auto' }} />
+        {/* RIGHT PANEL - Logo/branding */}
+        <div
+          style={{
+            width: "50%",
+            background: "#072261",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <img
+            src="logo.svg"
+            alt="Secure Shift Logo"
+            style={{ width: "400px", height: "auto" }}
+          />
         </div>
       </div>
     </div>
