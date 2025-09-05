@@ -3,20 +3,8 @@ import {
   View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet,
 } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-
-/* Colour Palette */
-const COLORS = {
-  bg: '#F6F7FB',
-  card: '#FFF',
-  text: '#111',
-  muted: '#667',
-  primary: '#274289',
-  rate: '#1AAE5B',
-  link: '#1660CF',
-  pending: '#A56600',
-  confirmed: '#1F8D4D',
-  rejected: '#B00020',
-};
+import { COLORS } from '../theme/colors';
+import { formatDate } from '../utils/date';
 
 type AppliedShift = {
   id: string; title: string; company: string; site: string;
@@ -32,14 +20,15 @@ type CompletedShift = {
 
 /* Sample Data */
 const APPLIED: AppliedShift[] = [
-  { id: '1', title: 'Shopping Centre Security', company: 'Vicinity Centres', site: 'Chadstone Shopping Centre', rate: '$75 p/h', date: '01-08-2025', time: '1:00 pm - 9:00 pm', status: 'Pending' },
-  { id: '2', title: 'Shopping Centre Security', company: 'Vicinity Centres', site: 'Chadstone Shopping Centre', rate: '$55 p/h', date: '04-08-2025', time: '12:00 pm - 7:30 pm', status: 'Pending' },
-  { id: '3', title: 'Crowd Control', company: 'AIG Solutions', site: 'Marvel Stadium', rate: '$55 p/h', date: '09-08-2025', time: '5:00 pm - 1:00 am', status: 'Confirmed' },
+  { id: '1', title: 'Shopping Centre Security', company: 'Vicinity Centres', site: 'Chadstone Shopping Centre', rate: '$75 p/h', date: '2025-08-01', time: '1:00 pm - 9:00 pm', status: 'Pending' },
+  { id: '2', title: 'Shopping Centre Security', company: 'Vicinity Centres', site: 'Chadstone Shopping Centre', rate: '$55 p/h', date: '2025-08-04', time: '12:00 pm - 7:30 pm', status: 'Pending' },
+  { id: '3', title: 'Crowd Control', company: 'AIG Solutions', site: 'Marvel Stadium', rate: '$55 p/h', date: '2025-08-09', time: '5:00 pm - 1:00 am', status: 'Confirmed' },
+  { id: '4', title: 'Crowd Control', company: 'MSS Security', site: 'Rod Laver Arena', rate: '$70 p/h', date: '2025-08-11', time: '3:00 pm - 11:00 pm', status: 'Rejected' },
 ];
 
 const COMPLETED: CompletedShift[] = [
-  { id: 'c1', title: 'Shopping Centre Security', company: 'Vicinity Centres', site: 'Chadstone Shopping Centre', rate: '$55 p/h', date: '01-08-2025', time: '1:00 pm - 9:00 pm', rated: false, rating: 0 },
-  { id: 'c2', title: 'Crowd Control', company: 'Securecorp', site: 'MCG', rate: '$55 p/h', date: '27-07-2025', time: '1:00 pm - 9:00 pm', rated: true, rating: 4 },
+  { id: 'c1', title: 'Shopping Centre Security', company: 'Vicinity Centres', site: 'Chadstone Shopping Centre', rate: '$55 p/h', date: '2025-08-01', time: '1:00 pm - 9:00 pm', rated: false, rating: 0 },
+  { id: 'c2', title: 'Crowd Control', company: 'Securecorp', site: 'MCG', rate: '$55 p/h', date: '2025-07-27', time: '1:00 pm - 9:00 pm', rated: true, rating: 4 },
 ];
 
 /* Search Bar (Shared for each tab) */
@@ -52,8 +41,16 @@ function Search({ q, setQ }: { q: string; setQ: (v: string) => void }) {
         placeholder="Search shifts..."
         placeholderTextColor="#A0A7B1"
         style={s.search}
+        accessibilityLabel="Search shifts"
+        accessibilityRole="search"
       />
-      <TouchableOpacity style={s.filterBtn}><Text>☰</Text></TouchableOpacity>
+      <TouchableOpacity
+        style={s.filterBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Open filter options"
+      >
+       <Text style={s.filterText}>☰</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -84,7 +81,7 @@ function AppliedTab() {
   );
 
   const colorFor = (st: AppliedShift['status']) =>
-    st === 'Pending' ? COLORS.pending : st === 'Confirmed' ? COLORS.confirmed : COLORS.rejected;
+    st === 'Pending' ? COLORS.status.pending : st === 'Confirmed' ? COLORS.status.confirmed : COLORS.status.rejected;
 
   return (
     <View style={s.screen}>
@@ -100,7 +97,7 @@ function AppliedTab() {
               <Text style={{ color: colorFor(item.status) }}>{item.status}</Text>
             </Text>
             <View style={s.row}>
-              <Text style={s.muted}>{item.date}</Text>
+              <Text style={s.muted}>{formatDate(item.date)}</Text>
               <Text style={s.dot}> • </Text>
               <Text style={s.muted}>{item.time}</Text>
             </View>
@@ -141,7 +138,7 @@ function CompletedTab() {
               <Stars n={item.rating} />
             </View>
             <View style={s.row}>
-              <Text style={s.muted}>{item.date}</Text>
+              <Text style={s.muted}>{formatDate(item.date)}</Text>
               <Text style={s.dot}> • </Text>
               <Text style={s.muted}>{item.time}</Text>
             </View>
@@ -158,7 +155,8 @@ const Top = createMaterialTopTabNavigator();
 export default function ShiftScreen() {
   return (
     <Top.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
+        tabBarAccessibilityLabel: `${route.name} tab`,
         tabBarStyle: {
           backgroundColor: "#E7E7EB",
           borderRadius: 12,
@@ -177,7 +175,7 @@ export default function ShiftScreen() {
         },
         tabBarActiveTintColor: "#fff", // white text when active
         tabBarInactiveTintColor: "#000", // black text when inactive
-      }}
+      })}
     >
       <Top.Screen name="Applied" component={AppliedTab} />
       <Top.Screen name="Completed" component={CompletedTab} />
@@ -198,6 +196,10 @@ const s = StyleSheet.create({
   filterBtn: {
     marginLeft: 8, width: 40, height: 44, borderRadius: 10, backgroundColor: '#fff',
     borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center',
+  },
+  filterText: {
+    fontSize: 18,
+    color: COLORS.text,
   },
 
   card: {
