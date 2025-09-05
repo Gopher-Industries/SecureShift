@@ -89,11 +89,19 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    // soft delete fields
+    isDeleted: { type: Boolean, default: false, index: true }, // marks user as deactivated
+    deletedAt: { type: Date, default: null }, // when it was deactivated
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // who did it
+    deleteReason: { type: String, default: null }, // optional reason
   },
   {
     timestamps: true,
     discriminatorKey: 'role', // Extend this schema for Guard, Employer, Admin
   }
+
+  
 );
 
 // Hash password

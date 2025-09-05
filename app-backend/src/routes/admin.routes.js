@@ -1,6 +1,10 @@
 // routes/admin.routes.js
 import express from 'express';
-import { adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs } from '../controllers/admin.controller.js';
+
+import { 
+    adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs, getUserById, getAllMessages, deleteUserById, deleteMessageById 
+} from '../controllers/admin.controller.js';
+
 import auth from '../middleware/auth.js';
 import { adminOnly } from '../middleware/role.js';
 
@@ -48,13 +52,14 @@ router.post('/login', adminLogin);
  * @swagger
  * /api/v1/admin/users:
  *   get:
- *     summary: Get all users (Admin only)
+ *     summary: Get all active (non-deleted) users (Admin only)
+ *     description: Returns users where isDeleted != true. Password is excluded.
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Placeholder list of users
+ *         description: List of users (non-deleted)
  *       403:
  *         description: Forbidden
  */
@@ -163,5 +168,158 @@ router.get('/audit-logs', auth, adminOnly, getAuditLogs);
  *         description: Server error
  */
 router.delete('/audit-logs/purge', auth, adminOnly, purgeAuditLogs);
+
+/**
+ * @swagger
+ * /api/v1/admin/users/{id}:
+ *   get:
+ *     summary: Get a user by ID (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MongoDB User ID
+ *     responses:
+ *       200:
+ *         description: User details
+ *       404:
+ *         description: User not found
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/users/:id', auth, adminOnly, getUserById);
+
+/**
+ * @swagger
+ * /api/v1/admin/messages:
+ *   get:
+ *     summary: Get all messages (Admin only)
+ *     description: By default excludes soft-deleted messages. Use includeDeleted=true to include them.
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20, maximum: 100 }
+ *         description: Page size
+ *       - in: query
+ *         name: sender
+ *         schema: { type: string }
+ *         description: Filter by sender userId
+ *       - in: query
+ *         name: receiver
+ *         schema: { type: string }
+ *         description: Filter by receiver userId
+ *       - in: query
+ *         name: conversationId
+ *         schema: { type: string }
+ *         description: Filter by conversationId (smallerId_biggerId)
+ *       - in: query
+ *         name: from
+ *         schema: { type: string, format: date-time }
+ *         description: ISO date (filters timestamp >= from)
+ *       - in: query
+ *         name: to
+ *         schema: { type: string, format: date-time }
+ *         description: ISO date (filters timestamp <= to)
+ *       - in: query
+ *         name: includeDeleted
+ *         schema: { type: string, enum: ['true','false'], default: 'false' }
+ *         description: Include soft-deleted messages when 'true'
+ *     responses:
+ *       200:
+ *         description: List of messages (with pagination block)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/messages', auth, adminOnly, getAllMessages);
+
+/**
+ * @swagger
+ * /api/v1/admin/users/{id}:
+ *   delete:
+ *     summary: Soft-delete a user by ID (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user ID to delete
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Optional reason for deleting the user
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       400:
+ *         description: Bad request (self-delete or last admin)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: User not found
+ */
+router.delete('/users/:id', auth, adminOnly, deleteUserById);
+
+/**
+ * @swagger
+ * /api/v1/admin/messages/{id}:
+ *   delete:
+ *     summary: Soft-delete a message by ID (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MongoDB message _id
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Optional reason for deleting the message
+ *     responses:
+ *       200:
+ *         description: Message deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Message not found
+ */
+router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
 
 export default router;
