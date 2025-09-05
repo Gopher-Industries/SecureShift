@@ -6,12 +6,14 @@ import LoginScreen from '../screen/loginscreen';      // keep your current casin
 import SignupScreen from '../screen/signupscreen';
 import AppTabs from './AppTabs';
 import SettingsScreen from '../screen/SettingsScreen';
+import ProfileScreen from '../features/profile/screens/ProfileScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   AppTabs: undefined;
   Settings: undefined;
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -23,6 +25,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Signup" component={SignupScreen} options={{ title: 'Sign Up' }} />
       <Stack.Screen name="AppTabs" component={AppTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
     </Stack.Navigator>
   );
 }
