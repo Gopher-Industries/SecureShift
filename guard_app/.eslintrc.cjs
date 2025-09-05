@@ -6,7 +6,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
-    project: false,
+    // don't set "project" to avoid perf/compat issues
   },
   settings: {
     react: { version: 'detect' },
@@ -23,23 +23,22 @@ module.exports = {
     'plugin:react-native/all',
     'plugin:import/recommended',
     'plugin:import/typescript',
-    'plugin:prettier/recommended', // adds prettier plugin + sets "prettier/prettier": "error"
+    'plugin:prettier/recommended',
   ],
   rules: {
-    // RN/React quality
+    // React/RN
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
-
-    // Tone down noisy RN rules for this project
     'react-native/no-color-literals': 'off',
     'react-native/no-inline-styles': 'warn',
     'react-native/no-unused-styles': 'warn',
+    'react-native/no-raw-text': 'off', // avoid current crash with our stack
 
-    // TS tweaks
+    // TS
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 
-    // Imports & order
+    // Import order
     'import/order': [
       'warn',
       {
@@ -56,18 +55,15 @@ module.exports = {
       },
     ],
 
-    // Prettier
+    // Prettier + misc
     'prettier/prettier': ['error', { endOfLine: 'auto' }],
-
-    // Misc
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
   overrides: [
     {
       files: ['**/*.ts', '**/*.tsx'],
-      rules: {
-        'no-undef': 'off',
-      },
+      rules: { 'no-undef': 'off' },
     },
   ],
+  ignorePatterns: ['node_modules/', 'dist/', 'build/', 'babel.config.js', 'metro.config.js'],
 };

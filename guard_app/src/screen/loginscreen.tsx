@@ -1,4 +1,5 @@
 // screens/LoginScreen.tsx
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   View,
@@ -11,7 +12,6 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
