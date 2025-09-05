@@ -6,6 +6,8 @@ import { ACTIONS } from "../middleware/logger.js";
 import EOI from '../models/eoi.js';
 import { GridFSBucket } from 'mongodb';
 
+import Guard from '../models/Guard.js'; // use the discriminator so license fields persist
+
 // ---------- Helpers ----------
 const generateToken = (user) => {
   return jwt.sign(
@@ -21,12 +23,19 @@ const generateOTP = () => {
 
 // ---------- Controllers ----------
 
-// @desc Register a new user (Guard, Employer, Admin)
+// @desc Register a new user (Employer, Admin)
 // @route POST /api/v1/auth/register
 export const register = async (req, res) => {
   const { name, email, password, role, phone, address } = req.body;
 
   try {
+    // Guards must use the dedicated /auth/register/guard route
+    if (role === 'guard') {
+      return res.status(400).json({
+        message: 'Guards must register using /auth/register/guard with a license upload.',
+      });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
@@ -39,6 +48,67 @@ export const register = async (req, res) => {
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * @desc Register a new Guard with a required license image
+ * @route POST /api/v1/auth/register/guard
+ * @access Public
+ * @body  multipart/form-data with field "license" (image), plus JSON fields
+ *        name, email, password, phone?, address?
+ */
+export const registerGuardWithLicense = async (req, res) => {
+  try {
+    // Must have a file (handled by Multer in the route)
+    if (!req.file) {
+      return res.status(400).json({ message: 'License image is required (form-data field: "license").' });
+    }
+
+    const { name, email, password } = req.body;
+
+    // Basic presence checks
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email, and password are required.' });
+    }
+
+    // Uniqueness check
+    const existing = await Guard.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: 'Email already registered.' });
+    }
+
+    // Build license URL from saved file (served via /uploads)
+    const imageUrl = `/uploads/${req.file.filename}`;
+
+    // Create Guard (license starts as pending)
+    const guard = await Guard.create({
+      name,
+      email,
+      password,
+      role: 'guard',
+      license: {
+        imageUrl,
+        status: 'pending',
+        verifiedAt: null,
+        verifiedBy: null,
+        rejectionReason: null,
+      },
+    });
+
+    // Hide password in response
+    const { password: _pw, ...safe } = guard.toObject();
+
+    return res.status(201).json({
+      message: 'Guard registered successfully. License submitted for review.',
+      user: safe,
+    });
+  } catch (err) {
+    // Handle a common case where address might be stringified JSON but invalid
+    if (err instanceof SyntaxError) {
+      return res.status(400).json({ message: 'Invalid address JSON format.' });
+    }
+    return res.status(500).json({ message: err.message });
   }
 };
 

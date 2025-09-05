@@ -3,6 +3,7 @@ import Shift from '../models/Shift.js';
 import AuditLog from '../models/AuditLogs.js';
 import Message from '../models/Message.js'; // Message Model
 import { ACTIONS } from '../middleware/logger.js';
+import Guard from '../models/Guard.js';
 
 import jwt from 'jsonwebtoken';
 
@@ -302,5 +303,79 @@ export const deleteMessageById = async (req, res) => {
     return res.status(200).json({ message: 'Message deleted successfully.' });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to delete message', error: error.message });
+  }
+};
+
+/**
+ * @desc List guards with pending license
+ * @route GET /api/v1/admin/guards/pending
+ * @access Admin
+ */
+export const listPendingLicenses = async (req, res) => {
+  try {
+    const guards = await Guard.find({ 'license.status': 'pending' })
+      .select('name email license.status license.imageUrl license.verifiedAt license.verifiedBy createdAt');
+    return res.status(200).json({ count: guards.length, guards });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to fetch pending licenses', error: err.message });
+  }
+};
+
+/**
+ * @desc Verify a guard's license
+ * @route PATCH /api/v1/admin/guards/:id/license/verify
+ * @access Admin
+ */
+export const verifyGuardLicense = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Ensure it's a guard record
+    const guard = await Guard.findById(id);
+    if (!guard) return res.status(404).json({ message: 'Guard not found' });
+
+    guard.license.status = 'verified';
+    guard.license.reviewedAt = new Date();
+    guard.license.verifiedBy = req.user.id;     // admin performing the action
+    guard.license.rejectionReason = null;
+
+    await guard.save();
+
+    return res.status(200).json({
+      message: 'License verified successfully',
+      license: guard.license,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to verify license', error: err.message });
+  }
+};
+
+/**
+ * @desc Reject a guard's license
+ * @route PATCH /api/v1/admin/guards/:id/license/reject
+ * @access Admin
+ * @body { reason?: string }
+ */
+export const rejectGuardLicense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body || {};
+
+    const guard = await Guard.findById(id);
+    if (!guard) return res.status(404).json({ message: 'Guard not found' });
+
+    guard.license.status = 'rejected';
+    guard.license.reviewedAt = new Date();           // not verified
+    guard.license.verifiedBy = req.user.id;     // admin who reviewed
+    guard.license.rejectionReason = reason || null;
+
+    await guard.save();
+
+    return res.status(200).json({
+      message: 'License rejected',
+      license: guard.license,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to reject license', error: err.message });
   }
 };
