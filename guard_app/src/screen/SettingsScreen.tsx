@@ -51,9 +51,20 @@ function Row({
       </View>
     </View>
   );
-  if (!onPress) return <View style={styles.row} testID={testID}>{content}</View>;
+  if (!onPress)
+    return (
+      <View style={styles.row} testID={testID}>
+        {content}
+      </View>
+    );
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75} accessibilityLabel={accessibilityLabel} testID={testID}>
+    <TouchableOpacity
+      style={styles.row}
+      onPress={onPress}
+      activeOpacity={0.75}
+      accessibilityLabel={accessibilityLabel}
+      testID={testID}
+    >
       {content}
     </TouchableOpacity>
   );
@@ -67,13 +78,9 @@ export default function SettingsScreen() {
   const [darkMode, setDarkMode] = useState(false);
 
   const appName =
-    (Constants?.expoConfig as any)?.name ||
-    Constants?.manifest?.name ||
-    'SecureShift Guard';
+    (Constants?.expoConfig as any)?.name || Constants?.manifest?.name || 'SecureShift Guard';
   const appVersion =
-    (Constants?.expoConfig as any)?.version ||
-    Constants?.manifest?.version ||
-    '1.0.0';
+    (Constants?.expoConfig as any)?.version || Constants?.manifest?.version || '1.0.0';
 
   const handleLogout = () => {
     navigation.reset({
@@ -83,18 +90,16 @@ export default function SettingsScreen() {
   };
 
   const openMail = () =>
-    Linking.openURL(
-      'mailto:support@secureshift.app?subject=SecureShift%20Guard%20Support'
-    ).catch(() => Alert.alert('Unable to open mail app'));
-
-  const callSupport = () =>
-    Linking.openURL('tel:+61123456789').catch(() =>
-      Alert.alert('Unable to start call')
+    Linking.openURL('mailto:support@secureshift.app?subject=SecureShift%20Guard%20Support').catch(
+      () => Alert.alert('Unable to open mail app'),
     );
 
+  const callSupport = () =>
+    Linking.openURL('tel:+61123456789').catch(() => Alert.alert('Unable to start call'));
+
   const openWebsite = () =>
-    Linking.openURL('https://example.gopherindustries.com/secure-shift').catch(
-      () => Alert.alert('Unable to open website')
+    Linking.openURL('https://example.gopherindustries.com/secure-shift').catch(() =>
+      Alert.alert('Unable to open website'),
     );
 
   const clearLocalData = () => {
@@ -115,7 +120,7 @@ export default function SettingsScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -210,7 +215,11 @@ export default function SettingsScreen() {
 
         {/* Logout */}
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} accessibilityLabel="Log out">
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={handleLogout}
+            accessibilityLabel="Log out"
+          >
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>

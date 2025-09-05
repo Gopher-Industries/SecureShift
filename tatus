@@ -1,0 +1,21 @@
+* [33mbf13ea62[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mchaitanyakotagiri27/feature/eslint-prettier-setup[m[33m, [m[1;31morigin/chaitanyakotagiri27/feature/eslint-prettier-setup[m[33m)[m chore(lint): add ESLint v8 + Prettier; repo-wide format; CI lint passing
+*   [33m47019220[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #113 from Gopher-Industries/neethuchandhavarkar/feature/eoi-integration
+[32m|[m[33m\[m  
+[32m|[m * [33md2444dfb[m Integrated EOI form submission with backend
+* [33m|[m   [33md28d6b00[m Merge pull request #112 from Gopher-Industries/krishuppal/feature/addedeoi
+[33m|[m[35m\[m [33m\[m  
+[33m|[m [35m|[m[33m/[m  
+[33m|[m[33m/[m[35m|[m   
+[33m|[m * [33m0577ec8e[m fixed the bug
+* [35m|[m [33mf15cd39b[m Merge pull request #111 from Gopher-Industries/krishuppal/feature/addedeoi
+[36m|[m[35m\[m[35m|[m 
+[36m|[m * [33md2de5ad7[m Added Eoi endpoint
+[36m|[m[36m/[m  
+*   [33me727cb4f[m[33m ([m[1;32mmain[m[33m)[m Merge pull request #109 from Gopher-Industries/ArjunBhardwaj3/feature/settings-screen
+[1;32m|[m[1;33m\[m  
+[1;32m|[m * [33m2a3be328[m Settings: add About, Contact Us, Preferences, Data & Privacy (frontend only)
+[1;32m|[m * [33m28289218[m Settings: add About, Contact Us, Preferences, Data & Privacy (frontend only)
+[1;32m|[m[1;32m/[m  
+*   [33m0b955fd0[m Merge pull request #82 from Gopher-Industries/tinak25/feature/profile-screen
+[1;34m|[m[1;35m\[m  
+[1;34m|[m * [33m7896ae10[m Added Profile Screen
