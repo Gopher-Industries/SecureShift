@@ -2,7 +2,9 @@
 import express from 'express';
 
 import { 
-    adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs, getUserById, getAllMessages, deleteUserById, deleteMessageById 
+    adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs, 
+    getUserById, getAllMessages, deleteUserById, deleteMessageById,
+    listPendingLicenses, verifyGuardLicense, rejectGuardLicense,
 } from '../controllers/admin.controller.js';
 
 import auth from '../middleware/auth.js';
@@ -321,5 +323,98 @@ router.delete('/users/:id', auth, adminOnly, deleteUserById);
  *         description: Message not found
  */
 router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
+
+
+/**
+ * @swagger
+ * /api/v1/admin/guards/pending:
+ *   get:
+ *     summary: List guards with pending license uploads
+ *     description: Returns guards whose `license.status` is `pending`.
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of guards with pending licenses
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (admin only)
+ *       500:
+ *         description: Server error
+ */
+router.get('/guards/pending', auth, adminOnly, listPendingLicenses);
+
+
+/**
+ * @swagger
+ * /api/v1/admin/guards/{id}/license/verify:
+ *   patch:
+ *     summary: Verify a guard's license
+ *     description: Sets the guard's license status to **verified** and records reviewer & timestamp.
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: Guard's user ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: License verified successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (admin only)
+ *       404:
+ *         description: Guard not found
+ *       500:
+ *         description: Server error
+ */
+router.patch('/guards/:id/license/verify', auth, adminOnly, verifyGuardLicense);
+
+/**
+ * @swagger
+ * /api/v1/admin/guards/{id}/license/reject:
+ *   patch:
+ *     summary: Reject a guard's license
+ *     description: Sets the guard's license status to **rejected** and can store an optional rejection reason.
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: Guard's user ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 example: "Photo is blurry; please re-upload a clearer image."
+ *     responses:
+ *       200:
+ *         description: License rejected
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (admin only)
+ *       404:
+ *         description: Guard not found
+ *       500:
+ *         description: Server error
+ */
+router.patch('/guards/:id/license/reject', auth, adminOnly, rejectGuardLicense);
 
 export default router;
