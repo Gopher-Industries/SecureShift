@@ -175,6 +175,11 @@ export default function HomeScreen(): JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  // put canvas before any 'card*' keys
+  canvas: {
+    width: CANVAS,
+  },
+
   card: {
     backgroundColor: '#FFFFFF',
     borderColor: BORDER,
@@ -207,12 +212,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 8,
   },
-  canvas: {
-    width: CANVAS,
-  },
-  gHeader: {
-    // (reserved if needed later)
-  },
+
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -245,6 +245,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: P,
     paddingTop: 18,
   },
+
   rowAmt: {
     color: '#1A936F',
     fontSize: 16,
@@ -278,6 +279,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
   },
+
   safe: {
     backgroundColor: '#FFFFFF',
     flex: 1,
@@ -288,6 +290,7 @@ const styles = StyleSheet.create({
   spacer: {
     height: 88,
   },
+
   statCard: {
     borderRadius: 22,
     marginBottom: 12,
@@ -322,6 +325,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
   },
+
   viewAll: {
     color: '#3E63DD',
     fontSize: 15,
