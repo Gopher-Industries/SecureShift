@@ -360,3 +360,32 @@ export const rateShift = async (req, res) => {
     return res.status(500).json({ message: e.message });
   }
 };
+/**
+ * GET /api/v1/shifts/history
+ * Guard → completed shifts assigned to them
+ * Employer → posted shifts with status = completed
+ */
+export const getShiftHistory = async (req, res) => {
+  try {
+    const role = req.user.role;
+    const uid  = req.user._id;
+
+    let query = {};
+    if (role === 'guard') {
+      query = { assignedGuard: uid, status: 'completed' };
+    } else if (role === 'employer') {
+      query = { createdBy: uid, status: 'completed' };
+    } else {
+      return res.status(403).json({ message: 'Forbidden: only guards and employers can view history' });
+    }
+
+    const shifts = await Shift.find(query)
+      .sort({ date: -1, createdAt: -1 })
+      .populate('createdBy', 'name email')
+      .populate('assignedGuard', 'name email');
+
+    return res.json({ total: shifts.length, items: shifts });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
