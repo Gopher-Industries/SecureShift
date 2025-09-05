@@ -222,7 +222,6 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
   safe: { flex: 1, backgroundColor: '#F9FAFB' },
   scroll: { padding: CANVAS_PADDING },
 
@@ -238,14 +237,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
     marginBottom: 16,
-=======
-  container: {
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
->>>>>>> 239f1fec (chore(lint): add ESLint v8 + Prettier; repo-wide format; CI lint passing)
   },
   cardTitle: { fontWeight: '800', fontSize: 16, color: '#0F172A', marginBottom: 8 },
 
@@ -274,26 +265,17 @@ const styles = StyleSheet.create({
 
   footer: { marginTop: 8, alignItems: 'center' },
   logoutBtn: {
-<<<<<<< HEAD
     backgroundColor: NAVY,
     paddingVertical: 16,
     paddingHorizontal: 20,
-=======
-    backgroundColor: '#274b93',
->>>>>>> 239f1fec (chore(lint): add ESLint v8 + Prettier; repo-wide format; CI lint passing)
     borderRadius: 9999,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 4,
     elevation: 3,
-<<<<<<< HEAD
     minWidth: 180,
     alignItems: 'center',
-=======
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
->>>>>>> 239f1fec (chore(lint): add ESLint v8 + Prettier; repo-wide format; CI lint passing)
   },
   logoutText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.5 },
 });
