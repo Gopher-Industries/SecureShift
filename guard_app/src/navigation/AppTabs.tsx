@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
-import ShiftScreen from '../screen/ShiftScreen';
+import ShiftsScreen from '../screen/ShiftsScreen';
 
 export type AppTabParamList = {
   Home: undefined;
@@ -35,7 +35,7 @@ export default function AppTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Shifts" component={ShiftScreen} />
+      <Tab.Screen name="Shifts" component={ShiftsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
