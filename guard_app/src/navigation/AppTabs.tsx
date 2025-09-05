@@ -2,7 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
@@ -17,8 +17,8 @@ const Tab = createBottomTabNavigator<AppTabParamList>();
 
 function ShiftsScreen() {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Shifts coming soon…</Text>
+    <View style={styles.screenCenter}>
+      <Text style={styles.muted}>Shifts coming soon…</Text>
     </View>
   );
 }
@@ -47,3 +47,8 @@ export default function AppTabs() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  muted: { color: '#666' },
+  screenCenter: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+});
