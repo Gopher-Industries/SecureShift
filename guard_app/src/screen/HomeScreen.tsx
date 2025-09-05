@@ -1,28 +1,30 @@
-// screen/HomeScreen.tsx
-
-import React, { useLayoutEffect } from "react";
+// guard_app/src/screen/HomeScreen.tsx
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React, { useLayoutEffect } from 'react';
 import {
+  Dimensions,
   SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
   ScrollView,
   StatusBar,
-  Dimensions,
+  StyleSheet,
+  Text,
   TouchableOpacity,
-} from "react-native";
-import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/AppNavigator"; // adjust if path differs
+  View,
+} from 'react-native';
 
-const NAVY = "#244B7A";
-const BORDER = "#E7EBF2";
-const MUTED = "#5C667A";
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-const DEVICE_W = Dimensions.get("window").width;
+const NAVY = '#244B7A';
+const BORDER = '#E7EBF2';
+const MUTED = '#5C667A';
+
+const DEVICE_W = Dimensions.get('window').width;
 const CANVAS = Math.min(390, DEVICE_W);
 const P = 24;
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const StatCard = ({
   icon,
@@ -56,7 +58,7 @@ const RowItem = ({
   highlight?: boolean;
 }) => (
   <View style={[styles.rowItem, highlight && styles.rowItemHL]}>
-    <View style={{ flex: 1 }}>
+    <View style={styles.rowItemLeft}>
       <Text style={styles.rowTitle}>{title}</Text>
       <Text style={styles.rowSub}>{time}</Text>
     </View>
@@ -64,18 +66,38 @@ const RowItem = ({
   </View>
 );
 
-export default function HomeScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export default function HomeScreen(): JSX.Element {
+  const navigation = useNavigation<Nav>();
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: "Home",
+      title: 'Home',
       headerStyle: { backgroundColor: NAVY },
-      headerTintColor: "#fff",
+      headerTintColor: '#fff',
       headerRight: () => (
-        <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
-          <Ionicons name="settings-outline" size={22} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity
+            accessibilityLabel="Messages"
+            onPress={() => navigation.navigate('Messages')}
+            style={styles.headerIconBtn}
+          >
+            <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityLabel="Notifications"
+            onPress={() => navigation.navigate('Notifications')}
+            style={styles.headerIconBtn}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityLabel="Settings"
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.headerIconBtn}
+          >
+            <Ionicons name="settings-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation]);
@@ -84,9 +106,9 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={{ width: CANVAS }}>
+        <View style={styles.canvas}>
           {/* Heading */}
-          <View style={{ paddingHorizontal: P, paddingTop: 18, alignItems: "center" }}>
+          <View style={styles.headerWrap}>
             <Text style={styles.h1}>Welcome back, Alex!</Text>
             <Text style={styles.h2}>Here’s your dashboard</Text>
           </View>
@@ -145,7 +167,7 @@ export default function HomeScreen() {
             <RowItem title="Woolworths" time="12-08-2025, 9:00 AM – 5:00 PM" amount="$170" />
           </View>
 
-          <View style={{ height: 88 }} />
+          <View style={styles.spacer} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -153,84 +175,160 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
-  scroll: { alignItems: "center" },
-
-  // Headings
-  h1: { fontSize: 28, fontWeight: "800", color: "#0F172A", letterSpacing: 0.2, textAlign: "center" },
-  h2: { fontSize: 14, color: "#6B7280", marginTop: 6, textAlign: "center" },
-
-  // Metrics grid
-  grid: {
-    paddingHorizontal: P,
-    marginTop: 18,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  // put canvas before any 'card*' keys
+  canvas: {
+    width: CANVAS,
   },
-  statCard: {
-    width: (CANVAS - P * 2 - 12) / 2,
-    borderRadius: 22,
-    padding: 16,
-    marginBottom: 12,
-  },
-  statTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  statValue: { fontSize: 20, fontWeight: "800", color: "#0F172A" },
-  statLabel: { marginTop: 10, fontSize: 12, color: "#6B7280" },
 
-  // Outer white cards
   card: {
+    backgroundColor: '#FFFFFF',
+    borderColor: BORDER,
+    borderRadius: 24,
+    borderWidth: 1,
+    elevation: 8,
     marginHorizontal: P,
     marginTop: 18,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
     padding: 16,
-    borderWidth: 1,
-    borderColor: BORDER,
-    shadowColor: "#000",
+    shadowColor: '#000',
+    shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 8 },
     shadowRadius: 16,
-    elevation: 8,
   },
   cardHead: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
     paddingHorizontal: 4,
     paddingVertical: 2,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
   },
-  cardHeadLeft: { flexDirection: "row", alignItems: "center" },
-  cardHeadTxt: { marginLeft: 8, fontSize: 16, color: MUTED, fontWeight: "700" },
-  viewAll: { fontSize: 15, color: "#3E63DD", fontWeight: "700" },
+  cardHeadLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  cardHeadTxt: {
+    color: MUTED,
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
 
-  // Inner pills
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 18,
+    paddingHorizontal: P,
+  },
+  h1: {
+    color: '#0F172A',
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    textAlign: 'center',
+  },
+  h2: {
+    color: '#6B7280',
+    fontSize: 14,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  headerIconBtn: {
+    marginLeft: 14,
+  },
+  headerIcons: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  headerWrap: {
+    alignItems: 'center',
+    paddingHorizontal: P,
+    paddingTop: 18,
+  },
+
+  rowAmt: {
+    color: '#1A936F',
+    fontSize: 16,
+    fontWeight: '900',
+    paddingLeft: 10,
+  },
   rowItem: {
-    borderWidth: 1,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderColor: BORDER,
     borderRadius: 18,
-    padding: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
     marginTop: 12,
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
+    padding: 16,
   },
-  rowItemHL: { backgroundColor: "#EAF7EF", borderColor: "#D4F0DC" },
-  rowTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
-  rowSub: { fontSize: 13, color: "#6B7280", marginTop: 6 },
-  rowAmt: { fontSize: 16, fontWeight: "900", color: "#1A936F", paddingLeft: 10 },
+  rowItemHL: {
+    backgroundColor: '#EAF7EF',
+    borderColor: '#D4F0DC',
+  },
+  rowItemLeft: {
+    flex: 1,
+  },
+  rowSub: {
+    color: '#6B7280',
+    fontSize: 13,
+    marginTop: 6,
+  },
+  rowTitle: {
+    color: '#0F172A',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+
+  safe: {
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+  },
+  scroll: {
+    alignItems: 'center',
+  },
+  spacer: {
+    height: 88,
+  },
+
+  statCard: {
+    borderRadius: 22,
+    marginBottom: 12,
+    padding: 16,
+    width: (CANVAS - P * 2 - 12) / 2,
+  },
+  statIcon: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    elevation: 2,
+    height: 36,
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    width: 36,
+  },
+  statLabel: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 10,
+  },
+  statTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statValue: {
+    color: '#0F172A',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+
+  viewAll: {
+    color: '#3E63DD',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });

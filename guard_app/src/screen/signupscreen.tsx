@@ -1,4 +1,5 @@
 // screens/SignupScreen.tsx
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   View,
@@ -12,11 +13,8 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function SignupScreen({ navigation }: any) {
-
-
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
@@ -24,8 +22,6 @@ export default function SignupScreen({ navigation }: any) {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-
 
   const validate = () => {
     const e = email.trim();
@@ -46,14 +42,11 @@ export default function SignupScreen({ navigation }: any) {
       return;
     }
     setError(null);
-navigation.replace('Login');
-
+    navigation.replace('Login');
   };
 
   const ctaDisabled =
     !email.trim() || !fullName.trim() || !password || !confirm || password.length < 6;
-
-
 
   return (
     <KeyboardAvoidingView
@@ -64,7 +57,6 @@ navigation.replace('Login');
         {/* Header: logo, title, subtitle */}
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
         <Text style={styles.subtitle}>Create an account and start looking for your shift</Text>
-
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -111,7 +103,7 @@ navigation.replace('Login');
             onChangeText={setPassword}
           />
           <TouchableOpacity
-            onPress={() => setShowPass(p => !p)}
+            onPress={() => setShowPass((p) => !p)}
             style={styles.iconRight}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             accessibilityRole="button"
@@ -138,7 +130,7 @@ navigation.replace('Login');
             onChangeText={setConfirm}
           />
           <TouchableOpacity
-            onPress={() => setShowConfirm(p => !p)}
+            onPress={() => setShowConfirm((p) => !p)}
             style={styles.iconRight}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             accessibilityRole="button"
@@ -161,7 +153,12 @@ navigation.replace('Login');
           accessibilityLabel="Upload your security license"
         >
           <Text style={styles.uploadText}>Upload your security license</Text>
-          <MaterialCommunityIcons name="upload" size={20} color="#111827" style={styles.uploadIcon} />
+          <MaterialCommunityIcons
+            name="upload"
+            size={20}
+            color="#111827"
+            style={styles.uploadIcon}
+          />
         </TouchableOpacity>
 
         {/* CTA */}
@@ -185,86 +182,88 @@ navigation.replace('Login');
   );
 }
 
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F6FA' },
-  container: { paddingHorizontal: 24, paddingTop: 36, paddingBottom: 24 },
-
-
-  logo: {
-  width: 150,
-  height: 150,
-  alignSelf: 'center',
-  resizeMode: 'contain',
- },
-
-  title: {
-  fontSize: 26,
-  fontWeight: '700',
-  color: '#111827',
-  textAlign: 'center' },
-
-  subtitle: { 
-  marginTop: 6,
-  textAlign: 'center',
-  color: '#6B7280',
-  marginBottom: 18 },
-
-  error: { 
-  color: '#B00020',
-  textAlign: 'center',
-  marginTop: 10,
-  marginBottom: 4,
-  fontWeight: '600' },
-
-  label: {
-  marginTop: 16,
-  marginBottom: 8,
-  color: '#111827',
-  fontWeight: '600' },
-
-  inputWrap: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 14,
-    height: 56,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  input: { fontSize: 16, color: '#111827' },
-  padRight: { paddingRight: 44 },
-  iconRight: { position: 'absolute', right: 14, height: 56, justifyContent: 'center' },
-
-  uploadBtn: {
-    marginTop: 4,
-    height: 56,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#111827',
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  uploadText: { color: '#111827', fontSize: 15 },
-  uploadIcon: { marginLeft: 8 },
-
+  container: { paddingBottom: 24, paddingHorizontal: 24, paddingTop: 36 },
   cta: {
-    marginTop: 24,
-    height: 58,
-    borderRadius: 999,
-    backgroundColor: '#274289',
     alignItems: 'center',
+    backgroundColor: '#274289',
+    borderRadius: 999,
+    height: 58,
     justifyContent: 'center',
+    marginTop: 24,
   },
+
   ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 
-  footerText: { textAlign: 'center', marginTop: 18, color: '#111827' },
+  error: {
+    color: '#B00020',
+    fontWeight: '600',
+    marginBottom: 4,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+
   footerLink: { fontWeight: '700' },
+
+  footerText: { color: '#111827', marginTop: 18, textAlign: 'center' },
+
+  iconRight: { height: 56, justifyContent: 'center', position: 'absolute', right: 14 },
+
+  input: { color: '#111827', fontSize: 16 },
+  inputWrap: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
+    borderWidth: 1,
+    elevation: 1,
+    height: 56,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+  },
+  label: {
+    color: '#111827',
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  logo: {
+    alignSelf: 'center',
+    height: 150,
+    resizeMode: 'contain',
+    width: 150,
+  },
+
+  padRight: { paddingRight: 44 },
+  safe: { backgroundColor: '#F5F6FA', flex: 1 },
+  subtitle: {
+    color: '#6B7280',
+    marginBottom: 18,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+
+  title: {
+    color: '#111827',
+    fontSize: 26,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  uploadBtn: {
+    alignItems: 'center',
+    borderColor: '#111827',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    height: 56,
+    justifyContent: 'center',
+    marginTop: 4,
+    paddingHorizontal: 16,
+  },
+
+  uploadIcon: { marginLeft: 8 },
+  uploadText: { color: '#111827', fontSize: 15 },
 });
