@@ -1,5 +1,8 @@
 // screen/HomeScreen.tsx
 
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useLayoutEffect } from 'react';
 import {
   SafeAreaView,
@@ -11,9 +14,7 @@ import {
   Dimensions,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { RootStackParamList } from '../navigation/AppNavigator'; // adjust if path differs
 
 const NAVY = '#244B7A';

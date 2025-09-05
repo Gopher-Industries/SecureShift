@@ -1,4 +1,5 @@
 // screens/SignupScreen.tsx
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   View,
@@ -12,7 +13,6 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import * as ImagePicker from 'expo-image-picker'; // added for license image picker
 import { registerUser } from '../api/auth'; // added for user registration API

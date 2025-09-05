@@ -1,3 +1,7 @@
+import { Ionicons, Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import Constants from 'expo-constants';
 import React, { useState } from 'react';
 import {
   SafeAreaView,
@@ -11,10 +15,6 @@ import {
   Linking,
   Platform,
 } from 'react-native';
-import { Ionicons, Feather } from '@expo/vector-icons';
-import Constants from 'expo-constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
 
 // Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';
@@ -231,60 +231,60 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
-  scroll: { padding: CANVAS_PADDING },
-
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
     borderColor: BORDER,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
+    borderRadius: 24,
+    borderWidth: 1,
     elevation: 6,
     marginBottom: 16,
-  },
-  cardTitle: { fontWeight: '800', fontSize: 16, color: '#0F172A', marginBottom: 8 },
-
-  row: {
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 16,
-    padding: 12,
-    marginTop: 10,
-    backgroundColor: '#FFFFFF',
-  },
-  rowInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  rowLeft: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
-  rowIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  rowLabel: { fontSize: 14, color: '#111827', fontWeight: '600', flexShrink: 1 },
-  rowRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  meta: { fontSize: 12, color: MUTED },
-
-  footer: { marginTop: 8, alignItems: 'center' },
-  logoutBtn: {
-    backgroundColor: NAVY,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 9999,
+    padding: 16,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+  },
+  cardTitle: { color: '#0F172A', fontSize: 16, fontWeight: '800', marginBottom: 8 },
+
+  footer: { alignItems: 'center', marginTop: 8 },
+  logoutBtn: {
+    alignItems: 'center',
+    backgroundColor: NAVY,
+    borderRadius: 9999,
     elevation: 3,
     minWidth: 180,
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
+
   logoutText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.5 },
+  meta: { color: MUTED, fontSize: 12 },
+  row: {
+    backgroundColor: '#FFFFFF',
+    borderColor: BORDER,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 12,
+  },
+  rowIcon: {
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    height: 36,
+    justifyContent: 'center',
+    marginRight: 10,
+    width: 36,
+  },
+  rowInner: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  rowLabel: { color: '#111827', flexShrink: 1, fontSize: 14, fontWeight: '600' },
+  rowLeft: { alignItems: 'center', flexDirection: 'row', flexShrink: 1 },
+
+  rowRight: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  safe: { backgroundColor: '#F9FAFB', flex: 1 },
+  scroll: { padding: CANVAS_PADDING },
 });
