@@ -1,21 +1,20 @@
-// screen/HomeScreen.tsx
-
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+// guard_app/src/screen/HomeScreen.tsx
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useLayoutEffect } from 'react';
 import {
+  Dimensions,
   SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
   ScrollView,
   StatusBar,
-  Dimensions,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
 
-import { RootStackParamList } from '../navigation/AppNavigator'; // adjust if path differs
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 const NAVY = '#244B7A';
 const BORDER = '#E7EBF2';
@@ -24,6 +23,8 @@ const MUTED = '#5C667A';
 const DEVICE_W = Dimensions.get('window').width;
 const CANVAS = Math.min(390, DEVICE_W);
 const P = 24;
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const StatCard = ({
   icon,
@@ -57,7 +58,7 @@ const RowItem = ({
   highlight?: boolean;
 }) => (
   <View style={[styles.rowItem, highlight && styles.rowItemHL]}>
-    <View style={{ flex: 1 }}>
+    <View style={styles.rowItemLeft}>
       <Text style={styles.rowTitle}>{title}</Text>
       <Text style={styles.rowSub}>{time}</Text>
     </View>
@@ -65,8 +66,8 @@ const RowItem = ({
   </View>
 );
 
-export default function HomeScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export default function HomeScreen(): JSX.Element {
+  const navigation = useNavigation<Nav>();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -74,9 +75,29 @@ export default function HomeScreen() {
       headerStyle: { backgroundColor: NAVY },
       headerTintColor: '#fff',
       headerRight: () => (
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="settings-outline" size={22} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity
+            accessibilityLabel="Messages"
+            onPress={() => navigation.navigate('Messages')}
+            style={styles.headerIconBtn}
+          >
+            <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityLabel="Notifications"
+            onPress={() => navigation.navigate('Notifications')}
+            style={styles.headerIconBtn}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityLabel="Settings"
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.headerIconBtn}
+          >
+            <Ionicons name="settings-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation]);
@@ -85,9 +106,9 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={{ width: CANVAS }}>
+        <View style={styles.canvas}>
           {/* Heading */}
-          <View style={{ paddingHorizontal: P, paddingTop: 18, alignItems: 'center' }}>
+          <View style={styles.headerWrap}>
             <Text style={styles.h1}>Welcome back, Alex!</Text>
             <Text style={styles.h2}>Here’s your dashboard</Text>
           </View>
@@ -146,7 +167,7 @@ export default function HomeScreen() {
             <RowItem title="Woolworths" time="12-08-2025, 9:00 AM – 5:00 PM" amount="$170" />
           </View>
 
-          <View style={{ height: 88 }} />
+          <View style={styles.spacer} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -154,51 +175,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { backgroundColor: '#FFFFFF', flex: 1 },
-  scroll: { alignItems: 'center' },
-
-  // Headings
-  h1: {
-    color: '#0F172A',
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-    textAlign: 'center',
-  },
-  h2: { color: '#6B7280', fontSize: 14, marginTop: 6, textAlign: 'center' },
-
-  // Metrics grid
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 18,
-    paddingHorizontal: P,
-  },
-  statCard: {
-    borderRadius: 22,
-    marginBottom: 12,
-    padding: 16,
-    width: (CANVAS - P * 2 - 12) / 2,
-  },
-  statTop: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  statIcon: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    elevation: 2,
-    height: 36,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    width: 36,
-  },
-  statValue: { color: '#0F172A', fontSize: 20, fontWeight: '800' },
-  statLabel: { color: '#6B7280', fontSize: 12, marginTop: 10 },
-
-  // Outer white cards
   card: {
     backgroundColor: '#FFFFFF',
     borderColor: BORDER,
@@ -209,7 +185,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
   },
@@ -221,11 +197,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
-  cardHeadLeft: { alignItems: 'center', flexDirection: 'row' },
-  cardHeadTxt: { color: MUTED, fontSize: 16, fontWeight: '700', marginLeft: 8 },
-  viewAll: { color: '#3E63DD', fontSize: 15, fontWeight: '700' },
-
-  // Inner pills
+  cardHeadLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  cardHeadTxt: {
+    color: MUTED,
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  canvas: {
+    width: CANVAS,
+  },
+  gHeader: {
+    // (reserved if needed later)
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 18,
+    paddingHorizontal: P,
+  },
+  h1: {
+    color: '#0F172A',
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    textAlign: 'center',
+  },
+  h2: {
+    color: '#6B7280',
+    fontSize: 14,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  headerIconBtn: {
+    marginLeft: 14,
+  },
+  headerIcons: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  headerWrap: {
+    alignItems: 'center',
+    paddingHorizontal: P,
+    paddingTop: 18,
+  },
+  rowAmt: {
+    color: '#1A936F',
+    fontSize: 16,
+    fontWeight: '900',
+    paddingLeft: 10,
+  },
   rowItem: {
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
@@ -236,8 +261,70 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 16,
   },
-  rowItemHL: { backgroundColor: '#EAF7EF', borderColor: '#D4F0DC' },
-  rowTitle: { color: '#0F172A', fontSize: 18, fontWeight: '800' },
-  rowSub: { color: '#6B7280', fontSize: 13, marginTop: 6 },
-  rowAmt: { color: '#1A936F', fontSize: 16, fontWeight: '900', paddingLeft: 10 },
+  rowItemHL: {
+    backgroundColor: '#EAF7EF',
+    borderColor: '#D4F0DC',
+  },
+  rowItemLeft: {
+    flex: 1,
+  },
+  rowSub: {
+    color: '#6B7280',
+    fontSize: 13,
+    marginTop: 6,
+  },
+  rowTitle: {
+    color: '#0F172A',
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  safe: {
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+  },
+  scroll: {
+    alignItems: 'center',
+  },
+  spacer: {
+    height: 88,
+  },
+  statCard: {
+    borderRadius: 22,
+    marginBottom: 12,
+    padding: 16,
+    width: (CANVAS - P * 2 - 12) / 2,
+  },
+  statIcon: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    elevation: 2,
+    height: 36,
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    width: 36,
+  },
+  statLabel: {
+    color: '#6B7280',
+    fontSize: 12,
+    marginTop: 10,
+  },
+  statTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statValue: {
+    color: '#0F172A',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  viewAll: {
+    color: '#3E63DD',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });
