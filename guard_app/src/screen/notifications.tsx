@@ -1,9 +1,18 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Platform } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
+// Narrow icon type to avoid `as any`
+type IconName = 'check-circle' | 'calendar-alt' | 'exclamation-circle';
+
 // Sample data for notifications
-const notifications = [
+const notifications: {
+  id: string;
+  icon: IconName;
+  iconColor: string;
+  title: string;
+  time: string;
+}[] = [
   {
     id: '1',
     icon: 'check-circle',
@@ -28,14 +37,18 @@ const notifications = [
 ];
 
 export default function NotificationsScreen() {
-  const renderItem = ({ item }: { item: typeof notifications[0] }) => {
+  const renderItem = ({ item }: { item: typeof notifications[number] }) => {
     const isReminder = item.icon === 'exclamation-circle';
     const cardStyle = isReminder ? styles.greyCard : styles.blueCard;
 
     return (
-      <View style={[styles.card, cardStyle]}>
+      <View
+        style={[styles.card, cardStyle]}
+        accessible
+        accessibilityLabel={`${item.title}, ${item.time}`}
+      >
         <View style={styles.cardContent}>
-          <FontAwesome5 name={item.icon as any} size={20} color={item.iconColor} />
+          <FontAwesome5 name={item.icon} size={20} color={item.iconColor} />
           <View style={styles.textContainer}>
             <Text style={styles.messageText}>{item.title}</Text>
             <Text style={styles.timeText}>{item.time}</Text>
@@ -48,8 +61,8 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerText}>Recent Notification’s</Text>
+      <View style={styles.headerContainer} accessible accessibilityRole="header">
+        <Text style={styles.headerText}>Recent Notifications</Text>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>2 new</Text>
         </View>
@@ -59,7 +72,7 @@ export default function NotificationsScreen() {
         data={notifications}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ gap: 12 }}
+        contentContainerStyle={{ gap: 12, paddingBottom: 12 }}
       />
     </View>
   );
@@ -88,10 +101,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    // iOS shadow
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
+    // Android elevation
+    ...(Platform.OS === 'android' ? { elevation: 2 } : null),
   },
   badgeText: {
     fontSize: 12,
@@ -101,11 +117,14 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     padding: 16,
+    // iOS shadow
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     borderWidth: 1,
+    // Android elevation
+    ...(Platform.OS === 'android' ? { elevation: 2 } : null),
   },
   // For approved/new shift cards
   blueCard: {
