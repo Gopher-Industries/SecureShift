@@ -13,6 +13,9 @@ export const ACTIONS = {
   VIEW_SHIFTS: 'VIEW_SHIFTS',
   SHIFT_COMPLETED: 'SHIFT_COMPLETED',
   MESSAGE_SENT: 'MESSAGE_SENT',
+  MESSAGE_READ: 'MESSAGE_READ', 
+  USER_SOFT_DELETED: 'USER_SOFT_DELETED',
+  MESSAGE_SOFT_DELETED: 'MESSAGE_SOFT_DELETED',
 };
 
 // Middleware to attach audit logging function to req
@@ -24,7 +27,7 @@ export const auditMiddleware = (req, res, next) => {
       }
       if (!AUDIT_LOG_ENABLED) return;
       try {
-        const logEntry = new AuditLog({ user, action, details });
+        const logEntry = new AuditLog({ user, action, metadata: details });
         await logEntry.save();
       } catch (err) {
         console.error('Failed to save audit log:', err.message);
