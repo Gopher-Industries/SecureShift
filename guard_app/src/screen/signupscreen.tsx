@@ -14,9 +14,10 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import * as ImagePicker from 'expo-image-picker'; // added for license image picker
+import { registerUser } from '../api/auth'; // added for user registration API
+
 export default function SignupScreen({ navigation }: any) {
-
-
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
@@ -25,46 +26,87 @@ export default function SignupScreen({ navigation }: any) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
+  const [submitting, setSubmitting] = useState(false); // added for loading state
+  const [licenseImage, setLicenseImage] = useState<any>(null); // added for storing selected image
 
   const validate = () => {
-    const e = email.trim();
+    const e = email.trim().toLowerCase(); // normalize email
     const n = fullName.trim();
+
     if (!e || !n || !password || !confirm) return 'Please fill all required fields.';
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+    const nameOk = /^[A-Za-z\s'-]+$/.test(n);
+    if (!nameOk) return "Name can only contain letters, spaces, hyphens (-), and apostrophes (').";
+
+    const emailOk = /^\S+@\S+\.\S+$/.test(e);
     if (!emailOk) return 'Please enter a valid email address.';
-    if (password.length < 6) return 'Password must be at least 6 characters.';
+
+    const pwOk = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(password); // enforce strong password
+    if (!pwOk) {
+      return 'Password needs 6+ chars with uppercase, lowercase, number, and special character.';
+    }
+
     if (password !== confirm) return 'Passwords do not match.';
+
     return null;
   };
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const msg = validate();
     if (msg) {
       setError(msg);
       Alert.alert('Invalid input', msg);
       return;
     }
-    setError(null);
-navigation.replace('Login');
 
+    if (!licenseImage) {
+      Alert.alert('License required', 'Please upload your license image.'); // show alert if license missing
+      return;
+    }
+
+    setError(null);
+    setSubmitting(true);
+
+    try {
+      const file = {
+        uri: licenseImage.uri,
+        name: licenseImage.fileName || 'license.jpg',
+        type: licenseImage.mimeType || 'image/jpeg',
+      };
+
+      await registerUser({
+        name: fullName.trim(),
+        email: email.trim(),
+        password: password,
+        license: file, // send file in payload
+      });
+
+      Alert.alert('Success', 'Account created. Please log in.');
+      navigation.replace('Login');
+    } catch (e: any) {
+      const apiMsg =
+        e?.response?.data?.message || e?.message || 'Signup failed. Please try again.';
+      setError(apiMsg);
+      Alert.alert('Signup failed', apiMsg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const ctaDisabled =
-    !email.trim() || !fullName.trim() || !password || !confirm || password.length < 6;
-
-
+  const ctaDisabled = !email.trim() || !fullName.trim() || !password || !confirm || password.length < 6 || submitting;
 
   return (
     <KeyboardAvoidingView
       style={styles.safe}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.container, { flexGrow: 1 }]} // added flexGrow to make scroll work in emulator
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Header: logo, title, subtitle */}
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
         <Text style={styles.subtitle}>Create an account and start looking for your shift</Text>
-
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -152,25 +194,53 @@ navigation.replace('Login');
           </TouchableOpacity>
         </View>
 
-        {/* Upload License button (UI only) */}
-        <Text style={styles.label}>Upload License*</Text>
+        {/* Upload License button */}
         <TouchableOpacity
           style={styles.uploadBtn}
-          onPress={() => {}}
+          onPress={async () => {
+            const result = await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: false,
+              quality: 1,
+            });
+
+            if (!result.canceled) {
+              const asset = result.assets[0];
+
+              const file = {
+                uri: asset.uri,
+                name: asset.fileName || 'license.jpg',
+                type: asset.mimeType || 'image/jpeg',
+              };
+
+              setLicenseImage(file); // store image in state
+            }
+          }}
           accessibilityRole="button"
           accessibilityLabel="Upload your security license"
         >
-          <Text style={styles.uploadText}>Upload your security license</Text>
+          <Text style={styles.uploadText}>
+            {licenseImage ? 'License uploaded' : 'Upload your security license'}
+          </Text>
           <MaterialCommunityIcons name="upload" size={20} color="#111827" style={styles.uploadIcon} />
         </TouchableOpacity>
 
+        {licenseImage && (
+          <Image
+            source={{ uri: licenseImage.uri }}
+            style={styles.imagePreview} // preview uploaded image
+          />
+        )}
+
         {/* CTA */}
         <TouchableOpacity
-          style={[styles.cta, ctaDisabled && { opacity: 0.6 }]}
+          style={[styles.cta, (ctaDisabled || submitting) && { opacity: 0.6 }]}
           onPress={onSubmit}
-          disabled={ctaDisabled}
+          disabled={ctaDisabled || submitting}
         >
-          <Text style={styles.ctaText}>Sign Up</Text>
+          <Text style={styles.ctaText}>
+            {submitting ? 'Signing up...' : 'Sign Up'}
+          </Text>
         </TouchableOpacity>
 
         {/* Footer */}
@@ -185,43 +255,45 @@ navigation.replace('Login');
   );
 }
 
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F5F6FA' },
   container: { paddingHorizontal: 24, paddingTop: 36, paddingBottom: 24 },
 
-
   logo: {
-  width: 150,
-  height: 150,
-  alignSelf: 'center',
-  resizeMode: 'contain',
- },
+    width: 150,
+    height: 150,
+    alignSelf: 'center',
+    resizeMode: 'contain',
+  },
 
   title: {
-  fontSize: 26,
-  fontWeight: '700',
-  color: '#111827',
-  textAlign: 'center' },
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center'
+  },
 
-  subtitle: { 
-  marginTop: 6,
-  textAlign: 'center',
-  color: '#6B7280',
-  marginBottom: 18 },
+  subtitle: {
+    marginTop: 6,
+    textAlign: 'center',
+    color: '#6B7280',
+    marginBottom: 18
+  },
 
-  error: { 
-  color: '#B00020',
-  textAlign: 'center',
-  marginTop: 10,
-  marginBottom: 4,
-  fontWeight: '600' },
+  error: {
+    color: '#B00020',
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 4,
+    fontWeight: '600'
+  },
 
   label: {
-  marginTop: 16,
-  marginBottom: 8,
-  color: '#111827',
-  fontWeight: '600' },
+    marginTop: 16,
+    marginBottom: 8,
+    color: '#111827',
+    fontWeight: '600'
+  },
 
   inputWrap: {
     backgroundColor: '#FFFFFF',
@@ -267,4 +339,15 @@ const styles = StyleSheet.create({
 
   footerText: { textAlign: 'center', marginTop: 18, color: '#111827' },
   footerLink: { fontWeight: '700' },
+
+  // style image(after upload)
+  imagePreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    marginTop: 12,
+    alignSelf: 'center',
+    borderColor: '#ccc',
+    borderWidth: 1,
+  },
 });
