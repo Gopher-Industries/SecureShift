@@ -8,6 +8,7 @@ import {
   getMyShifts,
   rateShift,
   listAvailableShifts, // dynamic by role
+  getShiftHistory,
 } from '../controllers/shift.controller.js';
 
 const router = express.Router();
@@ -297,5 +298,25 @@ router
 router
   .route('/:id/rate')
   .patch(protect, authorizeRole('guard', 'employer'), rateShift);
+
+/**
+ * @swagger
+ * /api/v1/shifts/history:
+ *   get:
+ *     summary: Get shift history (Guard/Employer only)
+ *     description: |
+ *       • Guard → all past/completed shifts the guard worked on.  
+ *       • Employer → all past/completed shifts the employer created.  
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: List of completed shifts for the user }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ */
+router
+  .route('/history')
+  .get(protect, authorizeRole('guard', 'employer'), getShiftHistory);
 
 export default router;

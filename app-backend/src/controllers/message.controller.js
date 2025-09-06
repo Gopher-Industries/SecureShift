@@ -1,6 +1,8 @@
 import User from "../models/User.js";
 import Message from "../models/Message.js";
 import { validationResult } from "express-validator";
+import { ACTIONS } from '../middleware/logger.js';
+
 /**
  * Send a new message
  * @route POST /api/v1/messages
