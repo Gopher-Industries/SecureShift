@@ -1,3 +1,4 @@
+// src/pages/Login.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../logo.png";
@@ -23,10 +24,8 @@ export default function Login() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "Login failed");
 
-      // ✅ Login succeeded → redirect to OTP page
       navigate("/2fa", { state: { email } });
     } catch (err) {
       setError(err.message);
@@ -36,60 +35,69 @@ export default function Login() {
   };
 
   return (
-    <div className="loginContainer">
-      {/* Left side - Login Form */}
-      <div className="loginFormSection">
-        <div className="formContainer">
-          <div className="headerSection">
-            <p className="employerText">Employer</p>
-            <h1 className="loginTitle">Log In</h1>
-            <p className="welcomeText">Welcome Back!</p>
-          </div>
-
-          <form onSubmit={handleLogin} className="loginForm">
-            <div className="inputGroup">
-              <label className="inputLabel">Email</label>
-              <input
-                type="email"
-                placeholder="example@mail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="formInput"
-              />
+    <div className="pageContainer">
+      <div className="loginContainer">
+        {/* Left Section */}
+        <div className="loginFormSection">
+          <div className="formContainer">
+            <div className="headerSection">
+              <p className="employerText">Employer</p>
+              <h1 className="loginTitle">Log In</h1>
+              <p className="welcomeText">Welcome Back!</p>
             </div>
 
-            <div className="inputGroup">
-              <label className="inputLabel">Password</label>
-              <input
-                type="password"
-                placeholder="••••••••••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="formInput"
-              />
+            <form className="loginForm" onSubmit={handleLogin}>
+              <div className="inputGroup">
+                <label className="inputLabel" htmlFor="email">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  placeholder="example@mail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="formInput"
+                />
+              </div>
+
+              <div className="inputGroup">
+                <label className="inputLabel" htmlFor="password">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="formInput"
+                />
+              </div>
+
+              <div className="forgotPasswordContainer">
+                <a href="/forgot-password" className="forgotPassword">Forgot Password?</a>
+              </div>
+
+              {error && <div className="errorMessage">{error}</div>}
+              {loading && <div className="loadingMessage">Sending OTP...</div>}
+
+              <button type="submit" className="loginButton" disabled={loading}>
+                {loading ? "Please wait..." : "Log In"}
+              </button>
+            </form>
+
+            <div className="partnerLink">
+              <p>
+                Want to partner with us?{" "}
+                <a href="/expression-of-interest" className="partnerText">
+                  Submit an expression of interest!
+                </a>
+              </p>
             </div>
-
-            {error && <div className="errorMessage">{error}</div>}
-            {loading && <div className="loadingMessage">Sending OTP...</div>}
-
-            <button type="submit" className="loginButton" disabled={loading}>
-              {loading ? "Please wait..." : "Log In"}
-            </button>
-          </form>
-
-          <div className="partnerLink">
-            <a href="/expression-of-interest" className="partnerText">
-              Want to partner with us? Submit an expression of interest!
-            </a>
           </div>
         </div>
-      </div>
 
-      {/* Right side - Logo/Brand */}
-      <div className="brandSection">
-        <div className="logoContainer">
+        {/* Right Section */}
+        <div className="brandSection">
           <img src={logo} alt="Secure Shift Logo" className="logoImage" />
         </div>
       </div>
