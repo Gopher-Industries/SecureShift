@@ -1,60 +1,62 @@
+// src/components/Header.js
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import CompanyLogo from './company_logo.svg';
-import ProfilePicPlaceHolder from './ProfilePicPlaceHolder.svg';
+import CompanyLogo from './company_logo.svg'; // Replace with actual logo path
 
 export default function Header() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const headerStyle = {
-        backgroundColor: '#072261',
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        color: "white",
-        padding: "0px 20px",
-        height: "70px"
-    };
+  return (
+    <header style={styles.header}>
+      {/* Logo and Name */}
+      <div style={styles.logoContainer}>
+        <img src={CompanyLogo} alt="Logo" style={styles.logo} />
+        <span style={styles.logoText}>Secure Shift</span>
+      </div>
 
-    const navButtonStyle = {
-        borderRadius: "30px",
-        width: '127px',
-        height: "42px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        textDecoration: "none",
-        color: "white",
-        backgroundColor: "#274B93",
-        transition: "background-color 0.3s",
-        cursor: "pointer"
-    };
-
-    const handleHomeClick = () => {
-        const token = localStorage.getItem("token");
-        navigate(token ? "/employer-dashboard" : "/login");
-    };
-
-    return (
-        <div style={headerStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <img src={CompanyLogo} alt="Company Logo" style={{ height: '66px' }} />
-                <div style={{ fontWeight: "600", fontSize: "24px" }}>Secure Shift</div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                {/* Home button */}
-                <div onClick={handleHomeClick} style={navButtonStyle}>Home</div>
-
-                {/* Other buttons using Link to avoid full page reload */}
-                <Link to="/manage-shift" style={navButtonStyle}>Shifts</Link>
-                <Link to="/guard-profiles" style={navButtonStyle}>Guard</Link>
-
-                {/* Avatar */}
-                <div onClick={() => navigate("/company-profile")} style={{ cursor: "pointer" }}>
-                    <img src={ProfilePicPlaceHolder} alt="Profile" style={{ height: '60px', marginLeft: "10px" }} />
-                </div>
-            </div>
-        </div>
-    );
+      {/* Navigation Buttons */}
+      <nav style={styles.nav}>
+        <Link to="/" style={styles.navItem}>Home</Link>
+        <Link to="/manage-shift" style={styles.navItem}>Shifts</Link>
+        <Link to="/guard-profiles" style={styles.navItem}>Guard</Link>
+      </nav>
+    </header>
+  );
 }
+
+const styles = {
+  header: {
+    backgroundColor: '#072261',
+    color: 'white',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0 20px',
+    height: '60px',
+  },
+  logoContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  logo: {
+    height: '42px',
+  },
+  logoText: {
+    fontWeight: '600',
+    fontSize: '20px',
+  },
+  nav: {
+    display: 'flex',
+    gap: '20px',
+    alignItems: 'center',
+  },
+    navItem: {
+    color: 'white',
+    textDecoration: 'none',
+    fontSize: '14px',
+    padding: '0',            
+    backgroundColor: 'none', 
+    borderRadius: '0',       
+  },
+};
