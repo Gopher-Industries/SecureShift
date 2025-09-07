@@ -32,7 +32,14 @@ const messageSchema = new mongoose.Schema({
   conversationId: {
     type: String,
     index: true
-  }
+  },
+
+  // soft delete fields
+  isDeleted: { type: Boolean, default: false, index: true }, // marks message as soft-deleted (hidden but not removed)
+  deletedAt: { type: Date, default: null }, // when it was hidden
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // who did it
+  deleteReason: { type: String, default: null }, // optional reason
+
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -51,8 +58,9 @@ messageSchema.pre('save', function(next) {
 // Compound indexes for efficient queries
 messageSchema.index({ sender: 1, timestamp: -1 });
 messageSchema.index({ receiver: 1, timestamp: -1 });
-messageSchema.index({ conversationId: 1, timestamp: -1 });
+messageSchema.index({ conversationId: 1, isDeleted: 1, timestamp: -1 });
 messageSchema.index({ receiver: 1, isRead: 1 });
+messageSchema.index({ isDeleted: 1, timestamp: -1 });
 
 // Virtual for message age
 messageSchema.virtual('age').get(function() {
@@ -64,7 +72,7 @@ messageSchema.statics.getConversation = function(userId1, userId2, limit = 50){
   const ids = [userId1.toString(), userId2.toString()].sort();
   const conversationId = `${ids[0]}_${ids[1]}`;
   
-  return this.find({ conversationId })
+  return this.find({ conversationId, isDeleted: { $ne: true } })
     .populate('sender', 'email name role')
     .populate('receiver', 'email name role')
     .sort({ timestamp: -1 })
@@ -80,7 +88,8 @@ messageSchema.statics.markAsRead = function(receiverId, senderId) {
     { 
       conversationId,
       receiver: receiverId,
-      isRead: false 
+      isRead: false,
+      isDeleted: { $ne: true }, 
     },
     { isRead: true }
   );
@@ -90,7 +99,8 @@ messageSchema.statics.markAsRead = function(receiverId, senderId) {
 messageSchema.statics.getUnreadCount = function(userId)  {
   return this.countDocuments({
     receiver: userId,
-    isRead: false
+    isRead: false,
+    isDeleted: { $ne: true },
   });
 };
 

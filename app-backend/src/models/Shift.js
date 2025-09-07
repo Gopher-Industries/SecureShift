@@ -28,12 +28,12 @@ const shiftSchema = new Schema(
       required: true,
       trim: true,
       minlength: 3,
-      // allow common punctuation: hyphen, comma, ampersand, dot, apostrophe, slash, parentheses
+      // allow common punctuation
       match: /^[\w\s\-&,.'()/]+$/u,
       index: true,
     },
 
-    // Date must be today or future (date of shift start)
+    // Date must be today or future
     date: {
       type: Date,
       required: true,
@@ -47,7 +47,7 @@ const shiftSchema = new Schema(
       },
     },
 
-    // Times as HH:MM strings; end may wrap past midnight
+    // Times as HH:MM strings
     startTime: {
       type: String,
       required: true,
@@ -62,7 +62,6 @@ const shiftSchema = new Schema(
           const start = hhmmToMinutes(this.startTime);
           const end   = hhmmToMinutes(v);
           if (Number.isNaN(start) || Number.isNaN(end)) return false;
-          // duration in minutes, allowing wrap past midnight; must be > 0 and < 24h
           const duration = (end - start + 1440) % 1440;
           return duration > 0;
         },
@@ -70,16 +69,16 @@ const shiftSchema = new Schema(
       },
     },
 
-    // Convenience flag (computed in pre-validate)
+    // Computed flag
     spansMidnight: { type: Boolean, default: false },
 
-    // Location (street/suburb/state/postcode)
+    // Location
     location: locationSchema,
 
-    // Optional domain field
+    // Optional field
     field: { type: String, trim: true, maxlength: 50 },
 
-    // Urgency enum
+    // Urgency
     urgency: {
       type: String,
       enum: ['normal', 'priority', 'last-minute'],
@@ -106,10 +105,10 @@ const shiftSchema = new Schema(
     // Canonical historical name
     acceptedBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
 
-    // Creator (employer)
+    // Creator
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
 
-    // Ratings & one-time flags
+    // Ratings
     guardRating: { type: Number, min: 1, max: 5 },
     employerRating: { type: Number, min: 1, max: 5 },
     ratedByGuard: { type: Boolean, default: false },
@@ -123,13 +122,12 @@ shiftSchema.pre('validate', function (next) {
   const s = hhmmToMinutes(this.startTime);
   const e = hhmmToMinutes(this.endTime);
   if (!Number.isNaN(s) && !Number.isNaN(e)) {
-    // if end <= start, it wraps past midnight
     this.spansMidnight = e <= s;
   }
   next();
 });
 
-// Clean applicants to avoid nulls sneaking in
+// Clean applicants
 shiftSchema.pre('save', function (next) {
   if (Array.isArray(this.applicants)) {
     this.applicants = this.applicants.filter(Boolean);
@@ -139,7 +137,7 @@ shiftSchema.pre('save', function (next) {
   next();
 });
 
-// Virtual alias: assignedGuard <-> acceptedBy (keeps new code working)
+// Virtual alias: assignedGuard <-> acceptedBy
 shiftSchema
   .virtual('assignedGuard')
   .get(function () {
@@ -149,9 +147,12 @@ shiftSchema
     this.acceptedBy = v;
   });
 
-// Ensure virtuals appear in API responses
+// Ensure virtuals in responses
 shiftSchema.set('toJSON', { virtuals: true });
 shiftSchema.set('toObject', { virtuals: true });
+
+// 🔑 Compound index for history queries
+shiftSchema.index({ status: 1, date: -1 });
 
 const Shift = model('Shift', shiftSchema);
 export default Shift;

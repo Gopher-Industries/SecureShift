@@ -1,6 +1,6 @@
 // screen/HomeScreen.tsx
 
-import React from "react";
+import React, { useLayoutEffect } from "react";
 import {
   SafeAreaView,
   View,
@@ -8,18 +8,21 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
-  TouchableOpacity,
   Dimensions,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/AppNavigator"; // adjust if path differs
 
 const NAVY = "#244B7A";
 const BORDER = "#E7EBF2";
 const MUTED = "#5C667A";
 
 const DEVICE_W = Dimensions.get("window").width;
-const CANVAS = Math.min(390, DEVICE_W); // lock to Figma width
-const P = 24; // page padding
+const CANVAS = Math.min(390, DEVICE_W);
+const P = 24;
 
 const StatCard = ({
   icon,
@@ -62,19 +65,24 @@ const RowItem = ({
 );
 
 export default function HomeScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Home",
+      headerStyle: { backgroundColor: NAVY },
+      headerTintColor: "#fff",
+      headerRight: () => (
+        <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+          <Ionicons name="settings-outline" size={22} color="#fff" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
-
-      {/* Top blue strip */}
-      <View style={styles.topBar}>
-        <View />
-        <View style={styles.topIcons}>
-          <Ionicons name="notifications-outline" size={18} color="#fff" />
-          <Ionicons name="settings-outline" size={18} color="#fff" style={{ marginLeft: 16 }} />
-        </View>
-      </View>
-
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={{ width: CANVAS }}>
           {/* Heading */}
@@ -140,39 +148,12 @@ export default function HomeScreen() {
           <View style={{ height: 88 }} />
         </View>
       </ScrollView>
-
-      {/* Bottom tabs (visual) */}
-      <View style={styles.tabBar}>
-        <View style={styles.tabActive}>
-          <Ionicons name="home" size={20} color="#0F172A" />
-          <Text style={styles.tabTextActive}>Home</Text>
-        </View>
-        <View style={styles.tab}>
-          <Ionicons name="briefcase-outline" size={20} color="#9AA3AF" />
-          <Text style={styles.tabText}>Shifts</Text>
-        </View>
-        <View style={styles.tab}>
-          <Ionicons name="person-outline" size={20} color="#9AA3AF" />
-          <Text style={styles.tabText}>Profile</Text>
-        </View>
-      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#FFFFFF" },
-
-  topBar: {
-    height: 48,
-    backgroundColor: NAVY,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-  },
-  topIcons: { flexDirection: "row", alignItems: "center" },
-
   scroll: { alignItems: "center" },
 
   // Headings
@@ -252,20 +233,4 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
   rowSub: { fontSize: 13, color: "#6B7280", marginTop: 6 },
   rowAmt: { fontSize: 16, fontWeight: "900", color: "#1A936F", paddingLeft: 10 },
-
-  // Bottom tabs
-  tabBar: {
-    height: 64,
-    borderTopWidth: 1,
-    borderTopColor: "#EDF1F6",
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingBottom: 8,
-  },
-  tab: { alignItems: "center", justifyContent: "center" },
-  tabActive: { alignItems: "center", justifyContent: "center" },
-  tabText: { fontSize: 12, color: "#9AA3AF", marginTop: 4 },
-  tabTextActive: { fontSize: 12, color: "#17223B", fontWeight: "800", marginTop: 4 },
 });
