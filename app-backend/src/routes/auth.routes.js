@@ -285,9 +285,14 @@ const fileInfos = await Promise.all(req.files.map(file => {
     };
 
     // Use your submitEOI controller to store eoiData in a collection
-    await submitEOI(eoiData);
+    const { eoi, employerCreated } = await submitEOI(eoiData);
 
-    res.status(201).json({ message: 'EOI submitted successfully', files: fileInfos });
+    let message = 'EOI submitted successfully';
+    if (!employerCreated) {
+      message += ' (Account already exists for this email; no new credentials sent)';
+    }
+
+    res.status(201).json({ message, files: fileInfos });
   } catch (err) {
     console.error('EOI upload error:', err);
     res.status(500).json({ error: err.message });
