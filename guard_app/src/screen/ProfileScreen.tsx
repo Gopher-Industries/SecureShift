@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,37 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useProfile } from '../hooks/useProfile';
+import { UserProfile } from '../models/UserProfile';
+import { getUserProfile } from '../api/profile';
 
 export default function ProfileScreen() {
-  const { data, loading, error } = useProfile();
+  const [data, setData] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const profile = await getUserProfile();
+        if (mounted) {
+          setData(profile);
+          setError(null);
+        }
+      } catch (e: any) {
+        if (mounted) {
+          setError(e?.message || 'Failed to load profile');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
