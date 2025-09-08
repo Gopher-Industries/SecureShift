@@ -5,7 +5,8 @@ import { BottomTabNavigationOptions, createBottomTabNavigator } from '@react-nav
 import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from '../screen/HomeScreen';
-import ProfileScreen from '../features/profile/screens/ProfileScreen';
+import ProfileScreen from '../screen/ProfileScreen';
+import ShiftsScreen from '../screen/ShiftsScreen';
 
 export type AppTabParamList = {
   Home: undefined;
@@ -14,14 +15,6 @@ export type AppTabParamList = {
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
-
-function ShiftsScreen() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Shifts coming soon…</Text>
-    </View>
-  );
-}
 
 export default function AppTabs() {
   return (
