@@ -4,7 +4,7 @@ import http from '../lib/http';
 // Endpoints
 const Endpoints = {
   usersMe: '/users/me',
-} as const;
+};
 
 // APIs
 
@@ -12,7 +12,7 @@ const Endpoints = {
 export const getUserProfile = async (): Promise<UserProfile | null> => {
   try {
     const { data } = await http.get(Endpoints.usersMe); // Protected GET request with token
-    return data;
+    return data as UserProfile;
   } catch (e) {
     console.error('Error getting user profile:', e);
     return null;
