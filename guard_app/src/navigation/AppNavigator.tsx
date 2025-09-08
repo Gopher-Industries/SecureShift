@@ -6,7 +6,7 @@ import LoginScreen from '../screen/loginscreen';      // keep your current casin
 import SignupScreen from '../screen/signupscreen';
 import AppTabs from './AppTabs';
 import SettingsScreen from '../screen/SettingsScreen';
-import ProfileScreen from '../features/profile/screens/ProfileScreen';
+import ProfileScreen from '../screen/ProfileScreen';
 
 export type RootStackParamList = {
   Login: undefined;
