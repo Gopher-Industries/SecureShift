@@ -23,12 +23,10 @@ const generateOTP = () => {
   return crypto.randomInt(100000, 999999).toString(); // 6-digit OTP
 };
 
-// ---------- Controllers ----------
-
 // @desc Register a new user (Employer, Admin)
 // @route POST /api/v1/auth/register
 export const register = async (req, res) => {
-  const { name, email, password, role, phone, address } = req.body;
+  const { name, email, password, role, phone, address, ABN } = req.body;
 
   try {
     // Guards must use the dedicated /auth/register/guard route
@@ -38,12 +36,32 @@ export const register = async (req, res) => {
       });
     }
 
+    // Unique email check
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    const newUser = new User({ name, email, password, role, phone, address });
+    let newUser;
+    if (role === 'employer') {
+      if (!ABN) {
+        return res.status(400).json({ message: 'ABN is required for employers' });
+      }
+
+      newUser = new Employer({
+        name,
+        email,
+        password,
+        role,
+        phone,
+        address,
+        ABN,
+      });
+    } else {
+      // default Admin or other roles
+      newUser = new User({ name, email, password, role, phone, address });
+    }
+
     await newUser.save();
     await req.audit.log(newUser._id, ACTIONS.PROFILE_CREATED, { registered: true });
 
