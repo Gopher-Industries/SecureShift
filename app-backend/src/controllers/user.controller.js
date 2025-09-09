@@ -66,3 +66,13 @@ export const adminUpdateUserProfile = async (req, res) => {
 });
   res.json(updatedUser);
 };
+
+/**
+ * @desc    Get all guards (Admin + Employee only)
+ * @route   GET /api/v1/users/guards
+ * @access  Private/Admin,Employee
+ */
+export const getAllGuards = async (req, res) => {
+  const guards = await User.find({ role: 'guard' }).select('-password');
+  res.json(guards);
+};
