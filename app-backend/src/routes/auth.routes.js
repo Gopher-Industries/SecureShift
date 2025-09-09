@@ -15,11 +15,14 @@ const router = express.Router();
  */
 
 /**
+/**
  * @swagger
  * /api/v1/auth/register:
  *   post:
  *     summary: Register a new Employer/Admin
- *     description: Guards must use /api/v1/auth/register/guard** because a license image is required.
+ *     description: 
+ *       - Employers **must** include an ABN.
+ *       - Guards must use `/api/v1/auth/register/guard` because a license image is required.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -29,27 +32,48 @@ const router = express.Router();
  *             type: object
  *             required: [name, email, password, role]
  *             properties:
- *               name: { type: string, example: "Krish Uppal" }
- *               email: { type: string, example: "krish@example.com" }
- *               password: { type: string, example: "P@ssw0rd!" }
+ *               name:
+ *                 type: string
+ *                 example: "Krish Uppal"
+ *               email:
+ *                 type: string
+ *                 example: "krish@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "P@ssw0rd!"
  *               role:
  *                 type: string
  *                 enum: [employer, admin]
  *                 example: employer
- *               phone: { type: string, example: "+61400123456" }
+ *               phone:
+ *                 type: string
+ *                 example: "+61400123456"
+ *               ABN:
+ *                 type: string
+ *                 example: "12345678901"
+ *                 description: Required if role = employer (must be 11 digits)
  *               address:
  *                 type: object
  *                 properties:
- *                   street: { type: string, example: "123 Main Street" }
- *                   suburb: { type: string, example: "Melbourne" }
- *                   state: { type: string, example: "VIC" }
- *                   postcode: { type: string, example: "3000" }
+ *                   street: 
+ *                     type: string
+ *                     example: "123 Main Street"
+ *                   suburb: 
+ *                     type: string
+ *                     example: "Melbourne"
+ *                   state: 
+ *                     type: string
+ *                     example: "VIC"
+ *                   postcode: 
+ *                     type: string
+ *                     example: "3000"
  *     responses:
  *       201:
  *         description: User registered successfully
  *       400:
- *         description: Email already registered or guard role not allowed here
+ *         description: Missing required fields (e.g., ABN for employers) or email already registered
  */
+
 router.post('/register', register);
 
 /**
