@@ -203,7 +203,7 @@ export const submitEOI = async (eoiData) => {
   // This is a service-style function, called from the router after GridFS upload
   const newEOI = new EOI(eoiData);
   await newEOI.save();
-  
+
   // Create employer account if not exists, then email credentials
   const email = eoiData.contactEmail;
   const abnAcn = eoiData.abnAcn;
