@@ -32,6 +32,14 @@ const shiftSchema = new Schema(
       index: true,
     },
 
+    company: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+      index: true,
+    },
+
     // Date must be today or future
     date: {
       type: Date,
@@ -84,7 +92,7 @@ const shiftSchema = new Schema(
       default: 'normal',
     },
 
-    // Pay Rate 
+    // Pay Rate
     payRate: {
       type: Number,
       required: false,   // make `true` if every shift must have a pay rate
