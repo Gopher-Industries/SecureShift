@@ -88,11 +88,15 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required: [title, date, startTime, endTime]
+ *             required: [title, company, date, startTime, endTime]
  *             properties:
  *               title:
  *                 type: string
  *                 example: "Night Patrol"
+ *               company:
+ *                 type: string
+ *                 example: "SecureCo Pty Ltd"
+ *                 description: "Employer's company name"
  *               date:
  *                 type: string
  *                 format: date
@@ -119,6 +123,10 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *               field:
  *                 type: string
  *                 example: "warehouse"
+ *               payRate:
+ *                 type: number
+ *                 example: 30
+ *                 description: "Hourly pay rate in AUD"
  *     responses:
  *       201: { description: Shift created }
  *       400: { description: Validation error }

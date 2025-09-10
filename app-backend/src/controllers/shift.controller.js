@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
-import { ACTIONS } from '../constants/actions.js';
+
+import { ACTIONS } from "../middleware/logger.js";
 
 function statusForGuard(shift, uid) {
   const iApplied =
@@ -48,10 +49,14 @@ const isInPastOrStarted = (shift) => {
  */
 export const createShift = async (req, res) => {
   try {
-    const { title, company, date, startTime, endTime, location, urgency, field } = req.body;
+    const { title, company, date, startTime, endTime, location, urgency, field, payRate } = req.body;
 
-    if (!title || !date || !startTime || !endTime) {
-      return res.status(400).json({ message: 'title, date, startTime, endTime are required' });
+    if (!title || !company || !date || !startTime || !endTime) {
+      return res.status(400).json({ message: 'title, company, date, startTime, endTime are required' });
+    }
+
+    if (payRate !== undefined && (isNaN(payRate) || Number(payRate) < 0)) {
+      return res.status(400).json({ message: 'payRate must be a non-negative number' });
     }
 
     // pick up user id from either _id or id
@@ -90,12 +95,14 @@ export const createShift = async (req, res) => {
       location: loc,
       urgency,
       field,
+      payRate,
     });
 
     await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
       shiftId: shift._id,
       title: shift.title,
-      date: shift.date
+      date: shift.date,
+      payRate: shift.payRate
     });
     
     return res.status(201).json(shift);

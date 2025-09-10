@@ -7,7 +7,7 @@ export type ShiftDto = {
   date: string;
   startTime: string;
   endTime: string;
-  company?: string;
+  company: string;
   // backend may return mapped (guard) or raw (employer/admin)
   status?: 'open' | 'pending' | 'confirmed' | 'rejected' | 'completed';
   rate?: number;

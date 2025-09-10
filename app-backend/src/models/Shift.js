@@ -28,13 +28,13 @@ const shiftSchema = new Schema(
       required: true,
       trim: true,
       minlength: 3,
-      // allow common punctuation
-      match: /^[\w\s\-&,.'()/]+$/u,
+      match: /^[\w\s\-&,.'()/]+$/u, // allow common punctuation
       index: true,
     },
 
     company: {
       type: String,
+      required: true,
       trim: true,
       maxlength: 100,
       index: true,
@@ -90,6 +90,13 @@ const shiftSchema = new Schema(
       type: String,
       enum: ['normal', 'priority', 'last-minute'],
       default: 'normal',
+    },
+
+    // Pay Rate
+    payRate: {
+      type: Number,
+      required: false,   // make `true` if every shift must have a pay rate
+      min: [0, 'Pay rate cannot be negative'],
     },
 
     // Domain fields
