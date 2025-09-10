@@ -119,6 +119,10 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *               field:
  *                 type: string
  *                 example: "warehouse"
+ *               payRate:
+ *                 type: number
+ *                 example: 30
+ *                 description: "Hourly pay rate in AUD"
  *     responses:
  *       201: { description: Shift created }
  *       400: { description: Validation error }
