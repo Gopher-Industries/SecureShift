@@ -33,6 +33,13 @@ const shiftSchema = new Schema(
       index: true,
     },
 
+    company: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      index: true,
+    },
+
     // Date must be today or future
     date: {
       type: Date,

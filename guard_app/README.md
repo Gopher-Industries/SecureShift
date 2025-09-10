@@ -59,3 +59,4 @@ Contributor Setup Checklist
    
    npm install @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs
 
+   npm install date-fns

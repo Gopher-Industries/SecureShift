@@ -1,5 +1,31 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
+import { ACTIONS } from '../constants/actions.js';
+
+function statusForGuard(shift, uid) {
+  const iApplied =
+    Array.isArray(shift.applicants) &&
+    shift.applicants.some(a => String(a) === String(uid));
+
+  // Pending = applied but not yet assigned
+  if (shift.status === 'applied' && iApplied) return 'pending';
+
+  // Confirmed = assigned to me
+  if (shift.status === 'assigned' && String(shift.acceptedBy) === String(uid))
+    return 'confirmed';
+
+  // Rejected = assigned to someone else, but I had applied
+  if (shift.status === 'assigned' && iApplied && String(shift.acceptedBy) !== String(uid))
+    return 'rejected';
+
+  // Completed = backend marks completed
+  if (shift.status === 'completed') return 'completed';
+
+  // Default → Available
+  return shift.status;
+}
+
+
 
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
@@ -22,7 +48,7 @@ const isInPastOrStarted = (shift) => {
  */
 export const createShift = async (req, res) => {
   try {
-    const { title, date, startTime, endTime, location, urgency, field } = req.body;
+    const { title, company, date, startTime, endTime, location, urgency, field } = req.body;
 
     if (!title || !date || !startTime || !endTime) {
       return res.status(400).json({ message: 'title, date, startTime, endTime are required' });
@@ -56,6 +82,7 @@ export const createShift = async (req, res) => {
 
     const shift = await Shift.create({
       title,
+      company,
       date: d,
       startTime,
       endTime,
@@ -120,6 +147,7 @@ export const listAvailableShifts = async (req, res) => {
       query.$or = [
         { title: { $regex: q, $options: 'i' } },
         { field: { $regex: q, $options: 'i' } },
+        { company: { $regex: q, $options: 'i' } },
       ];
     }
     if (urgency && ['normal','priority','last-minute'].includes(urgency)) {
@@ -137,13 +165,25 @@ export const listAvailableShifts = async (req, res) => {
 
     const [docs, total] = await Promise.all([findQ.lean(), Shift.countDocuments(query)]);
 
-    const items = (role === 'employer' || role === 'admin')
-      ? docs.map(d => ({
-          ...d,
-          applicantCount: Array.isArray(d.applicants) ? d.applicants.length : 0,
-          hasApplicants: Array.isArray(d.applicants) && d.applicants.length > 0,
-        }))
-      : docs;
+    let items;
+    if (role === 'guard') {
+      items = docs.map(d => {
+        const out = { ...d };
+        out.status = statusForGuard(out, uid); // 'pending' / 'confirmed' for THIS guard
+        // Optional: trim heavy internals for guards
+        // delete out.applicants;
+        // delete out.acceptedBy;
+        return out;
+      });
+    } else if (role === 'employer' || role === 'admin') {
+      items = docs.map(d => ({
+        ...d,
+        applicantCount: Array.isArray(d.applicants) ? d.applicants.length : 0,
+        hasApplicants: Array.isArray(d.applicants) && d.applicants.length > 0,
+      }));
+    } else {
+      items = docs;
+    }
 
     res.json({ page, limit, total, items });
   } catch (e) {
@@ -187,10 +227,12 @@ export const applyForShift = async (req, res) => {
     if (shift.status === 'open') shift.status = 'applied';
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, {
-      shiftId: shift._id
-    });
-    return res.json({ message: 'Application submitted', shift });
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, { shiftId: shift._id });
+
+    const out = shift.toObject();
+    out.status = statusForGuard(out, req.user._id); // ensure 'pending' right away
+
+    return res.json({ message: 'Application submitted', shift: out });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
@@ -263,7 +305,7 @@ export const completeShift = async (req, res) => {
     shift.status = 'completed';
     await shift.save();
     await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, {
-     shiftId: shift._id 
+     shiftId: shift._id
     });
 
     return res.json({ message: 'Shift completed', shift });
@@ -299,11 +341,27 @@ export const getMyShifts = async (req, res) => {
       .populate('acceptedBy', 'name email')
       .populate('applicants', 'name email');
 
+    // 🔽 Map status per current guard so UI shows Pending/Confirmed/Rejected
+    if (role === 'guard') {
+      const out = shifts.map(doc => {
+        const o = doc.toObject ? doc.toObject() : { ...doc };
+        o.status = statusForGuard(o, uid);
+        // Optional: hide internals from guards
+        // delete o.applicants;
+        // delete o.acceptedBy;
+        return o;
+      });
+      return res.json(out);
+    }
+
+    // employer/admin unchanged
     return res.json(shifts);
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
 };
+
+
 
 /**
  * PATCH /api/v1/shifts/:id/rate  (guard/employer)
