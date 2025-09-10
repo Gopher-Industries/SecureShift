@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ShiftStatus = Object.freeze({
@@ -21,6 +21,13 @@ const Sort = Object.freeze({
 
 const ManageShift = () => {
     const navigate = useNavigate();
+
+    // API state
+    const [shifts, setShifts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    //UI state
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedFilter, setSelectedFilter] = useState(Filter.All);
     const [sortBy, setSortBy] = useState(Sort.DateAsc);
@@ -28,10 +35,46 @@ const ManageShift = () => {
 
     const itemsPerPage = 8;
 
+    // Fetch shifts from API
+    useEffect(() => {
+        const fetchShifts = async () => {
+            try {
+              const token = localStorage.getItem("token"); // ✅ get token
+              if (!token) {
+                console.error("No token found — please log in.");
+                return;
+              }
+          
+              const res = await fetch("http://localhost:5000/api/v1/shifts", { 
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`, // send token
+                },
+              });
+          
+              if (!res.ok) {
+                const errorText = await res.text(); // log actual backend error
+                console.error(`Failed to load shifts (${res.status}):`, errorText);
+                return;
+              }
+          
+              const data = await res.json();
+              console.log("Shifts loaded:", data);
+              // setShifts(data); // update state with shifts if you have one
+            } catch (err) {
+              console.error("Error fetching shifts:", err);
+            }
+          };
+
+        fetchShifts();
+    }, []);
+
+
     // Filter shifts based on selected filter
     const filteredShifts = selectedFilter === Filter.All
-        ? dummyShifts
-        : dummyShifts.filter(shift => shift.status === selectedFilter);
+        ? shifts
+        : shifts.filter((shift) => shift.status === selectedFilter);
 
     // Sort filtered shifts based on selected sort option
     const sortedShifts = [...filteredShifts].sort((a, b) => {
@@ -51,10 +94,10 @@ const ManageShift = () => {
     const currentItems = sortedShifts.slice(indexStart, indexStart + itemsPerPage);
 
     // Calculate summary statistics
-    const totalShifts = dummyShifts.length;
-    const completedShifts = dummyShifts.filter(shift => shift.status === ShiftStatus.Completed).length;
-    const inProgressShifts = dummyShifts.filter(shift => shift.status === ShiftStatus.InProgress).length;
-    const pendingShifts = dummyShifts.filter(shift => shift.status === ShiftStatus.Pending).length;
+    const totalShifts = shifts.length;
+    const completedShifts = shifts.filter((shift) => shift.status === ShiftStatus.Completed).length;
+    const inProgressShifts = shifts.filter((shift) => shift.status === ShiftStatus.InProgress).length;
+    const pendingShifts = shifts.filter((shift) => shift.status === ShiftStatus.Pending).length;
 
     const goPrevPage = () => {
         if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -208,6 +251,12 @@ const ManageShift = () => {
                 </div>
             </div>
 
+            {/* Loading / Error / Empty */}
+            {loading && <p>Loading shifts...</p>}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {!loading && !error && currentItems.length === 0 && <p>No shifts found.</p>}
+
+
             {/* Shift Cards Grid */}
             <div style={gridStyle}>
                 {currentItems.map(({ id, title, dateTime, location, status, price }) => (
@@ -248,6 +297,7 @@ const ManageShift = () => {
             </div>
 
             {/* Pagination */}
+            {!loading && !error && totalPages > 1 && (
             <div style={paginationStyle}>
                 <button
                     onClick={goPrevPage}
@@ -276,7 +326,7 @@ const ManageShift = () => {
                     <img src={"/ic-arrow-forward.svg"} alt="Next" style={smallIconStyle} />
                 </button>
             </div>
-
+            )}
             {/* Sort Modal */}
             {showSortModal && (
                 <div style={modalOverlayStyle} onClick={() => setShowSortModal(false)}>
@@ -305,25 +355,6 @@ const ManageShift = () => {
 };
 
 export default ManageShift;
-
-// Generate dummy data with more realistic information
-const generateDummyShifts = (count) => {
-    const titles = ['Night Patrol', 'Gate Duty', 'Event Watch', 'Lobby Control'];
-    const locations = ['Melbourne CBD', 'Docklands', 'Southbank', 'St Kilda'];
-    const statuses = [ShiftStatus.Pending, ShiftStatus.InProgress, ShiftStatus.Completed];
-    const prices = [100, 120, 150, 180];
-
-    return Array.from({ length: count }, (_, i) => ({
-        id: i + 1,
-        title: `Security Guard - ${titles[i % titles.length]}`,
-        dateTime: `2025-08-${(i % 30) + 1} ${(8 + (i % 12))}:00`,
-        location: locations[i % locations.length],
-        status: statuses[i % statuses.length],
-        price: prices[i % prices.length],
-    }));
-};
-
-const dummyShifts = generateDummyShifts(100);
 
 // Status tag styles
 const getStatusTagStyle = (status) => ({
