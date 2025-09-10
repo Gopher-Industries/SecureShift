@@ -1,4 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+
 import ExpressionOfInterest from './pages/ExpressionOfInterest';
 import Login from './pages/Login';
 import TwoFA from './pages/2FA';
@@ -14,24 +17,77 @@ import Footer from './components/Footer';
 function App() {
   return (
     <Router>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Header />
-        <main style={{ flex: 1, paddingBottom: '20px' }}>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/2fa" element={<TwoFA />} /> {/* ✅ new 2FA route */}
-            <Route path="/employer-dashboard" element={<EmployerDashboard />} />
-            <Route path="/create-shift" element={<CreateShift />} />
-            <Route path="/manage-shift" element={<ManageShift />} />
-            <Route path="/guard-profiles" element={<GuardProfiles />} />
-            <Route path="/company-profile" element={<CompanyProfile />} />
-            <Route path="/submission" element={<SubmissionConfirmation />} />
-            <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AuthProvider>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <Header />
+          <main style={{ flex: 1, paddingBottom: '20px' }}>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/2fa" element={<TwoFA />} />
+
+              {/* Protected routes */}
+              <Route
+                path="/employer-dashboard"
+                element={
+                  <ProtectedRoute>
+                    <EmployerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/create-shift"
+                element={
+                  <ProtectedRoute>
+                    <CreateShift />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/manage-shift"
+                element={
+                  <ProtectedRoute>
+                    <ManageShift />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/guard-profiles"
+                element={
+                  <ProtectedRoute>
+                    <GuardProfiles />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/company-profile"
+                element={
+                  <ProtectedRoute>
+                    <CompanyProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/submission"
+                element={
+                  <ProtectedRoute>
+                    <SubmissionConfirmation />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/expression-of-interest"
+                element={
+                  <ProtectedRoute>
+                    <ExpressionOfInterest />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </AuthProvider>
     </Router>
   );
 }
