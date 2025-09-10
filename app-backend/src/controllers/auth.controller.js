@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
+import Employer from '../models/Employer.js';
+import { sendEmployerCredentials } from '../utils/sendEmail.js';
 import { sendOTP } from '../utils/sendEmail.js';
 import { ACTIONS } from "../middleware/logger.js";
 import EOI from '../models/eoi.js';
@@ -21,12 +23,10 @@ const generateOTP = () => {
   return crypto.randomInt(100000, 999999).toString(); // 6-digit OTP
 };
 
-// ---------- Controllers ----------
-
 // @desc Register a new user (Employer, Admin)
 // @route POST /api/v1/auth/register
 export const register = async (req, res) => {
-  const { name, email, password, role, phone, address } = req.body;
+  const { name, email, password, role, phone, address, ABN } = req.body;
 
   try {
     // Guards must use the dedicated /auth/register/guard route
@@ -36,12 +36,32 @@ export const register = async (req, res) => {
       });
     }
 
+    // Unique email check
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    const newUser = new User({ name, email, password, role, phone, address });
+    let newUser;
+    if (role === 'employer') {
+      if (!ABN) {
+        return res.status(400).json({ message: 'ABN is required for employers' });
+      }
+
+      newUser = new Employer({
+        name,
+        email,
+        password,
+        role,
+        phone,
+        address,
+        ABN,
+      });
+    } else {
+      // default Admin or other roles
+      newUser = new User({ name, email, password, role, phone, address });
+    }
+
     await newUser.save();
     await req.audit.log(newUser._id, ACTIONS.PROFILE_CREATED, { registered: true });
 
@@ -183,5 +203,74 @@ export const submitEOI = async (eoiData) => {
   // This is a service-style function, called from the router after GridFS upload
   const newEOI = new EOI(eoiData);
   await newEOI.save();
-  return newEOI;
+  
+  // Create employer account if not exists, then email credentials
+  const email = eoiData.contactEmail;
+  const abnAcn = eoiData.abnAcn;
+  const contactPerson = eoiData.contactPerson;
+  const companyName = eoiData.companyName;
+  const phone = eoiData.phone;
+  let employerCreated = false;
+  let credentialsEmailSent = false;
+
+  // Check if a user already exists for this email
+  const existingUser = await User.findOne({ email });
+  if (!existingUser) {
+    // Generate a strong temporary password
+    const tempPassword = generateStrongTempPassword();
+
+    // If ABN looks valid (11 digits), create Employer; otherwise fallback to base User with role employer
+    const isValidABN = /^\d{11}$/.test(abnAcn || '');
+    const baseUserData = {
+      name: contactPerson || companyName || 'Employer',
+      email,
+      password: tempPassword,
+      role: 'employer',
+      phone,
+    };
+
+    if (isValidABN) {
+      await Employer.create({ ...baseUserData, ABN: abnAcn });
+    } else {
+      await User.create(baseUserData);
+    }
+    employerCreated = true;
+
+    // Send credentials email (do not block on failure)
+    try {
+      await sendEmployerCredentials(email, tempPassword, contactPerson, companyName);
+      credentialsEmailSent = true;
+    } catch (err) {
+      // Log and continue; EOI still created
+      console.error('Failed to send employer credentials:', err.message);
+    }
+  } else {
+    console.warn(`submitEOI: User with email ${email} already exists; skipping account creation and credential email.`);
+  }
+
+  // Return EOI and status flags
+  return { eoi: newEOI, employerCreated, credentialsEmailSent };
+};
+
+// Local helper to ensure password meets validation rules
+const generateStrongTempPassword = () => {
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lower = 'abcdefghijklmnopqrstuvwxyz';
+  const digits = '0123456789';
+  const special = '!@#$%^&*()-_=+[]{};:,.?';
+  const all = upper + lower + digits + special;
+
+  const pick = (chars) => chars[Math.floor(Math.random() * chars.length)];
+  const required = [pick(upper), pick(lower), pick(digits), pick(special)];
+
+  const length = 12;
+  const remaining = Array.from({ length: length - required.length }, () => pick(all));
+  const passwordChars = required.concat(remaining);
+
+  // Shuffle
+  for (let i = passwordChars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [passwordChars[i], passwordChars[j]] = [passwordChars[j], passwordChars[i]];
+  }
+  return passwordChars.join('');
 };
