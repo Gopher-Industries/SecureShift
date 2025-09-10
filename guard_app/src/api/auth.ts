@@ -1,4 +1,4 @@
-import http from "../lib/http";
+import http from '../lib/http';
 
 // Payload for registering a new guard
 export type RegisterPayload = {
@@ -27,19 +27,19 @@ export async function registerUser(payload: RegisterPayload) {
   const formData = new FormData(); // Construct multipart form
 
   // Append all required fields to formData
-  formData.append("name", payload.name);
-  formData.append("email", payload.email.toLowerCase().trim());
-  formData.append("password", payload.password);
-  formData.append("license", {
+  formData.append('name', payload.name);
+  formData.append('email', payload.email.toLowerCase().trim());
+  formData.append('password', payload.password);
+  formData.append('license', {
     uri: (payload.license as any).uri,
     name: (payload.license as any).name || 'license.jpg',
     type: (payload.license as any).type || 'image/jpeg',
   } as any);
 
   // Send POST request with formData and proper headers
-  const { data } = await http.post("/auth/register/guard", formData, {
+  const { data } = await http.post('/auth/register/guard', formData, {
     headers: {
-      "Content-Type": "multipart/form-data",
+      'Content-Type': 'multipart/form-data',
     },
   });
 
@@ -49,12 +49,12 @@ export async function registerUser(payload: RegisterPayload) {
 // Login (POST /auth/login)
 // Backend may return a token immediately along with role and id
 export async function login(payload: LoginPayload) {
-  const { data } = await http.post("/auth/login", payload); // Send credentials
+  const { data } = await http.post('/auth/login', payload); // Send credentials
   return {
-    token: data?.token ?? null,   // Extract JWT token if returned
-    role: data?.role ?? null,     // Extract user role
-    id: data?.id ?? null,         // Extract user ID
-    raw: data,                    // Include raw response if needed
+    token: data?.token ?? null, // Extract JWT token if returned
+    role: data?.role ?? null, // Extract user role
+    id: data?.id ?? null, // Extract user ID
+    raw: data, // Include raw response if needed
   };
 }
 
@@ -62,7 +62,7 @@ export async function login(payload: LoginPayload) {
 // Backend expects: email and otp
 // Backend returns a JWT token if successful
 export async function verifyOtp(payload: VerifyOtpPayload) {
-  const { data } = await http.post("/auth/verify-otp", payload); // Submit OTP
+  const { data } = await http.post('/auth/verify-otp', payload); // Submit OTP
   return {
     token: data?.token ?? data?.accessToken ?? null, // Support both token keys
     raw: data,
@@ -72,6 +72,6 @@ export async function verifyOtp(payload: VerifyOtpPayload) {
 // Get the logged-in guard's profile (GET /users/me)
 // Requires Authorization: Bearer <token>
 export async function getMe() {
-  const { data } = await http.get("/users/me"); // Protected GET request with token
+  const { data } = await http.get('/users/me'); // Protected GET request with token
   return data;
 }

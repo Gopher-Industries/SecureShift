@@ -1,11 +1,11 @@
 // src/navigation/AppNavigator.tsx
-import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
 
-import LoginScreen from '../screen/loginscreen';      // keep your current casing/paths
-import SignupScreen from '../screen/signupscreen';
 import AppTabs from './AppTabs';
+import LoginScreen from '../screen/loginscreen'; // keep your current casing/paths
 import SettingsScreen from '../screen/SettingsScreen';
+import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
 
 export type RootStackParamList = {
@@ -29,4 +29,3 @@ export default function AppNavigator() {
     </Stack.Navigator>
   );
 }
- 
