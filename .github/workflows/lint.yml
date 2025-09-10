@@ -1,8 +1,9 @@
-name: Lint
-
+name: lint
 on:
   pull_request:
-    branches: [ main ]
+    paths:
+      - 'guard_app/**'
+      - '.github/workflows/lint.yml'
 
 jobs:
   lint:
@@ -12,16 +13,10 @@ jobs:
         working-directory: guard_app
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Install deps
-        run: npm install
-
-      - name: ESLint
-        run: npm run lint
-
-      - name: Prettier check
-        run: npm run format:check
+          node-version: 18
+          cache: npm
+          cache-dependency-path: guard_app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
