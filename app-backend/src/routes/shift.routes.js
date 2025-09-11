@@ -88,11 +88,15 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required: [title, date, startTime, endTime]
+ *             required: [title, company, date, startTime, endTime]
  *             properties:
  *               title:
  *                 type: string
  *                 example: "Night Patrol"
+ *               company:
+ *                 type: string
+ *                 example: "SecureCo Pty Ltd"
+ *                 description: "Employer's company name"
  *               date:
  *                 type: string
  *                 format: date
