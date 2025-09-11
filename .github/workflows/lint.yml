@@ -7,31 +7,27 @@ on:
       - 'guard_app/**'
       - '.github/workflows/lint.yml'
   push:
-    branches: [ main ]
+    branches:
+      - '**'          # run on pushes to any branch in your fork
     paths:
       - 'guard_app/**'
       - '.github/workflows/lint.yml'
+  workflow_dispatch: {} # allow manual runs from the Actions tab
 
 jobs:
   lint:
-    name: "ESLint & Prettier (guard_app)"
+    name: ESLint & Prettier
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: guard_app
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: guard_app/package-lock.json
-
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
@@ -39,9 +35,7 @@ jobs:
           else
             npm install --no-audit --no-fund
           fi
-
       - name: Run ESLint
         run: npm run lint
-
-      - name: Prettier check
+      - name: Run Prettier check
         run: npm run format:check
