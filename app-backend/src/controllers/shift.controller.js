@@ -8,21 +8,21 @@ function statusForGuard(shift, uid) {
     Array.isArray(shift.applicants) &&
     shift.applicants.some(a => String(a) === String(uid));
 
-  // Pending = applied but not yet assigned
+  // Pending = applied
   if (shift.status === 'applied' && iApplied) return 'pending';
 
-  // Confirmed = assigned to me
+  // Confirmed = assigned
   if (shift.status === 'assigned' && String(shift.acceptedBy) === String(uid))
     return 'confirmed';
 
-  // Rejected = assigned to someone else, but I had applied
+  // Rejected = assigned to someone else, but I had the confirmed displaying for all guards not rejected and the guard seleced with confirmed
   if (shift.status === 'assigned' && iApplied && String(shift.acceptedBy) !== String(uid))
     return 'rejected';
 
   // Completed = backend marks completed
   if (shift.status === 'completed') return 'completed';
 
-  // Default → Available
+  // Default (Available)
   return shift.status;
 }
 
