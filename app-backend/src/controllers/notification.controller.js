@@ -1,4 +1,3 @@
-// src/controllers/notification.controller.js
 import { sendNotification } from '../services/notification.service.js';
 
 export async function send(req, res) {
