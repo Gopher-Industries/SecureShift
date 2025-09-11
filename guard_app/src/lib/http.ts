@@ -1,5 +1,5 @@
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 // Create an Axios instance with a base URL and timeout
 const http = axios.create({
@@ -9,7 +9,7 @@ const http = axios.create({
 
 // Automatically attach JWT token from AsyncStorage to every request
 http.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem("auth_token"); // Retrieve token from storage
+  const token = await AsyncStorage.getItem('auth_token'); // Retrieve token from storage
   if (token) {
     config.headers.Authorization = `Bearer ${token}`; // Attach token to Authorization header
   }
@@ -22,11 +22,11 @@ export function attach401Handler(onUnauthorized: () => void) {
     (res) => res, // Pass successful responses through
     async (err) => {
       if (err?.response?.status === 401) {
-        await AsyncStorage.multiRemove(["auth_token", "auth_user"]); // Clear tokens on 401
+        await AsyncStorage.multiRemove(['auth_token', 'auth_user']); // Clear tokens on 401
         onUnauthorized(); // Trigger logout handler (e.g., navigate to Login)
       }
       throw err; // Rethrow error for further handling
-    }
+    },
   );
 }
 
