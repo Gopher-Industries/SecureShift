@@ -176,10 +176,10 @@ export const listAvailableShifts = async (req, res) => {
     if (role === 'guard') {
       items = docs.map(d => {
         const out = { ...d };
-        out.status = statusForGuard(out, uid); // 'pending' / 'confirmed' for THIS guard
+        out.status = statusForGuard(out, uid); // now uses a function 
         // Optional: trim heavy internals for guards
-        // delete out.applicants;
-        // delete out.acceptedBy;
+        // delete o.applicants;
+        // delete o.acceptedBy;
         return out;
       });
     } else if (role === 'employer' || role === 'admin') {
@@ -348,7 +348,7 @@ export const getMyShifts = async (req, res) => {
       .populate('acceptedBy', 'name email')
       .populate('applicants', 'name email');
 
-    // 🔽 Map status per current guard so UI shows Pending/Confirmed/Rejected
+    // Status for current guard so UI shows Pending/Confirmed/Rejected
     if (role === 'guard') {
       const out = shifts.map(doc => {
         const o = doc.toObject ? doc.toObject() : { ...doc };
