@@ -14,8 +14,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Added for token storage and login API
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login as apiLogin, verifyOtp as apiVerifyOtp } from '../api/auth';
+import { LocalStorage } from '../lib/localStorage';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -56,7 +56,7 @@ export default function LoginScreen({ navigation }: any) {
       const res = await apiLogin({ email: email.trim().toLowerCase(), password });
 
       if (res.token) {
-        await AsyncStorage.setItem('auth_token', res.token); // Save token
+        await LocalStorage.setToken(res.token);
         await goToApp();
       } else {
         setOtpMode(true); // Trigger OTP screen
@@ -82,7 +82,7 @@ export default function LoginScreen({ navigation }: any) {
       const res = await apiVerifyOtp({ email: email.trim().toLowerCase(), otp: otp.trim() });
 
       if (!res.token) throw new Error('No token returned');
-      await AsyncStorage.setItem('auth_token', res.token); // Save verified token
+      await LocalStorage.setToken(res.token);
       await goToApp();
     } catch (e: any) {
       const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Invalid or expired code';
