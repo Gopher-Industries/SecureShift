@@ -107,7 +107,20 @@ export default function HomeScreen() {
         (s: any) => s.status === "assigned" && new Date(s.date) > new Date()
       );
 
-      const earnings = today.reduce((sum: number, s: any) => sum + (s.payRate || 0), 0);
+      const earnings = today.reduce((sum: number, s: any) => {
+        if (!s.startTime || !s.endTime || !s.payRate) return sum;
+
+        const [sh, sm] = s.startTime.split(":").map(Number);
+        const [eh, em] = s.endTime.split(":").map(Number);
+
+        const start = sh * 60 + sm;
+        const end = eh * 60 + em;
+        let duration = (end - start + 1440) % 1440;
+        if (duration === 0) duration = 1440;
+
+        const hours = duration / 60;
+        return sum + s.payRate * hours;
+      }, 0);
 
       setMetrics({
         confirmed,
@@ -134,9 +147,9 @@ export default function HomeScreen() {
   );
 
   const onRefresh = async () => {
-    setRefreshing(true); // start spinner
-    await load(); // refetch data
-    setRefreshing(false); // stop spinner
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
   };
 
   return (
@@ -144,7 +157,7 @@ export default function HomeScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} // added pull-to-refresh
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={{ width: CANVAS }}>
           {/* Heading */}
@@ -195,7 +208,20 @@ export default function HomeScreen() {
                   key={i}
                   title={s.title}
                   time={`${s.startTime} – ${s.endTime}`}
-                  amount={s.payRate ? `$${s.payRate}` : undefined}
+                  amount={
+                    s.payRate && s.startTime && s.endTime
+                      ? (() => {
+                          const [sh, sm] = s.startTime.split(":").map(Number);
+                          const [eh, em] = s.endTime.split(":").map(Number);
+                          const start = sh * 60 + sm;
+                          const end = eh * 60 + em;
+                          let duration = (end - start + 1440) % 1440;
+                          if (duration === 0) duration = 1440;
+                          const hours = duration / 60;
+                          return `$${s.payRate * hours}`;
+                        })()
+                      : undefined
+                  }
                   highlight
                 />
               ))
@@ -223,7 +249,20 @@ export default function HomeScreen() {
                   key={i}
                   title={s.title}
                   time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime} – ${s.endTime}`}
-                  amount={s.payRate ? `$${s.payRate}` : undefined}
+                  amount={
+                    s.payRate && s.startTime && s.endTime
+                      ? (() => {
+                          const [sh, sm] = s.startTime.split(":").map(Number);
+                          const [eh, em] = s.endTime.split(":").map(Number);
+                          const start = sh * 60 + sm;
+                          const end = eh * 60 + em;
+                          let duration = (end - start + 1440) % 1440;
+                          if (duration === 0) duration = 1440;
+                          const hours = duration / 60;
+                          return `$${s.payRate * hours}`;
+                        })()
+                      : undefined
+                  }
                 />
               ))
             ) : (
