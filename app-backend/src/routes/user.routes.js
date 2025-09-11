@@ -3,7 +3,8 @@ import {
   getMyProfile,
   updateMyProfile,
   adminGetUserProfile,
-  adminUpdateUserProfile
+  adminUpdateUserProfile,
+  getAllGuards
 } from '../controllers/user.controller.js';
 import protect from '../middleware/auth.js'; // only default export available
 
@@ -142,9 +143,35 @@ router
  *       403:
  *         description: Forbidden
  */
+
+  /**
+ * @swagger
+ * /api/v1/users/guards:
+ *   get:
+ *     summary: Get all guards (Admin + Employee only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all guards.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+// must be above the "/:id" route
+router.get('/guards', protect, (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'employee') {
+    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
+  }
+  next();
+}, getAllGuards);
+
 router
   .route('/:id')
   .get(protect, authorizeAdmin, adminGetUserProfile)
   .put(protect, authorizeAdmin, adminUpdateUserProfile);
+
 
 export default router;

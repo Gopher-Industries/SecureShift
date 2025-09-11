@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
 
+import { ACTIONS } from "../middleware/logger.js";
+
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
 const isValidHHMM = (s) => typeof s === 'string' && HHMM.test(s);
@@ -22,10 +24,14 @@ const isInPastOrStarted = (shift) => {
  */
 export const createShift = async (req, res) => {
   try {
-    const { title, date, startTime, endTime, location, urgency, field } = req.body;
+    const { title, date, startTime, endTime, location, urgency, field, payRate } = req.body;
 
     if (!title || !date || !startTime || !endTime) {
       return res.status(400).json({ message: 'title, date, startTime, endTime are required' });
+    }
+
+    if (payRate !== undefined && (isNaN(payRate) || Number(payRate) < 0)) {
+      return res.status(400).json({ message: 'payRate must be a non-negative number' });
     }
 
     // pick up user id from either _id or id
@@ -63,12 +69,14 @@ export const createShift = async (req, res) => {
       location: loc,
       urgency,
       field,
+      payRate,
     });
 
     await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
       shiftId: shift._id,
       title: shift.title,
-      date: shift.date
+      date: shift.date,
+      payRate: shift.payRate
     });
     
     return res.status(201).json(shift);
@@ -356,6 +364,35 @@ export const rateShift = async (req, res) => {
     });
 
     return res.json({ message: 'Rating saved', shift });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+/**
+ * GET /api/v1/shifts/history
+ * Guard → completed shifts assigned to them
+ * Employer → posted shifts with status = completed
+ */
+export const getShiftHistory = async (req, res) => {
+  try {
+    const role = req.user.role;
+    const uid  = req.user._id;
+
+    let query = {};
+    if (role === 'guard') {
+      query = { assignedGuard: uid, status: 'completed' };
+    } else if (role === 'employer') {
+      query = { createdBy: uid, status: 'completed' };
+    } else {
+      return res.status(403).json({ message: 'Forbidden: only guards and employers can view history' });
+    }
+
+    const shifts = await Shift.find(query)
+      .sort({ date: -1, createdAt: -1 })
+      .populate('createdBy', 'name email')
+      .populate('assignedGuard', 'name email');
+
+    return res.json({ total: shifts.length, items: shifts });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }

@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import { ACTIONS } from "../middleware/logger.js";
 
 /**
  * @desc    View logged-in user's profile
@@ -54,15 +55,23 @@ export const adminUpdateUserProfile = async (req, res) => {
     fieldsToUpdate,
     { new: true, runValidators: true }
   ).select('-password');
-  await req.audit.log(req.user.id, ACTIONS.PROFILE_UPDATED, {
-    updatedFields: Object.keys(fieldsToUpdate)
-  });
-
 
   if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+
   await req.audit.log(req.user.id, ACTIONS.PROFILE_UPDATED, {
-  updatedUserId: req.params.id,
-  updatedFields: Object.keys(fieldsToUpdate)
-});
+    updatedUserId: req.params.id,
+    updatedFields: Object.keys(fieldsToUpdate),
+  });
+
   res.json(updatedUser);
+};
+
+/**
+ * @desc    Get all guards (Admin + Employee only)
+ * @route   GET /api/v1/users/guards
+ * @access  Private/Admin,Employee
+ */
+export const getAllGuards = async (req, res) => {
+  const guards = await User.find({ role: 'guard' }).select('-password');
+  res.json(guards);
 };

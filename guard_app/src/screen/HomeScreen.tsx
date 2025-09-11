@@ -1,6 +1,6 @@
 // screen/HomeScreen.tsx
 
-import React from "react";
+import React, { useLayoutEffect, useEffect, useState, useCallback } from "react"; 
 import {
   SafeAreaView,
   View,
@@ -8,18 +8,23 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
-  TouchableOpacity,
   Dimensions,
+  TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/AppNavigator";
+import http from "../lib/http";
 
 const NAVY = "#244B7A";
 const BORDER = "#E7EBF2";
 const MUTED = "#5C667A";
 
 const DEVICE_W = Dimensions.get("window").width;
-const CANVAS = Math.min(390, DEVICE_W); // lock to Figma width
-const P = 24; // page padding
+const CANVAS = Math.min(390, DEVICE_W);
+const P = 24;
 
 const StatCard = ({
   icon,
@@ -62,24 +67,102 @@ const RowItem = ({
 );
 
 export default function HomeScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const [user, setUser] = useState<any>(null);
+  const [metrics, setMetrics] = useState({ confirmed: 0, pending: 0, earnings: 0, rating: 0 });
+  const [todayShifts, setTodayShifts] = useState<any[]>([]);
+  const [upcomingShifts, setUpcomingShifts] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false); 
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Home",
+      headerStyle: { backgroundColor: NAVY },
+      headerTintColor: "#fff",
+      headerRight: () => (
+        <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+          <Ionicons name="settings-outline" size={22} color="#fff" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
+  const load = async () => {
+    try {
+      const { data: u } = await http.get("/users/me");
+      setUser(u);
+
+      const { data: myShifts } = await http.get("/shifts/myshifts");
+      const confirmed = myShifts.filter((s: any) => s.status === "assigned").length;
+      const pending = myShifts.filter((s: any) => s.status === "applied").length;
+
+      const today = myShifts.filter(
+        (s: any) =>
+          s.status === "assigned" &&
+          new Date(s.date).toDateString() === new Date().toDateString()
+      );
+
+      const upcoming = myShifts.filter(
+        (s: any) => s.status === "assigned" && new Date(s.date) > new Date()
+      );
+
+      const earnings = today.reduce((sum: number, s: any) => {
+        if (!s.startTime || !s.endTime || !s.payRate) return sum;
+
+        const [sh, sm] = s.startTime.split(":").map(Number);
+        const [eh, em] = s.endTime.split(":").map(Number);
+
+        const start = sh * 60 + sm;
+        const end = eh * 60 + em;
+        let duration = (end - start + 1440) % 1440;
+        if (duration === 0) duration = 1440;
+
+        const hours = duration / 60;
+        return sum + s.payRate * hours;
+      }, 0);
+
+      setMetrics({
+        confirmed,
+        pending,
+        earnings,
+        rating: u.rating || 0,
+      });
+
+      setTodayShifts(today);
+      setUpcomingShifts(upcoming);
+    } catch (err) {
+      console.error("Failed to load home data:", err);
+    }
+  };
+
+  useEffect(() => {
+    load(); // initial load
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load(); // reload when screen comes into focus
+    }, [])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
-
-      {/* Top blue strip */}
-      <View style={styles.topBar}>
-        <View />
-        <View style={styles.topIcons}>
-          <Ionicons name="notifications-outline" size={18} color="#fff" />
-          <Ionicons name="settings-outline" size={18} color="#fff" style={{ marginLeft: 16 }} />
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <View style={{ width: CANVAS }}>
           {/* Heading */}
           <View style={{ paddingHorizontal: P, paddingTop: 18, alignItems: "center" }}>
-            <Text style={styles.h1}>Welcome back, Alex!</Text>
+            <Text style={styles.h1}>Welcome back, {user?.name || "Guard"}!</Text>
             <Text style={styles.h2}>Here’s your dashboard</Text>
           </View>
 
@@ -88,25 +171,25 @@ export default function HomeScreen() {
             <StatCard
               icon={<Ionicons name="calendar-outline" size={18} color="#3E63DD" />}
               label="Confirmed shifts"
-              value="3"
+              value={metrics.confirmed}
               tint="#EEF2FF"
             />
             <StatCard
               icon={<Ionicons name="time-outline" size={18} color="#C99A06" />}
               label="Pending Applications"
-              value="2"
+              value={metrics.pending}
               tint="#FFF4C8"
             />
             <StatCard
               icon={<Feather name="dollar-sign" size={18} color="#1A936F" />}
               label="Today’s Earning"
-              value="$260"
+              value={`$${metrics.earnings}`}
               tint="#EAF7EF"
             />
             <StatCard
               icon={<MaterialCommunityIcons name="trending-up" size={18} color="#7C5CFC" />}
               label="Current Rating"
-              value="4.9"
+              value={metrics.rating}
               tint="#ECEBFF"
             />
           </View>
@@ -119,7 +202,34 @@ export default function HomeScreen() {
                 <Text style={styles.cardHeadTxt}>Today’s Schedule</Text>
               </View>
             </View>
-            <RowItem title="Shopping Center" time="9:00 AM – 5:00" amount="$100" highlight />
+            {todayShifts.length > 0 ? (
+              todayShifts.map((s, i) => (
+                <RowItem
+                  key={i}
+                  title={s.title}
+                  time={`${s.startTime} – ${s.endTime}`}
+                  amount={
+                    s.payRate && s.startTime && s.endTime
+                      ? (() => {
+                          const [sh, sm] = s.startTime.split(":").map(Number);
+                          const [eh, em] = s.endTime.split(":").map(Number);
+                          const start = sh * 60 + sm;
+                          const end = eh * 60 + em;
+                          let duration = (end - start + 1440) % 1440;
+                          if (duration === 0) duration = 1440;
+                          const hours = duration / 60;
+                          return `$${s.payRate * hours}`;
+                        })()
+                      : undefined
+                  }
+                  highlight
+                />
+              ))
+            ) : (
+              <Text style={{ color: MUTED, fontSize: 14, marginTop: 6 }}>
+                No shifts scheduled for today
+              </Text>
+            )}
           </View>
 
           {/* Upcoming Shifts */}
@@ -129,57 +239,51 @@ export default function HomeScreen() {
                 <Feather name="clock" size={16} color={MUTED} />
                 <Text style={styles.cardHeadTxt}>Upcoming Shifts</Text>
               </View>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate("Shifts")}>
                 <Text style={styles.viewAll}>View All ›</Text>
               </TouchableOpacity>
             </View>
-            <RowItem title="Hospital Complex" time="10-08-2025, 9:00 AM – 5:00 PM" amount="$200" />
-            <RowItem title="Woolworths" time="12-08-2025, 9:00 AM – 5:00 PM" amount="$170" />
+            {upcomingShifts.length > 0 ? (
+              upcomingShifts.slice(0, 2).map((s, i) => (
+                <RowItem
+                  key={i}
+                  title={s.title}
+                  time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime} – ${s.endTime}`}
+                  amount={
+                    s.payRate && s.startTime && s.endTime
+                      ? (() => {
+                          const [sh, sm] = s.startTime.split(":").map(Number);
+                          const [eh, em] = s.endTime.split(":").map(Number);
+                          const start = sh * 60 + sm;
+                          const end = eh * 60 + em;
+                          let duration = (end - start + 1440) % 1440;
+                          if (duration === 0) duration = 1440;
+                          const hours = duration / 60;
+                          return `$${s.payRate * hours}`;
+                        })()
+                      : undefined
+                  }
+                />
+              ))
+            ) : (
+              <Text style={{ color: MUTED, fontSize: 14, marginTop: 6 }}>
+                No upcoming shifts
+              </Text>
+            )}
           </View>
 
           <View style={{ height: 88 }} />
         </View>
       </ScrollView>
-
-      {/* Bottom tabs (visual) */}
-      <View style={styles.tabBar}>
-        <View style={styles.tabActive}>
-          <Ionicons name="home" size={20} color="#0F172A" />
-          <Text style={styles.tabTextActive}>Home</Text>
-        </View>
-        <View style={styles.tab}>
-          <Ionicons name="briefcase-outline" size={20} color="#9AA3AF" />
-          <Text style={styles.tabText}>Shifts</Text>
-        </View>
-        <View style={styles.tab}>
-          <Ionicons name="person-outline" size={20} color="#9AA3AF" />
-          <Text style={styles.tabText}>Profile</Text>
-        </View>
-      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#FFFFFF" },
-
-  topBar: {
-    height: 48,
-    backgroundColor: NAVY,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-  },
-  topIcons: { flexDirection: "row", alignItems: "center" },
-
   scroll: { alignItems: "center" },
-
-  // Headings
   h1: { fontSize: 28, fontWeight: "800", color: "#0F172A", letterSpacing: 0.2, textAlign: "center" },
   h2: { fontSize: 14, color: "#6B7280", marginTop: 6, textAlign: "center" },
-
-  // Metrics grid
   grid: {
     paddingHorizontal: P,
     marginTop: 18,
@@ -209,8 +313,6 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 20, fontWeight: "800", color: "#0F172A" },
   statLabel: { marginTop: 10, fontSize: 12, color: "#6B7280" },
-
-  // Outer white cards
   card: {
     marginHorizontal: P,
     marginTop: 18,
@@ -236,8 +338,6 @@ const styles = StyleSheet.create({
   cardHeadLeft: { flexDirection: "row", alignItems: "center" },
   cardHeadTxt: { marginLeft: 8, fontSize: 16, color: MUTED, fontWeight: "700" },
   viewAll: { fontSize: 15, color: "#3E63DD", fontWeight: "700" },
-
-  // Inner pills
   rowItem: {
     borderWidth: 1,
     borderColor: BORDER,
@@ -252,20 +352,4 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
   rowSub: { fontSize: 13, color: "#6B7280", marginTop: 6 },
   rowAmt: { fontSize: 16, fontWeight: "900", color: "#1A936F", paddingLeft: 10 },
-
-  // Bottom tabs
-  tabBar: {
-    height: 64,
-    borderTopWidth: 1,
-    borderTopColor: "#EDF1F6",
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingBottom: 8,
-  },
-  tab: { alignItems: "center", justifyContent: "center" },
-  tabActive: { alignItems: "center", justifyContent: "center" },
-  tabText: { fontSize: 12, color: "#9AA3AF", marginTop: 4 },
-  tabTextActive: { fontSize: 12, color: "#17223B", fontWeight: "800", marginTop: 4 },
 });

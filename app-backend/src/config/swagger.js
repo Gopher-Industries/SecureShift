@@ -2,6 +2,8 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
+const PORT = process.env.PORT || 5000;
+
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -12,7 +14,7 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000', // Update for prod if needed
+        url: `http://localhost:${PORT}`,
         description: 'Local server',
       },
     ],
@@ -38,7 +40,7 @@ const swaggerSpec = swaggerJsdoc(options);
 
 const setupSwagger = (app) => {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  console.log('📄 Swagger docs available at: http://localhost:3000/api-docs');
+  console.log(`📄 Swagger docs available at: http://localhost:${PORT}/api-docs`);
 };
 
 export default setupSwagger;

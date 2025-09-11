@@ -31,11 +31,58 @@ const CreateShift = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  // Connect to backend with Authorization and auto-generate endTime
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      console.log('Submitted:', formData);
+    if (!validate()) return;
+
+    try {
+      // Calculate endTime as +8 hours of startTime
+      const start = formData.time;
+      let endTime = start;
+      if (start) {
+        const [hour, minute] = start.split(':').map(Number);
+        const endHour = (hour + 8) % 24;
+        endTime = `${String(endHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      }
+
+      const payload = {
+        title: formData.title,
+        date: formData.date,
+        startTime: formData.time,
+        endTime, // backend requires this
+        location: { street: formData.location },
+        payRate: formData.payRate
+      };
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('You must be logged in as an employer.');
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/api/v1/shifts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create shift');
+      }
+
       alert('Shift created successfully!');
+      console.log('Server response:', data);
+      handleReset();
+
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Error creating shift');
     }
   };
 
@@ -50,7 +97,7 @@ const CreateShift = () => {
     setErrors({});
   };
 
-   // Inline styles 
+  // Inline styles unchanged
   const styles = {
     page: {
       display: 'flex',
@@ -59,7 +106,6 @@ const CreateShift = () => {
       background: '#fafafa',
       fontFamily: 'Poppins, sans-serif',
     },
-    
     content: {
       flex: 1,
       display: 'flex',
@@ -71,16 +117,8 @@ const CreateShift = () => {
       padding: '50px',
       background: '#fff',
     },
-    formTitle: {
-      fontSize: '28px',
-      fontWeight: '600',
-      marginBottom: '8px',
-    },
-    formSubtitle: {
-      fontSize: '14px',
-      marginBottom: '30px',
-      color: '#555',
-    },
+    formTitle: { fontSize: '28px', fontWeight: '600', marginBottom: '8px' },
+    formSubtitle: { fontSize: '14px', marginBottom: '30px', color: '#555' },
     input: {
       width: '100%',
       padding: '12px 16px',
@@ -92,17 +130,8 @@ const CreateShift = () => {
       outline: 'none',
       backgroundColor: '#f2f2f2',
     },
-    error: {
-      fontSize: '13px',
-      color: '#aa0028',
-      margin: '-15px 0 15px',
-    },
-    buttonRow: {
-      display: 'flex',
-      justifyContent: 'center',
-      gap: '20px',
-      marginTop: '20px',
-    },
+    error: { fontSize: '13px', color: '#aa0028', margin: '-15px 0 15px' },
+    buttonRow: { display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '20px' },
     primaryBtn: {
       padding: '12px 30px',
       background: '#274b93',
@@ -127,78 +156,55 @@ const CreateShift = () => {
     },
     logoSection: {
       flex: 1,
-  background: '#072261',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',  
-  backgroundSize: 'contain',   // keeps aspect ratio
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'center',
+      background: '#072261',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
     },
-    logo: {
-      maxWidth: '300px',
-      maxHeight: '300px',
-      objectFit: 'contain',
-      
-    },
+    logo: { maxWidth: '300px', maxHeight: '300px', objectFit: 'contain' },
     footer: {
-  background: '#072261',
-  color: '#fff',
-  padding: '15px 40px',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-},
-footerLeft: {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-},
-footerLogo: {
-  width: '26px',
-  height: '26px',
-},
-footerLinks: {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '15px',
-},
-footerBtn: {
-  padding: '8px 18px',
-  background: '#274b93',
-  color: '#fff',
-  fontSize: '14px',
-  fontWeight: '500',
-  border: 'none',
-  borderRadius: '20px',
-  cursor: 'pointer',
-  fontFamily: 'Poppins, sans-serif',
-},
-profileIcon: {
-  width: '32px',
-  height: '32px',
-  borderRadius: '50%',
-  background: '#fff',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  cursor: 'pointer',
-},
-
+      background: '#072261',
+      color: '#fff',
+      padding: '15px 40px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    footerLeft: { display: 'flex', alignItems: 'center', gap: '10px' },
+    footerLogo: { width: '26px', height: '26px' },
+    footerLinks: { display: 'flex', alignItems: 'center', gap: '15px' },
+    footerBtn: {
+      padding: '8px 18px',
+      background: '#274b93',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: '500',
+      border: 'none',
+      borderRadius: '20px',
+      cursor: 'pointer',
+      fontFamily: 'Poppins, sans-serif',
+    },
+    profileIcon: {
+      width: '32px',
+      height: '32px',
+      borderRadius: '50%',
+      background: '#fff',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      cursor: 'pointer',
+    },
   };
 
   return (
     <div style={styles.page}>
-    
-
-
-      {/* Main content */}
       <div style={styles.content}>
-        {/* Left - Form */}
         <div style={styles.formSection}>
           <h2 style={styles.formTitle}>Create Shift</h2>
           <p style={styles.formSubtitle}>Post a new shift and connect with reliable staff.</p>
-
           <form onSubmit={handleSubmit}>
             <input
               style={styles.input}
@@ -256,43 +262,12 @@ profileIcon: {
             </div>
           </form>
         </div>
-
-        {/* Right - Logo */}
         <div style={styles.logoSection}>
-          <img
-            style={styles.logo}
-            src="logo.svg"
-            alt="Secure Shift Logo"
-            style={{ width: '400px', height: 'auto' }}
-          />
+          <img style={styles.logo} src="logo.svg" alt="Secure Shift Logo" style={{ width: '400px', height: 'auto' }} />
         </div>
       </div>
-
-      {/* Footer */}
-<div style={styles.footer}>
-  {/* Left side: logo + Secure Shift */}
-  <div style={styles.footerLeft}>
-    <img src="logo.svg" alt="Logo" style={styles.footerLogo} />
-    <span>Secure Shift</span>
-  </div>
-
-  {/* Right side: nav buttons + profile */}
-  <div style={styles.footerLinks}>
-    <button style={styles.footerBtn}>Home</button>
-    <button style={styles.footerBtn}>Jobs</button>
-    <button style={styles.footerBtn}>Applications</button>
-    <div style={styles.profileIcon}>
-      <img src="profile.png" alt="Profile" style={{ 
-      width: '100%', 
-      height: '100%', 
-      borderRadius: '50%', 
-      objectFit: 'cover' 
-    }}  />
     </div>
-  </div>
-</div>
-    </div>
-    );
+  );
 };
 
 export default CreateShift;
