@@ -1,33 +1,46 @@
 // screens/LoginScreen.tsx
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
+  Alert,
   Image,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Added for token storage and login API
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login as apiLogin, verifyOtp as apiVerifyOtp } from '../api/auth';
 
-export default function LoginScreen({ navigation }: any) {
+type LoginScreenProps = {
+  navigation: {
+    reset: (opts: { index: number; routes: { name: string }[] }) => void;
+    navigate: (name: string) => void;
+    replace: (name: string) => void;
+  };
+};
+
+function getErrorMessage(e: unknown, fallback: string) {
+  if (e && typeof e === 'object') {
+    const err = e as { message?: string; response?: { data?: { message?: string } } };
+    return err.response?.data?.message ?? err.message ?? fallback;
+  }
+  return fallback;
+}
+
+export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // State for OTP mode and code
   const [otpMode, setOtpMode] = useState(false);
   const [otp, setOtp] = useState('');
 
-  // State for loading indicator
   const [submitting, setSubmitting] = useState(false);
 
   const validate = () => {
@@ -38,12 +51,10 @@ export default function LoginScreen({ navigation }: any) {
     return null;
   };
 
-  // Reset stack and go to AppTabs
   const goToApp = async () => {
-    navigation.reset({ index: 0, routes: [{ name: 'AppTabs' as never }] });
+    navigation.reset({ index: 0, routes: [{ name: 'AppTabs' }] });
   };
 
-  // Now handles API login and OTP fallback
   const handleLogin = async () => {
     const msg = validate();
     if (msg) {
@@ -56,14 +67,14 @@ export default function LoginScreen({ navigation }: any) {
       const res = await apiLogin({ email: email.trim().toLowerCase(), password });
 
       if (res.token) {
-        await AsyncStorage.setItem('auth_token', res.token); // Save token
+        await AsyncStorage.setItem('auth_token', res.token);
         await goToApp();
       } else {
-        setOtpMode(true); // Trigger OTP screen
+        setOtpMode(true);
         Alert.alert('OTP required', 'Please enter the code sent to your email.');
       }
-    } catch (e: any) {
-      const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Try again';
+    } catch (e: unknown) {
+      const apiMsg = getErrorMessage(e, 'Try again');
       setError(apiMsg);
       Alert.alert('Login failed', apiMsg);
     } finally {
@@ -71,7 +82,6 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  // OTP verification handler
   const handleVerifyOtp = async () => {
     if (!otp.trim()) {
       Alert.alert('OTP required', 'Enter your OTP code.');
@@ -82,10 +92,10 @@ export default function LoginScreen({ navigation }: any) {
       const res = await apiVerifyOtp({ email: email.trim().toLowerCase(), otp: otp.trim() });
 
       if (!res.token) throw new Error('No token returned');
-      await AsyncStorage.setItem('auth_token', res.token); // Save verified token
+      await AsyncStorage.setItem('auth_token', res.token);
       await goToApp();
-    } catch (e: any) {
-      const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Invalid or expired code';
+    } catch (e: unknown) {
+      const apiMsg = getErrorMessage(e, 'Invalid or expired code');
       setError(apiMsg);
       Alert.alert('OTP verification failed', apiMsg);
     } finally {
@@ -94,7 +104,10 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={styles.safe}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <View style={styles.container}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
         <Text style={styles.subtitle}>Login with your email and password</Text>
@@ -112,7 +125,7 @@ export default function LoginScreen({ navigation }: any) {
             onChangeText={(t) => {
               setEmail(t);
               if (otpMode) {
-                setOtpMode(false); // reset OTP if email changes
+                setOtpMode(false);
                 setOtp('');
               }
               if (error) setError(null);
@@ -143,16 +156,22 @@ export default function LoginScreen({ navigation }: any) {
             accessibilityRole="button"
             accessibilityLabel={showPass ? 'Hide password' : 'Show password'}
           >
-            <MaterialCommunityIcons name={showPass ? 'eye-off-outline' : 'eye-outline'} size={22} color="#6B7280" />
+            <MaterialCommunityIcons
+              name={showPass ? 'eye-off-outline' : 'eye-outline'}
+              size={22}
+              color="#6B7280"
+            />
           </TouchableOpacity>
         </View>
 
-        {/* Button now shows loading state */}
-        <TouchableOpacity style={[styles.button, submitting && { opacity: 0.6 }]} onPress={handleLogin} disabled={submitting}>
+        <TouchableOpacity
+          style={[styles.button, submitting && styles.btnDisabled]}
+          onPress={handleLogin}
+          disabled={submitting}
+        >
           <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Login'}</Text>
         </TouchableOpacity>
 
-        {/* OTP field shown only if triggered */}
         {otpMode && (
           <>
             <Text style={styles.label}>Enter OTP*</Text>
@@ -168,7 +187,7 @@ export default function LoginScreen({ navigation }: any) {
             </View>
 
             <TouchableOpacity
-              style={[styles.button, { marginTop: 16 }, submitting && { opacity: 0.6 }]}
+              style={[styles.button, styles.mt16, submitting && styles.btnDisabled]}
               onPress={handleVerifyOtp}
               disabled={submitting}
             >
@@ -189,33 +208,40 @@ export default function LoginScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F6FA' },
+  btnDisabled: { opacity: 0.6 },
+  button: {
+    alignItems: 'center',
+    backgroundColor: '#274289',
+    borderRadius: 999,
+    height: 58,
+    justifyContent: 'center',
+    marginTop: 28,
+  },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 80 },
-  logo: { width: 150, height: 150, alignSelf: 'center', resizeMode: 'contain' },
-  title: { fontSize: 26, fontWeight: '700', textAlign: 'center', color: '#1F2937' },
-  subtitle: { marginTop: 6, textAlign: 'center', color: '#6B7280' },
-  error: { color: '#B00020', textAlign: 'center', marginTop: 12, fontWeight: '600' },
-  label: { marginTop: 24, marginBottom: 8, color: '#111827', fontWeight: '600' },
-  mt16: { marginTop: 16 },
+  error: { color: '#B00020', fontWeight: '600', marginTop: 12, textAlign: 'center' },
+  eye: { height: 56, justifyContent: 'center', position: 'absolute', right: 14 },
+  footerLink: { fontWeight: '700' },
+  footerText: { color: '#111827', marginTop: 22, textAlign: 'center' },
+  input: { color: '#111827', fontSize: 16 },
   inputWrap: {
     backgroundColor: '#FFFFFF',
+    borderColor: '#E5E7EB',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 14,
+    elevation: 1,
     height: 56,
     justifyContent: 'center',
+    paddingHorizontal: 14,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
   },
-  input: { fontSize: 16, color: '#111827' },
+  label: { color: '#111827', fontWeight: '600', marginBottom: 8, marginTop: 24 },
+  logo: { alignSelf: 'center', height: 150, resizeMode: 'contain', width: 150 },
+  mt16: { marginTop: 16 },
   padRight: { paddingRight: 44 },
-  eye: { position: 'absolute', right: 14, height: 56, justifyContent: 'center' },
-  button: { marginTop: 28, height: 58, borderRadius: 999, backgroundColor: '#274289', alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  footerText: { textAlign: 'center', marginTop: 22, color: '#111827' },
-  footerLink: { fontWeight: '700' },
+  safe: { backgroundColor: '#F5F6FA', flex: 1 },
+  subtitle: { color: '#6B7280', marginTop: 6, textAlign: 'center' },
 });

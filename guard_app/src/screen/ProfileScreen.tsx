@@ -1,12 +1,7 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-} from 'react-native';
+// src/screen/ProfileScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function ProfileScreen() {
   return (
@@ -25,20 +20,20 @@ export default function ProfileScreen() {
         {/* Performance Summary */}
         <View style={[styles.card, styles.performanceCard]}>
           <Text style={styles.cardTitle}>
-            <Text style={styles.icon}>⭐</Text>  Performance Summary
+            <Text style={styles.icon}>⭐</Text> Performance Summary
           </Text>
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: '#4F46E5' }]}>140</Text>
+              <Text style={[styles.statValue, styles.statValueIndigo]}>140</Text>
               <Text style={styles.statLabel}>Total Shifts</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: '#facc15' }]}>4.9</Text>
+              <Text style={[styles.statValue, styles.statValueYellow]}>4.9</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: 'green' }]}>98%</Text>
+              <Text style={[styles.statValue, styles.statValueGreen]}>98%</Text>
               <Text style={styles.statLabel}>Attendance</Text>
             </View>
           </View>
@@ -48,7 +43,7 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
           <Text style={styles.infoText}>Email: alex.johnson@gmail.com</Text>
-          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: +61 123456789</Text>
+          <Text style={[styles.infoText, styles.infoTextSpaced]}>Phone: +61 123456789</Text>
         </View>
 
         {/* Certifications */}
@@ -66,99 +61,104 @@ export default function ProfileScreen() {
     </SafeAreaView>
   );
 }
-//styles for the profile screen
+
 const styles = StyleSheet.create({
-  //main screen container
-  container: {
-    flex: 1,
-    backgroundColor: '#f9f9f9',
+  // --- class names alphabetized ---
+  avatar: {
+    alignItems: 'center',
+    backgroundColor: '#1E3A8A',
+    borderRadius: 50,
+    height: 100,
+    justifyContent: 'center',
+    width: 100,
   },
-  // Padding around scroll view content
-  scrollContent: {
-    paddingTop: 100, 
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  // Container for avatar
   avatarContainer: {
     alignItems: 'center',
     marginBottom: 10,
   },
-  // Avatar circle with icon inside
-  avatar: {
-    backgroundColor: '#1E3A8A',
-    height: 100,
-    width: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
+  badge: {
+    backgroundColor: '#e0e7ff',
+    borderRadius: 20,
+    marginBottom: 8,
+    marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  // Name text below avatar
-  name: {
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  // Reusable card style
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    elevation: 1,
-  },
-  performanceCard: {
-    backgroundColor: '#EEF2FF', 
-  },
-  // Card title style
-  cardTitle: {
-    fontWeight: 'bold',
-    fontSize: 15,
-    marginBottom: 10,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
-  },
-  statBox: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  statLabel: {
+  badgeText: {
+    color: '#1E3A8A',
     fontSize: 12,
-    color: '#555',
-    marginTop: 2,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#333',
   },
   badgesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 10,
   },
-  // Badge label
-  badge: {
-    backgroundColor: '#e0e7ff',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginRight: 8,
-    marginBottom: 8,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    elevation: 1,
+    marginBottom: 15,
+    padding: 15,
   },
-  badgeText: {
-    fontSize: 12,
-    color: '#1E3A8A',
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  container: {
+    backgroundColor: '#f9f9f9',
+    flex: 1,
   },
   icon: {
     fontSize: 16,
     marginRight: 6,
+  },
+  infoText: {
+    color: '#333',
+    fontSize: 14,
+  },
+  infoTextSpaced: {
+    marginTop: 6,
+  },
+  name: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  performanceCard: {
+    backgroundColor: '#EEF2FF',
+  },
+  scrollContent: {
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 100,
+  },
+  statBox: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statLabel: {
+    color: '#555',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  statValueGreen: {
+    color: 'green',
+  },
+  statValueIndigo: {
+    color: '#4F46E5',
+  },
+  statValueYellow: {
+    color: '#facc15',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
   },
 });
