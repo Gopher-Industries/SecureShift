@@ -4,11 +4,13 @@ import { LocalStorage } from "./localStorage";
 
 export const API_BASE_URL: string =
   (process.env.EXPO_PUBLIC_API_BASE_URL as string) ||
-  (Platform.OS === 'android' ? 'http://10.0.2.2:5000/api/v1' : 'http://localhost:5000/api/v1'); // Local for android and ios simulator
+  (Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000'); // Local for android and ios simulator
+
+export const API_PATH: string = '/api/v1';
 
 // Create an Axios instance with a base URL and timeout
 const http = axios.create({
-  baseURL: API_BASE_URL, // API base URL from environment variable
+  baseURL: API_BASE_URL + API_PATH, // API base URL from environment variable
   timeout: 20000, // 20 second timeout for requests
 });
 
