@@ -1,6 +1,7 @@
-import axios from "axios";
+import axios from 'axios';
 import { Platform } from 'react-native';
-import { LocalStorage } from "./localStorage";
+
+import { LocalStorage } from './localStorage';
 
 export const API_BASE_URL: string =
   (process.env.EXPO_PUBLIC_API_BASE_URL as string) ||
@@ -31,7 +32,7 @@ export function attach401Handler(onUnauthorized: () => void) {
         onUnauthorized(); // Trigger logout handler (e.g., navigate to Login)
       }
       throw err; // Rethrow error for further handling
-    }
+    },
   );
 }
 
