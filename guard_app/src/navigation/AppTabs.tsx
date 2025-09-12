@@ -1,7 +1,7 @@
 // src/navigation/AppTabs.tsx
 import React from 'react';
 import { View, Text } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabNavigationOptions, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from '../screen/HomeScreen';
@@ -19,9 +19,9 @@ const Tab = createBottomTabNavigator<AppTabParamList>();
 export default function AppTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={({ route }): BottomTabNavigationOptions => ({
         headerShown: true,
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size }: { color: string; size: number }) => {
           const name =
             route.name === 'Home'
               ? ('home-outline' as const)
