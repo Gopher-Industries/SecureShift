@@ -1,31 +1,35 @@
+// screens/LoginScreen.tsx
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
+  Alert,
   Image,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-import {
-  login as apiLogin,
-  verifyOtp as apiVerifyOtp,
-  getMe, // Added to fetch current user's profile
-} from '../api/auth';
+import { getMe, login as apiLogin, verifyOtp as apiVerifyOtp } from '../api/auth';
 
-export default function LoginScreen({ navigation }: any) {
+type Nav = {
+  reset: (opts: { index: number; routes: { name: string }[] }) => void;
+  navigate: (name: string) => void;
+};
+
+export default function LoginScreen({ navigation }: { navigation: Nav }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [otpMode, setOtpMode] = useState(false);
   const [otp, setOtp] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
 
   const validate = () => {
@@ -37,7 +41,7 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const goToApp = async () => {
-    navigation.reset({ index: 0, routes: [{ name: 'AppTabs' as never }] });
+    navigation.reset({ index: 0, routes: [{ name: 'AppTabs' }] });
   };
 
   const handleLogin = async () => {
@@ -52,14 +56,15 @@ export default function LoginScreen({ navigation }: any) {
       const res = await apiLogin({ email: email.trim(), password });
 
       if (res.token) {
-        await AsyncStorage.setItem('auth_token', res.token); // Save token
-        await goToApp(); // Direct login
+        await AsyncStorage.setItem('auth_token', res.token);
+        await goToApp();
       } else {
-        setOtpMode(true); // Switch to OTP input
+        setOtpMode(true);
         Alert.alert('OTP required', 'Please enter the code sent to your email.');
       }
-    } catch (e: any) {
-      const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Try again';
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      const apiMsg = err?.response?.data?.message ?? err?.message ?? 'Try again';
       setError(apiMsg);
       Alert.alert('Login failed', apiMsg);
     } finally {
@@ -67,7 +72,6 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  // OTP verification logic with license status check
   const handleVerifyOtp = async () => {
     if (!otp.trim()) {
       Alert.alert('OTP required', 'Enter your OTP code.');
@@ -80,41 +84,30 @@ export default function LoginScreen({ navigation }: any) {
       const token = res.token;
       if (!token) throw new Error('No token returned');
 
-      // Save token
       await AsyncStorage.setItem('auth_token', token);
 
-      // Fetch user profile to check license status
       const user = await getMe();
-      const license = user?.license;
-
-      if (!license) {
-        Alert.alert('Error', 'License info not found.');
-        return;
-      }
-
-      const status = license.status;
-      const reason = license.rejectionReason;
+      const status = user?.license?.status as 'verified' | 'pending' | 'rejected' | undefined;
+      const reason = user?.license?.rejectionReason as string | undefined;
 
       if (status === 'verified') {
-        // If verified, go to app
         await goToApp();
       } else if (status === 'pending') {
-        // If pending, show info message
         Alert.alert(
           'License Pending',
           'Your license is currently under review. You will be notified once it is verified.',
         );
       } else if (status === 'rejected') {
-        // If rejected, show rejection reason
         Alert.alert(
           'License Rejected',
           `Your license was rejected.\n\nReason: ${reason || 'No reason provided'}.\n\nPlease check your email for more details.`,
         );
       } else {
-        Alert.alert('Unknown License Status', `Status: ${status}`);
+        Alert.alert('Unknown License Status', `Status: ${String(status)}`);
       }
-    } catch (e: any) {
-      const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Invalid or expired code';
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } }; message?: string };
+      const apiMsg = err?.response?.data?.message ?? err?.message ?? 'Invalid or expired code';
       setError(apiMsg);
       Alert.alert('OTP verification failed', apiMsg);
     } finally {
@@ -132,7 +125,6 @@ export default function LoginScreen({ navigation }: any) {
         <Text style={styles.subtitle}>Login with your email and password</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {/* Email input */}
         <Text style={styles.label}>Email*</Text>
         <View style={styles.inputWrap}>
           <TextInput
@@ -155,7 +147,6 @@ export default function LoginScreen({ navigation }: any) {
           />
         </View>
 
-        {/* Password input */}
         <Text style={[styles.label, styles.mt16]}>Password*</Text>
         <View style={styles.inputWrap}>
           <TextInput
@@ -174,6 +165,8 @@ export default function LoginScreen({ navigation }: any) {
             onPress={() => setShowPass((s) => !s)}
             style={styles.eye}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel={showPass ? 'Hide password' : 'Show password'}
           >
             <MaterialCommunityIcons
               name={showPass ? 'eye-off-outline' : 'eye-outline'}
@@ -183,16 +176,14 @@ export default function LoginScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Login button */}
         <TouchableOpacity
-          style={[styles.button, submitting && { opacity: 0.6 }]}
+          style={[styles.button, submitting && styles.buttonDisabled]}
           onPress={handleLogin}
           disabled={submitting}
         >
           <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Login'}</Text>
         </TouchableOpacity>
 
-        {/* OTP input */}
         {otpMode && (
           <>
             <Text style={styles.label}>Enter OTP*</Text>
@@ -208,7 +199,7 @@ export default function LoginScreen({ navigation }: any) {
             </View>
 
             <TouchableOpacity
-              style={[styles.button, { marginTop: 16 }, submitting && { opacity: 0.6 }]}
+              style={[styles.button, styles.mt16, submitting && styles.buttonDisabled]}
               onPress={handleVerifyOtp}
               disabled={submitting}
             >
@@ -228,7 +219,6 @@ export default function LoginScreen({ navigation }: any) {
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
@@ -238,6 +228,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 28,
   },
+  buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 80 },
   error: { color: '#B00020', fontWeight: '600', marginTop: 12, textAlign: 'center' },
