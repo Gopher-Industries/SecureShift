@@ -1,5 +1,4 @@
 // src/screen/HomeScreen.tsx
-
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +18,8 @@ import {
 import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
 type User = { name?: string; rating?: number };
 type Shift = {
   title: string;
@@ -33,6 +34,8 @@ type Metrics = { confirmed: number; pending: number; earnings: number; rating: n
 const NAVY = '#244B7A';
 const BORDER = '#E7EBF2';
 const MUTED = '#5C667A';
+const BLUE = '#3E63DD';
+const GREEN = '#1A936F';
 
 const DEVICE_W = Dimensions.get('window').width;
 const CANVAS = Math.min(390, DEVICE_W);
@@ -47,7 +50,6 @@ function minutesBetween(startHHMM: string, endHHMM: string): number {
   if (duration === 0) duration = 1440;
   return duration;
 }
-
 function moneyForShift(s: Shift): string | undefined {
   if (!s.payRate || !s.startTime || !s.endTime) return undefined;
   const hours = minutesBetween(s.startTime, s.endTime) / 60;
@@ -90,12 +92,12 @@ const RowItem = ({
       <Text style={styles.rowTitle}>{title}</Text>
       <Text style={styles.rowSub}>{time}</Text>
     </View>
-    {amount ? <Text style={styles.rowAmt}>{amount}</Text> : null}
+    {!!amount && <Text style={styles.rowAmt}>{amount}</Text>}
   </View>
 );
 
 export default function HomeScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<Nav>();
 
   const [user, setUser] = useState<User | null>(null);
   const [metrics, setMetrics] = useState<Metrics>({
@@ -114,9 +116,26 @@ export default function HomeScreen() {
       headerStyle: { backgroundColor: NAVY },
       headerTintColor: '#fff',
       headerRight: () => (
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
-          <Ionicons name="settings-outline" size={22} color="#fff" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Messages')}
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Ionicons name="chatbubble-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Notifications')}
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Settings')}
+            style={{ paddingLeft: 8 }}
+          >
+            <Ionicons name="settings-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation]);
@@ -135,7 +154,6 @@ export default function HomeScreen() {
       const today = myShifts.filter(
         (s) => s.status === 'assigned' && new Date(s.date).toDateString() === todayStr,
       );
-
       const upcoming = myShifts.filter(
         (s) => s.status === 'assigned' && new Date(s.date) > new Date(),
       );
@@ -146,17 +164,10 @@ export default function HomeScreen() {
         return sum + s.payRate * hours;
       }, 0);
 
-      setMetrics({
-        confirmed,
-        pending,
-        earnings,
-        rating: u?.rating ?? 0,
-      });
-
+      setMetrics({ confirmed, pending, earnings, rating: u?.rating ?? 0 });
       setTodayShifts(today);
       setUpcomingShifts(upcoming);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Failed to load home data:', err);
     }
   };
@@ -194,7 +205,7 @@ export default function HomeScreen() {
           {/* Metrics */}
           <View style={styles.grid}>
             <StatCard
-              icon={<Ionicons name="calendar-outline" size={18} color="#3E63DD" />}
+              icon={<Ionicons name="calendar-outline" size={18} color={BLUE} />}
               label="Confirmed shifts"
               value={metrics.confirmed}
               extraStyle={styles.tintBlue}
@@ -206,7 +217,7 @@ export default function HomeScreen() {
               extraStyle={styles.tintYellow}
             />
             <StatCard
-              icon={<Feather name="dollar-sign" size={18} color="#1A936F" />}
+              icon={<Feather name="dollar-sign" size={18} color={GREEN} />}
               label="Today’s Earning"
               value={`$${metrics.earnings.toFixed(0)}`}
               extraStyle={styles.tintGreen}
@@ -281,101 +292,96 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#FFFFFF' },
+  scroll: { alignItems: 'center' },
   canvas: { width: CANVAS },
 
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: BORDER,
-    borderRadius: 24,
-    borderWidth: 1,
-    elevation: 8,
-    marginHorizontal: P,
-    marginTop: 18,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-  },
-  cardHead: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  cardHeadLeft: { alignItems: 'center', flexDirection: 'row' },
-  cardHeadTxt: { color: MUTED, fontSize: 16, fontWeight: '700', marginLeft: 8 },
-
-  emptyText: { color: MUTED, fontSize: 14, marginTop: 6 },
-
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 18,
-    paddingHorizontal: P,
-  },
-
+  // Headings
+  heading: { alignItems: 'center', paddingHorizontal: P, paddingTop: 18 },
   h1: {
-    color: '#0F172A',
     fontSize: 28,
     fontWeight: '800',
+    color: '#0F172A',
     letterSpacing: 0.2,
     textAlign: 'center',
   },
-  h2: { color: '#6B7280', fontSize: 14, marginTop: 6, textAlign: 'center' },
+  h2: { fontSize: 14, color: '#6B7280', marginTop: 6, textAlign: 'center' },
 
-  heading: { alignItems: 'center', paddingHorizontal: P, paddingTop: 18 },
-
-  rowAmt: { color: '#1A936F', fontSize: 16, fontWeight: '900', paddingLeft: 10 },
-  rowItem: {
-    alignItems: 'center',
+  // Metrics
+  grid: {
+    paddingHorizontal: P,
+    marginTop: 18,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  statCard: { width: (CANVAS - P * 2 - 12) / 2, borderRadius: 22, padding: 16, marginBottom: 12 },
+  statTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  statValue: { fontSize: 20, fontWeight: '800', color: '#0F172A' },
+  statLabel: { marginTop: 10, fontSize: 12, color: '#6B7280' },
+  tintBlue: { backgroundColor: '#EEF2FF' },
+  tintYellow: { backgroundColor: '#FFF4C8' },
+  tintGreen: { backgroundColor: '#EAF7EF' },
+  tintPurple: { backgroundColor: '#ECEBFF' },
+
+  // Cards
+  card: {
+    marginHorizontal: P,
+    marginTop: 18,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: BORDER,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  cardHead: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  cardHeadLeft: { flexDirection: 'row', alignItems: 'center' },
+  cardHeadTxt: { marginLeft: 8, fontSize: 16, color: MUTED, fontWeight: '700' },
+
+  // Rows
+  rowItem: {
+    borderWidth: 1,
     borderColor: BORDER,
     borderRadius: 18,
-    borderWidth: 1,
-    flexDirection: 'row',
-    marginTop: 12,
     padding: 16,
+    marginTop: 12,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   rowItemHL: { backgroundColor: '#EAF7EF', borderColor: '#D4F0DC' },
   rowLeft: { flex: 1 },
-  rowSub: { color: '#6B7280', fontSize: 13, marginTop: 6 },
-  rowTitle: { color: '#0F172A', fontSize: 18, fontWeight: '800' },
+  rowTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  rowSub: { fontSize: 13, color: '#6B7280', marginTop: 6 },
+  rowAmt: { fontSize: 16, fontWeight: '900', color: GREEN, paddingLeft: 10 },
 
-  safe: { backgroundColor: '#FFFFFF', flex: 1 },
-  scroll: { alignItems: 'center' },
+  emptyText: { color: MUTED, fontSize: 14, marginTop: 6 },
+  viewAll: { fontSize: 15, color: '#3E63DD', fontWeight: '700' },
+
   spacer: { height: 88 },
-
-  statCard: {
-    borderRadius: 22,
-    marginBottom: 12,
-    padding: 16,
-    width: (CANVAS - P * 2 - 12) / 2,
-  },
-  statIcon: {
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    elevation: 2,
-    height: 36,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    width: 36,
-  },
-  statLabel: { color: '#6B7280', fontSize: 12, marginTop: 10 },
-  statTop: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  statValue: { color: '#0F172A', fontSize: 20, fontWeight: '800' },
-
-  tintBlue: { backgroundColor: '#EEF2FF' },
-  tintGreen: { backgroundColor: '#EAF7EF' },
-  tintPurple: { backgroundColor: '#ECEBFF' },
-  tintYellow: { backgroundColor: '#FFF4C8' },
-
-  viewAll: { color: '#3E63DD', fontSize: 15, fontWeight: '700' },
 });
