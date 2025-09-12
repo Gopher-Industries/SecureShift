@@ -1,38 +1,23 @@
+<<<<<<< HEAD
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 
 import { getUserProfile } from '../api/profile';
 import { UserProfile } from '../models/UserProfile';
+=======
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+>>>>>>> origin/main
 
 export default function ProfileScreen() {
-  const [data, setData] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const profile = await getUserProfile();
-        if (mounted) {
-          setData(profile);
-          setError(null);
-        }
-      } catch (e: any) {
-        if (mounted) {
-          setError(e?.message || 'Failed to load profile');
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -44,11 +29,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Name */}
-        {loading || error ? (
-          <Text style={styles.name}>---</Text>
-        ) : (
-          <Text style={styles.name}>{data?.name || '—'}</Text>
-        )}
+        <Text style={styles.name}>Alex Johnson</Text>
 
         {/* Performance Summary */}
         <View style={[styles.card, styles.performanceCard]}>
@@ -75,8 +56,8 @@ export default function ProfileScreen() {
         {/* Contact Info */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
-          <Text style={styles.infoText}>Email: {data?.email || '—'}</Text>
-          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: {data?.phone || '—'}</Text>
+          <Text style={styles.infoText}>Email: alex.johnson@gmail.com</Text>
+          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: +61 123456789</Text>
         </View>
 
         {/* Certifications */}
