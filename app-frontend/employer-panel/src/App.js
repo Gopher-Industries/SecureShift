@@ -10,10 +10,12 @@ import SubmissionConfirmation from './pages/SubmissionConfirmation';
 import CompanyProfile from './pages/CompanyProfile';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import PageTitleHandler from './components/PageTitleHandler';
 
 function App() {
   return (
     <Router>
+      <PageTitleHandler />
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Header />
         <main style={{ flex: 1, paddingBottom: '20px' }}>
