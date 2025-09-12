@@ -1,6 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -18,6 +17,7 @@ import {
   verifyOtp as apiVerifyOtp,
   getMe, // Added to fetch current user's profile
 } from '../api/auth';
+import { LocalStorage } from '../lib/localStorage';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -52,7 +52,7 @@ export default function LoginScreen({ navigation }: any) {
       const res = await apiLogin({ email: email.trim(), password });
 
       if (res.token) {
-        await AsyncStorage.setItem('auth_token', res.token); // Save token
+        await LocalStorage.setToken(res.token); // Save token
         await goToApp(); // Direct login
       } else {
         setOtpMode(true); // Switch to OTP input
@@ -81,7 +81,7 @@ export default function LoginScreen({ navigation }: any) {
       if (!token) throw new Error('No token returned');
 
       // Save token
-      await AsyncStorage.setItem('auth_token', token);
+      await LocalStorage.setToken(token);
 
       // Fetch user profile to check license status
       const user = await getMe();

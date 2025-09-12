@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,11 +9,11 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { UserProfile } from '../models/UserProfile';
+
 import { getUserProfile } from '../api/profile';
 import { LocalStorage } from '../lib/localStorage';
 import { LicenseStatus } from '../models/License';
+import { UserProfile } from '../models/UserProfile';
 
 export default function ProfileScreen({ navigation, route }: any) {
   const [data, setData] = useState<UserProfile | null>(null);
@@ -38,7 +39,7 @@ export default function ProfileScreen({ navigation, route }: any) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const profile = await getUserProfile();
       setData(profile);
     } catch (e: any) {
@@ -63,7 +64,7 @@ export default function ProfileScreen({ navigation, route }: any) {
       // Clear the refresh parameter to prevent infinite loops from navigation
       navigation.setParams({ refresh: false });
     }
-  }, [route?.params?.refresh]);
+  }, [navigation, route?.params?.refresh]);
 
   // Helper functions for license status styling
   const getStatusBadgeStyle = (status: LicenseStatus) => {
@@ -153,8 +154,8 @@ export default function ProfileScreen({ navigation, route }: any) {
         {/* Contact Info */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
-          <Text style={styles.infoText}>Email: alex.johnson@gmail.com</Text>
-          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: +61 123456789</Text>
+          <Text style={styles.infoText}>Email: {data?.email || '—'}</Text>
+          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: {data?.phone || '—'}</Text>
         </View>
 
         {/* Address Info */}
@@ -184,9 +185,7 @@ export default function ProfileScreen({ navigation, route }: any) {
                 </View>
               </View>
               {data.license.rejectionReason && (
-                <Text style={styles.rejectionReason}>
-                  Reason: {data.license.rejectionReason}
-                </Text>
+                <Text style={styles.rejectionReason}>Reason: {data.license.rejectionReason}</Text>
               )}
             </View>
           </View>
@@ -216,7 +215,7 @@ const styles = StyleSheet.create({
   },
   // Padding around scroll view content
   scrollContent: {
-    paddingTop: 50, 
+    paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },

@@ -1,15 +1,13 @@
-// src/navigation/AppNavigator.tsx
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
 
 import AppTabs from './AppTabs';
+import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/NotificationsScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
-import EditProfileScreen from '../screen/EditProfileScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -26,7 +24,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
@@ -46,7 +44,11 @@ export default function AppNavigator() {
         component={NotificationsScreen}
         options={{ headerShown: true, title: 'Notifications' }}
       />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }
