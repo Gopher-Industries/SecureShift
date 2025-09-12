@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   View,
@@ -11,12 +10,8 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-<<<<<<< HEAD
-
-=======
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
->>>>>>> origin/main
 import {
   login as apiLogin,
   verifyOtp as apiVerifyOtp,
@@ -106,13 +101,13 @@ export default function LoginScreen({ navigation }: any) {
         // If pending, show info message
         Alert.alert(
           'License Pending',
-          'Your license is currently under review. You will be notified once it is verified.',
+          'Your license is currently under review. You will be notified once it is verified.'
         );
       } else if (status === 'rejected') {
         // If rejected, show rejection reason
         Alert.alert(
           'License Rejected',
-          `Your license was rejected.\n\nReason: ${reason || 'No reason provided'}.\n\nPlease check your email for more details.`,
+          `Your license was rejected.\n\nReason: ${reason || 'No reason provided'}.\n\nPlease check your email for more details.`
         );
       } else {
         Alert.alert('Unknown License Status', `Status: ${status}`);
@@ -127,10 +122,7 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.container}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
         <Text style={styles.subtitle}>Login with your email and password</Text>
@@ -179,11 +171,7 @@ export default function LoginScreen({ navigation }: any) {
             style={styles.eye}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <MaterialCommunityIcons
-              name={showPass ? 'eye-off-outline' : 'eye-outline'}
-              size={22}
-              color="#6B7280"
-            />
+            <MaterialCommunityIcons name={showPass ? 'eye-off-outline' : 'eye-outline'} size={22} color="#6B7280" />
           </TouchableOpacity>
         </View>
 
