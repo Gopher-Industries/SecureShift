@@ -11,12 +11,12 @@ export interface ImagePickerResult {
 export async function requestImagePickerPermissions(): Promise<boolean> {
   try {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (status !== 'granted') {
       Alert.alert(
         'Permission Required',
         'Sorry, we need camera roll permissions to select a profile picture.',
-        [{ text: 'OK' }]
+        [{ text: 'OK' }],
       );
       return false;
     }
@@ -50,7 +50,7 @@ export async function pickImageFromGallery(): Promise<ImagePickerResult | null> 
         type: asset.type,
       };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error picking image:', error);
@@ -62,12 +62,12 @@ export async function pickImageFromGallery(): Promise<ImagePickerResult | null> 
 export async function takePhotoWithCamera(): Promise<ImagePickerResult | null> {
   try {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    
+
     if (status !== 'granted') {
       Alert.alert(
         'Permission Required',
         'Sorry, we need camera permissions to take a profile picture.',
-        [{ text: 'OK' }]
+        [{ text: 'OK' }],
       );
       return null;
     }
@@ -89,7 +89,7 @@ export async function takePhotoWithCamera(): Promise<ImagePickerResult | null> {
         type: asset.type,
       };
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error taking photo:', error);
@@ -98,35 +98,34 @@ export async function takePhotoWithCamera(): Promise<ImagePickerResult | null> {
   }
 }
 
-export function showImagePickerOptions({ title, message }: {
-  title: string,
-  message: string
+export function showImagePickerOptions({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
 }): Promise<ImagePickerResult | null> {
   return new Promise((resolve) => {
-    Alert.alert(
-      title,
-      message,
-      [
-        {
-          text: 'Camera',
-          onPress: async () => {
-            const result = await takePhotoWithCamera();
-            resolve(result);
-          },
+    Alert.alert(title, message, [
+      {
+        text: 'Camera',
+        onPress: async () => {
+          const result = await takePhotoWithCamera();
+          resolve(result);
         },
-        {
-          text: 'Gallery',
-          onPress: async () => {
-            const result = await pickImageFromGallery();
-            resolve(result);
-          },
+      },
+      {
+        text: 'Gallery',
+        onPress: async () => {
+          const result = await pickImageFromGallery();
+          resolve(result);
         },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-          onPress: () => resolve(null),
-        },
-      ]
-    );
+      },
+      {
+        text: 'Cancel',
+        style: 'cancel',
+        onPress: () => resolve(null),
+      },
+    ]);
   });
 }
