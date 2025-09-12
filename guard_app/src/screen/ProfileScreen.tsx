@@ -1,12 +1,6 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 
 export default function ProfileScreen() {
   return (
@@ -25,7 +19,7 @@ export default function ProfileScreen() {
         {/* Performance Summary */}
         <View style={[styles.card, styles.performanceCard]}>
           <Text style={styles.cardTitle}>
-            <Text style={styles.icon}>⭐</Text>  Performance Summary
+            <Text style={styles.icon}>⭐</Text> Performance Summary
           </Text>
 
           <View style={styles.statsRow}>
@@ -75,7 +69,7 @@ const styles = StyleSheet.create({
   },
   // Padding around scroll view content
   scrollContent: {
-    paddingTop: 100, 
+    paddingTop: 100,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
@@ -109,7 +103,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   performanceCard: {
-    backgroundColor: '#EEF2FF', 
+    backgroundColor: '#EEF2FF',
   },
   // Card title style
   cardTitle: {
