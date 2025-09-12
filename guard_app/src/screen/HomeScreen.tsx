@@ -1,4 +1,7 @@
 // src/screen/HomeScreen.tsx
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   Dimensions,
@@ -11,9 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -99,7 +100,12 @@ export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
 
   const [user, setUser] = useState<User | null>(null);
-  const [metrics, setMetrics] = useState<Metrics>({ confirmed: 0, pending: 0, earnings: 0, rating: 0 });
+  const [metrics, setMetrics] = useState<Metrics>({
+    confirmed: 0,
+    pending: 0,
+    earnings: 0,
+    rating: 0,
+  });
   const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
   const [upcomingShifts, setUpcomingShifts] = useState<Shift[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -111,13 +117,22 @@ export default function HomeScreen() {
       headerTintColor: '#fff',
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity onPress={() => navigation.navigate('Messages')} style={{ paddingHorizontal: 8 }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Messages')}
+            style={{ paddingHorizontal: 8 }}
+          >
             <Ionicons name="chatbubble-outline" size={22} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ paddingHorizontal: 8 }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Notifications')}
+            style={{ paddingHorizontal: 8 }}
+          >
             <Ionicons name="notifications-outline" size={22} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={{ paddingLeft: 8 }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Settings')}
+            style={{ paddingLeft: 8 }}
+          >
             <Ionicons name="settings-outline" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -139,7 +154,9 @@ export default function HomeScreen() {
       const today = myShifts.filter(
         (s) => s.status === 'assigned' && new Date(s.date).toDateString() === todayStr,
       );
-      const upcoming = myShifts.filter((s) => s.status === 'assigned' && new Date(s.date) > new Date());
+      const upcoming = myShifts.filter(
+        (s) => s.status === 'assigned' && new Date(s.date) > new Date(),
+      );
 
       const earnings = today.reduce((sum, s) => {
         if (!s.startTime || !s.endTime || !s.payRate) return sum;
@@ -250,16 +267,18 @@ export default function HomeScreen() {
             </View>
 
             {upcomingShifts.length > 0 ? (
-              upcomingShifts.slice(0, 2).map((s, i) => (
-                <RowItem
-                  key={`${s.title}-${i}`}
-                  title={s.title}
-                  time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${
-                    s.endTime ?? '--:--'
-                  }`}
-                  amount={moneyForShift(s)}
-                />
-              ))
+              upcomingShifts
+                .slice(0, 2)
+                .map((s, i) => (
+                  <RowItem
+                    key={`${s.title}-${i}`}
+                    title={s.title}
+                    time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${
+                      s.endTime ?? '--:--'
+                    }`}
+                    amount={moneyForShift(s)}
+                  />
+                ))
             ) : (
               <Text style={styles.emptyText}>No upcoming shifts</Text>
             )}
@@ -279,7 +298,13 @@ const styles = StyleSheet.create({
 
   // Headings
   heading: { alignItems: 'center', paddingHorizontal: P, paddingTop: 18 },
-  h1: { fontSize: 28, fontWeight: '800', color: '#0F172A', letterSpacing: 0.2, textAlign: 'center' },
+  h1: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: 0.2,
+    textAlign: 'center',
+  },
   h2: { fontSize: 14, color: '#6B7280', marginTop: 6, textAlign: 'center' },
 
   // Metrics
