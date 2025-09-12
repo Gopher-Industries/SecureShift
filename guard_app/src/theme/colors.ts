@@ -11,5 +11,5 @@ export const COLORS = {
     pending: '#A56600',
     confirmed: '#1FB04D',
     rejected: '#B00020',
-  }
+  },
 };

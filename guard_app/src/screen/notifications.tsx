@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, Platform } from 'react-native';
+// src/screen/notifications.tsx
 import { FontAwesome5 } from '@expo/vector-icons';
+import React from 'react';
+import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 
-// Narrow icon type to avoid `as any`
+// Narrow icon type to avoid `any`
 type IconName = 'check-circle' | 'calendar-alt' | 'exclamation-circle';
 
 // Sample data for notifications
@@ -37,7 +38,7 @@ const notifications: {
 ];
 
 export default function NotificationsScreen() {
-  const renderItem = ({ item }: { item: typeof notifications[number] }) => {
+  const renderItem = ({ item }: { item: (typeof notifications)[number] }) => {
     const isReminder = item.icon === 'exclamation-circle';
     const cardStyle = isReminder ? styles.greyCard : styles.blueCard;
 
@@ -72,97 +73,91 @@ export default function NotificationsScreen() {
         data={notifications}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ gap: 12, paddingBottom: 12 }}
+        contentContainerStyle={styles.listContent}
       />
     </View>
   );
 }
 
-// Styles
+// Styles (class names and properties alphabetized)
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: '#F4F4F4',
-    flex: 1,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  // Recent Notifications
-  headerText: {
-    fontSize: 20,
-    fontWeight: '600',
-    flex: 1,
-  },
   badge: {
     backgroundColor: '#DB4D56',
+    borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
-    // iOS shadow
     shadowColor: '#000',
+    shadowOffset: { height: 1, width: 0 },
     shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
-    // Android elevation
     ...(Platform.OS === 'android' ? { elevation: 2 } : null),
   },
   badgeText: {
+    color: '#fff',
     fontSize: 12,
     fontWeight: '400',
-    color: '#fff',
   },
-  card: {
-    borderRadius: 12,
-    padding: 16,
-    // iOS shadow
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    borderWidth: 1,
-    // Android elevation
-    ...(Platform.OS === 'android' ? { elevation: 2 } : null),
-  },
-  // For approved/new shift cards
   blueCard: {
     backgroundColor: '#E6EEFF',
     borderColor: '#B0C7FF',
   },
-  // For reminder card
+  card: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    ...(Platform.OS === 'android' ? { elevation: 2 } : null),
+  },
+  cardContent: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  container: {
+    backgroundColor: '#F4F4F4',
+    flex: 1,
+    padding: 16,
+  },
+  dot: {
+    backgroundColor: '#2D3E50',
+    borderRadius: 5,
+    height: 10,
+    marginTop: 4,
+    width: 10,
+  },
   greyCard: {
     backgroundColor: '#F3F3F3',
     borderColor: '#DDD',
   },
-  cardContent: {
+  headerContainer: {
+    alignItems: 'center',
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  headerText: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  listContent: {
     gap: 12,
+    paddingBottom: 12,
+  },
+  messageText: {
+    color: '#111',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
   },
   textContainer: {
     flex: 1,
   },
-  // Notification message
-  messageText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#111',
-    marginBottom: 4,
-  },
-  // Time text
   timeText: {
+    color: '#777',
     fontSize: 12,
     fontWeight: '400',
-    color: '#777',
-  },
-  // Dot shown for non-reminder items
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#2D3E50',
-    marginTop: 4,
   },
 });
