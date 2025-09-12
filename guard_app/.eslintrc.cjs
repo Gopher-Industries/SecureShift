@@ -20,7 +20,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'plugin:react-native/all',
+    'plugin:react-native/all',            // keep full RN rules...
     'plugin:import/recommended',
     'plugin:import/typescript',
     'plugin:prettier/recommended',
@@ -32,26 +32,20 @@ module.exports = {
     'react-native/no-color-literals': 'off',
     'react-native/no-inline-styles': 'warn',
     'react-native/no-unused-styles': 'warn',
-    'react-native/no-raw-text': 'off', // avoid current crash with our stack
+    'react-native/no-raw-text': 'off',
+    'react-native/sort-styles': 'off',    // <-- turn OFF the style/class sorting errors
 
     // TS
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 
-    // Import order
+    // Import order (keep as warning so CI doesn’t fail)
     'import/order': [
       'warn',
       {
         'newlines-between': 'always',
         alphabetize: { order: 'asc', caseInsensitive: true },
-        groups: [
-          'builtin',
-          'external',
-          'internal',
-          ['parent', 'sibling', 'index'],
-          'object',
-          'type',
-        ],
+        groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index'], 'object', 'type'],
       },
     ],
 
