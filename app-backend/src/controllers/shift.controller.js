@@ -86,6 +86,8 @@ export const createShift = async (req, res) => {
  */
 export const listAvailableShifts = async (req, res) => {
   try {
+    import Availability from '../models/Availability.js';
+    import User from '../models/User.js';
     const role = req.user?.role;
     const uid  = req.user?._id || req.user?.id;
     if (!role || !uid) return res.status(401).json({ message: 'Unauthorized' });

@@ -160,4 +160,15 @@ router.post('/', auth, availabilityController.createOrUpdateAvailability);
  */
 router.get('/:userId', auth, availabilityController.getAvailability);
 
+/**
+ * List all availabilities (admin only)
+ */
+router.get('/', auth, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: admin only' });
+  }
+  const availabilities = await availabilityController.listAllAvailabilities();
+  res.json(availabilities);
+});
+
 export default router;

@@ -8,6 +8,7 @@ import setupSwagger from './config/swagger.js'; // ✅ now using ES module impor
 import { auditMiddleware } from "./middleware/logger.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
+import Availability from './models/Availability.js'; // Ensure model is loaded
 
 const app = express();
 

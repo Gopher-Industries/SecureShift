@@ -21,6 +21,7 @@ const AvailabilitySchema = new Schema(
       ref: 'User',
       unique: true,
       required: true,
+      index: true,
     },
     days: {
       type: [String],

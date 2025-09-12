@@ -113,6 +113,13 @@ const shiftSchema = new Schema(
     employerRating: { type: Number, min: 1, max: 5 },
     ratedByGuard: { type: Boolean, default: false },
     ratedByEmployer: { type: Boolean, default: false },
+
+    // Optional: reference to guard availability for matching
+    guardAvailability: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Availability',
+      default: null
+    },
   },
   { timestamps: true }
 );
