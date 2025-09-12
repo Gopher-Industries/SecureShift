@@ -10,4 +10,5 @@ const NotificationSchema = new mongoose.Schema({
   sentAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 
+NotificationSchema.index({ guardId: 1, createdAt: -1 });
 export default mongoose.model('Notification', NotificationSchema);
