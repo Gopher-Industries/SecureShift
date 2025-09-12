@@ -153,8 +153,8 @@ export default function ProfileScreen({ navigation, route }: any) {
         {/* Contact Info */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
-          <Text style={styles.infoText}>Email: {data?.email || '—'}</Text>
-          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: {data?.phone || '—'}</Text>
+          <Text style={styles.infoText}>Email: alex.johnson@gmail.com</Text>
+          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: +61 123456789</Text>
         </View>
 
         {/* Address Info */}
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   performanceCard: {
-    backgroundColor: '#EEF2FF', 
+    backgroundColor: '#EEF2FF',
   },
   cardTitleContainer: {
     flexDirection: 'row',

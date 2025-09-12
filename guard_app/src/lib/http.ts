@@ -33,7 +33,7 @@ export function attach401Handler(onUnauthorized: () => void) {
         onUnauthorized(); // Trigger logout handler (e.g., navigate to Login)
       }
       throw err; // Rethrow error for further handling
-    }
+    },
   );
 }
 
