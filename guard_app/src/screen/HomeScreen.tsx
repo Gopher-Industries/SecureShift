@@ -1,23 +1,34 @@
-// screen/HomeScreen.tsx
+// src/screen/HomeScreen.tsx
 
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useLayoutEffect, useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
+  Dimensions,
+  RefreshControl,
   SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
   ScrollView,
   StatusBar,
-  Dimensions,
+  StyleSheet,
+  Text,
   TouchableOpacity,
-  RefreshControl,
+  View,
 } from 'react-native';
 
 import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
+
+type User = { name?: string; rating?: number };
+type Shift = {
+  title: string;
+  date: string; // ISO
+  status: 'assigned' | 'applied' | string;
+  startTime?: string; // "HH:mm"
+  endTime?: string; // "HH:mm"
+  payRate?: number; // $/hour
+};
+type Metrics = { confirmed: number; pending: number; earnings: number; rating: number };
 
 const NAVY = '#244B7A';
 const BORDER = '#E7EBF2';
@@ -27,18 +38,34 @@ const DEVICE_W = Dimensions.get('window').width;
 const CANVAS = Math.min(390, DEVICE_W);
 const P = 24;
 
+function minutesBetween(startHHMM: string, endHHMM: string): number {
+  const [sh, sm] = startHHMM.split(':').map(Number);
+  const [eh, em] = endHHMM.split(':').map(Number);
+  const start = sh * 60 + sm;
+  const end = eh * 60 + em;
+  let duration = (end - start + 1440) % 1440; // handle overnight
+  if (duration === 0) duration = 1440;
+  return duration;
+}
+
+function moneyForShift(s: Shift): string | undefined {
+  if (!s.payRate || !s.startTime || !s.endTime) return undefined;
+  const hours = minutesBetween(s.startTime, s.endTime) / 60;
+  return `$${(s.payRate * hours).toFixed(0)}`;
+}
+
 const StatCard = ({
   icon,
   label,
   value,
-  tint,
+  extraStyle,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | number;
-  tint: string;
+  extraStyle?: object;
 }) => (
-  <View style={[styles.statCard, { backgroundColor: tint }]}>
+  <View style={[styles.statCard, extraStyle]}>
     <View style={styles.statTop}>
       <View style={styles.statIcon}>{icon}</View>
       <Text style={styles.statValue}>{value}</Text>
@@ -59,7 +86,7 @@ const RowItem = ({
   highlight?: boolean;
 }) => (
   <View style={[styles.rowItem, highlight && styles.rowItemHL]}>
-    <View style={{ flex: 1 }}>
+    <View style={styles.rowLeft}>
       <Text style={styles.rowTitle}>{title}</Text>
       <Text style={styles.rowSub}>{time}</Text>
     </View>
@@ -70,10 +97,15 @@ const RowItem = ({
 export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [user, setUser] = useState<any>(null);
-  const [metrics, setMetrics] = useState({ confirmed: 0, pending: 0, earnings: 0, rating: 0 });
-  const [todayShifts, setTodayShifts] = useState<any[]>([]);
-  const [upcomingShifts, setUpcomingShifts] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [metrics, setMetrics] = useState<Metrics>({
+    confirmed: 0,
+    pending: 0,
+    earnings: 0,
+    rating: 0,
+  });
+  const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
+  const [upcomingShifts, setUpcomingShifts] = useState<Shift[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   useLayoutEffect(() => {
@@ -91,34 +123,26 @@ export default function HomeScreen() {
 
   const load = async () => {
     try {
-      const { data: u } = await http.get('/users/me');
+      const { data: u } = await http.get<User>('/users/me');
       setUser(u);
 
-      const { data: myShifts } = await http.get('/shifts/myshifts');
-      const confirmed = myShifts.filter((s: any) => s.status === 'assigned').length;
-      const pending = myShifts.filter((s: any) => s.status === 'applied').length;
+      const { data: myShifts } = await http.get<Shift[]>('/shifts/myshifts');
 
+      const confirmed = myShifts.filter((s) => s.status === 'assigned').length;
+      const pending = myShifts.filter((s) => s.status === 'applied').length;
+
+      const todayStr = new Date().toDateString();
       const today = myShifts.filter(
-        (s: any) =>
-          s.status === 'assigned' && new Date(s.date).toDateString() === new Date().toDateString(),
+        (s) => s.status === 'assigned' && new Date(s.date).toDateString() === todayStr,
       );
 
       const upcoming = myShifts.filter(
-        (s: any) => s.status === 'assigned' && new Date(s.date) > new Date(),
+        (s) => s.status === 'assigned' && new Date(s.date) > new Date(),
       );
 
-      const earnings = today.reduce((sum: number, s: any) => {
+      const earnings = today.reduce((sum, s) => {
         if (!s.startTime || !s.endTime || !s.payRate) return sum;
-
-        const [sh, sm] = s.startTime.split(':').map(Number);
-        const [eh, em] = s.endTime.split(':').map(Number);
-
-        const start = sh * 60 + sm;
-        const end = eh * 60 + em;
-        let duration = (end - start + 1440) % 1440;
-        if (duration === 0) duration = 1440;
-
-        const hours = duration / 60;
+        const hours = minutesBetween(s.startTime, s.endTime) / 60;
         return sum + s.payRate * hours;
       }, 0);
 
@@ -126,23 +150,24 @@ export default function HomeScreen() {
         confirmed,
         pending,
         earnings,
-        rating: u.rating || 0,
+        rating: u?.rating ?? 0,
       });
 
       setTodayShifts(today);
       setUpcomingShifts(upcoming);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Failed to load home data:', err);
     }
   };
 
   useEffect(() => {
-    load(); // initial load
+    load();
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      load(); // reload when screen comes into focus
+      load();
     }, []),
   );
 
@@ -159,9 +184,9 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <View style={{ width: CANVAS }}>
+        <View style={styles.canvas}>
           {/* Heading */}
-          <View style={{ paddingHorizontal: P, paddingTop: 18, alignItems: 'center' }}>
+          <View style={styles.heading}>
             <Text style={styles.h1}>Welcome back, {user?.name || 'Guard'}!</Text>
             <Text style={styles.h2}>Here’s your dashboard</Text>
           </View>
@@ -172,25 +197,25 @@ export default function HomeScreen() {
               icon={<Ionicons name="calendar-outline" size={18} color="#3E63DD" />}
               label="Confirmed shifts"
               value={metrics.confirmed}
-              tint="#EEF2FF"
+              extraStyle={styles.tintBlue}
             />
             <StatCard
               icon={<Ionicons name="time-outline" size={18} color="#C99A06" />}
               label="Pending Applications"
               value={metrics.pending}
-              tint="#FFF4C8"
+              extraStyle={styles.tintYellow}
             />
             <StatCard
               icon={<Feather name="dollar-sign" size={18} color="#1A936F" />}
               label="Today’s Earning"
-              value={`$${metrics.earnings}`}
-              tint="#EAF7EF"
+              value={`$${metrics.earnings.toFixed(0)}`}
+              extraStyle={styles.tintGreen}
             />
             <StatCard
               icon={<MaterialCommunityIcons name="trending-up" size={18} color="#7C5CFC" />}
               label="Current Rating"
               value={metrics.rating}
-              tint="#ECEBFF"
+              extraStyle={styles.tintPurple}
             />
           </View>
 
@@ -202,33 +227,19 @@ export default function HomeScreen() {
                 <Text style={styles.cardHeadTxt}>Today’s Schedule</Text>
               </View>
             </View>
+
             {todayShifts.length > 0 ? (
               todayShifts.map((s, i) => (
                 <RowItem
-                  key={i}
+                  key={`${s.title}-${i}`}
                   title={s.title}
-                  time={`${s.startTime} – ${s.endTime}`}
-                  amount={
-                    s.payRate && s.startTime && s.endTime
-                      ? (() => {
-                          const [sh, sm] = s.startTime.split(':').map(Number);
-                          const [eh, em] = s.endTime.split(':').map(Number);
-                          const start = sh * 60 + sm;
-                          const end = eh * 60 + em;
-                          let duration = (end - start + 1440) % 1440;
-                          if (duration === 0) duration = 1440;
-                          const hours = duration / 60;
-                          return `$${s.payRate * hours}`;
-                        })()
-                      : undefined
-                  }
+                  time={`${s.startTime ?? '--:--'} – ${s.endTime ?? '--:--'}`}
+                  amount={moneyForShift(s)}
                   highlight
                 />
               ))
             ) : (
-              <Text style={{ color: MUTED, fontSize: 14, marginTop: 6 }}>
-                No shifts scheduled for today
-              </Text>
+              <Text style={styles.emptyText}>No shifts scheduled for today</Text>
             )}
           </View>
 
@@ -243,34 +254,26 @@ export default function HomeScreen() {
                 <Text style={styles.viewAll}>View All ›</Text>
               </TouchableOpacity>
             </View>
+
             {upcomingShifts.length > 0 ? (
-              upcomingShifts.slice(0, 2).map((s, i) => (
-                <RowItem
-                  key={i}
-                  title={s.title}
-                  time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime} – ${s.endTime}`}
-                  amount={
-                    s.payRate && s.startTime && s.endTime
-                      ? (() => {
-                          const [sh, sm] = s.startTime.split(':').map(Number);
-                          const [eh, em] = s.endTime.split(':').map(Number);
-                          const start = sh * 60 + sm;
-                          const end = eh * 60 + em;
-                          let duration = (end - start + 1440) % 1440;
-                          if (duration === 0) duration = 1440;
-                          const hours = duration / 60;
-                          return `$${s.payRate * hours}`;
-                        })()
-                      : undefined
-                  }
-                />
-              ))
+              upcomingShifts
+                .slice(0, 2)
+                .map((s, i) => (
+                  <RowItem
+                    key={`${s.title}-${i}`}
+                    title={s.title}
+                    time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${
+                      s.endTime ?? '--:--'
+                    }`}
+                    amount={moneyForShift(s)}
+                  />
+                ))
             ) : (
-              <Text style={{ color: MUTED, fontSize: 14, marginTop: 6 }}>No upcoming shifts</Text>
+              <Text style={styles.emptyText}>No upcoming shifts</Text>
             )}
           </View>
 
-          <View style={{ height: 88 }} />
+          <View style={styles.spacer} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -278,6 +281,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  canvas: { width: CANVAS },
+
   card: {
     backgroundColor: '#FFFFFF',
     borderColor: BORDER,
@@ -302,6 +307,9 @@ const styles = StyleSheet.create({
   },
   cardHeadLeft: { alignItems: 'center', flexDirection: 'row' },
   cardHeadTxt: { color: MUTED, fontSize: 16, fontWeight: '700', marginLeft: 8 },
+
+  emptyText: { color: MUTED, fontSize: 14, marginTop: 6 },
+
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -309,6 +317,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingHorizontal: P,
   },
+
   h1: {
     color: '#0F172A',
     fontSize: 28,
@@ -317,6 +326,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   h2: { color: '#6B7280', fontSize: 14, marginTop: 6, textAlign: 'center' },
+
+  heading: { alignItems: 'center', paddingHorizontal: P, paddingTop: 18 },
+
   rowAmt: { color: '#1A936F', fontSize: 16, fontWeight: '900', paddingLeft: 10 },
   rowItem: {
     alignItems: 'center',
@@ -329,10 +341,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   rowItemHL: { backgroundColor: '#EAF7EF', borderColor: '#D4F0DC' },
+  rowLeft: { flex: 1 },
   rowSub: { color: '#6B7280', fontSize: 13, marginTop: 6 },
   rowTitle: { color: '#0F172A', fontSize: 18, fontWeight: '800' },
+
   safe: { backgroundColor: '#FFFFFF', flex: 1 },
   scroll: { alignItems: 'center' },
+  spacer: { height: 88 },
+
   statCard: {
     borderRadius: 22,
     marginBottom: 12,
@@ -355,5 +371,11 @@ const styles = StyleSheet.create({
   statLabel: { color: '#6B7280', fontSize: 12, marginTop: 10 },
   statTop: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   statValue: { color: '#0F172A', fontSize: 20, fontWeight: '800' },
+
+  tintBlue: { backgroundColor: '#EEF2FF' },
+  tintGreen: { backgroundColor: '#EAF7EF' },
+  tintPurple: { backgroundColor: '#ECEBFF' },
+  tintYellow: { backgroundColor: '#FFF4C8' },
+
   viewAll: { color: '#3E63DD', fontSize: 15, fontWeight: '700' },
 });
