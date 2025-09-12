@@ -1,9 +1,43 @@
-// src/screen/ProfileScreen.tsx
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { UserProfile } from '../models/UserProfile';
+import { getUserProfile } from '../api/profile';
 
 export default function ProfileScreen() {
+  const [data, setData] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const profile = await getUserProfile();
+        if (mounted) {
+          setData(profile);
+          setError(null);
+        }
+      } catch (e: any) {
+        if (mounted) {
+          setError(e?.message || 'Failed to load profile');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -15,25 +49,29 @@ export default function ProfileScreen() {
         </View>
 
         {/* Name */}
-        <Text style={styles.name}>Alex Johnson</Text>
+        {loading || error ? (
+          <Text style={styles.name}>---</Text>
+        ) : (
+          <Text style={styles.name}>{data?.name || '—'}</Text>
+        )}
 
         {/* Performance Summary */}
         <View style={[styles.card, styles.performanceCard]}>
           <Text style={styles.cardTitle}>
-            <Text style={styles.icon}>⭐</Text> Performance Summary
+            <Text style={styles.icon}>⭐</Text>  Performance Summary
           </Text>
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={[styles.statValue, styles.statValueIndigo]}>140</Text>
+              <Text style={[styles.statValue, { color: '#4F46E5' }]}>140</Text>
               <Text style={styles.statLabel}>Total Shifts</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={[styles.statValue, styles.statValueYellow]}>4.9</Text>
+              <Text style={[styles.statValue, { color: '#facc15' }]}>4.9</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={[styles.statValue, styles.statValueGreen]}>98%</Text>
+              <Text style={[styles.statValue, { color: 'green' }]}>98%</Text>
               <Text style={styles.statLabel}>Attendance</Text>
             </View>
           </View>
@@ -42,8 +80,8 @@ export default function ProfileScreen() {
         {/* Contact Info */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Contact Information</Text>
-          <Text style={styles.infoText}>Email: alex.johnson@gmail.com</Text>
-          <Text style={[styles.infoText, styles.infoTextSpaced]}>Phone: +61 123456789</Text>
+          <Text style={styles.infoText}>Email: {data?.email || '—'}</Text>
+          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: {data?.phone || '—'}</Text>
         </View>
 
         {/* Certifications */}
@@ -61,104 +99,99 @@ export default function ProfileScreen() {
     </SafeAreaView>
   );
 }
-
+//styles for the profile screen
 const styles = StyleSheet.create({
-  // --- class names alphabetized ---
-  avatar: {
-    alignItems: 'center',
-    backgroundColor: '#1E3A8A',
-    borderRadius: 50,
-    height: 100,
-    justifyContent: 'center',
-    width: 100,
+  //main screen container
+  container: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
   },
+  // Padding around scroll view content
+  scrollContent: {
+    paddingTop: 100, 
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  // Container for avatar
   avatarContainer: {
     alignItems: 'center',
     marginBottom: 10,
   },
-  badge: {
-    backgroundColor: '#e0e7ff',
-    borderRadius: 20,
-    marginBottom: 8,
-    marginRight: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  // Avatar circle with icon inside
+  avatar: {
+    backgroundColor: '#1E3A8A',
+    height: 100,
+    width: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  badgeText: {
-    color: '#1E3A8A',
+  // Name text below avatar
+  name: {
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  // Reusable card style
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    elevation: 1,
+  },
+  performanceCard: {
+    backgroundColor: '#EEF2FF', 
+  },
+  // Card title style
+  cardTitle: {
+    fontWeight: 'bold',
+    fontSize: 15,
+    marginBottom: 10,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  statBox: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  statLabel: {
     fontSize: 12,
+    color: '#555',
+    marginTop: 2,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#333',
   },
   badgesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 10,
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    elevation: 1,
-    marginBottom: 15,
-    padding: 15,
+  // Badge label
+  badge: {
+    backgroundColor: '#e0e7ff',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 8,
   },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  container: {
-    backgroundColor: '#f9f9f9',
-    flex: 1,
+  badgeText: {
+    fontSize: 12,
+    color: '#1E3A8A',
   },
   icon: {
     fontSize: 16,
     marginRight: 6,
-  },
-  infoText: {
-    color: '#333',
-    fontSize: 14,
-  },
-  infoTextSpaced: {
-    marginTop: 6,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  performanceCard: {
-    backgroundColor: '#EEF2FF',
-  },
-  scrollContent: {
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    paddingTop: 100,
-  },
-  statBox: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statLabel: {
-    color: '#555',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  statValueGreen: {
-    color: 'green',
-  },
-  statValueIndigo: {
-    color: '#4F46E5',
-  },
-  statValueYellow: {
-    color: '#facc15',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
   },
 });
