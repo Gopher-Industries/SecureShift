@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 export default function TwoFA() {
   const navigate = useNavigate();
@@ -8,8 +9,15 @@ export default function TwoFA() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const { login, startTwoFA } = useContext(AuthContext);
+
   // Get email passed from Login page
   const email = location.state?.email;
+
+  // Mark 2FA as pending to prevent AuthContext redirect
+  useEffect(() => {
+    startTwoFA?.();
+  }, [startTwoFA]);
 
   if (!email) {
     return <p style={{ color: "red" }}>Error: No email found. Please log in again.</p>;
@@ -30,13 +38,11 @@ export default function TwoFA() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Invalid OTP");
 
-      // Save JWT token and user info
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userRole", data.role);
-      localStorage.setItem("userId", data.id);
-
-      // Redirect to employer dashboard
-      navigate("/employer-dashboard");
+      // Use AuthContext login to set user and JWT
+      login(
+        { id: data.id, role: data.role, email },
+        data.token // store as "jwt" in localStorage via login()
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -47,7 +53,9 @@ export default function TwoFA() {
   return (
     <div style={{ maxWidth: 400, margin: "0 auto", padding: 20 }}>
       <h2>Enter OTP</h2>
-      <p>We sent a 6-digit code to <b>{email}</b></p>
+      <p>
+        We sent a 6-digit code to <b>{email}</b>
+      </p>
 
       <form onSubmit={handleVerify}>
         <input
