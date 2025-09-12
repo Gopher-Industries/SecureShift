@@ -20,7 +20,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'plugin:react-native/all',            // keep full RN rules...
+    'plugin:react-native/all', // keep full RN rules...
     'plugin:import/recommended',
     'plugin:import/typescript',
     'plugin:prettier/recommended',
@@ -33,7 +33,7 @@ module.exports = {
     'react-native/no-inline-styles': 'warn',
     'react-native/no-unused-styles': 'warn',
     'react-native/no-raw-text': 'off',
-    'react-native/sort-styles': 'off',    // <-- turn OFF the style/class sorting errors
+    'react-native/sort-styles': 'off', // <-- turn OFF the style/class sorting errors
 
     // TS
     '@typescript-eslint/no-explicit-any': 'warn',
@@ -45,7 +45,14 @@ module.exports = {
       {
         'newlines-between': 'always',
         alphabetize: { order: 'asc', caseInsensitive: true },
-        groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index'], 'object', 'type'],
+        groups: [
+          'builtin',
+          'external',
+          'internal',
+          ['parent', 'sibling', 'index'],
+          'object',
+          'type',
+        ],
       },
     ],
 
