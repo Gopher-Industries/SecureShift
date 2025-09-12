@@ -1,5 +1,5 @@
-import { Address } from "./Address";
-import { License } from "./License";
+import { Address } from './Address';
+import { License } from './License';
 
 export type UserProfile = {
   _id: string;

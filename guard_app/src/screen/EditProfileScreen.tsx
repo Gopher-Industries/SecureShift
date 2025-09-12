@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,12 +13,12 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { UserProfile } from '../models/UserProfile';
+
 import { updateUserProfile, UpdateProfilePayload } from '../api/profile';
-import { showImagePickerOptions, ImagePickerResult } from '../utils/imagePicker';
-import { LocalStorage } from '../lib/localStorage';
 import { API_BASE_URL } from '../lib/http';
+import { LocalStorage } from '../lib/localStorage';
+import { UserProfile } from '../models/UserProfile';
+import { showImagePickerOptions, ImagePickerResult } from '../utils/imagePicker';
 
 interface EditProfileScreenProps {
   navigation: any;
@@ -56,12 +57,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
         state: profile.address?.state || '',
         postcode: profile.address?.postcode || '',
       });
-        
+
       // Set license image if available
       if (profile.license?.imageUrl) {
         setLicenseImage(API_BASE_URL + profile.license.imageUrl);
       }
-        
+
       loadProfileImage();
     }
   }, [route?.params?.userProfile]);
@@ -76,7 +77,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
@@ -84,10 +85,10 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
 
   const handleImagePicker = async () => {
     try {
-        const result: ImagePickerResult | null = await showImagePickerOptions({
-            title: 'Select Profile Picture',
-            message: 'Choose how you want to add a profile picture'
-        });
+      const result: ImagePickerResult | null = await showImagePickerOptions({
+        title: 'Select Profile Picture',
+        message: 'Choose how you want to add a profile picture',
+      });
 
       if (result) {
         await LocalStorage.saveProfileImage(result.uri);
@@ -97,7 +98,6 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
       Alert.alert('Error', 'Failed to update profile picture. Please try again.');
     }
   };
-
 
   const validateForm = () => {
     if (!formData.name.trim()) {
@@ -141,14 +141,14 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
       };
 
       // Remove undefined values
-      Object.keys(updatePayload).forEach(key => {
+      Object.keys(updatePayload).forEach((key) => {
         if (updatePayload[key as keyof UpdateProfilePayload] === undefined) {
           delete updatePayload[key as keyof UpdateProfilePayload];
         }
       });
 
       if (updatePayload.address) {
-        Object.keys(updatePayload.address).forEach(key => {
+        Object.keys(updatePayload.address).forEach((key) => {
           if (updatePayload.address![key as keyof typeof updatePayload.address] === undefined) {
             delete updatePayload.address![key as keyof typeof updatePayload.address];
           }
@@ -157,10 +157,15 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
 
       await updateUserProfile(updatePayload);
       Alert.alert('Success', 'Profile updated successfully!', [
-        { text: 'OK', onPress: () => navigation.navigate('AppTabs', { screen: 'Profile', params: { refresh: true } }) }
+        {
+          text: 'OK',
+          onPress: () =>
+            navigation.navigate('AppTabs', { screen: 'Profile', params: { refresh: true } }),
+        },
       ]);
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || 'Failed to update profile. Please try again.';
+      const errorMessage =
+        error?.response?.data?.message || 'Failed to update profile. Please try again.';
       Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
@@ -168,19 +173,15 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      'Discard Changes',
-      'Are you sure you want to discard your changes?',
-      [
-        { text: 'Keep Editing' },
-        { text: 'Discard', style: 'destructive', onPress: () => navigation.goBack() }
-      ]
-    );
+    Alert.alert('Discard Changes', 'Are you sure you want to discard your changes?', [
+      { text: 'Keep Editing' },
+      { text: 'Discard', style: 'destructive', onPress: () => navigation.goBack() },
+    ]);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -190,14 +191,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
             <Ionicons name="close" size={24} color="#1E3A8A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Profile</Text>
-          <TouchableOpacity 
-            onPress={handleSave} 
+          <TouchableOpacity
+            onPress={handleSave}
             style={[styles.headerButton, styles.saveButton]}
             disabled={loading}
           >
-            <Text style={styles.saveButtonText}>
-              {loading ? 'Saving...' : 'Save'}
-            </Text>
+            <Text style={styles.saveButtonText}>{loading ? 'Saving...' : 'Save'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -225,7 +224,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
           {/* Personal Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Personal Information</Text>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Full Name *</Text>
               <TextInput
@@ -270,7 +269,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
           {/* Address Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Address Information</Text>
-            
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Street Address</Text>
               <TextInput
@@ -331,10 +330,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
           {licenseImage && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>License Information</Text>
-              <Image
-                source={{ uri: licenseImage }}
-                style={styles.imagePreview}
-              />
+              <Image source={{ uri: licenseImage }} style={styles.imagePreview} />
             </View>
           )}
         </ScrollView>
