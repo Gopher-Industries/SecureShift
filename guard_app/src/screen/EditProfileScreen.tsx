@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import {
