@@ -29,9 +29,21 @@ export default function AppNavigator() {
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: true, title: 'Settings' }} />
-      <Stack.Screen name="Messages" component={MessagesScreen} options={{ headerShown: true, title: 'Messages' }} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: true, title: 'Notifications' }} />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ headerShown: true, title: 'Settings' }}
+      />
+      <Stack.Screen
+        name="Messages"
+        component={MessagesScreen}
+        options={{ headerShown: true, title: 'Messages' }}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ headerShown: true, title: 'Notifications' }}
+      />
     </Stack.Navigator>
   );
 }
