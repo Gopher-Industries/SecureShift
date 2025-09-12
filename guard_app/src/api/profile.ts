@@ -1,6 +1,5 @@
-import { UserProfile } from '../models/UserProfile';
-
 import http from '../lib/http';
+import { UserProfile } from '../models/UserProfile';
 
 // Endpoints
 const Endpoints = {
