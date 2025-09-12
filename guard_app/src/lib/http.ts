@@ -1,16 +1,5 @@
-<<<<<<< HEAD
-import axios from 'axios';
-import { Platform } from 'react-native';
-
-import { LocalStorage } from './localStorage';
-
-export const API_BASE_URL: string =
-  (process.env.EXPO_PUBLIC_API_BASE_URL as string) ||
-  (Platform.OS === 'android' ? 'http://10.0.2.2:5000/api/v1' : 'http://localhost:5000/api/v1'); // Local for android and ios simulator
-=======
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
->>>>>>> origin/main
 
 // Create an Axios instance with a base URL and timeout
 const http = axios.create({
@@ -37,7 +26,7 @@ export function attach401Handler(onUnauthorized: () => void) {
         onUnauthorized(); // Trigger logout handler (e.g., navigate to Login)
       }
       throw err; // Rethrow error for further handling
-    },
+    }
   );
 }
 
