@@ -4,11 +4,11 @@ import React from 'react';
 
 import AppTabs from './AppTabs';
 import LoginScreen from '../screen/loginscreen';
+import MessagesScreen from '../screen/MessagesScreen';
+import NotificationsScreen from '../screen/NotificationsScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
-import MessagesScreen from '../screen/MessagesScreen';
-import NotificationsScreen from '../screen/NotificationsScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
