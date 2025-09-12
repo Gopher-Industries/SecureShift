@@ -1,7 +1,8 @@
 // src/navigation/AppTabs.tsx
-import { Ionicons } from '@expo/vector-icons';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
+import { View, Text } from 'react-native';
+import { BottomTabNavigationOptions, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
@@ -18,20 +19,15 @@ const Tab = createBottomTabNavigator<AppTabParamList>();
 export default function AppTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={({ route }): BottomTabNavigationOptions => ({
         headerShown: true,
-        tabBarIcon: ({ color, size }) => {
-          let name: React.ComponentProps<typeof Ionicons>['name'];
-          switch (route.name) {
-            case 'Home':
-              name = 'home-outline';
-              break;
-            case 'Shifts':
-              name = 'briefcase-outline';
-              break;
-            default:
-              name = 'person-outline';
-          }
+        tabBarIcon: ({ color, size }: { color: string; size: number }) => {
+          const name =
+            route.name === 'Home'
+              ? ('home-outline' as const)
+              : route.name === 'Shifts'
+              ? ('briefcase-outline' as const)
+              : ('person-outline' as const);
           return <Ionicons name={name} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#1E3A8A',
@@ -44,3 +40,4 @@ export default function AppTabs() {
     </Tab.Navigator>
   );
 }
+ 
