@@ -1,5 +1,5 @@
-import { UserProfile } from '../models/UserProfile';
 import http from '../lib/http';
+import { UserProfile } from '../models/UserProfile';
 
 // Endpoints
 const Endpoints = {
@@ -17,4 +17,4 @@ export const getUserProfile = async (): Promise<UserProfile | null> => {
     console.error('Error getting user profile:', e);
     return null;
   }
-}
+};

@@ -1,4 +1,4 @@
-import { Address } from "./Address";
+import { Address } from './Address';
 
 export type UserProfile = {
   _id: string;

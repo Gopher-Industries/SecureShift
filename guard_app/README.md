@@ -2,7 +2,6 @@
 
 This is the mobile frontend for the SecureShift Guard App, developed using React Native with Expo and TypeScript. It allows licensed security guards to log in, manage their profile, view available shifts, and apply for them.
 
-
 ## Prerequisites
 
 - Node.js (v18+ recommended)
