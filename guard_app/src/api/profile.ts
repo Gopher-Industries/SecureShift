@@ -1,4 +1,5 @@
 import { UserProfile } from '../models/UserProfile';
+
 import http from '../lib/http';
 
 // Endpoints
@@ -33,7 +34,9 @@ export const getUserProfile = async (): Promise<UserProfile | null> => {
 };
 
 // Update user profile
-export const updateUserProfile = async (payload: UpdateProfilePayload): Promise<UserProfile | null> => {
+export const updateUserProfile = async (
+  payload: UpdateProfilePayload,
+): Promise<UserProfile | null> => {
   try {
     const { data } = await http.put(Endpoints.usersMe, payload);
     return data as UserProfile;
