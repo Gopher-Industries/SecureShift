@@ -13,6 +13,7 @@ import { ACTIONS } from "../middleware/logger.js";
  */
 
 import Availability from '../models/Availability.js';
+import User from '../models/User.js'; // Add this import
 import mongoose from 'mongoose';
 
 /** Utility: validate time slot format */
@@ -101,8 +102,12 @@ export const createOrUpdateAvailability = async (req, res) => {
 
     const availability = await Availability.findOneAndUpdate(filter, update, options).populate(
       'user',
-      'name email role' // optional fields if User has these
+      'name email role'
     );
+
+    // Link the availability to the user (one-to-one)
+    await User.findByIdAndUpdate(targetUserId, { availability: availability._id });
+
     await req.audit.log(req.user.id, ACTIONS.AVAILABILITY_UPDATED, {
       availabilityId: availability._id,
       targetUserId: targetUserId,

@@ -95,6 +95,13 @@ const userSchema = new mongoose.Schema(
     deletedAt: { type: Date, default: null }, // when it was deactivated
     deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // who did it
     deleteReason: { type: String, default: null }, // optional reason
+
+    // Add reference to availability (one-to-one)
+    availability: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Availability',
+      default: null
+    },
   },
   {
     timestamps: true,
