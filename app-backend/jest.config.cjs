@@ -1,7 +1,16 @@
 module.exports = {
   testEnvironment: 'node',
+  roots: ['<rootDir>/tests'],
+  collectCoverage: true,
+  coverageDirectory: '<rootDir>/coverage',
+  setupFilesAfterEnv: ['<rootDir>/tests/setupTests.js'],
   transform: {
-    '^.+\\.js$': 'babel-jest',
+    '^.+\\.m?js$': ['babel-jest', { configFile: './babel.config.cjs' }],
   },
-  moduleFileExtensions: ['js', 'json', 'node'],
+  globals: {
+    'babel-jest': {
+      useESM: true,
+    },
+  },
+  testTimeout: 20000,
 };
