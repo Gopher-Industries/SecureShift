@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import http from "../lib/http";
 
 // Expression of Interest form component
 export default function ExpressionOfInterest() {
@@ -77,25 +78,11 @@ export default function ExpressionOfInterest() {
       formData.append("documents", file);
 
       // POST request to backend API
-      const response = await fetch("http://localhost:5000/api/v1/auth/eoi", {
-        method: "POST",
-        body: formData,
+      const { data } = await http.post("/auth/eoi", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
-
-      // Handle response safely (JSON or non-JSON fallback)
-      const contentType = response.headers.get("content-type");
-      let data;
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = await response.text();
-        console.error("Non-JSON response from server:", text);
-        throw new Error("Server returned non-JSON response" + text);
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to submit EOI");
-      }
 
       // Success
       alert("EOI submitted successfully!");
