@@ -1,3 +1,5 @@
+// Put vector-icons first, then React (to satisfy your import/order rule)
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
   SafeAreaView,
@@ -10,7 +12,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
+const NAVY = '#274b93';
 
 type Message = {
   id: string;
@@ -21,9 +24,24 @@ type Message = {
 
 export default function MessagesScreen() {
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', from: 'employer', text: 'Hi Alex, can you confirm shift for tomorrow?', time: '10:00 AM' },
-    { id: '2', from: 'guard', text: 'Yes, I’ll be there at 9 AM sharp.', time: '10:02 AM' },
-    { id: '3', from: 'employer', text: 'Great, see you then!', time: '10:05 AM' },
+    {
+      id: '1',
+      from: 'employer',
+      text: 'Hi Alex, can you confirm shift for tomorrow?',
+      time: '10:00 AM',
+    },
+    {
+      id: '2',
+      from: 'guard',
+      text: 'Yes, I’ll be there at 9 AM sharp.',
+      time: '10:02 AM',
+    },
+    {
+      id: '3',
+      from: 'employer',
+      text: 'Great, see you then!',
+      time: '10:05 AM',
+    },
   ]);
   const [input, setInput] = useState('');
 
@@ -35,7 +53,7 @@ export default function MessagesScreen() {
       text: input.trim(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
-    setMessages((prev) => [...prev, newMsg]);
+    setMessages(prev => [...prev, newMsg]);
     setInput('');
   };
 
@@ -54,25 +72,22 @@ export default function MessagesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.kav}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
-        {/* Header */}
         <View style={styles.header}>
           <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
           <Text style={styles.headerTitle}>Messages</Text>
         </View>
 
-        {/* Messages */}
         <FlatList
           data={messages}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           renderItem={renderMessage}
           contentContainerStyle={styles.chat}
         />
 
-        {/* Input bar */}
         <View style={styles.inputBar}>
           <TextInput
             style={styles.input}
@@ -89,10 +104,9 @@ export default function MessagesScreen() {
   );
 }
 
-const NAVY = '#274b93';
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9f9f9' },
+  kav: { flex: 1 }, // <- replaces inline { flex: 1 }
 
   header: {
     flexDirection: 'row',
