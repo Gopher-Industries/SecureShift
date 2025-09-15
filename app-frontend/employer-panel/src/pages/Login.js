@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../logo.png";
 import "./Login.css";
+import http from "../lib/http";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,15 +17,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "Login failed");
+      const { data } = await http.post("/auth/login", { email, password });
 
       // ✅ Login succeeded → redirect to OTP page
       navigate("/2fa", { state: { email } });
