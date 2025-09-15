@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import http from '../lib/http';
 
 const CreateShift = () => {
   const navigate = useNavigate();
@@ -61,20 +62,7 @@ const CreateShift = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/v1/shifts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create shift');
-      }
+      const { data } = await http.post('/shifts', payload);
 
       alert('Shift created successfully!');
       console.log('Server response:', data);
