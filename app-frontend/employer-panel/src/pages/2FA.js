@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import http from "../lib/http";
 
 export default function TwoFA() {
   const navigate = useNavigate();
@@ -21,14 +22,7 @@ export default function TwoFA() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/v1/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Invalid OTP");
+      const { data } = await http.post("/auth/verify-otp", { email, otp });
 
       // Save JWT token and user info
       localStorage.setItem("token", data.token);
