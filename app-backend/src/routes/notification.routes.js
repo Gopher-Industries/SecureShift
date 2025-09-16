@@ -1,7 +1,7 @@
-// src/routes/v1/notification.routes.js
 import express from 'express';
-import { send } from '../../src/controllers/notification.controller.js';
-import auth from '../../src/middleware/auth.js';
+import { send } from '../controllers/notification.controller.js';
+import auth from '../middleware/auth.js';
+import { adminOnly, employerOnly } from '../middleware/role.js';
 
 const router = express.Router();
 

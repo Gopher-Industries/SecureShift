@@ -1,6 +1,25 @@
-import { messaging } from '../config/firebase.js';
+import { getMessaging } from '../config/firebase.js';
 import Guard from '../models/Guard.js';
 import Notification from '../models/Notification.js';
+
+const VALID_NOTIFICATION_TYPES = ['SHIFT_NEW', 'SHIFT_UPDATE', 'MESSAGE'];
+
+/**
+ * Remove invalid tokens from a guard's device tokens
+ * @param {string} guardId - Guard ID
+ * @param {string[]} invalidTokens - Array of invalid tokens to remove
+ */
+async function pruneInvalidTokens(guardId, invalidTokens) {
+  try {
+    await Guard.updateOne(
+      { _id: guardId },
+      { $pull: { deviceTokens: { $in: invalidTokens } } }
+    );
+    console.log(`Pruned ${invalidTokens.length} invalid tokens for guard ${guardId}`);
+  } catch (error) {
+    console.error('Error pruning invalid tokens:', error);
+  }
+}
 
 /**
  * Send push notification to specified devices and save audit log
@@ -10,7 +29,7 @@ import Notification from '../models/Notification.js';
  * @param {string} params.title - Notification title
  * @param {string} params.body - Notification body
  * @param {Object} [params.data] - Additional data payload
- * @param {string} [params.type] - Notification type
+ * @param {string} [params.type] - Notification type (SHIFT_NEW, SHIFT_UPDATE, MESSAGE)
  * @returns {Promise<Object>} Response with success status and counts
  */
 export const sendNotification = async ({
@@ -19,8 +38,12 @@ export const sendNotification = async ({
   title,
   body,
   data = {},
-  type = 'DEFAULT'
-}) =>{
+  type = 'MESSAGE'
+}) => {
+  // Validate notification type
+  if (!VALID_NOTIFICATION_TYPES.includes(type)) {
+    throw new Error(`Invalid notification type. Must be one of: ${VALID_NOTIFICATION_TYPES.join(', ')}`);
+  }
   try {
     // Collect device tokens
     let targetTokens = [...tokens];
@@ -84,7 +107,7 @@ export const sendNotification = async ({
       };
     } else {
       // Send through Firebase FCM
-      const response = await messaging.sendEachForMulticast(message);
+      const response = await getMessaging().sendEachForMulticast(message);
 
       // Handle any failures
       if (response.failureCount > 0) {
