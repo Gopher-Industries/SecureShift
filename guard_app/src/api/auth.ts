@@ -2,13 +2,20 @@ import http from '../lib/http';
 
 // Types
 
+/** React Native file-like object (e.g., from Image Picker) */
+export type RNFile = {
+  uri: string;
+  name?: string;
+  type?: string;
+};
+
 /** Payload for registering a new guard */
 export type RegisterPayload = {
   name: string;
   email: string;
   password: string;
-  /** License file (image) to be uploaded */
-  license: File | Blob;
+  /** License file: RNFile (mobile), File (web), or Blob */
+  license: RNFile | File | Blob;
 };
 
 /** Payload for login */
@@ -36,14 +43,19 @@ export async function registerUser(payload: RegisterPayload) {
   formData.append('name', payload.name);
   formData.append('email', payload.email.toLowerCase().trim());
   formData.append('password', payload.password);
-  formData.append(
-    'license',
-    {
-      uri: (payload.license as any).uri,
-      name: (payload.license as any).name || 'license.jpg',
-      type: (payload.license as any).type || 'image/jpeg',
-    } as any
-  );
+
+  if ('uri' in payload.license) {
+    // React Native / Expo style file object
+    const file = payload.license as RNFile;
+    formData.append('license', {
+      uri: file.uri,
+      name: file.name ?? 'license.jpg',
+      type: file.type ?? 'image/jpeg',
+    } as unknown as Blob);
+  } else {
+    // Browser File or Blob
+    formData.append('license', payload.license);
+  }
 
   const { data } = await http.post('/auth/register/guard', formData, {
     headers: {
