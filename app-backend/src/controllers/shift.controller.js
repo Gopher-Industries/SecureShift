@@ -3,6 +3,8 @@ import Shift from '../models/Shift.js';
 import Availability from '../models/Availability.js';
 import User from '../models/User.js';
 
+import { ACTIONS } from "../middleware/logger.js";
+
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
 const isValidHHMM = (s) => typeof s === 'string' && HHMM.test(s);
@@ -24,10 +26,14 @@ const isInPastOrStarted = (shift) => {
  */
 export const createShift = async (req, res) => {
   try {
-    const { title, date, startTime, endTime, location, urgency, field } = req.body;
+    const { title, date, startTime, endTime, location, urgency, field, payRate } = req.body;
 
     if (!title || !date || !startTime || !endTime) {
       return res.status(400).json({ message: 'title, date, startTime, endTime are required' });
+    }
+
+    if (payRate !== undefined && (isNaN(payRate) || Number(payRate) < 0)) {
+      return res.status(400).json({ message: 'payRate must be a non-negative number' });
     }
 
     // pick up user id from either _id or id
@@ -65,12 +71,14 @@ export const createShift = async (req, res) => {
       location: loc,
       urgency,
       field,
+      payRate,
     });
 
     await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
       shiftId: shift._id,
       title: shift.title,
-      date: shift.date
+      date: shift.date,
+      payRate: shift.payRate
     });
     
     return res.status(201).json(shift);

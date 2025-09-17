@@ -50,12 +50,8 @@ Contributor Setup Checklist
 
 +> Navigate to `app-frontend/guard-app`.
 
-+> Install dependencies:
+## Install these dependencies for Secure Shift guard app:
+# Local storage
+npm install @react-native-async-storage/async-storage
 
-   ```bash
-   npm install
-   
-   npx expo install react-native-gesture-handler react-native-reanimated react-native-screens react-native-safe-area-context
-   
-   npm install @react-navigation/native @react-navigation/native-stack @react-navigation/bottom-tabs
 

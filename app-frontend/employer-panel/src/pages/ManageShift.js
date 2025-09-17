@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const ShiftStatus = Object.freeze({
-    Completed: 'Completed',
-    InProgress: 'In Progress',
-    Pending: 'Pending',
-});
+// Map backend status to filter display
+const statusDisplayMap = {
+    completed: "Completed",
+    inprogress: "In Progress",
+    pending: "Pending",
+    open: "Open",
+};
 
 const Filter = Object.freeze({
     All: 'All',
     Completed: 'Completed',
     InProgress: 'In Progress',
     Pending: 'Pending',
+    Open: 'Open',
 });
 
 const Sort = Object.freeze({
@@ -19,90 +22,122 @@ const Sort = Object.freeze({
     DateDesc: 'Date (Desc)',
 });
 
+// Normalize shift data from backend
+const normalizeShift = (s) => ({
+    id: s._id,
+    title: s.title || "--",
+    // Compose dateTime string for sorting
+    dateTime: s.date && s.startTime ? `${s.date} ${s.startTime}` : s.date || "",
+    location: s.location 
+        ? `${s.location.street}, ${s.location.suburb}, ${s.location.state}` 
+        : "--",
+    status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
+    price: s.price || "--"
+});
+
 const ManageShift = () => {
     const navigate = useNavigate();
+    const [shifts, setShifts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedFilter, setSelectedFilter] = useState(Filter.All);
     const [sortBy, setSortBy] = useState(Sort.DateAsc);
     const [showSortModal, setShowSortModal] = useState(false);
-
     const itemsPerPage = 8;
 
-    // Filter shifts based on selected filter
-    const filteredShifts = selectedFilter === Filter.All
-        ? dummyShifts
-        : dummyShifts.filter(shift => shift.status === selectedFilter);
-
-    // Sort filtered shifts based on selected sort option
-    const sortedShifts = [...filteredShifts].sort((a, b) => {
-        const dateA = new Date(a.dateTime);
-        const dateB = new Date(b.dateTime);
-
-        if (sortBy === Sort.DateAsc) {
-            return dateA - dateB;
-        } else if (sortBy === Sort.DateDesc) {
-            return dateB - dateA;
+    useEffect(() => {
+    const fetchShifts = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setError("No token found. Please log in.");
+                setLoading(false);
+                return;
+            }
+            const res = await fetch("http://localhost:5000/api/v1/shifts", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                setError(`Failed to fetch shifts (${res.status}): ${text}`);
+                setLoading(false);
+                return;
+            }
+            const data = await res.json();
+            console.log("Raw API response:", data); // Debug
+            let apiShifts;
+            if (Array.isArray(data)) {
+                apiShifts = data;
+            } else if (Array.isArray(data.shifts)) {
+                apiShifts = data.shifts;
+            } else if (data.items && Array.isArray(data.items)) {
+                apiShifts = data.items;
+            } else {
+                apiShifts = [];
+            }
+            console.log("Normalized shift array:", apiShifts); // Debug
+            setShifts(apiShifts.map(normalizeShift));
+        } catch (err) {
+            setError("Error fetching shifts.");
+            console.error(err); // Debug
+        } finally {
+            setLoading(false);
         }
-        return 0;
+    };
+    fetchShifts();
+}, []);
+
+
+    // Map frontend filter values to backend status
+    const filterToBackendStatus = {
+        Completed: "Completed",
+        InProgress: "In Progress",
+        Pending: "Pending",
+        Open: "Open",
+    };
+
+    const filteredShifts = selectedFilter === Filter.All
+        ? shifts
+        : shifts.filter(shift => shift.status === filterToBackendStatus[selectedFilter]);
+
+    const sortedShifts = [...filteredShifts].sort((a, b) => {
+        const dateA = new Date(a?.dateTime || 0);
+        const dateB = new Date(b?.dateTime || 0);
+        return sortBy === Sort.DateAsc ? dateA - dateB : dateB - dateA;
     });
 
     const totalPages = Math.ceil(sortedShifts.length / itemsPerPage);
     const indexStart = (currentPage - 1) * itemsPerPage;
     const currentItems = sortedShifts.slice(indexStart, indexStart + itemsPerPage);
 
-    // Calculate summary statistics
-    const totalShifts = dummyShifts.length;
-    const completedShifts = dummyShifts.filter(shift => shift.status === ShiftStatus.Completed).length;
-    const inProgressShifts = dummyShifts.filter(shift => shift.status === ShiftStatus.InProgress).length;
-    const pendingShifts = dummyShifts.filter(shift => shift.status === ShiftStatus.Pending).length;
+    const totalShifts = shifts.length;
+    const completedShifts = shifts.filter(s => s.status === "Completed").length;
+    const inProgressShifts = shifts.filter(s => s.status === "In Progress").length;
+    const pendingShifts = shifts.filter(s => s.status === "Pending").length;
 
-    const goPrevPage = () => {
-        if (currentPage > 1) setCurrentPage(currentPage - 1);
-    };
-    const goNextPage = () => {
-        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-    };
-    const goToPage = (page) => {
-        setCurrentPage(page);
-    };
+    const goPrevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+    const goNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
+    const goToPage = (page) => setCurrentPage(page);
 
     const getPaginationNumbers = () => {
         const pages = [];
         const maxVisiblePages = 5;
-
         if (totalPages <= maxVisiblePages) {
-            // Show all pages if total is small
-            for (let i = 1; i <= totalPages; i++) {
-                pages.push(i);
-            }
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
         } else {
-            // Always show first page
             pages.push(1);
-
-            if (currentPage > 3) {
-                pages.push('...');
-            }
-
-            // Show pages around current page
+            if (currentPage > 3) pages.push('...');
             const start = Math.max(2, currentPage - 1);
             const end = Math.min(totalPages - 1, currentPage + 1);
-
-            for (let i = start; i <= end; i++) {
-                if (i !== 1 && i !== totalPages) {
-                    pages.push(i);
-                }
-            }
-
-            if (currentPage < totalPages - 2) {
-                pages.push('...');
-            }
-
-            // Always show last page
-            if (totalPages > 1) {
-                pages.push(totalPages);
-            }
+            for (let i = start; i <= end; i++) pages.push(i);
+            if (currentPage < totalPages - 2) pages.push('...');
+            if (totalPages > 1) pages.push(totalPages);
         }
-
         return pages;
     };
 
@@ -111,219 +146,181 @@ const ManageShift = () => {
         setShowSortModal(false);
     };
 
-    // Format date as MMM DD, YYYY
     const formatDate = (dateString) => {
+        if (!dateString) return "--";
         const date = new Date(dateString);
+        if (isNaN(date)) return "--";
         return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    // Format time range as HH:MM - HH:MM
-    const formatTime = (timeString) => {
-        const startTime = timeString;
-        const endTime = timeString.replace(/(\d+):(\d+)/, (match, hour, minute) => {
-            const newHour = parseInt(hour) + 4;
-            return `${newHour.toString().padStart(2, '0')}:${minute}`;
-        });
-        return `${startTime} - ${endTime}`;
+    const formatTime = (dateTimeString) => {
+        if (!dateTimeString) return "--";
+        const timePart = dateTimeString.split(' ')[1] || dateTimeString;
+        const [hour, minute] = timePart.split(":").map(Number);
+        if (isNaN(hour) || isNaN(minute)) return "--";
+        const endHour = (hour + 4) % 24;
+        return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} - ${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     };
 
     return (
         <div style={containerStyle}>
-            {/* Header */}
             <div style={headerStyle}>
                 <h1 style={titleStyle}>Manage Shifts</h1>
                 <button style={addButtonStyle} onClick={() => navigate('/create-shift')}>
-                    <img src={"/ic-add.svg"} alt="Add" style={bigIconStyle} />
-                    Add New Shift
+                    <img src={"/ic-add.svg"} alt="Add" style={bigIconStyle} /> Add New Shift
                 </button>
             </div>
-
-            {/* Summary Cards */}
             <div style={summaryGridStyle}>
-                <div style={{ ...summaryCardStyle, backgroundColor: "#EFF4FF" }}>
-                    <div>
-                        <p style={summaryLabelStyle}>Total shifts</p>
-                        <p style={summaryNumberStyle}>{totalShifts}</p>
-                    </div>
-                    <div>
-                        <img src={"/ic-task.svg"} alt="Check" style={bigIconStyle} />
-                    </div>
-                </div>
-
-                <div style={{ ...summaryCardStyle, backgroundColor: "#EAFAE7" }}>
-                    <div>
-                        <p style={summaryLabelStyle}>Completed shifts</p>
-                        <p style={summaryNumberStyle}>{completedShifts}</p>
-                    </div>
-                    <div>
-                        <img src={"/ic-completed.svg"} alt="Completed" style={bigIconStyle} />
-                    </div>
-                </div>
-
-                <div style={{ ...summaryCardStyle, backgroundColor: "#F6EFFF" }}>
-                    <div>
-                        <p style={summaryLabelStyle}>In-Progress shifts</p>
-                        <p style={summaryNumberStyle}>{inProgressShifts}</p>
-                    </div>
-                    <div>
-                        <img src={"/ic-lightning.svg"} alt="In Progress" style={bigIconStyle} />
-                    </div>
-                </div>
-
-                <div style={{ ...summaryCardStyle, backgroundColor: "#FBFAE2" }}>
-                    <div>
-                        <p style={summaryLabelStyle}>Pending shifts</p>
-                        <p style={summaryNumberStyle}>{pendingShifts}</p>
-                    </div>
-                    <div>
-                        <img src={"/ic-hourglass.svg"} alt="Pending" style={bigIconStyle} />
-                    </div>
-                </div>
+                <SummaryCard label="Total shifts" number={totalShifts} icon="/ic-task.svg" bg="#EFF4FF" />
+                <SummaryCard label="Completed shifts" number={completedShifts} icon="/ic-completed.svg" bg="#EAFAE7" />
+                <SummaryCard label="In-Progress shifts" number={inProgressShifts} icon="/ic-lightning.svg" bg="#F6EFFF" />
+                <SummaryCard label="Pending shifts" number={pendingShifts} icon="/ic-hourglass.svg" bg="#FBFAE2" />
             </div>
-
-            {/* Filter and Sort Section */}
-            <div style={filterSectionStyle}>
-                <div style={filterGroupStyle}>
-                    <img src={"/ic-filter.svg"} alt="Filter" style={smallIconStyle} />
-                    <span style={filterLabelStyle}>Filter by:</span>
-                    <div style={filterButtonsStyle}>
-                        {Object.values(Filter).map(filter => (
-                            <button
-                                key={filter}
-                                style={selectedFilter === filter ? activeFilterButtonStyle : filterButtonStyle}
-                                onClick={() => setSelectedFilter(filter)}
-                            >
-                                {filter}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div style={sortGroupStyle}>
-                    <img src={"/ic-sort.svg"} alt="Sort" style={smallIconStyle} />
-                    <span style={filterLabelStyle}>Sort by:</span>
-                    <button style={sortButtonStyle} onClick={() => setShowSortModal(true)}>
-                        {sortBy} <span style={{ fontSize: '10px' }}>▼</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Shift Cards Grid */}
+            <FilterSortSection
+                Filter={Filter}
+                selectedFilter={selectedFilter}
+                setSelectedFilter={setSelectedFilter}
+                sortBy={sortBy}
+                setShowSortModal={setShowSortModal}
+            />
+            {loading && <p>Loading shifts...</p>}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {!loading && !error && currentItems.length === 0 && <p>No shifts found.</p>}
             <div style={gridStyle}>
-                {currentItems.map(({ id, title, dateTime, location, status, price }) => (
-                    <div key={id} style={cardStyle}>
-                        <div>
-                            <h3 style={cardTitleStyle}>{title}</h3>
-                            <div style={cardHeaderStyle}>
-                                <div style={getStatusTagStyle(status)}>
-                                    {status}
+                {currentItems.map((shift) => {
+                    const [datePart, timePart] = shift.dateTime?.split(' ') || [null, null];
+                    return (
+                        <div key={shift.id} style={cardStyle}>
+                            <div>
+                                <h3 style={cardTitleStyle}>{shift.title}</h3>
+                                <div style={cardHeaderStyle}>
+                                    <div style={getStatusTagStyle(shift.status)}>{shift.status}</div>
+                                    <div style={priceStyle}>${shift.price}</div>
                                 </div>
-                                <div style={priceStyle}>${price}</div>
+                            </div>
+                            <div style={cardDetailsStyle}>
+                                <div style={detailRowStyle}>
+                                    <img src={"/ic-location.svg"} alt="Location" style={smallIconStyle} />
+                                    <span style={detailTextStyle}>{shift.location}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
+                                    <div style={detailRowStyle}>
+                                        <img src={"/ic-calendar.svg"} alt="Date" style={smallIconStyle} />
+                                        <span style={detailTextStyle}>{formatDate(datePart)}</span>
+                                    </div>
+                                    <div style={detailRowStyle}>
+                                        <img src={"/ic-clock.svg"} alt="Time" style={smallIconStyle} />
+                                        <span style={detailTextStyle}>{formatTime(shift.dateTime)}</span>
+                                    </div>
+                                </div>
+                                <button style={viewDetailsButtonStyle}>View Details</button>
                             </div>
                         </div>
-
-                        <div style={cardDetailsStyle}>
-                            <div style={detailRowStyle}>
-                                <img src={"/ic-location.svg"} alt="Location" style={smallIconStyle} />
-                                <span style={detailTextStyle}>{location}</span>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={detailRowStyle}>
-                                    <img src={"/ic-calendar.svg"} alt="Date" style={smallIconStyle} />
-                                    <span style={detailTextStyle}>{formatDate(dateTime.split(' ')[0])}</span>
-                                </div>
-                                <div style={detailRowStyle}>
-                                    <img src={"/ic-clock.svg"} alt="Time" style={smallIconStyle} />
-                                    <span style={detailTextStyle}>{formatTime(dateTime.split(' ')[1])}</span>
-                                </div>
-                            </div>
-                            <button style={viewDetailsButtonStyle}>
-                                View Details
-                            </button>
-                        </div>
-
-
-                    </div>
-                ))}
+                    );
+                })}
             </div>
-
-            {/* Pagination */}
-            <div style={paginationStyle}>
-                <button
-                    onClick={goPrevPage}
-                    disabled={currentPage === 1}
-                    style={currentPage === 1 ? disabledPaginationButtonStyle : paginationButtonStyle}
-                >
-                    <img src={"/ic-arrow-back.svg"} alt="Previous" style={smallIconStyle} />
-                </button>
-
-                {getPaginationNumbers().map((page, index) => (
-                    <button
-                        key={index}
-                        onClick={() => typeof page === 'number' ? goToPage(page) : null}
-                        style={page === currentPage ? activePaginationButtonStyle : paginationButtonStyle}
-                        disabled={page === '...'}
-                    >
-                        {page}
-                    </button>
-                ))}
-
-                <button
-                    onClick={goNextPage}
-                    disabled={currentPage === totalPages}
-                    style={currentPage === totalPages ? disabledPaginationButtonStyle : paginationButtonStyle}
-                >
-                    <img src={"/ic-arrow-forward.svg"} alt="Next" style={smallIconStyle} />
-                </button>
-            </div>
-
-            {/* Sort Modal */}
+            {!loading && !error && totalPages > 1 && (
+                <Pagination
+                    totalPages={totalPages}
+                    currentPage={currentPage}
+                    goPrevPage={goPrevPage}
+                    goNextPage={goNextPage}
+                    goToPage={goToPage}
+                    getPaginationNumbers={getPaginationNumbers}
+                />
+            )}
             {showSortModal && (
-                <div style={modalOverlayStyle} onClick={() => setShowSortModal(false)}>
-                    <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-                        <div style={modalHeaderStyle}>
-                            <h3 style={modalTitleStyle}>Sort by</h3>
-                            <button style={closeButtonStyle} onClick={() => setShowSortModal(false)}>×</button>
-                        </div>
-                        <div style={modalBodyStyle}>
-                            {Object.values(Sort).map((sortOption) => (
-                                <button
-                                    key={sortOption}
-                                    style={sortOption === sortBy ? activeSortOptionStyle : sortOptionStyle}
-                                    onClick={() => selectSortBy(sortOption)}
-                                >
-                                    {sortOption}
-                                    {sortOption === sortBy && <span style={checkmarkStyle}>✓</span>}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                <SortModal
+                    Sort={Sort}
+                    sortBy={sortBy}
+                    selectSortBy={selectSortBy}
+                    setShowSortModal={setShowSortModal}
+                />
             )}
         </div>
     );
 };
 
+const SummaryCard = ({ label, number, icon, bg }) => (
+    <div style={{ ...summaryCardStyle, backgroundColor: bg }}>
+        <div>
+            <p style={summaryLabelStyle}>{label}</p>
+            <p style={summaryNumberStyle}>{number}</p>
+        </div>
+        <div><img src={icon} alt={label} style={bigIconStyle} /></div>
+    </div>
+);
+
+const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, setShowSortModal }) => (
+    <div style={filterSectionStyle}>
+        <div style={filterGroupStyle}>
+            <img src={"/ic-filter.svg"} alt="Filter" style={smallIconStyle} />
+            <span style={filterLabelStyle}>Filter by:</span>
+            <div style={filterButtonsStyle}>
+                {Object.values(Filter).map(f => (
+                    <button
+                        key={f}
+                        style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle}
+                        onClick={() => setSelectedFilter(f)}
+                    >{f}</button>
+                ))}
+            </div>
+        </div>
+        <div style={sortGroupStyle}>
+            <img src={"/ic-sort.svg"} alt="Sort" style={smallIconStyle} />
+            <span style={filterLabelStyle}>Sort by:</span>
+            <button style={sortButtonStyle} onClick={() => setShowSortModal(true)}>
+                {sortBy} <span style={{ fontSize: '10px' }}>▼</span>
+            </button>
+        </div>
+    </div>
+);
+
+const Pagination = ({ totalPages, currentPage, goPrevPage, goNextPage, goToPage, getPaginationNumbers }) => (
+    <div style={paginationStyle}>
+        <button onClick={goPrevPage} disabled={currentPage === 1} style={currentPage === 1 ? disabledPaginationButtonStyle : paginationButtonStyle}>
+            <img src={"/ic-arrow-back.svg"} alt="Previous" style={smallIconStyle} />
+        </button>
+        {getPaginationNumbers().map((page, index) => (
+            <button
+                key={index}
+                onClick={() => typeof page === 'number' ? goToPage(page) : null}
+                style={page === currentPage ? activePaginationButtonStyle : paginationButtonStyle}
+                disabled={page === '...'}
+            >{page}</button>
+        ))}
+        <button onClick={goNextPage} disabled={currentPage === totalPages} style={currentPage === totalPages ? disabledPaginationButtonStyle : paginationButtonStyle}>
+            <img src={"/ic-arrow-forward.svg"} alt="Next" style={smallIconStyle} />
+        </button>
+    </div>
+);
+
+const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
+    <div style={modalOverlayStyle} onClick={() => setShowSortModal(false)}>
+        <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
+            <div style={modalHeaderStyle}>
+                <h3 style={modalTitleStyle}>Sort by</h3>
+                <button style={closeButtonStyle} onClick={() => setShowSortModal(false)}>×</button>
+            </div>
+            <div style={modalBodyStyle}>
+                {Object.values(Sort).map(option => (
+                    <button
+                        key={option}
+                        style={option === sortBy ? activeSortOptionStyle : sortOptionStyle}
+                        onClick={() => selectSortBy(option)}
+                    >
+                        {option} {option === sortBy && <span style={checkmarkStyle}>✓</span>}
+                    </button>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
 export default ManageShift;
 
-// Generate dummy data with more realistic information
-const generateDummyShifts = (count) => {
-    const titles = ['Night Patrol', 'Gate Duty', 'Event Watch', 'Lobby Control'];
-    const locations = ['Melbourne CBD', 'Docklands', 'Southbank', 'St Kilda'];
-    const statuses = [ShiftStatus.Pending, ShiftStatus.InProgress, ShiftStatus.Completed];
-    const prices = [100, 120, 150, 180];
 
-    return Array.from({ length: count }, (_, i) => ({
-        id: i + 1,
-        title: `Security Guard - ${titles[i % titles.length]}`,
-        dateTime: `2025-08-${(i % 30) + 1} ${(8 + (i % 12))}:00`,
-        location: locations[i % locations.length],
-        status: statuses[i % statuses.length],
-        price: prices[i % prices.length],
-    }));
-};
 
-const dummyShifts = generateDummyShifts(100);
 
 // Status tag styles
 const getStatusTagStyle = (status) => ({
@@ -332,10 +329,18 @@ const getStatusTagStyle = (status) => ({
     fontSize: '12px',
     fontWeight: '600',
     display: 'inline-block',
-    color: status === ShiftStatus.Completed ? '#2E7D32' :
-        status === ShiftStatus.InProgress ? '#7B1FA2' : '#F57C00',
-    backgroundColor: status === ShiftStatus.Completed ? '#EAFAE7' :
-        status === ShiftStatus.InProgress ? '#F6EFFF' : '#FBFAE2',
+    color: 
+        status === "Completed" ? "#2E7D32" :
+        status === "In Progress" ? "#7B1FA2" :
+        status === "Pending" ? "#F57C00" :
+        status === "Open" ? "#1565C0" :
+        "#757575",
+    backgroundColor: 
+        status === "Completed" ? "#EAFAE7" :
+        status === "In Progress" ? "#F6EFFF" :
+        status === "Pending" ? "#FBFAE2" :
+        status === "Open" ? "#E3F2FD" :
+        "#F5F5F5",
 });
 
 // Container styles
