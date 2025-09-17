@@ -128,6 +128,19 @@ You can explore, test, and understand the structure of all API endpoints there.
 
 ---
 
+## Firebase Console Setup 
+
+This is needed to enable FCM push notifications in the backend
+
+Create Project:
+1. Visit Firebase Console
+2. Click "Create Project", name it "SecureShift"
+
+Admin SDK Setup (Backend):
+1. Go to Project Settings > Service Accounts
+2. Click "Generate New Private Key"
+3. Save as firebase-service-account.json in backend project
+
 ## 🧪 Testing
 
 ```bash
