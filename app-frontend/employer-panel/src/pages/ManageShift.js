@@ -55,7 +55,7 @@ const ManageShift = () => {
                 setLoading(false);
                 return;
             }
-            const res = await fetch("http://localhost:5050/api/v1/shifts", {
+            const res = await fetch("http://localhost:5000/api/v1/shifts", {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
