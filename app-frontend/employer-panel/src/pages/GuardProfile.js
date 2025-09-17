@@ -7,10 +7,8 @@ const allSkills = ["CCTV Monitoring","Crowd Control","Defensive Driving","First 
 const availabilityOptions = ["Available","Unavailable","On Leave"];
 
 // NEW: read API base from env (Vite or CRA) ---------------------------------
-const API_BASE =                                                      // NEW
-  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) ||  // NEW
-  process.env.REACT_APP_API_BASE_URL ||                               // NEW
-  "http://localhost:3000";                                           // NEW
+const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
+                                          // NEW
 
 function GuardProfiles() {
   const navigate = useNavigate();
