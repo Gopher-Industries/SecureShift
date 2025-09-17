@@ -100,8 +100,9 @@ const userSchema = new mongoose.Schema(
     availability: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Availability',
-      default: null
+    default: null // Will be set to default on user creation (see controller)
     },
+  
   },
   {
     timestamps: true,

@@ -1,3 +1,30 @@
+import Shift from '../models/Shift.js';
+import User from '../models/User.js';
+
+// ...existing code...
+
+/**
+ * GET /api/v1/availability/match/:shiftId
+ * Returns guards whose availability matches the shift's day.
+ */
+export const matchGuardsToShift = async (req, res) => {
+  try {
+    const { shiftId } = req.params;
+    const shift = await Shift.findById(shiftId);
+    if (!shift) return res.status(404).json({ message: 'Shift not found' });
+
+    // Get day of week from shift date
+    const shiftDay = new Date(shift.date).toLocaleString('en-US', { weekday: 'long' });
+
+    // Find availabilities that include this day
+    const availabilities = await Availability.find({ days: shiftDay }).populate('user', 'name email role');
+    const eligibleGuards = availabilities.map(a => a.user);
+
+    res.json({ eligibleGuards });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
 /**
  * controllers/availability.controller.js
  *
@@ -11,7 +38,6 @@
  */
 
 import Availability from '../models/Availability.js';
-import User from '../models/User.js'; // Add this import
 import mongoose from 'mongoose';
 
 /** Utility: validate time slot format */

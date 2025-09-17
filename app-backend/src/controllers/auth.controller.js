@@ -9,6 +9,7 @@ import EOI from '../models/eoi.js';
 import { GridFSBucket } from 'mongodb';
 
 import Guard from '../models/Guard.js'; // use the discriminator so license fields persist
+import Availability from '../models/Availability.js';
 
 // ---------- Helpers ----------
 const generateToken = (user) => {
@@ -115,6 +116,17 @@ export const registerGuardWithLicense = async (req, res) => {
         rejectionReason: null,
       },
     });
+
+    // Set default availability: all days, all time slots
+    const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const allTimeSlots = ['00:00-23:59'];
+    const availability = await Availability.create({
+      user: guard._id,
+      days: allDays,
+      timeSlots: allTimeSlots,
+    });
+    guard.availability = availability._id;
+    await guard.save();
 
     // Hide password in response
     const { password: _pw, ...safe } = guard.toObject();
