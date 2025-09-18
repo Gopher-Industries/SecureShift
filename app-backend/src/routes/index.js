@@ -6,6 +6,7 @@ import messageRoutes from './message.routes.js';
 import userRoutes from './user.routes.js'; 
 import adminRoutes from './admin.routes.js';
 import availabilityRoutes from './availability.routes.js'; 
+import verificationRoutes from './verification.routes.js'; 
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/messages', messageRoutes);
 router.use('/admin', adminRoutes);
 router.use('/availability', availabilityRoutes); 
 router.use('/users', userRoutes);  
+router.use('/verification', verificationRoutes);  
 
 export default router;
