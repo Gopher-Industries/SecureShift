@@ -62,7 +62,7 @@ export const startVerification = async (req, res) => {
         guardId,
         jurisdiction,
         licenceNumber: encryptedLicence,
-        status: 'manual_pending',
+        status: 'pending',
         source: 'manual',
         notes: `manualId:${manual._id}`
       });
