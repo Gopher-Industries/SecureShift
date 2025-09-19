@@ -1,5 +1,36 @@
+ feature/guard-availability-matching
+import Shift from '../models/Shift.js';
+import User from '../models/User.js';
 import { ACTIONS } from "../middleware/logger.js";
 
+// ...existing code...
+
+/**
+ * GET /api/v1/availability/match/:shiftId
+ * Returns guards whose availability matches the shift's day.
+ */
+export const matchGuardsToShift = async (req, res) => {
+  try {
+    const { shiftId } = req.params;
+    const shift = await Shift.findById(shiftId);
+    if (!shift) return res.status(404).json({ message: 'Shift not found' });
+
+    // Get day of week from shift date
+    const shiftDay = new Date(shift.date).toLocaleString('en-US', { weekday: 'long' });
+
+    // Find availabilities that include this day
+    const availabilities = await Availability.find({ days: shiftDay }).populate('user', 'name email role');
+    const eligibleGuards = availabilities.map(a => a.user);
+
+    res.json({ eligibleGuards });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+import { ACTIONS } from "../middleware/logger.js";
+
+main
 /**
  * controllers/availability.controller.js
  *
@@ -101,8 +132,12 @@ export const createOrUpdateAvailability = async (req, res) => {
 
     const availability = await Availability.findOneAndUpdate(filter, update, options).populate(
       'user',
-      'name email role' // optional fields if User has these
+      'name email role'
     );
+
+    // Link the availability to the user (one-to-one)
+    await User.findByIdAndUpdate(targetUserId, { availability: availability._id });
+
     await req.audit.log(req.user.id, ACTIONS.AVAILABILITY_UPDATED, {
       availabilityId: availability._id,
       targetUserId: targetUserId,

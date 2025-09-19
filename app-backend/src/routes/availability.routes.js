@@ -9,8 +9,39 @@ const router = express.Router();
  * tags:
  *   name: Availability
  *   description: API to manage user availability
+ *
+ * /api/v1/availability/match/{shiftId}:
+ *   get:
+ *     summary: Get guards available for a specific shift
+ *     tags: [Availability]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shiftId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The shift ID
+ *     responses:
+ *       200:
+ *         description: List of available guards for the shift
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 eligibleGuards:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *       404:
+ *         description: Shift not found
+ *       401:
+ *         description: Unauthorized
  */
 
+router.get('/match/:shiftId', auth, availabilityController.matchGuardsToShift);
 /**
  * @swagger
  * /api/v1/availability:
@@ -159,5 +190,16 @@ router.post('/', auth, availabilityController.createOrUpdateAvailability);
  * Get availability for a user by userId.
  */
 router.get('/:userId', auth, availabilityController.getAvailability);
+
+/**
+ * List all availabilities (admin only)
+ */
+router.get('/', auth, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: admin only' });
+  }
+  const availabilities = await availabilityController.listAllAvailabilities();
+  res.json(availabilities);
+});
 
 export default router;

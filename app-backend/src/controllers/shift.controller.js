@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
+import Availability from '../models/Availability.js';
+import User from '../models/User.js';
 
 import { ACTIONS } from "../middleware/logger.js";
 
@@ -94,6 +96,7 @@ export const createShift = async (req, res) => {
  */
 export const listAvailableShifts = async (req, res) => {
   try {
+  // imports moved to top of file
     const role = req.user?.role;
     const uid  = req.user?._id || req.user?.id;
     if (!role || !uid) return res.status(401).json({ message: 'Unauthorized' });
