@@ -15,6 +15,7 @@ import {
   rateShift,
   listAvailableShifts,
   getShiftHistory,
+  assignGuard,
   listOpenShiftsForGuard,
 } from '../controllers/shift.controller.js';
 
@@ -286,7 +287,14 @@ router
  */
 router
   .route('/available')
-  .get(protect, authorizeRole('guard'), listOpenShiftsForGuard);
+  .get(
+  auth,
+  loadUser,
+  authorizeRoles(ROLES.GUARD),
+  authorizePermissions(['shift:read']),
+  listOpenShiftsForGuard
+);
+
 
 
 export default router;

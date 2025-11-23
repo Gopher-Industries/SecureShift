@@ -7,6 +7,7 @@
  */
 import Role from '../models/Role.js';
 import User from '../models/User.js';
+import router from './user.routes.js';
 
 export const ROLES = {
   SUPER_ADMIN: 'super_admin',
@@ -174,3 +175,5 @@ export function requireSelfOrRoles({ paramKey = 'userId', roles = [] } = {}) {
     return res.status(403).json({ message: 'Insufficient privileges' });
   };
 }
+
+export default router;
