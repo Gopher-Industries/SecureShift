@@ -15,8 +15,7 @@ import {
   rateShift,
   listAvailableShifts,
   getShiftHistory,
-  assignGuard,
-  listShifts,
+  listOpenShiftsForGuard,
 } from '../controllers/shift.controller.js';
 
 const router = express.Router();
@@ -250,31 +249,44 @@ router
  *     summary: Get shift history (Guard/Employer only)
  *     tags: [Shifts]
  */
-router
-  .route('/history')
-  .get(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.GUARD, ROLES.EMPLOYER),
-    authorizePermissions(['shift:read']),
-    getShiftHistory
-  );
-
 /**
  * @swagger
- * /api/v1/shifts/all:
+ * /api/v1/shifts/available:
  *   get:
- *     summary: Admin-level shift list
+ *     summary: List open shifts for guards (filter by date/location)
+ *     description: >
+ *       Guard-only endpoint. Returns **open** shifts not created by the guard.  
+ *       If `date` is omitted, returns only today/future shifts.  
+ *       Results are sorted by date ascending.
  *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         schema: { type: string, format: date, example: "2025-09-07" }
+ *         required: false
+ *         description: Filter to a specific calendar day (YYYY-MM-DD)
+ *       - in: query
+ *         name: location
+ *         schema: { type: string, example: "Port Melbourne" }
+ *         required: false
+ *         description: Case-insensitive match against street/suburb/state/postcode
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+ *     responses:
+ *       200: { description: Paged list of open shifts for guards }
+ *       400: { description: Validation error }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
  */
 router
-  .route('/all')
-  .get(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-    authorizePermissions(['shift:read'], { any: true }),
-    listShifts
-  );
+  .route('/available')
+  .get(protect, authorizeRole('guard'), listOpenShiftsForGuard);
+
 
 export default router;
