@@ -15,8 +15,7 @@ import {
   adminUpdateUserProfile,
   getAllGuards,
   listUsers,
-  updateUser,
-  deleteUser,
+  deleteUser
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
@@ -211,14 +210,6 @@ router
     authorizePermissions('user:write'),
     requireSameBranchAsTargetUser({ paramKey: 'userId' }),
     adminUpdateUserProfile
-  )
-  .patch(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
-    authorizePermissions('user:write'),
-    requireSameBranchAsTargetUser({ paramKey: 'userId' }),
-    updateUser
   )
   .delete(
     auth,
