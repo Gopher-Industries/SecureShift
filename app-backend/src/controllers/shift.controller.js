@@ -418,26 +418,75 @@ export const getShiftHistory = async (req, res) => {
 };
 
 /**
- * GET /api/v1/shifts/all  (admin/super)
+ * GET /api/v1/shifts/available  (guard only)
+ * Optional query params:
+ *   - date=YYYY-MM-DD (returns shifts on that calendar day)
+ *   - location=string  (matches street/suburb/state/postcode, case-insensitive)
+ * Always:
+ *   - status: 'open'
+ *   - exclude shifts created by the guard
+ *   - future or today when no date is supplied
+ *   - sort by date ASC, then startTime ASC
  */
-export const listShifts = async (req, res) => {
+export const listOpenShiftsForGuard = async (req, res) => {
   try {
+    const uid  = req.user?._id || req.user?.id;
+    const role = req.user?.role;
+    if (!uid || role !== 'guard') {
+      return res.status(403).json({ message: 'Forbidden: guard role required' });
+    }
+
+    // Pagination
     const page  = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const skip  = (page - 1) * limit;
 
-    const query = {};
-    const [docs, total] = await Promise.all([
+    const { date, location } = req.query;
+
+    // Base query
+    const query = {
+      status: 'open',
+      createdBy: { $ne: uid },
+    };
+
+    // Date filter
+    if (date) {
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) {
+        return res.status(400).json({ message: 'date must be YYYY-MM-DD' });
+      }
+      const start = new Date(d); start.setHours(0, 0, 0, 0);
+      const end   = new Date(d); end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    } else {
+      // If no specific day requested, only show today or future
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      query.date = { $gte: today };
+    }
+
+    // Location filter (matches any location sub-field)
+    if (location && typeof location === 'string' && location.trim()) {
+      const rx = new RegExp(location.trim(), 'i');
+      query.$or = [
+        { 'location.street':   { $regex: rx } },
+        { 'location.suburb':   { $regex: rx } },
+        { 'location.state':    { $regex: rx } },
+        { 'location.postcode': { $regex: rx } },
+        // If you also store a flat text field, include it:
+        { locationText:        { $regex: rx } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
       Shift.find(query)
-        .sort({ date: -1, createdAt: -1 })
+        .sort({ date: 1, startTime: 1 }) // ascending
         .skip(skip).limit(limit)
-        .populate('createdBy', 'name email')
-        .populate('assignedGuard', 'name email')
+        .populate('createdBy', 'name')
         .lean(),
       Shift.countDocuments(query),
     ]);
 
-    return res.json({ page, limit, total, items: docs });
+    return res.json({ page, limit, total, items });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
