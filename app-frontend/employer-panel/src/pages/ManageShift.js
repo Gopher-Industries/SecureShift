@@ -32,7 +32,7 @@ const normalizeShift = (s) => ({
         ? `${s.location.street}, ${s.location.suburb}, ${s.location.state}` 
         : "--",
     status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
-    price: s.price || "--"
+    price: s.payRate != null ? `${s.payRate} p/h` : "--"
 });
 
 const ManageShift = () => {
