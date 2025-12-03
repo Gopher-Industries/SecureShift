@@ -1,11 +1,18 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
-
+import Availability from '../models/Availability.js'; // Import added for filtering
 import { ACTIONS } from "../middleware/logger.js";
 
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
 const isValidHHMM = (s) => typeof s === 'string' && HHMM.test(s);
+
+// Helper: Convert HH:MM string to minutes for comparison
+const toMinutes = (str) => {
+  if (!str) return 0;
+  const [h, m] = str.split(':').map(Number);
+  return h * 60 + m;
+};
 
 // Returns true if now is at/after the shift start datetime
 const isInPastOrStarted = (shift) => {
@@ -34,7 +41,6 @@ export const createShift = async (req, res) => {
       return res.status(400).json({ message: 'payRate must be a non-negative number' });
     }
 
-    // pick up user id from either _id or id
     const creatorId = req.user?._id || req.user?.id;
     if (!creatorId) {
       return res.status(401).json({ message: 'Authenticated user id missing from context' });
@@ -72,12 +78,14 @@ export const createShift = async (req, res) => {
       payRate,
     });
 
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
-      shiftId: shift._id,
-      title: shift.title,
-      date: shift.date,
-      payRate: shift.payRate
-    });
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
+        shiftId: shift._id,
+        title: shift.title,
+        date: shift.date,
+        payRate: shift.payRate
+        });
+    }
     
     return res.status(201).json(shift);
   } catch (e) {
@@ -86,11 +94,8 @@ export const createShift = async (req, res) => {
 };
 
 /**
- * GET /api/v1/shifts  (dynamic by role)
- * Guard → available (open/applied) future/today not created by guard
- * Employer → own shifts waiting for approval (status: applied)
- * Admin → all shifts waiting for approval (status: applied)
- * Optional query params: ?q=&urgency=&limit=&page=
+ * GET /api/v1/shifts
+ * UPDATED: Filters by Guard Availability
  */
 export const listAvailableShifts = async (req, res) => {
   try {
@@ -106,15 +111,26 @@ export const listAvailableShifts = async (req, res) => {
     const withApplicantsOnly = String(req.query.withApplicantsOnly) === 'true';
 
     let query = {};
+    let availability = null;
+
     if (role === 'guard') {
-      const today = new Date(); today.setHours(0,0,0,0);
+      // 1. Fetch Guard Availability first
+      availability = await Availability.findOne({ user: uid });
+      
+      // Strict filtering: If guard has NO availability set, return empty list immediately
+      if (!availability) {
+         return res.json({ page, limit, total: 0, items: [] });
+      }
+
+      const today = new Date(); 
+      today.setHours(0,0,0,0);
+      
       query = {
         status: { $in: ['open', 'applied'] },
         createdBy: { $ne: uid },
         date: { $gte: today },
       };
     } else if (role === 'employer') {
-      // show ALL my shifts; optionally filter to only those with applicants
       query = { createdBy: uid };
       if (withApplicantsOnly) query['applicants.0'] = { $exists: true };
     } else if (role === 'admin') {
@@ -134,24 +150,56 @@ export const listAvailableShifts = async (req, res) => {
       query.urgency = urgency;
     }
 
+    // Fetch candidates
     const findQ = Shift.find(query)
       .sort({ date: role === 'guard' ? 1 : -1, startTime: role === 'guard' ? 1 : -1, createdAt: -1 })
-      .skip(skip).limit(limit)
       .populate('createdBy', 'name');
 
     if (role === 'employer' || role === 'admin') {
       findQ.populate('applicants', 'name email');
     }
 
-    const [docs, total] = await Promise.all([findQ.lean(), Shift.countDocuments(query)]);
+    let docs = await findQ.lean();
+
+    // --- LOGIC CHANGE: Apply Availability Filter (Guard Only) ---
+    if (role === 'guard' && availability) {
+        docs = docs.filter(shift => {
+            // 1. Check Day of Week (e.g. "Monday")
+            const shiftDate = new Date(shift.date);
+            const shiftDayName = shiftDate.toLocaleDateString('en-US', { weekday: 'long' });
+            
+            if (!availability.days.includes(shiftDayName)) {
+                return false; // Guard doesn't work this day
+            }
+
+            // 2. Check Time Slot (Shift must be fully within a slot)
+            const shiftStart = toMinutes(shift.startTime);
+            const shiftEnd = toMinutes(shift.endTime);
+
+            const hasValidSlot = availability.timeSlots.some(slot => {
+                const [slotStartStr, slotEndStr] = slot.split('-');
+                const slotStart = toMinutes(slotStartStr);
+                const slotEnd = toMinutes(slotEndStr);
+                
+                // Shift starts after slot starts AND Shift ends before slot ends
+                return shiftStart >= slotStart && shiftEnd <= slotEnd;
+            });
+
+            return hasValidSlot;
+        });
+    }
+
+    // Pagination (manual slice since we filtered in memory)
+    const total = docs.length;
+    const paginatedItems = docs.slice(skip, skip + limit);
 
     const items = (role === 'employer' || role === 'admin')
-      ? docs.map(d => ({
+      ? paginatedItems.map(d => ({
           ...d,
           applicantCount: Array.isArray(d.applicants) ? d.applicants.length : 0,
           hasApplicants: Array.isArray(d.applicants) && d.applicants.length > 0,
         }))
-      : docs;
+      : paginatedItems;
 
     res.json({ page, limit, total, items });
   } catch (e) {
@@ -160,7 +208,7 @@ export const listAvailableShifts = async (req, res) => {
 };
 
 /**
- * PUT /api/v1/shifts/:id/apply  (guard only)
+ * PUT /api/v1/shifts/:id/apply
  */
 export const applyForShift = async (req, res) => {
   try {
@@ -185,7 +233,6 @@ export const applyForShift = async (req, res) => {
       return res.status(400).json({ message: 'Employer cannot apply to own shift' });
     }
 
-    // sanitize & dedupe
     shift.applicants = (shift.applicants || []).filter(Boolean);
     if (shift.applicants.some(a => String(a) === String(userId))) {
       return res.status(400).json({ message: 'Already applied' });
@@ -195,19 +242,20 @@ export const applyForShift = async (req, res) => {
     if (shift.status === 'open') shift.status = 'applied';
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, {
-      shiftId: shift._id
-    });
+    
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, {
+        shiftId: shift._id
+        });
+    }
     return res.json({ message: 'Application submitted', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
 };
 
-
 /**
- * PUT /api/v1/shifts/:id/approve  (employer/admin)
- * body: { guardId, keepOthers=false }
+ * PUT /api/v1/shifts/:id/approve
  */
 export const approveShift = async (req, res) => {
   try {
@@ -233,16 +281,19 @@ export const approveShift = async (req, res) => {
       return res.status(400).json({ message: 'Guard did not apply for this shift' });
     }
 
-    shift.assignedGuard = guardId; // virtual -> acceptedBy
+    shift.assignedGuard = guardId; 
     shift.status = 'assigned';
     if (!keepOthers) shift.applicants = [guardId];
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPROVED, {
-      shiftId: shift._id,
-      approvedGuardId: guardId,
-      keepOthers
-    });
+    
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.SHIFT_APPROVED, {
+        shiftId: shift._id,
+        approvedGuardId: guardId,
+        keepOthers
+        });
+    }
 
     return res.json({ message: 'Guard approved', shift });
   } catch (e) {
@@ -251,7 +302,7 @@ export const approveShift = async (req, res) => {
 };
 
 /**
- * PUT /api/v1/shifts/:id/complete  (employer/admin)
+ * PUT /api/v1/shifts/:id/complete
  */
 export const completeShift = async (req, res) => {
   try {
@@ -270,9 +321,12 @@ export const completeShift = async (req, res) => {
 
     shift.status = 'completed';
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, {
-     shiftId: shift._id 
-    });
+    
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, {
+        shiftId: shift._id 
+        });
+    }
 
     return res.json({ message: 'Shift completed', shift });
   } catch (e) {
@@ -281,10 +335,7 @@ export const completeShift = async (req, res) => {
 };
 
 /**
- * GET /api/v1/shifts/myshifts  (?status=past)
- * guard: applied/assigned/past
- * employer: created
- * admin: all
+ * GET /api/v1/shifts/myshifts
  */
 export const getMyShifts = async (req, res) => {
   try {
@@ -297,7 +348,7 @@ export const getMyShifts = async (req, res) => {
       query = { $or: [{ applicants: uid }, { acceptedBy: uid }] };
     } else if (role === 'employer') {
       query = { createdBy: uid };
-    } // admin sees all
+    } 
 
     if (pastOnly) query = { ...query, status: 'completed' };
 
@@ -314,8 +365,7 @@ export const getMyShifts = async (req, res) => {
 };
 
 /**
- * PATCH /api/v1/shifts/:id/rate  (guard/employer)
- * body: { rating: 1..5 }
+ * PATCH /api/v1/shifts/:id/rate
  */
 export const rateShift = async (req, res) => {
   try {
@@ -357,21 +407,23 @@ export const rateShift = async (req, res) => {
     }
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.RATINGS_SUBMITTED, {
-      shiftId: shift._id,
-      rating: r,
-      role: req.user.role
-    });
+    
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.RATINGS_SUBMITTED, {
+        shiftId: shift._id,
+        rating: r,
+        role: req.user.role
+        });
+    }
 
     return res.json({ message: 'Rating saved', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
 };
+
 /**
  * GET /api/v1/shifts/history
- * Guard → completed shifts assigned to them
- * Employer → posted shifts with status = completed
  */
 export const getShiftHistory = async (req, res) => {
   try {
