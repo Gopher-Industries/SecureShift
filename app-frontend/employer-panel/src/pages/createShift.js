@@ -238,7 +238,7 @@ const CreateShift = () => {
               style={styles.input}
               type="number"
               name="payRate"
-              placeholder="Pay rate*"
+              placeholder="Pay rate* (p/h)"
               value={formData.payRate}
               onChange={handleChange}
             />
