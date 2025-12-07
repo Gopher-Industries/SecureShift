@@ -52,19 +52,37 @@ const Star = ({ filled }) => (
 );
 
 export default function EmployerDashboard() {
-  const [view, setView] = useState("list"); // default list view
+  const [view, setView] = useState("list");
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
-  const navigate = useNavigate();   
+  const navigate = useNavigate();
 
+  /* ---------------------------------------
+     SHIFT DATA (DUMMY FOR NOW)
+     --------------------------------------- */
   const shifts = useMemo(() => [
-    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Confirmed", tone: "confirmed" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
-    { role: "Shopping Centre Security", company: "Vicinity Centres", venue: "Chadstone Shopping Centre", rate: 75, status: { text: "Pending", tone: "pending" }, date: "03-08-2025", time: "1:00 pm - 9:00 pm" },
-    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Rejected", tone: "rejected" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
-    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Unrated)", tone: "completed" }, date: "01-08-2025", time: "5:00 pm - 1:00 am" },
-    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Rated)", tone: "completed" }, date: "31-07-2025", time: "5:00 pm - 1:00 am" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, date: "12/12/2025", time: "5:00 PM - 1:00 AM", status: "open" },
+    { role: "Shopping Centre Security", company: "Vicinity Centres", venue: "Chadstone Shopping Centre", rate: 75, date: "11/12/2025", time: "1:00 PM - 9:00 PM", status: "applied" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, date: "10/12/2025", time: "5:00 PM - 1:00 AM", status: "assigned" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, date: "08/12/2025", time: "5:00 PM - 1:00 AM", status: "completed" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, date: "07/12/2025", time: "5:00 PM - 1:00 AM", status: "completed" },
+    { role: "New Test Shift",company: "Test Co",venue: "Test Venue",rate: 40,date: "01/01/2026",time: "5PM - 11PM",status: "applied"},
+    { role: "New Test Shift",company: "Test Co",venue: "Test Venue",rate: 40,date: "01/01/2026",time: "5PM - 11PM",status: "applied"}
+
+
+
+
   ], []);
 
+  /* ---------------------------------------
+     LIVE INDICATOR COUNTS
+     --------------------------------------- */
+  const openCount = shifts.filter(s => s.status === "open").length;
+  const appliedCount = shifts.filter(s => s.status === "applied").length;
+  const assignedCount = shifts.filter(s => s.status === "assigned").length;
+  const completedCount = shifts.filter(s => s.status === "completed").length;
+
+  /* Dummy Reviews */
   const reviews = useMemo(() => [
     { name: "John Smith", role: "Crowd Control", stars: 5 },
     { name: "Andrew Goddard", role: "Crowd Control", stars: 4 },
@@ -78,44 +96,43 @@ export default function EmployerDashboard() {
 
   return (
     <div className="ss-page">
-  
-      {/* -------- Overview -------- */}
       <main className="ss-main">
+        
         <h2 className="ss-h1">Overview</h2>
 
-        {/* Controls ABOVE grey grid */}
+        {/* ---------------------------------------
+            LIVE STATUS INDICATORS
+        --------------------------------------- */}
+        <div className="status-row">
+          <div className="status-card open">Open Shifts: {openCount}</div>
+          <div className="status-card applied">Applied Shifts: {appliedCount}</div>
+          <div className="status-card assigned">Assigned Shifts: {assignedCount}</div>
+          <div className="status-card completed">Completed Shifts: {completedCount}</div>
+        </div>
+
+        {/* Controls ABOVE grid */}
         <div className="ss-controls">
           <div className="ss-controls-right">
-            <button
-              className="ss-primary ss-primary--wide"
-              onClick={() => navigate("/create-shift")}
-            >
+            <button className="ss-primary ss-primary--wide" onClick={() => navigate("/create-shift")}>
               <IconPlus className="ss-plus" /> Create Shift
             </button>
             <div className="ss-viewtoggle">
-              <button
-                className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
-                onClick={() => setView("grid")}
-              >
-                <IconGrid />
-              </button>
-              <button
-                className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`}
-                onClick={() => setView("list")}
-              >
-                <IconList />
-              </button>
+              <button className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`} onClick={() => setView("grid")}><IconGrid /></button>
+              <button className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`} onClick={() => setView("list")}><IconList /></button>
             </div>
           </div>
         </div>
 
-        {/* Grey Grid */}
+        {/* ---------------------------------------
+            SHIFTS LIST + GRID
+        --------------------------------------- */}
         <div className="ss-overview">
           <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(overviewScroller, -320)}>‹</button>
+
           <div className="ss-panel">
             <div ref={overviewScroller} className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}>
 
-              {/* Create Shift Card (only in grid view) */}
+              {/* Create Shift card (grid only) */}
               {view === "grid" && (
                 <div className="ss-card ss-card--create" onClick={() => navigate("/create-shift")}>
                   <div className="ss-card__createicon"><IconPlus /></div>
@@ -125,47 +142,68 @@ export default function EmployerDashboard() {
 
               {shifts.map((s, idx) =>
                 view === "grid" ? (
+                  /* ---------- GRID CARD ----------- */
                   <div className="ss-card" key={idx}>
                     <div className="ss-card__head">
                       <div className="ss-role">{s.role}</div>
                       <div className="ss-rate">${s.rate} p/h</div>
                     </div>
+
                     <div className="ss-meta">{s.company} — {s.venue}</div>
-                    <div className={`ss-status ss-status--${s.status.tone}`}>Status: {s.status.text}</div>
+
+                    {/* FIXED STATUS HERE */}
+                    <div className={`ss-status ss-status--${s.status}`}>
+                      Status: {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
+                    </div>
+
                     <div className="ss-when">
-                      <span className="ss-when__item"><IconCalendar className="ss-ico" />{s.date}</span>
-                      <span className="ss-when__item"><IconClock className="ss-ico" />{s.time}</span>
+                      <span className="ss-when__item"><IconCalendar className="ss-ico" /> {s.date}</span>
+                      <span className="ss-when__item"><IconClock className="ss-ico" /> {s.time}</span>
                     </div>
                   </div>
                 ) : (
+                  /* ------------ LIST ROW ------------ */
                   <div className="ss-row" key={idx}>
+
                     <div className="ss-col ss-role">{s.role}</div>
                     <div className="ss-col ss-company">{s.company} — {s.venue}</div>
                     <div className="ss-col ss-rate">${s.rate} p/h</div>
+
                     <div className="ss-col ss-date">
                       <IconCalendar className="ss-ico" /> {s.date}
                     </div>
+
                     <div className="ss-col ss-time">
                       <IconClock className="ss-ico" /> {s.time}
                     </div>
-                    <div className={`ss-col ss-status ss-status--${s.status.tone}`}>
-                      Status: {s.status.text}
+
+                    {/* FIXED STATUS HERE */}
+                   <div className={`status-badge badge-${s.status}`}>
+                      {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
                     </div>
+
+
                   </div>
                 )
               )}
             </div>
           </div>
+
           <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(overviewScroller, 320)}>›</button>
         </div>
 
-        {/* Reviews */}
+        {/* ---------------------------------------
+            REVIEWS
+        --------------------------------------- */}
         <h2 className="ss-h1 ss-h1--spaced">Recent Review</h2>
+
         <div className="ss-reviews">
           <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(reviewScroller, -300)}>‹</button>
+
           <div ref={reviewScroller} className="ss-reviews__track">
             {reviews.map((r, i) => (
               <div key={i} className="ss-reviewcard">
+
                 <div className="ss-reviewcard__top">
                   <div className="ss-avatar ss-avatar--lg"><IconUser /></div>
                   <div>
@@ -173,15 +211,20 @@ export default function EmployerDashboard() {
                     <div className="ss-review__role">{r.role}</div>
                   </div>
                 </div>
+
                 <div className="ss-review__stars">
                   {[0,1,2,3,4].map((k) => <Star key={k} filled={k < r.stars} />)}
                 </div>
+
                 <button className="ss-secondary">View Review</button>
+
               </div>
             ))}
           </div>
+
           <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(reviewScroller, 300)}>›</button>
         </div>
+
       </main>
     </div>
   );
