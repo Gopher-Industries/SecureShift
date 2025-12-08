@@ -155,7 +155,7 @@ export const login = async (req, res) => {
     user.otpExpiresAt = expiry;
     await user.save();
 
-    await sendOTP(user.email, otp);
+    console.log("DEV_MODE otp:", otp); // For temporary testing purposes
     await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
 
     res.status(200).json({ message: 'OTP sent to your email' });
