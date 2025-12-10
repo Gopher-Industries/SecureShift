@@ -94,7 +94,7 @@ const shiftSchema = new Schema(
     // Domain fields
     status: {
       type: String,
-      enum: ['open', 'applied', 'assigned', 'completed'],
+      enum: ['open', 'applied', 'assigned', 'completed', 'cancelled'],
       default: 'open',
       index: true,
     },
@@ -107,6 +107,21 @@ const shiftSchema = new Schema(
         message: 'Applicants cannot contain null/undefined',
       },
     },
+
+    assignedGuard: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+
+    logs: [
+    {
+      action: { type: String, required: true },
+      timestamp: { type: Date, default: Date.now },
+      user: { type: Schema.Types.ObjectId, ref: "User" },
+      meta: { type: Object, default: {} }
+    }
+  ],
 
     // Canonical historical name
     acceptedBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
@@ -145,7 +160,7 @@ shiftSchema.pre('save', function (next) {
 
 // Virtual alias: assignedGuard <-> acceptedBy
 shiftSchema
-  .virtual('assignedGuard')
+  .virtual('assignGuard')
   .get(function () {
     return this.acceptedBy;
   })
