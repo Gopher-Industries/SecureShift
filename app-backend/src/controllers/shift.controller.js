@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
 import { ACTIONS } from "../middleware/logger.js";
+import User from "../models/User.js";
+import Message from "../models/Message.js";
 
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
@@ -75,7 +77,7 @@ export const createShift = async (req, res) => {
       title: shift.title,
       date: shift.date,
       payRate: shift.payRate
-    });
+    }, shift._id);
     
     return res.status(201).json(shift);
   } catch (e) {
@@ -96,7 +98,7 @@ export const listAvailableShifts = async (req, res) => {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const skip  = (page - 1) * limit;
 
-    const { q, urgency } = req.query;
+    const { q, urgency, status, date, location } = req.query;
     const withApplicantsOnly = String(req.query.withApplicantsOnly) === 'true';
 
     let query = {};
@@ -116,7 +118,6 @@ export const listAvailableShifts = async (req, res) => {
     } else {
       return res.status(403).json({ message: 'Forbidden' });
     }
-
     if (q) {
       query.$or = [
         { title: { $regex: q, $options: 'i' } },
@@ -126,9 +127,38 @@ export const listAvailableShifts = async (req, res) => {
     if (urgency && ['normal','priority','last-minute'].includes(urgency)) {
       query.urgency = urgency;
     }
-
+    if (status) {
+      const allowedStatuses = ["open", "applied", "assigned", "completed"];
+      if (allowedStatuses.includes(status.toLowerCase())) {
+        query.status = status.toLowerCase();
+      }
+    }
+    if (date) {
+      const d = new Date(date);
+      if (!isNaN(d)) {
+        const start = new Date(d); start.setHours(0,0,0,0);
+        const end   = new Date(d); end.setHours(23,59,59,999);
+        query.date = { $gte: start, $lte: end };
+      }
+    }
+    if (location && location.trim()) {
+      const rx = new RegExp(location.trim(), "i");
+      query.$or = [
+        { "location.street": { $regex: rx } },
+        { "location.suburb": { $regex: rx } },
+        { "location.state": { $regex: rx } },
+        { "location.postcode": { $regex: rx } },
+      ];
+    } 
+    if (req.query.guard && mongoose.isValidObjectId) {
+        query.assignedGuard = req.query.guard;
+      }   
+    let sortOrder = { date: 1, startTime: 1 };
+    if (req.query.sort === "desc") {
+      sortOrder = { date: -1, startTime: -1 };
+    }
     const findQ = Shift.find(query)
-      .sort({ date: role === 'guard' ? 1 : -1, startTime: role === 'guard' ? 1 : -1, createdAt: -1 })
+      .sort(sortOrder)
       .skip(skip).limit(limit)
       .populate('createdBy', 'name');
 
@@ -186,8 +216,14 @@ export const applyForShift = async (req, res) => {
     shift.applicants.push(userId);
     if (shift.status === 'open') shift.status = 'applied';
 
+    shift.logs.push({
+      action: "APPLIED",
+      user: userId,
+      meta: {}
+    });
+
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, { shiftId: shift._id });
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, { shiftId: shift._id }, shift._id);
     return res.json({ message: 'Application submitted', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
@@ -225,12 +261,18 @@ export const approveShift = async (req, res) => {
     shift.status = 'assigned';
     if (!keepOthers) shift.applicants = [guardId];
 
+    shift.logs.push({
+      action: "APPROVED",
+      user: req.user._id,
+      meta: { guardId }
+    });
+
     await shift.save();
     await req.audit.log(req.user._id, ACTIONS.SHIFT_APPROVED, {
       shiftId: shift._id,
       approvedGuardId: guardId,
       keepOthers
-    });
+    }, shift._id);
 
     return res.json({ message: 'Guard approved', shift });
   } catch (e) {
@@ -264,11 +306,17 @@ export const assignGuard = async (req, res) => {
     shift.status = 'assigned';
     shift.applicants = [guardId];
 
+    shift.logs.push({
+      action: "ASSIGNED",
+      user: req.user._id,
+      meta: { guardId }
+    });
+
     await shift.save();
     await req.audit.log(req.user._id, ACTIONS.SHIFT_ASSIGNED, {
       shiftId: shift._id,
       assignedGuardId: guardId
-    });
+    }, shift._id);
 
     return res.json({ message: 'Guard successfully assigned to shift', shift });
   } catch (e) {
@@ -295,8 +343,14 @@ export const completeShift = async (req, res) => {
     if (shift.status === 'completed') return res.status(400).json({ message: 'Already completed' });
 
     shift.status = 'completed';
+
+    shift.logs.push({
+      action: "COMPLETED",
+      user: req.user._id
+    });
+
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, { shiftId: shift._id });
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, { shiftId: shift._id }, shift._id);
 
     return res.json({ message: 'Shift completed', shift });
   } catch (e) {
@@ -381,7 +435,7 @@ export const rateShift = async (req, res) => {
       shiftId: shift._id,
       rating: r,
       role: req.user.role
-    });
+    }, shift._id);
 
     return res.json({ message: 'Rating saved', shift });
   } catch (e) {
@@ -412,6 +466,199 @@ export const getShiftHistory = async (req, res) => {
       .populate('assignedGuard', 'name email');
 
     return res.json({ total: shifts.length, items: shifts });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * GET /api/v1/shifts/:id/details
+ * return a populated detailed view of a single shift.
+ * designed for the frontend "View Details" page.
+ */
+export const getShiftDetails = async (req, res) => {
+  try {
+    const shift = await Shift.findById(req.params.id)
+      .populate("createdBy", "name email")
+      .populate("assignedGuard", "name email")
+      .populate("applicants", "name email");
+
+    if (!shift) return res.status(404).json({ message: "Shift not found" });
+
+    return res.json(shift);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * GET /api/v1/users/guards  
+ * return a list of active guard users.
+ * Always:
+ *   - role: 'guard'
+ *   - isDeleted: false (exclude soft-deleted users)
+ */
+export const listGuards = async (req, res) => {
+  try {
+    const guards = await User.find({ role: "guard", isDeleted: false })
+      .select("_id name email");
+
+    return res.json(guards);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * GET /api/v1/shifts/:id/logs 
+ */
+export const getShiftLogs = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid shift ID" });
+    }
+
+    const shift = await Shift.findById(id)
+      .populate("logs.user", "name email");
+
+    if (!shift) {
+      return res.status(404).json({ message: "Shift not found" });
+    }
+
+    return res.json(shift.logs);
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * POST /api/v1/shifts/:id/chat  
+ */
+export const sendChatMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message) return res.status(400).json({ message: "Message text required" });
+
+    const newMsg = await Message.create({
+      sender: req.user._id,
+      shift: id,               
+      text: message,
+      timestamp: new Date(),
+    });
+
+    return res.status(201).json(newMsg);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * GET /api/v1/shifts/:id/chat 
+ */
+export const getChatMessages = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const messages = await Message.find({ shift: id })
+      .populate("sender", "name role")
+      .sort({ timestamp: 1 });
+
+    return res.status(200).json(messages);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * PATCH /api/v1/shifts/:id
+ */
+export const editShift = async (req, res) => {
+  try {
+    console.log("REQ BODY =", req.body);
+    const { id } = req.params;
+
+    const allowed = ["title", "date", "startTime", "endTime", "location", "urgency", "payRate"];
+    const update = {};
+
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) update[field] = req.body[field];
+    });
+
+    const shift = await Shift.findById(id);
+    if (!shift) return res.status(404).json({ message: "Shift not found" });
+
+    Object.assign(shift, update);
+    if (!Array.isArray(shift.logs)) shift.logs = [];
+
+    shift.logs.push({
+      action: "EDITED",
+      user: req.user._id,
+      meta: update,
+      timestamp: new Date()
+    });
+    
+    await shift.save();
+    return res.json(shift);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * POST /api/v1/shifts/:id/duplicate
+ */
+export const duplicateShift = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const original = await Shift.findById(id);
+
+    if (!original) return res.status(404).json({ message: "Shift not found" });
+
+    const newShift = await Shift.create({
+      ...original.toObject(),
+      _id: undefined,
+      status: "open",
+      applicants: [],
+      assignedGuard: null,
+      acceptedBy: null,
+      logs: [{
+        action: "DUPLICATED",
+        user: req.user._id,
+        meta: { fromShift: id }
+      }]
+    });
+
+    return res.status(201).json(newShift);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * PATCH /api/v1/shifts/:id/cancel
+ */
+export const cancelShift = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const shift = await Shift.findById(id);
+    if (!shift) return res.status(404).json({ message: "Shift not found" });
+
+    shift.status = "cancelled";
+
+    shift.logs.push({
+      action: "CANCELLED",
+      user: req.user._id,
+      meta: {}
+    });
+
+    await shift.save();
+
+    return res.json({ message: "Shift cancelled", shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
