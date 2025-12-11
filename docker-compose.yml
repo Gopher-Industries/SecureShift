@@ -22,9 +22,9 @@ services:
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: kat5290
-      MONGO_INITDB_ROOT_PASSWORD: kat5290188K
-      MONGO_INITDB_DATABASE: secureshift
+      MONGO_INITDB_ROOT_USERNAME: <username>
+      MONGO_INITDB_ROOT_PASSWORD: <password>
+      MONGO_INITDB_DATABASE: <database>
     volumes:
       - mongo-data:/data/db
       - ./app-backend/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
