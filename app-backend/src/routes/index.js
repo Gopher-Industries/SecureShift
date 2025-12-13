@@ -8,7 +8,8 @@ import userRoutes from './user.routes.js';
 import adminRoutes from './admin.routes.js';
 import availabilityRoutes from './availability.routes.js'; 
 import rbacRoutes from './rbac.routes.js';
-import ShiftAttendance from '../models/ShiftAttendance.js';
+import shiftattenddanceRoutes from './shiftattendance.routes.js'
+
 
 const router = express.Router();
 
@@ -20,6 +21,6 @@ router.use('/admin', adminRoutes);
 router.use('/availability', availabilityRoutes); 
 router.use('/users', userRoutes);  
 router.use('/rbac', rbacRoutes);
-router.use('/attendance', ShiftAttendance)
+router.use('/attendance', shiftattenddanceRoutes)
 
 export default router;

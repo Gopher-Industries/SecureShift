@@ -17,6 +17,8 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // POST /api/v1/attendance/checkin/:shiftId
 export const checkIn = async (req, res) => {
   try {
+    console.log("Incoming check-in request:", req.params, req.body);
+
     const { latitude, longitude } = req.body;
     const { shiftId } = req.params;
     const guardId = req.user.id; // from JWT
@@ -46,6 +48,8 @@ export const checkIn = async (req, res) => {
 // POST /api/v1/attendance/checkout/:shiftId
 export const checkOut = async (req, res) => {
   try {
+    console.log("Incoming check-in request:", req.params, req.body);
+
     const { latitude, longitude } = req.body;
     const { shiftId } = req.params;
     const guardId = req.user.id;
