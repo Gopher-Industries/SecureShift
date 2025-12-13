@@ -1,13 +1,13 @@
 import express from "express";
-import { checkIn, checkOut } from "../controllers/shiftAttendanceController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { checkIn, checkOut } from "../controllers/shiftattendance.controller.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
 // check-in
 /**
  * @swagger
- * /attendance/checkin/{shiftId}:
+ * /api/v1/attendance/checkin/{shiftId}:
  *   post:
  *     summary: Guard check-in for a shift
  *     tags: [Shift Attendance]
@@ -42,12 +42,12 @@ const router = express.Router();
  *         description: Server error
  */
 
-router.post("/checkin/:shiftId", authMiddleware, checkIn);
+router.post("/checkin/:shiftId", auth, checkIn);
 
 // check-out
 /**
  * @swagger
- * /attendance/checkout/{shiftId}:
+ * /api/v1/attendance/checkout/{shiftId}:
  *   post:
  *     summary: Guard check-out for a shift
  *     tags: [Shift Attendance]
@@ -81,6 +81,6 @@ router.post("/checkin/:shiftId", authMiddleware, checkIn);
  *       500:
  *         description: Server error
  */
-router.post("/checkout/:shiftId", authMiddleware, checkOut);
+router.post("/checkout/:shiftId", auth, checkOut);
 
 export default router;
