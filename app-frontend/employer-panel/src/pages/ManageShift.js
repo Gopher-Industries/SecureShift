@@ -213,7 +213,12 @@ const ManageShift = () => {
                                         <span style={detailTextStyle}>{formatTime(shift.dateTime)}</span>
                                     </div>
                                 </div>
-                                <button style={viewDetailsButtonStyle}>View Details</button>
+                                <button
+                                style={viewDetailsButtonStyle}
+                                onClick={() => navigate(`/manage-shift/${shift.id}`)}
+                                >
+                                View Details
+                                </button>
                             </div>
                         </div>
                     );
