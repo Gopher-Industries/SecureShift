@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
+import AvailabilityScreen from '../screen/AvailabilityScreen';
 import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
 import ShiftsScreen from '../screen/ShiftsScreen';
-import AvailabilityScreen from '../screen/AvailabilityScreen';
 
 export type AppTabParamList = {
   Home: undefined;
@@ -12,7 +12,6 @@ export type AppTabParamList = {
   Availability: undefined;
   Profile: undefined;
 };
-
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
@@ -26,10 +25,10 @@ export default function AppTabs() {
             route.name === 'Home'
               ? ('home-outline' as const)
               : route.name === 'Shifts'
-              ? ('briefcase-outline' as const)
-              : route.name === 'Availability'
-              ? ('calendar-outline' as const)
-              : ('person-outline' as const);
+                ? ('briefcase-outline' as const)
+                : route.name === 'Availability'
+                  ? ('calendar-outline' as const)
+                  : ('person-outline' as const);
 
           return <Ionicons name={name} size={size} color={color} />;
         },
