@@ -1,96 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-// Map backend status to filter display
-const statusDisplayMap = {
-    completed: "Completed",
-    inprogress: "In Progress",
-    pending: "Pending",
-    open: "Open",
-};
-
-const Filter = Object.freeze({
-    All: 'All',
-    Completed: 'Completed',
-    InProgress: 'In Progress',
-    Pending: 'Pending',
-    Open: 'Open',
-});
-
-const Sort = Object.freeze({
-    DateAsc: 'Date (Asc)',
-    DateDesc: 'Date (Desc)',
-});
-
-// Normalize shift data from backend
-const normalizeShift = (s) => ({
-    id: s._id,
-    title: s.title || "--",
-    // Compose dateTime string for sorting
-    dateTime: s.date && s.startTime ? `${s.date} ${s.startTime}` : s.date || "",
-    location: s.location 
-        ? `${s.location.street}, ${s.location.suburb}, ${s.location.state}` 
-        : "--",
-    status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
-    price: s.price || "--"
-});
+// --- ManageShift.js ---
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ManageShift = () => {
-    const navigate = useNavigate();
-    const [shifts, setShifts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [selectedFilter, setSelectedFilter] = useState(Filter.All);
-    const [sortBy, setSortBy] = useState(Sort.DateAsc);
-    const [showSortModal, setShowSortModal] = useState(false);
-    const itemsPerPage = 8;
+  const navigate = useNavigate();
+  const [shifts, setShifts] = useState([]);
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchShifts = async () => {
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                setError("No token found. Please log in.");
-                setLoading(false);
-                return;
-            }
-            const res = await fetch("http://localhost:5000/api/v1/shifts", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                setError(`Failed to fetch shifts (${res.status}): ${text}`);
-                setLoading(false);
-                return;
-            }
-            const data = await res.json();
-            console.log("Raw API response:", data); // Debug
-            let apiShifts;
-            if (Array.isArray(data)) {
-                apiShifts = data;
-            } else if (Array.isArray(data.shifts)) {
-                apiShifts = data.shifts;
-            } else if (data.items && Array.isArray(data.items)) {
-                apiShifts = data.items;
-            } else {
-                apiShifts = [];
-            }
-            console.log("Normalized shift array:", apiShifts); // Debug
-            setShifts(apiShifts.map(normalizeShift));
-        } catch (err) {
-            setError("Error fetching shifts.");
-            console.error(err); // Debug
-        } finally {
-            setLoading(false);
-        }
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/v1/shifts", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        const shiftList = Array.isArray(data) ? data : data.shifts || [];
+
+        const formatted = shiftList.map((s) => ({
+          id: s._id,
+          title: s.title,
+          date: s.date,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          status: s.status,
+          location: formatLocation(s.location)
+        }));
+
+        setShifts(formatted);
+
+      } catch (err) {
+        console.error("Fetch error:", err);
+      }
     };
-    fetchShifts();
-}, []);
 
 
     // Map frontend filter values to backend status
@@ -293,384 +235,42 @@ const Pagination = ({ totalPages, currentPage, goPrevPage, goNextPage, goToPage,
                 style={page === currentPage ? activePaginationButtonStyle : paginationButtonStyle}
                 disabled={page === '...'}
             >{page}</button>
-        ))}
-        <button onClick={goNextPage} disabled={currentPage === totalPages} style={currentPage === totalPages ? disabledPaginationButtonStyle : paginationButtonStyle}>
-            <img src={"/ic-arrow-forward.svg"} alt="Next" style={smallIconStyle} />
-        </button>
-    </div>
-);
+    fetchShifts();
+  }, []);
 
-const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
-    <div style={modalOverlayStyle} onClick={() => setShowSortModal(false)}>
-        <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-            <div style={modalHeaderStyle}>
-                <h3 style={modalTitleStyle}>Sort by</h3>
-                <button style={closeButtonStyle} onClick={() => setShowSortModal(false)}>×</button>
-            </div>
-            <div style={modalBodyStyle}>
-                {Object.values(Sort).map(option => (
-                    <button
-                        key={option}
-                        style={option === sortBy ? activeSortOptionStyle : sortOptionStyle}
-                        onClick={() => selectSortBy(option)}
-                    >
-                        {option} {option === sortBy && <span style={checkmarkStyle}>✓</span>}
-                    </button>
-                ))}
-            </div>
-        </div>
+  const formatLocation = (loc) => {
+    if (!loc) return "No location provided";
+
+    return [
+      loc.street,
+      loc.suburb,
+      loc.state,
+      loc.postcode
+    ].filter(Boolean).join(", ");
+  };
+
+  return (
+    <div style={{ padding: "40px" }}>
+      <h1>Manage Shifts</h1>
+
+      {/* navigate is used here → no warnings */}
+      <button onClick={() => navigate("/create-shift")}>
+        + Add Shift
+      </button>
+
+      <div style={{ marginTop: "20px" }}>
+        {shifts.map((s) => (
+          <div key={s.id} style={{ border: "1px solid #ccc", padding: "15px", marginBottom: "10px" }}>
+            <h3>{s.title}</h3>
+            <p><strong>Date:</strong> {s.date}</p>
+            <p><strong>Time:</strong> {s.startTime} - {s.endTime}</p>
+            <p><strong>Location:</strong> {s.location}</p>
+            <p><strong>Status:</strong> {s.status}</p>
+          </div>
+        ))}
+      </div>
     </div>
-);
+  );
+};
 
 export default ManageShift;
-
-
-
-
-// Status tag styles
-const getStatusTagStyle = (status) => ({
-    padding: '4px 12px',
-    borderRadius: '16px',
-    fontSize: '12px',
-    fontWeight: '600',
-    display: 'inline-block',
-    color: 
-        status === "Completed" ? "#2E7D32" :
-        status === "In Progress" ? "#7B1FA2" :
-        status === "Pending" ? "#F57C00" :
-        status === "Open" ? "#1565C0" :
-        "#757575",
-    backgroundColor: 
-        status === "Completed" ? "#EAFAE7" :
-        status === "In Progress" ? "#F6EFFF" :
-        status === "Pending" ? "#FBFAE2" :
-        status === "Open" ? "#E3F2FD" :
-        "#F5F5F5",
-});
-
-// Container styles
-const containerStyle = {
-    padding: '40px',
-    minHeight: '100vh',
-    maxWidth: '1200px',
-    margin: '0 auto',
-};
-
-const headerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px',
-};
-
-const titleStyle = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#1a1a1a',
-    margin: '0',
-};
-
-const addButtonStyle = {
-    backgroundColor: '#274b93',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '10px 16px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    boxShadow: '0 2px 4px rgba(39, 75, 147, 0.2)',
-};
-
-// Summary cards styles
-const summaryGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '16px',
-    marginBottom: '24px',
-};
-
-const summaryCardStyle = {
-    borderRadius: '12px',
-    padding: '20px 30px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-};
-
-const summaryLabelStyle = {
-    margin: '0 0 8px 0',
-    fontSize: '16px',
-    color: '#1E1E1E',
-    fontWeight: '400',
-};
-
-const summaryNumberStyle = {
-    margin: '0',
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#1E1E1E',
-};
-
-const bigIconStyle = {
-    width: '24px',
-    height: '24px',
-};
-
-const smallIconStyle = {
-    width: '20px',
-    height: '20px',
-};
-
-// Filter section styles
-const filterSectionStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px',
-    flexWrap: 'wrap',
-    gap: '16px',
-};
-
-const filterGroupStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-};
-
-const sortGroupStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-};
-
-const filterLabelStyle = {
-    fontSize: '14px',
-    fontWeight: '400',
-    color: '#1E1E1E',
-};
-
-const filterButtonsStyle = {
-    display: 'flex',
-    gap: '8px',
-};
-
-const filterButtonStyle = {
-    backgroundColor: 'white',
-    border: '1px solid #e0e0e0',
-    borderRadius: '12px',
-    padding: '8px 16px',
-    fontSize: '14px',
-    color: '#666',
-    cursor: 'pointer',
-    fontWeight: '500',
-};
-
-const activeFilterButtonStyle = {
-    ...filterButtonStyle,
-    backgroundColor: '#274b93',
-    color: 'white',
-    border: '1px solid #274b93',
-};
-
-const sortButtonStyle = {
-    backgroundColor: 'white',
-    border: '1px solid #e0e0e0',
-    borderRadius: '12px',
-    padding: '8px 16px',
-    fontSize: '14px',
-    color: '#666',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-};
-
-// Grid and card styles
-const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '20px',
-    marginBottom: '32px',
-};
-
-const cardStyle = {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    gap: '20px',
-};
-
-const cardHeaderStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginTop: '12px',
-};
-
-const cardTitleStyle = {
-    margin: '0 0 4px 0',
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1E1E1E',
-};
-
-const priceStyle = {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#2E7D32',
-};
-
-const cardDetailsStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-};
-
-const detailRowStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-};
-
-const detailTextStyle = {
-    fontSize: '14px',
-    color: '#1E1E1E',
-    fontWeight: '400',
-};
-
-const viewDetailsButtonStyle = {
-    backgroundColor: '#274b93',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    marginTop: '8px',
-};
-
-// Pagination styles
-const paginationStyle = {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '8px',
-};
-
-const paginationButtonStyle = {
-    width: '32px',
-    height: '32px',
-    backgroundColor: 'white',
-    border: 'none',
-    borderRadius: '16px',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#1E1E1E',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-};
-
-const activePaginationButtonStyle = {
-    ...paginationButtonStyle,
-    backgroundColor: '#274b93',
-    color: 'white',
-    fontWeight: '600',
-};
-
-const disabledPaginationButtonStyle = {
-    ...paginationButtonStyle,
-    cursor: 'not-allowed',
-};
-
-// Modal styles
-const modalOverlayStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-};
-
-const modalContentStyle = {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '0',
-    maxWidth: '400px',
-    width: '90%',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-};
-
-const modalHeaderStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '20px 24px',
-    borderBottom: '1px solid #e0e0e0',
-};
-
-const modalTitleStyle = {
-    margin: 0,
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1E1E1E',
-};
-
-const closeButtonStyle = {
-    backgroundColor: 'transparent',
-    border: 'none',
-    fontSize: '24px',
-    color: '#666',
-    cursor: 'pointer',
-    padding: '0',
-    width: '24px',
-    height: '24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-};
-
-const modalBodyStyle = {
-    padding: '16px 0',
-};
-
-const sortOptionStyle = {
-    width: '100%',
-    backgroundColor: 'transparent',
-    border: 'none',
-    padding: '12px 24px',
-    fontSize: '16px',
-    color: '#1E1E1E',
-    cursor: 'pointer',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    textAlign: 'left',
-};
-
-const activeSortOptionStyle = {
-    ...sortOptionStyle,
-    backgroundColor: '#EFF4FF',
-    color: '#274b93',
-    fontWeight: '600',
-};
-
-const checkmarkStyle = {
-    color: '#274b93',
-    fontWeight: 'bold',
-};
