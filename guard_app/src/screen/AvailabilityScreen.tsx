@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 
 import { getMe } from '../api/auth';
 import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
@@ -9,18 +9,16 @@ const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 
 export default function AvailabilityScreen() {
   const [userId, setUserId] = useState<string | null>(null);
-
   const [days, setDays] = useState<string[]>([]);
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    const init = async () => {
+    const load = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -29,8 +27,7 @@ export default function AvailabilityScreen() {
         const id = me?._id ?? me?.id;
 
         if (!id) {
-          setError('Could not determine logged-in user id.');
-          return;
+          throw new Error('Unable to determine user ID');
         }
 
         setUserId(id);
@@ -39,9 +36,6 @@ export default function AvailabilityScreen() {
         if (data) {
           setDays(Array.isArray(data.days) ? data.days : []);
           setTimeSlots(Array.isArray(data.timeSlots) ? data.timeSlots : []);
-        } else {
-          setDays([]);
-          setTimeSlots([]);
         }
       } catch (e) {
         console.error(e);
@@ -51,7 +45,7 @@ export default function AvailabilityScreen() {
       }
     };
 
-    void init();
+    void load();
   }, []);
 
   const toggleDay = (day: string) => {
@@ -62,15 +56,8 @@ export default function AvailabilityScreen() {
     setTimeSlots([]);
   };
 
-  const handleOpenModal = () => {
-    setModalVisible(true);
-  };
-
   const handleAddSlot = (dayName: string, slotLabel: string) => {
-    // Ensure the day is selected
     setDays((prev) => (prev.includes(dayName) ? prev : [...prev, dayName]));
-
-    // Add the slot only if not already present
     setTimeSlots((prev) => (prev.includes(slotLabel) ? prev : [...prev, slotLabel]));
   };
 
@@ -80,23 +67,24 @@ export default function AvailabilityScreen() {
 
   const handleSave = async () => {
     if (!userId) {
-      Alert.alert('Error', 'User not loaded yet.');
+      Alert.alert('Error', 'User not loaded');
       return;
     }
 
-    if (days.length === 0) {
-      Alert.alert('Validation', 'Please select at least one day.');
-      return;
-    }
-
-    if (timeSlots.length === 0) {
-      Alert.alert('Validation', 'Please add at least one time slot.');
+    if (days.length === 0 || timeSlots.length === 0) {
+      Alert.alert('Validation', 'Please select at least one day and one time slot.');
       return;
     }
 
     try {
       setSaving(true);
-      const payload: AvailabilityData = { userId, days, timeSlots };
+
+      const payload: AvailabilityData = {
+        userId,
+        days,
+        timeSlots,
+      };
+
       await upsertAvailability(payload);
       Alert.alert('Success', 'Availability saved');
     } catch (e) {
@@ -127,10 +115,8 @@ export default function AvailabilityScreen() {
           return (
             <TouchableOpacity
               key={day}
-              onPress={() => toggleDay(day)}
               style={[styles.dayChip, selected && styles.dayChipSelected]}
-              accessibilityRole="button"
-              accessibilityLabel={`Toggle availability for ${day}`}
+              onPress={() => toggleDay(day)}
             >
               <Text style={selected ? styles.dayChipTextSelected : styles.dayChipText}>
                 {day.slice(0, 3)}
@@ -141,12 +127,22 @@ export default function AvailabilityScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>Time slots</Text>
-      <Text style={styles.helperText}>
-        Use &quot;Add availability&quot; to add time ranges for your availability.
-      </Text>
+
+      {timeSlots.length === 0 && (
+        <Text style={styles.helperTextMuted}>No time slots added yet.</Text>
+      )}
+
+      {timeSlots.map((slot) => (
+        <View key={slot} style={styles.slotRow}>
+          <Text style={styles.slotItem}>• {slot}</Text>
+          <TouchableOpacity onPress={() => handleRemoveSlot(slot)} style={styles.removeButton}>
+            <Text style={styles.removeButtonText}>Remove</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
 
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.primaryButton} onPress={handleOpenModal}>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => setModalVisible(true)}>
           <Text style={styles.primaryButtonText}>Add availability</Text>
         </TouchableOpacity>
 
@@ -156,24 +152,6 @@ export default function AvailabilityScreen() {
           <Text style={styles.secondaryButtonText}>Clear slots</Text>
         </TouchableOpacity>
       </View>
-
-      {timeSlots.length === 0 && (
-        <Text style={styles.helperTextMuted}>No time slots added yet.</Text>
-      )}
-
-      {timeSlots.map((slot) => (
-        <View key={slot} style={styles.slotRow}>
-          <Text style={styles.slotItem}>• {slot}</Text>
-          <TouchableOpacity
-            style={styles.removeButton}
-            onPress={() => handleRemoveSlot(slot)}
-            accessibilityRole="button"
-            accessibilityLabel={`Remove slot ${slot}`}
-          >
-            <Text style={styles.removeButtonText}>Remove</Text>
-          </TouchableOpacity>
-        </View>
-      ))}
 
       <View style={styles.saveButtonWrapper}>
         <TouchableOpacity
@@ -195,41 +173,15 @@ export default function AvailabilityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 8,
-  },
-  errorText: {
-    color: 'red',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-    fontSize: 16,
-  },
-  helperText: {
-    marginBottom: 8,
-    color: '#555',
-  },
-  helperTextMuted: {
-    marginTop: 4,
-    marginBottom: 8,
-    color: '#888',
-  },
-  daysRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-  },
+  container: { flex: 1, padding: 16 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 8 },
+  errorText: { color: 'red', marginBottom: 12 },
+
+  sectionTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 8 },
+  helperTextMuted: { color: '#888', marginBottom: 8 },
+
+  daysRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
   dayChip: {
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -238,27 +190,35 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     borderWidth: 1,
     borderColor: '#ccc',
-    backgroundColor: 'white',
   },
   dayChipSelected: {
-    borderColor: '#003f88',
     backgroundColor: '#e3ecff',
+    borderColor: '#003f88',
   },
-  dayChipText: {
-    color: '#000',
-  },
-  dayChipTextSelected: {
-    color: '#003f88',
-    fontWeight: '600',
-  },
-  actionsRow: {
+  dayChipText: { color: '#000' },
+  dayChipTextSelected: { color: '#003f88', fontWeight: '600' },
+
+  slotRow: {
     flexDirection: 'row',
-    marginVertical: 8,
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginVertical: 4,
   },
-  spacer: {
-    width: 8,
+  slotItem: { color: '#111' },
+
+  removeButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e11d48',
+    backgroundColor: '#fef2f2',
   },
+  removeButtonText: { color: '#b91c1c', fontSize: 12, fontWeight: '600' },
+
+  actionsRow: { flexDirection: 'row', marginTop: 12 },
+  spacer: { width: 8 },
+
   primaryButton: {
     flex: 1,
     backgroundColor: '#003f88',
@@ -266,13 +226,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  primaryButtonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
+  primaryButtonDisabled: { opacity: 0.6 },
+  primaryButtonText: { color: '#fff', fontWeight: '700' },
+
   secondaryButton: {
     flex: 1,
     borderRadius: 10,
@@ -282,33 +238,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     backgroundColor: '#f5f5f5',
   },
-  secondaryButtonText: {
-    color: '#333',
-    fontWeight: '600',
-  },
-  slotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    justifyContent: 'space-between',
-  },
-  slotItem: {
-    color: '#111',
-  },
-  removeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e11d48',
-    backgroundColor: '#fef2f2',
-  },
-  removeButtonText: {
-    color: '#b91c1c',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  saveButtonWrapper: {
-    marginTop: 24,
-  },
+  secondaryButtonText: { color: '#333', fontWeight: '600' },
+
+  saveButtonWrapper: { marginTop: 24 },
 });
