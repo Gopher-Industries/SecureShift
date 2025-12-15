@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="64ef35b3-52d4-4317-b7d9-cb52d9efacc4" name="Changes" comment="" />
+    <list default="true" id="64ef35b3-52d4-4317-b7d9-cb52d9efacc4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -51,7 +53,7 @@
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "ArjunBhardwaj3/feature/settings-screen",
+    "git-widget-placeholder": "Sanjolika6788/feature/add-availability-modal",
     "kotlin-language-version-configured": "true"
   }
 }]]></component>
