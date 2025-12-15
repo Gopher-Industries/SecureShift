@@ -1,6 +1,7 @@
 import http from '../lib/http';
 
 export interface AvailabilityData {
+  userId: string;
   days: string[];
   timeSlots: string[];
 }
@@ -18,6 +19,7 @@ export const getAvailability = async (userId: string): Promise<AvailabilityData 
     const res = await http.get<AvailabilityResponse>(`/availability/${userId}`);
 
     return {
+      userId,
       days: res.data.availability?.days ?? [],
       timeSlots: res.data.availability?.timeSlots ?? [],
     };
