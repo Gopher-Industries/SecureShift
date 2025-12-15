@@ -536,6 +536,136 @@ const Pagination = ({ totalPages, currentPage, goPrevPage, goNextPage, goToPage,
       </div>
 );
 
+const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
+    <div style={modalOverlayStyle} onClick={() => setShowSortModal(false)}>
+        <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
+            <div style={modalHeaderStyle}>
+                <h3 style={modalTitleStyle}>Sort by</h3>
+                <button style={closeButtonStyle} onClick={() => setShowSortModal(false)}>×</button>
+            </div>
+            <div style={modalBodyStyle}>
+                {Object.values(Sort).map(option => (
+                    <button
+                        key={option}
+                        style={option === sortBy ? activeSortOptionStyle : sortOptionStyle}
+                        onClick={() => selectSortBy(option)}
+                    >
+                        {option} {option === sortBy && <span style={checkmarkStyle}>✓</span>}
+                    </button>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// Status tag styles
+const getStatusTagStyle = (status) => ({
+    padding: '4px 12px',
+    borderRadius: '16px',
+    fontSize: '12px',
+    fontWeight: '600',
+    display: 'inline-block',
+    color: 
+        status === "Completed" ? "#2E7D32" :
+        status === "In Progress" ? "#7B1FA2" :
+        status === "Pending" ? "#F57C00" :
+        status === "Open" ? "#1565C0" :
+        "#757575",
+    backgroundColor: 
+        status === "Completed" ? "#EAFAE7" :
+        status === "In Progress" ? "#F6EFFF" :
+        status === "Pending" ? "#FBFAE2" :
+        status === "Open" ? "#E3F2FD" :
+        "#F5F5F5",
+});
+
+// Container styles
+const containerStyle = {
+    padding: '40px',
+    minHeight: '100vh',
+    maxWidth: '1200px',
+    margin: '0 auto',
+};
+
+const headerStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '24px',
+};
+
+const titleStyle = {
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#1a1a1a',
+    margin: '0',
+};
+
+const addButtonStyle = {
+    backgroundColor: '#274b93',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '10px 16px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    boxShadow: '0 2px 4px rgba(39, 75, 147, 0.2)',
+};
+
+// Summary cards styles
+const summaryGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    marginBottom: '24px',
+};
+
+const summaryCardStyle = {
+    borderRadius: '12px',
+    padding: '20px 30px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+};
+
+const summaryLabelStyle = {
+    margin: '0 0 8px 0',
+    fontSize: '16px',
+    color: '#1E1E1E',
+    fontWeight: '400',
+};
+
+const summaryNumberStyle = {
+    margin: '0',
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#1E1E1E',
+};
+
+const bigIconStyle = {
+    width: '24px',
+    height: '24px',
+};
+
+const smallIconStyle = {
+    width: '20px',
+    height: '20px',
+};
+
+// Filter section styles
+const filterSectionStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '24px',
+    flexWrap: 'wrap',
+    gap: '16px',
+};
+
 const filterGroupStyle = {
     display: 'flex',
     alignItems: 'center',
