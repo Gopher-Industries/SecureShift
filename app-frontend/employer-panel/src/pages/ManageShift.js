@@ -534,9 +534,7 @@ const Pagination = ({ totalPages, currentPage, goPrevPage, goNextPage, goToPage,
             >{page}</button>
         ))}
       </div>
-    </div>
-  );
-};
+);
 
 const filterGroupStyle = {
     display: 'flex',
