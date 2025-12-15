@@ -23,7 +23,7 @@ Install Dependencies
 
 Start Expo and run on an Android emulator or physical device:
 
-=> npx expo start --android
+=> npx expo start --android 
 
 If you're using a physical device, install the Expo Go app from the Play Store and scan the QR code.
 
