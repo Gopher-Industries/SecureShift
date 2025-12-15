@@ -14,10 +14,12 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+// Auto refresh when navigating back
 
 import { listShifts, myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
+// From Shifts API
 
 function parseJwt(token: string) {
   try {
@@ -28,6 +30,7 @@ function parseJwt(token: string) {
       atob(base64)
         .split('')
         .map((c) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join(''),
     );
     return JSON.parse(jsonPayload);
@@ -64,6 +67,8 @@ type ShiftFilters = {
   company: string[];
   site: string[];
 };
+/* To rate helper to backend */
+const toRate = (r?: number | string) => (typeof r === 'number' ? `$${r} p/h` : (r ?? '$—'));
 
 type FilterableShift = {
   title: string;
@@ -92,6 +97,11 @@ function mapMineShifts(s: ShiftDto[] | unknown, myUid: string): AppliedShift[] {
       } else if (x.acceptedBy != null) {
         acceptedId = String(x.acceptedBy);
       }
+      const acceptedId =
+        typeof x.acceptedBy === 'object' ? x.acceptedBy?._id : String(x.acceptedBy ?? '');
+      const applicants = Array.isArray(x.applicants)
+        ? x.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
+        : [];
 
       // Safely normalise applicants to string IDs
       const applicants: string[] = Array.isArray(x.applicants)
@@ -208,6 +218,7 @@ function FilterModal({ visible, onClose, filters, setFilters, data }: FilterModa
                 key={status}
                 style={[s.tag, filters.status === status && s.tagSelected]}
                 onPress={() => toggleStatus(status as 'Pending' | 'Confirmed' | 'Rejected')}
+                onPress={() => toggleStatus(status)}
               >
                 <Text>{status}</Text>
               </Pressable>
@@ -265,6 +276,14 @@ function filterShifts<T extends FilterableShift>(data: T[], q: string, filters: 
 
     const statusMatch = !filters.status || x.status === filters.status;
     const companyMatch = filters.company.length === 0 || filters.company.includes(x.company);
+function filterShifts(data, q, filters) {
+  return data.filter((x) => {
+    const qMatch = (x.title + x.createdBy?.company + x.site)
+      .toLowerCase()
+      .includes(q.toLowerCase());
+    const statusMatch = !filters.status || x.status === filters.status;
+    const companyMatch =
+      filters.company.length === 0 || filters.company.includes(x.createdBy?.company);
     const siteMatch = filters.site.length === 0 || filters.site.includes(x.site);
 
     return qMatch && statusMatch && companyMatch && siteMatch;
@@ -303,6 +322,14 @@ function Search({ q, setQ, onFilterPress }: SearchProps) {
 }
 
 type CardProps = React.PropsWithChildren<{
+function Card({
+  title,
+  company,
+  site,
+  rate,
+  children,
+  onApply,
+}: React.PropsWithChildren<{
   title: string;
   company: string;
   site: string;
@@ -311,6 +338,7 @@ type CardProps = React.PropsWithChildren<{
 }>;
 
 function Card({ title, company, site, rate, children, onApply }: CardProps) {
+}>) {
   return (
     <View style={s.card}>
       <View style={s.headerRow}>
@@ -339,6 +367,10 @@ function AppliedTab() {
     status: null,
     company: [],
     site: [],
+  const [filters, setFilters] = useState({
+    status: null as null | 'Pending' | 'Confirmed' | 'Rejected',
+    company: [] as string[],
+    site: [] as string[],
   });
 
   const [rows, setRows] = useState<AppliedShift[]>([]);
@@ -360,6 +392,13 @@ function AppliedTab() {
       if (!myUid) {
         throw new Error('No user ID in token');
       }
+      // Fetch User Data
+      const token = await AsyncStorage.getItem('auth_token');
+      if (!token) throw new Error('No auth token found in storage');
+
+      const decoded = parseJwt(token);
+      const myUid = decoded?.id;
+      if (!myUid) throw new Error('No user ID in token');
 
       const [mine, allResp] = await Promise.all([myShifts(), listShifts()]);
 
@@ -408,11 +447,13 @@ function AppliedTab() {
 
   const onApplyPress = async (id: string) => {
     try {
+      // optimistic: set pending
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'Pending' } : r)));
 
       const res = await applyToShift(id);
       const newStatus = (res?.shift?.status ?? '').toString().toLowerCase();
 
+      // trust backend-mapped status ('pending' for guard)
       setRows((prev) =>
         prev.map((r) =>
           r.id === id
@@ -441,6 +482,11 @@ function AppliedTab() {
             : 'Failed to apply';
 
       setErr(message);
+      // optional: background refresh later, not immediately
+      // await fetchData();
+    } catch (e: any) {
+      setErr(e?.response?.data?.message ?? e?.message ?? 'Failed to apply');
+      // rollback on error
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: undefined } : r)));
     }
   };
@@ -508,6 +554,10 @@ function CompletedTab() {
     status: null,
     company: [],
     site: [],
+  const [filters, setFilters] = useState({
+    status: null,
+    company: [] as string[],
+    site: [] as string[],
   });
 
   const [rows, setRows] = useState<CompletedShift[]>([]);
@@ -615,6 +665,8 @@ export default function ShiftScreen() {
         tabBarIndicatorStyle: {
           backgroundColor: '#274289',
           height: '100%',
+          backgroundColor: '#274289', // blue background
+          height: '100%', // fill the tab height
           borderRadius: 12,
         },
         tabBarLabelStyle: {
@@ -623,6 +675,8 @@ export default function ShiftScreen() {
         },
         tabBarActiveTintColor: '#fff',
         tabBarInactiveTintColor: '#000',
+        tabBarActiveTintColor: '#fff', // white text when active
+        tabBarInactiveTintColor: '#000', // black text when inactive
       })}
     >
       <Top.Screen name="Applied" component={AppliedTab} />
@@ -631,6 +685,7 @@ export default function ShiftScreen() {
   );
 }
 
+/* Styles */
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 16, paddingTop: 8 },
 
@@ -686,6 +741,7 @@ const s = StyleSheet.create({
 
   status: { marginTop: 6, color: COLORS.muted },
 
+  // Filter Menu Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -706,6 +762,7 @@ const s = StyleSheet.create({
   },
   modalCloseText: { color: '#fff', fontWeight: 'bold' },
 
+  // Apply
   applyBtn: {
     marginTop: 10,
     backgroundColor: COLORS.primary,
