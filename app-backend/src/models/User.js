@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import Branch from './Branch.js';
 
 // Define the base user schema
 const userSchema = new mongoose.Schema(
@@ -48,7 +49,19 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ['guard', 'employer', 'admin'],
+      enum: ['client','guard','employer','admin','branch_admin','super_admin'],
+    },
+
+    /**
+     * Optional branch association:
+     * - Branch Admin: must be associated with a branch
+     * - Guards/Clients/Employers: may be associated with a branch depending on business rules
+     */
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      default: null,
+      index: true,
     },
 
     phone: {
@@ -100,11 +113,9 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
     discriminatorKey: 'role', // Extend this schema for Guard, Employer, Admin
   }
-
-  
 );
 
-// Hash password
+// Hash password before save
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
 
@@ -119,7 +130,15 @@ userSchema.pre('save', async function (next) {
 
 // Compare passwords
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  return bcrypt.compare(enteredPassword, this.password);
+};
+
+// Convenience role checks
+userSchema.methods.isSuperAdmin = function () {
+  return this.role === 'super_admin';
+};
+userSchema.methods.isBranchAdmin = function () {
+  return this.role === 'branch_admin';
 };
 
 const User = mongoose.model('User', userSchema);

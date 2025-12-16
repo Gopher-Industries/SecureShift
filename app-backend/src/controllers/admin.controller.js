@@ -379,3 +379,115 @@ export const rejectGuardLicense = async (req, res) => {
     return res.status(500).json({ message: 'Failed to reject license', error: err.message });
   }
 };
+
+export const getAdminSummary = async (req, res) => {
+  try {
+    // today (server TZ). If you store UTC, this is fine.
+    const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+    const endOfToday   = new Date(); endOfToday.setHours(23,59,59,999);
+
+    // ---------- USERS (exclude soft-deleted if you use isDeleted) ----------
+    const [
+      totalUsers,
+      totalGuards,
+      totalEmployers,
+      totalAdmins,
+      newUsersToday,
+    ] = await Promise.all([
+      User.countDocuments({ isDeleted: { $ne: true } }),
+      User.countDocuments({ role: 'guard',    isDeleted: { $ne: true } }),
+      User.countDocuments({ role: 'employer', isDeleted: { $ne: true } }),
+      User.countDocuments({ role: 'admin',    isDeleted: { $ne: true } }),
+      User.countDocuments({
+        isDeleted: { $ne: true },
+        createdAt: { $gte: startOfToday, $lte: endOfToday },
+      }),
+    ]);
+
+    // ---------- SHIFTS ----------
+    // (Assumes Shift has fields: status, createdAt. If you also have date/startTime,
+    // they’re included below so it “just works”. Remove any that don’t exist.)
+    const [
+      totalShifts,
+      openShifts,
+      assignedShifts,
+      completedShifts,
+      shiftsToday,
+    ] = await Promise.all([
+      Shift.countDocuments({}),
+      Shift.countDocuments({ status: 'open' }),
+      Shift.countDocuments({ status: 'assigned' }),
+      Shift.countDocuments({ status: 'completed' }),
+      Shift.countDocuments({
+        $or: [
+          { createdAt:  { $gte: startOfToday, $lte: endOfToday } },
+          { startTime:  { $gte: startOfToday, $lte: endOfToday } },
+          { scheduledFor:{ $gte: startOfToday, $lte: endOfToday } },
+          { date:       { $gte: startOfToday, $lte: endOfToday } },
+        ],
+      }),
+    ]);
+
+    // ---------- MESSAGES (use your schema: timestamp + soft delete) ----------
+    const [
+      totalMessages,
+      todayMessages,
+    ] = await Promise.all([
+      Message.countDocuments({ isDeleted: { $ne: true } }),
+      Message.countDocuments({
+        isDeleted: { $ne: true },
+        $or: [
+          { timestamp: { $gte: startOfToday, $lte: endOfToday } },
+          { createdAt: { $gte: startOfToday, $lte: endOfToday } }, // because timestamps: true
+        ],
+      }),
+    ]);
+
+    // ---------- PAYMENTS (no model yet → keep UI shape, all zeros) ----------
+    const payments = {
+      totalPayments: 0,
+      paid: 0,
+      pending: 0,
+      totalAmountPaid: 0,
+    };
+
+    // Optional: audit, if your audit middleware is present
+    try {
+      if (req.audit?.log) {
+        await req.audit.log(req.user?.id, 'DASHBOARD_SUMMARY_VIEWED', {
+          totalUsers, totalShifts, totalMessages,
+        });
+      }
+    } catch (_) {}
+
+    return res.status(200).json({
+      totalUsers,
+      totalGuards,
+      totalEmployers,
+      totalAdmins,
+
+      shifts: {
+        totalShifts,
+        openShifts,
+        assignedShifts,
+        completedShifts,
+        shiftsToday,
+      },
+
+      payments, // zeros for now
+
+      messages: {
+        totalMessages,
+        todayMessages,
+      },
+
+      activity: {
+        newUsersToday,
+        shiftsCreatedToday: shiftsToday,
+        paymentsProcessedToday: 0, // no payments yet
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to get admin summary', error: err.message });
+  }
+};
