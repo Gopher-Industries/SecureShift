@@ -9,6 +9,7 @@ import adminRoutes from './admin.routes.js';
 import availabilityRoutes from './availability.routes.js'; 
 import rbacRoutes from './rbac.routes.js';
 import shiftattenddanceRoutes from './shiftattendance.routes.js'
+import dashboardRoutes from './dashboard.routes.js'
 
 
 const router = express.Router();
@@ -22,5 +23,6 @@ router.use('/availability', availabilityRoutes);
 router.use('/users', userRoutes);  
 router.use('/rbac', rbacRoutes);
 router.use('/attendance', shiftattenddanceRoutes)
+router.use('/dashboard', dashboardRoutes);
 
 export default router;
