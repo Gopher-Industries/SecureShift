@@ -54,50 +54,50 @@ const ManageShift = () => {
     const itemsPerPage = 8;
 
     useEffect(() => {
-        const fetchShifts = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    setError("No token found. Please log in.");
-                    setLoading(false);
-                    return;
-                }
-                const res = await fetch("http://localhost:5000/api/v1/shifts", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                if (!res.ok) {
-                    const text = await res.text();
-                    setError(`Failed to fetch shifts (${res.status}): ${text}`);
-                    setLoading(false);
-                    return;
-                }
-                const data = await res.json();
-                console.log("Raw API response:", data); // Debug
-                let apiShifts;
-                if (Array.isArray(data)) {
-                    apiShifts = data;
-                } else if (Array.isArray(data.shifts)) {
-                    apiShifts = data.shifts;
-                } else if (data.items && Array.isArray(data.items)) {
-                    apiShifts = data.items;
-                } else {
-                    apiShifts = [];
-                }
-                console.log("Normalized shift array:", apiShifts); // Debug
-                setShifts(apiShifts.map(normalizeShift));
-            } catch (err) {
-                setError("Error fetching shifts.");
-                console.error(err); // Debug
-            } finally {
+    const fetchShifts = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setError("No token found. Please log in.");
                 setLoading(false);
+                return;
             }
-        };
-        fetchShifts();
-    }, []);
+            const res = await fetch("http://localhost:5000/api/v1/shifts", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                setError(`Failed to fetch shifts (${res.status}): ${text}`);
+                setLoading(false);
+                return;
+            }
+            const data = await res.json();
+            console.log("Raw API response:", data); // Debug
+            let apiShifts;
+            if (Array.isArray(data)) {
+                apiShifts = data;
+            } else if (Array.isArray(data.shifts)) {
+                apiShifts = data.shifts;
+            } else if (data.items && Array.isArray(data.items)) {
+                apiShifts = data.items;
+            } else {
+                apiShifts = [];
+            }
+            console.log("Normalized shift array:", apiShifts); // Debug
+            setShifts(apiShifts.map(normalizeShift));
+        } catch (err) {
+            setError("Error fetching shifts.");
+            console.error(err); // Debug
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchShifts();
+}, []);
 
 
     // Map frontend filter values to backend status
