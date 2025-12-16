@@ -31,8 +31,8 @@ The project includes:
 
 Install the following:
 
-* Docker  
-* Docker Compose
+- Docker
+- Docker Compose
 
 ---
 
@@ -66,17 +66,17 @@ To build and start all containers:
 docker compose up --build -d
 ```
 
-* `--build` → rebuilds containers  
-* `-d` → run in background
+- `--build` → rebuilds containers
+- `-d` → run in background
 
 ---
 
 ## Verifying the Setup
 
-* Backend → http://localhost:5000  
-* Swagger Docs → http://localhost:5000/api-docs  
-* Employer Panel → http://localhost:3000  
-* MongoDB → `localhost:27017` (Compass supported)
+- Backend → http://localhost:5000
+- Swagger Docs → http://localhost:5000/api-docs
+- Employer Panel → http://localhost:3000
+- MongoDB → `localhost:27017` (Compass supported)
 
 ---
 
@@ -92,20 +92,20 @@ docker compose down -v
 
 ## Notes
 
-* Ensure `.env` PORT matches the backend container port.  
-* Mongo credentials must match in both `.env` and `docker-compose.yml`.  
-* Frontend container must have a valid `npm start` script.  
+- Ensure `.env` PORT matches the backend container port.
+- Mongo credentials must match in both `.env` and `docker-compose.yml`.
+- Frontend container must have a valid `npm start` script.
 
 ---
 
 ## Contributor Guide
 
-* Fork the repository  
-* Clone your fork  
-* Create a feature branch  
-* Develop using Docker  
-* Commit + push  
-* Open a Pull Request into `main`
+- Fork the repository
+- Clone your fork
+- Create a feature branch
+- Develop using Docker
+- Commit + push
+- Open a Pull Request into `main`
 
 ---
 
@@ -124,27 +124,27 @@ Commit messages should be clear and descriptive.
 
 ## Code Style
 
-* Follow backend (Node.js/Express) and frontend (React) conventions  
-* Format code before committing  
-* Run lint when available  
+- Follow backend (Node.js/Express) and frontend (React) conventions
+- Format code before committing
+- Run lint when available
 
 ---
 
 ## Communication
 
-* Use GitHub Issues for bugs/features  
-* Add descriptive PR messages  
-* Include screenshots when needed  
+- Use GitHub Issues for bugs/features
+- Add descriptive PR messages
+- Include screenshots when needed
 
 ---
 
 ## Authentication (JWT Flow)
 
-* Login → `/api/v1/auth/login`  
-* OTP is emailed  
-* OTP verification → `/api/v1/auth/verify-otp`  
-* User receives a JWT (1-hour expiry)  
-* Requests must include:
+- Login → `/api/v1/auth/login`
+- OTP is emailed
+- OTP verification → `/api/v1/auth/verify-otp`
+- User receives a JWT (1-hour expiry)
+- Requests must include:
 
 ```http
 Authorization: Bearer <token>
@@ -157,51 +157,57 @@ No refresh tokens are used.
 ## API Endpoints
 
 ### Auth (`/api/v1/auth`)
-* POST `/register`
-* POST `/register/guard`
-* POST `/login`
-* POST `/verify-otp`
-* POST `/eoi`
+
+- POST `/register`
+- POST `/register/guard`
+- POST `/login`
+- POST `/verify-otp`
+- POST `/eoi`
 
 ### Users (`/api/v1/users`)
-* GET `/me`
-* PUT `/me`
-* GET `/{id}`
-* PUT `/{id}`
-* GET `/guards`
+
+- GET `/me`
+- PUT `/me`
+- GET `/{id}`
+- PUT `/{id}`
+- GET `/guards`
 
 ### Shifts (`/api/v1/shifts`)
-* GET `/`
-* POST `/`
-* PUT `/{id}/apply`
-* PUT `/{id}/approve`
-* PUT `/{id}/complete`
-* GET `/myshifts`
-* PATCH `/{id}/rate`
-* GET `/history`
+
+- GET `/`
+- POST `/`
+- PUT `/{id}/apply`
+- PUT `/{id}/approve`
+- PUT `/{id}/complete`
+- GET `/myshifts`
+- PATCH `/{id}/rate`
+- GET `/history`
 
 ### Availability (`/api/v1/availability`)
-* POST `/`
-* GET `/{userId}`
+
+- POST `/`
+- GET `/{userId}`
 
 ### Messages (`/api/v1/messages`)
-* POST `/`
-* GET `/inbox`
-* GET `/sent`
-* GET `/conversation/{userId}`
-* PATCH `/{messageId}/read`
-* GET `/stats`
+
+- POST `/`
+- GET `/inbox`
+- GET `/sent`
+- GET `/conversation/{userId}`
+- PATCH `/{messageId}/read`
+- GET `/stats`
 
 ### Admin (`/api/v1/admin`)
-* POST `/login`
-* GET `/users`
-* GET `/users/{id}`
-* DELETE `/users/{id}`
-* GET `/shifts`
-* GET `/audit-logs`
-* DELETE `/audit-logs/purge`
-* GET `/messages`
-* DELETE `/messages/{id}`
-* GET `/guards/pending`
-* PATCH `/guards/{id}/license/verify`
-* PATCH `/guards/{id}/license/reject`
+
+- POST `/login`
+- GET `/users`
+- GET `/users/{id}`
+- DELETE `/users/{id}`
+- GET `/shifts`
+- GET `/audit-logs`
+- DELETE `/audit-logs/purge`
+- GET `/messages`
+- DELETE `/messages/{id}`
+- GET `/guards/pending`
+- PATCH `/guards/{id}/license/verify`
+- PATCH `/guards/{id}/license/reject`
