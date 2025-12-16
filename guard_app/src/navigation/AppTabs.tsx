@@ -21,16 +21,19 @@ export default function AppTabs() {
       screenOptions={({ route }) => ({
         headerShown: true,
         tabBarIcon: ({ color, size }) => {
-          const name =
-            route.name === 'Home'
-              ? ('home-outline' as const)
-              : route.name === 'Shifts'
-                ? ('briefcase-outline' as const)
-                : route.name === 'Availability'
-                  ? ('calendar-outline' as const)
-                  : ('person-outline' as const);
+          let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
 
-          return <Ionicons name={name} size={size} color={color} />;
+          if (route.name === 'Home') {
+            iconName = 'home-outline';
+          } else if (route.name === 'Shifts') {
+            iconName = 'briefcase-outline';
+          } else if (route.name === 'Availability') {
+            iconName = 'calendar-outline';
+          } else if (route.name === 'Profile') {
+            iconName = 'person-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#1E3A8A',
         tabBarInactiveTintColor: '#888',
@@ -38,7 +41,10 @@ export default function AppTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Shifts" component={ShiftsScreen} />
+
+      {/* ✅ Your new Availability tab */}
       <Tab.Screen name="Availability" component={AvailabilityScreen} />
+
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
