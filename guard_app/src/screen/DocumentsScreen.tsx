@@ -95,10 +95,10 @@ export default function DocumentsScreen() {
         const allDocs: UploadedDocument[] = storedDocs ? JSON.parse(storedDocs) : [];
         allDocs.push(newDocument);
 
-        await AsyncStorage.setItem('uploadedDocuments', JSON.stringify(allDocs));;
+        await AsyncStorage.setItem('uploadedDocuments', JSON.stringify(allDocs))
 
         const sortedDocs = allDocs.sort(
-          (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+          (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
         );
         setDocuments(sortedDocs);
 
