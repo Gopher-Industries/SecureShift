@@ -1,10 +1,10 @@
 /* eslint-disable react-native/no-inline-styles */
 // src/screen/HomeScreen.tsx
 
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   Dimensions,
   RefreshControl,
@@ -290,16 +290,18 @@ export default function HomeScreen() {
             </View>
 
             {upcomingShifts.length > 0 ? (
-              upcomingShifts.slice(0, 2).map((s, i) => (
-                <RowItem
-                  key={`${s.title}-${i}`}
-                  title={s.title}
-                  time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${
-                    s.endTime ?? '--:--'
-                  }`}
-                  amount={moneyForShift(s)}
-                />
-              ))
+              upcomingShifts
+                .slice(0, 2)
+                .map((s, i) => (
+                  <RowItem
+                    key={`${s.title}-${i}`}
+                    title={s.title}
+                    time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${
+                      s.endTime ?? '--:--'
+                    }`}
+                    amount={moneyForShift(s)}
+                  />
+                ))
             ) : (
               <Text style={styles.emptyText}>No upcoming shifts</Text>
             )}
