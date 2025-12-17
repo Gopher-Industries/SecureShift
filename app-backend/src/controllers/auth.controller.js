@@ -156,8 +156,7 @@ export const login = async (req, res) => {
     await user.save();
 
     console.log("DEV_MODE otp: ", otp);
-    // sendOTP(email, otp);
-    
+    // await sendOTP(user.email, otp);
     await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
 
     res.status(200).json({ message: 'OTP sent to your email' });

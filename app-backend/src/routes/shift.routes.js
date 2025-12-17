@@ -17,6 +17,14 @@ import {
   getShiftHistory,
   assignGuard,
   listOpenShiftsForGuard,
+  listGuards,
+  getShiftLogs,
+  getShiftDetails,
+  sendChatMessage,
+  getChatMessages,
+  editShift,
+  duplicateShift,
+  cancelShift,
 } from '../controllers/shift.controller.js';
 
 const router = express.Router();
@@ -288,13 +296,58 @@ router
 router
   .route('/available')
   .get(
+    auth,
+    loadUser,
+    authorizeRoles(ROLES.GUARD),
+    authorizePermissions(['shift:read']),
+    listOpenShiftsForGuard
+  );
+
+router.get(
+  '/guards',
   auth,
   loadUser,
-  authorizeRoles(ROLES.GUARD),
-  authorizePermissions(['shift:read']),
-  listOpenShiftsForGuard
+  authorizeRoles(
+    ROLES.ADMIN,
+    ROLES.SUPER_ADMIN,
+    ROLES.BRANCH_ADMIN,
+    ROLES.EMPLOYER
+  ),
+  authorizePermissions(['shift:read'], { any: true }),
+  listGuards
 );
 
+router.get(
+  '/:id/details',
+  auth,
+  loadUser,
+  authorizePermissions(['shift:read'], { any: true }),
+  getShiftDetails
+);
 
+router.get(
+  '/:id/logs',
+  auth,
+  loadUser,
+  authorizePermissions(['shift:read'], { any: true }),
+  getShiftLogs
+);
+
+router
+  .route('/:id/chat')
+  .post(auth, loadUser, sendChatMessage)
+  .get(auth, loadUser, getChatMessages);
+
+router.post('/:id/duplicate', auth, loadUser, duplicateShift);
+
+router.patch('/:id/cancel', auth, loadUser, cancelShift);
+
+router.patch(
+  '/:id',
+  auth,
+  loadUser,
+  authorizePermissions(['shift:write'], { any: true }),
+  editShift
+);
 
 export default router;
