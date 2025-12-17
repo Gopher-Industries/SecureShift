@@ -239,7 +239,7 @@ function Card({
   return (
     <View style={s.card}>
       <View style={s.headerRow}>
-        <View style={{ flex: 1 }}>
+        <View style={s.flex1}>
           <Text style={s.title}>{title}</Text>
           <Text style={s.muted}>{company}</Text>
           <Text style={s.muted}>{site}</Text>
