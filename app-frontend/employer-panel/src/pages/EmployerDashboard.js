@@ -186,3 +186,4 @@ export default function EmployerDashboard() {
     </div>
   );
 }
+// Employer dashboard enhancements: live status, analytics, hover UI
