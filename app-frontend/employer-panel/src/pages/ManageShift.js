@@ -4,13 +4,24 @@ import { useNavigate } from 'react-router-dom';
 // Map backend status to filter display
 const statusDisplayMap = {
     completed: "Completed",
-    inprogress: "In Progress",
-    pending: "Pending",
+    assigned: "In Progress",
+    applied: "Pending",
     open: "Open",
+};
+
+const frontToBackendStatus = {
+    "Completed": "completed",
+    "Open": "open",
+    "In Progress": "assigned",
+    "Pending": "applied"
 };
 
 const Filter = Object.freeze({
     All: 'All',
+    Status: 'Status',     
+    Date: 'Date',         
+    Location: 'Location', 
+    Guard: "Guard",
     Completed: 'Completed',
     InProgress: 'In Progress',
     Pending: 'Pending',
@@ -23,17 +34,31 @@ const Sort = Object.freeze({
 });
 
 // Normalize shift data from backend
-const normalizeShift = (s) => ({
-    id: s._id,
-    title: s.title || "--",
-    // Compose dateTime string for sorting
-    dateTime: s.date && s.startTime ? `${s.date} ${s.startTime}` : s.date || "",
-    location: s.location 
-        ? `${s.location.street}, ${s.location.suburb}, ${s.location.state}` 
-        : "--",
-    status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
-    price: s.payRate != null ? `${s.payRate} p/h` : "--"
-});
+const normalizeShift = (s) => {
+    let finalDate = null;
+
+    if (s.date) {
+        const dateOnly = s.date.split("T")[0];
+        if (s.startTime) {
+            finalDate = new Date(`${dateOnly}T${s.startTime}:00`);
+        } else {
+            finalDate = new Date(s.date);
+        }
+    }
+
+    return {
+        id: s._id,
+        title: s.title || "--",
+        dateTime: finalDate,
+        location: s.location
+            ? [s.location.street, s.location.suburb, s.location.state]
+                .filter(Boolean)
+                .join(", ")
+            : "--",
+        status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
+        price: s.payRate != null ? `${s.payRate} p/h` : "--",
+    };
+};
 
 const ManageShift = () => {
     const navigate = useNavigate();
@@ -44,73 +69,96 @@ const ManageShift = () => {
     const [selectedFilter, setSelectedFilter] = useState(Filter.All);
     const [sortBy, setSortBy] = useState(Sort.DateAsc);
     const [showSortModal, setShowSortModal] = useState(false);
+    const [showStatusDropdown, setShowStatusDropdown] = useState(false); 
+    const [showDateDropdown, setShowDateDropdown] = useState(false);     
+    const [selectedDateFilter, setSelectedDateFilter] = useState(null);  
+    const [selectedLocationFilter, setSelectedLocationFilter] = useState("");
+    const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+    const [guards, setGuards] = useState([]);           
+    const [selectedGuardFilter, setSelectedGuardFilter] = useState(""); 
+    const [showGuardDropdown, setShowGuardDropdown] = useState(false); 
     const itemsPerPage = 8;
 
     useEffect(() => {
-    const fetchShifts = async () => {
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                setError("No token found. Please log in.");
+        const fetchGuards = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const res = await fetch("http://localhost:5000/api/v1/shifts/guards", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                const data = await res.json();
+                setGuards(data);
+            } catch (err) {
+                console.error("Failed to load guards:", err);
+            }
+        };
+        fetchGuards();
+    }, []);  
+
+    useEffect(() => {    
+        const fetchShifts = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    setError("No token found. Please log in.");
+                    setLoading(false);
+                    return;
+                }
+                const params = new URLSearchParams();
+
+                if (["Completed", "In Progress", "Pending", "Open"].includes(selectedFilter)) {
+                    const backendStatus = frontToBackendStatus[selectedFilter];
+                    params.append("status", backendStatus);
+                }
+
+                if (sortBy === "Date (Asc)") params.append("sort", "asc");
+                if (sortBy === "Date (Desc)") params.append("sort", "desc");
+
+                if (selectedFilter === "Date" && selectedDateFilter) {
+                    params.append("date", selectedDateFilter);
+                }
+
+                if (selectedFilter === "Location" && selectedLocationFilter.trim() !== "") {
+                    params.append("location", selectedLocationFilter.trim());
+                }
+
+                if (selectedFilter === "Guard" && selectedGuardFilter) {
+                    params.append("guard", selectedGuardFilter);
+                }
+
+                const url = `http://localhost:5000/api/v1/shifts?${params.toString()}`;
+
+                const res = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    setError(`Failed to fetch shifts (${res.status}): ${text}`);
+                    setLoading(false);
+                    return;
+                }
+
+                const data = await res.json();
+                const apiShifts = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : [];
+                setShifts(apiShifts.map(normalizeShift));
+
+            } catch (err) {
+                setError("Error fetching shifts.");
+                console.error(err);
+            } finally {
                 setLoading(false);
-                return;
             }
-            const res = await fetch("http://localhost:5000/api/v1/shifts", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                setError(`Failed to fetch shifts (${res.status}): ${text}`);
-                setLoading(false);
-                return;
-            }
-            const data = await res.json();
-            console.log("Raw API response:", data); // Debug
-            let apiShifts;
-            if (Array.isArray(data)) {
-                apiShifts = data;
-            } else if (Array.isArray(data.shifts)) {
-                apiShifts = data.shifts;
-            } else if (data.items && Array.isArray(data.items)) {
-                apiShifts = data.items;
-            } else {
-                apiShifts = [];
-            }
-            console.log("Normalized shift array:", apiShifts); // Debug
-            setShifts(apiShifts.map(normalizeShift));
-        } catch (err) {
-            setError("Error fetching shifts.");
-            console.error(err); // Debug
-        } finally {
-            setLoading(false);
-        }
-    };
-    fetchShifts();
-}, []);
+        };
+        fetchShifts();
+    }, [selectedFilter, selectedDateFilter, selectedLocationFilter, sortBy]);
 
-
-    // Map frontend filter values to backend status
-    const filterToBackendStatus = {
-        Completed: "Completed",
-        InProgress: "In Progress",
-        Pending: "Pending",
-        Open: "Open",
-    };
-
-    const filteredShifts = selectedFilter === Filter.All
-        ? shifts
-        : shifts.filter(shift => shift.status === filterToBackendStatus[selectedFilter]);
-
-    const sortedShifts = [...filteredShifts].sort((a, b) => {
-        const dateA = new Date(a?.dateTime || 0);
-        const dateB = new Date(b?.dateTime || 0);
-        return sortBy === Sort.DateAsc ? dateA - dateB : dateB - dateA;
-    });
-
+    const sortedShifts = shifts;
     const totalPages = Math.ceil(sortedShifts.length / itemsPerPage);
     const indexStart = (currentPage - 1) * itemsPerPage;
     const currentItems = sortedShifts.slice(indexStart, indexStart + itemsPerPage);
@@ -146,18 +194,15 @@ const ManageShift = () => {
         setShowSortModal(false);
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return "--";
-        const date = new Date(dateString);
-        if (isNaN(date)) return "--";
-        return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formatDate = (dateObj) => {
+        if (!(dateObj instanceof Date)) return "--";
+        return dateObj.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    const formatTime = (dateTimeString) => {
-        if (!dateTimeString) return "--";
-        const timePart = dateTimeString.split(' ')[1] || dateTimeString;
-        const [hour, minute] = timePart.split(":").map(Number);
-        if (isNaN(hour) || isNaN(minute)) return "--";
+    const formatTime = (dateObj) => {
+         if (!(dateObj instanceof Date)) return "--";
+        const hour = dateObj.getHours();
+        const minute = dateObj.getMinutes();
         const endHour = (hour + 4) % 24;
         return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} - ${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     };
@@ -182,13 +227,31 @@ const ManageShift = () => {
                 setSelectedFilter={setSelectedFilter}
                 sortBy={sortBy}
                 setShowSortModal={setShowSortModal}
+                showStatusDropdown={showStatusDropdown}         
+                setShowStatusDropdown={setShowStatusDropdown}   
+                showDateDropdown={showDateDropdown}             
+                setShowDateDropdown={setShowDateDropdown}       
+                selectSortBy={selectSortBy}                     
+                selectedDateFilter={selectedDateFilter}         
+                setSelectedDateFilter={setSelectedDateFilter}                   
+                showLocationDropdown={showLocationDropdown}
+                setShowLocationDropdown={setShowLocationDropdown}
+                selectedLocationFilter={selectedLocationFilter}
+                setSelectedLocationFilter={setSelectedLocationFilter}
+                guards={guards}
+                selectedGuardFilter={selectedGuardFilter}
+                setSelectedGuardFilter={setSelectedGuardFilter}
+                showGuardDropdown={showGuardDropdown}
+                setShowGuardDropdown={setShowGuardDropdown}
             />
             {loading && <p>Loading shifts...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {!loading && !error && currentItems.length === 0 && <p>No shifts found.</p>}
             <div style={gridStyle}>
                 {currentItems.map((shift) => {
-                    const [datePart, timePart] = shift.dateTime?.split(' ') || [null, null];
+                    const dateObj = shift.dateTime instanceof Date ? shift.dateTime : null;
+                    const datePart = dateObj ? dateObj.toISOString().split("T")[0] : null;
+                    const timePart = dateObj ? dateObj.toTimeString().slice(0,5) : null;
                     return (
                         <div key={shift.id} style={cardStyle}>
                             <div>
@@ -206,14 +269,16 @@ const ManageShift = () => {
                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
                                     <div style={detailRowStyle}>
                                         <img src={"/ic-calendar.svg"} alt="Date" style={smallIconStyle} />
-                                        <span style={detailTextStyle}>{formatDate(datePart)}</span>
+                                        <span style={detailTextStyle}>{formatDate(shift.dateTime)}</span>
                                     </div>
                                     <div style={detailRowStyle}>
                                         <img src={"/ic-clock.svg"} alt="Time" style={smallIconStyle} />
                                         <span style={detailTextStyle}>{formatTime(shift.dateTime)}</span>
                                     </div>
                                 </div>
-                                <button style={viewDetailsButtonStyle}>View Details</button>
+                                <button style={viewDetailsButtonStyle}
+                                        onClick={() => navigate(`/shift/${shift.id}`)}
+                                >View Details</button>
                             </div>
                         </div>
                     );
@@ -251,19 +316,200 @@ const SummaryCard = ({ label, number, icon, bg }) => (
     </div>
 );
 
-const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, setShowSortModal }) => (
+const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, setShowSortModal, showStatusDropdown, setShowStatusDropdown, showDateDropdown, setShowDateDropdown, selectSortBy, selectedDateFilter, setSelectedDateFilter, showLocationDropdown, setShowLocationDropdown, selectedLocationFilter, setSelectedLocationFilter, guards, setSelectedGuardFilter, showGuardDropdown, setShowGuardDropdown, }) => (
     <div style={filterSectionStyle}>
         <div style={filterGroupStyle}>
             <img src={"/ic-filter.svg"} alt="Filter" style={smallIconStyle} />
             <span style={filterLabelStyle}>Filter by:</span>
-            <div style={filterButtonsStyle}>
-                {Object.values(Filter).map(f => (
-                    <button
-                        key={f}
-                        style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle}
-                        onClick={() => setSelectedFilter(f)}
-                    >{f}</button>
-                ))}
+   <div style={filterButtonsStyle}>
+                {Object.values(Filter).filter(f => !["Completed", "In Progress", "Pending", "Open"].includes(f)).map(f => {
+                    if (f === "Status") {
+                        return (
+                            <div key="Status" style={{ position: "relative" }}>
+                                <button
+                                    style={filterButtonStyle}
+                                    onClick={() => setShowStatusDropdown(prev => !prev)}
+                                >
+                                    Status <span style={{ fontSize: '10px' }}>▼</span>
+                                </button>
+                                {showStatusDropdown && (
+                                    <div style={dropdownStyle}>
+                                        {["Completed", "In Progress", "Pending", "Open"].map(option => (
+                                            <div
+                                                key={option}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
+                                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                                                onClick={() => {
+                                                    setSelectedFilter(option);
+                                                    setSelectedDateFilter(null);   
+                                                    setShowStatusDropdown(false);
+                                                }}
+                                            >
+                                                {option}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+                    if (f === "Date") {
+                        return (
+                            <div key="Date" style={{ position: "relative" }}>
+                                <button
+                                    style={filterButtonStyle}
+                                    onClick={() => setShowDateDropdown(prev => !prev)}
+                                >
+                                    Date <span style={{ fontSize: '10px' }}>▼</span>
+                                </button>
+                                {showDateDropdown && (
+                                    <div style={dropdownStyle}>
+                                        {["Date (Asc)", "Date (Desc)"].map(option => (
+                                            <div
+                                                key={option}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
+                                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                                                onClick={() => {
+                                                    selectSortBy(option);
+                                                    setShowDateDropdown(false);
+                                                }}
+                                            >
+                                                {option}
+                                            </div>
+                                        ))}
+                                        <div style={{ height: "1px", background: "#ddd", margin: "6px 0" }} />
+                                        <div style={ datePickerWrapperStyle }>
+                                            {/* Calendar picker */}
+                                            <input
+                                                type="date"
+                                                value={selectedDateFilter || ""}
+                                                onChange={(e) => {
+                                                    setSelectedDateFilter(e.target.value);
+                                                    setSelectedFilter("Date");
+                                                }}
+                                                style={datePickerInputStyle}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+                    if (f === "Location") {
+                        return (
+                            <div key="Location" style={{ position: "relative" }}>
+                                <button
+                                    style={filterButtonStyle}
+                                    onClick={() => setShowLocationDropdown(prev => !prev)}
+                                >
+                                    Location <span style={{ fontSize: '10px' }}>▼</span>
+                                </button>
+                                {showLocationDropdown && (
+                                    <div style={dropdownStyle}>
+                                        <div style={{ padding: "10px 16px" }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter location"
+                                                value={selectedLocationFilter}
+                                                onChange={(e) => setSelectedLocationFilter(e.target.value)}
+                                                style={{
+                                                    width: "100%",
+                                                    padding: "8px 12px",
+                                                    borderRadius: "6px",
+                                                    border: "1px solid #ccc",
+                                                    fontSize: "14px",
+                                                }}
+                                            />
+                                        </div>
+                                        <div
+                                            style={{
+                                                ...dropdownItemStyle,
+                                                fontWeight: "600",
+                                                color: "#000000ff",
+                                            }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                                            onClick={() => {
+                                                setSelectedFilter("Location");
+                                                setSelectedDateFilter(null);  
+                                                setShowLocationDropdown(false);
+                                            }}
+                                        >
+                                            Apply
+                                        </div>
+                                        <div
+                                            style={{
+                                                ...dropdownItemStyle,
+                                                color: "#888",
+                                            }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
+                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                                            onClick={() => {
+                                                setSelectedLocationFilter("");
+                                                setSelectedFilter("All");
+                                                setShowLocationDropdown(false);
+                                            }}
+                                        >
+                                            Clear
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+                    if (f === "Guard") {
+                        return (
+                            <div key="Guard" style={{ position: "relative" }}>
+                                <button
+                                    style={filterButtonStyle}
+                                    onClick={() => setShowGuardDropdown(prev => !prev)}
+                                >
+                                    Guard <span style={{ fontSize: '10px' }}>▼</span>
+                                </button>
+                                {showGuardDropdown && (
+                                    <div style={dropdownStyle}>
+                                        {guards.map(g => (
+                                            <div
+                                                key={g._id}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
+                                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
+                                                onClick={() => {
+                                                    setSelectedGuardFilter(g._id);
+                                                    setSelectedFilter("Guard");
+                                                    setShowGuardDropdown(false);
+                                                }}
+                                            >
+                                                {g.name}
+                                            </div>
+                                        ))}
+                                        <div
+                                            style={{ ...dropdownItemStyle, color: "#888" }}
+                                            onClick={() => {
+                                                setSelectedGuardFilter("");
+                                                setSelectedFilter("All");
+                                                setShowGuardDropdown(false);
+                                            }}
+                                        >
+                                            Clear
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }         
+                    return (
+                        <button
+                            key={f}
+                            style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle}
+                            onClick={() => setSelectedFilter(f)}
+                        >
+                            {f}
+                        </button>
+                    );
+                })}
             </div>
         </div>
         <div style={sortGroupStyle}>
@@ -289,10 +535,7 @@ const Pagination = ({ totalPages, currentPage, goPrevPage, goNextPage, goToPage,
                 disabled={page === '...'}
             >{page}</button>
         ))}
-        <button onClick={goNextPage} disabled={currentPage === totalPages} style={currentPage === totalPages ? disabledPaginationButtonStyle : paginationButtonStyle}>
-            <img src={"/ic-arrow-forward.svg"} alt="Next" style={smallIconStyle} />
-        </button>
-    </div>
+      </div>
 );
 
 const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
@@ -316,11 +559,6 @@ const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
         </div>
     </div>
 );
-
-export default ManageShift;
-
-
-
 
 // Status tag styles
 const getStatusTagStyle = (status) => ({
@@ -450,7 +688,9 @@ const filterLabelStyle = {
 
 const filterButtonsStyle = {
     display: 'flex',
+    flexWrap: 'wrap',
     gap: '8px',
+    width: '100%',
 };
 
 const filterButtonStyle = {
@@ -462,6 +702,8 @@ const filterButtonStyle = {
     color: '#666',
     cursor: 'pointer',
     fontWeight: '500',
+    flexShrink: 0,
+    flex: "0 0 auto",
 };
 
 const activeFilterButtonStyle = {
@@ -669,3 +911,38 @@ const checkmarkStyle = {
     color: '#274b93',
     fontWeight: 'bold',
 };
+
+const dropdownStyle = {
+    position: "absolute",
+    top: "42px",
+    left: "0",
+    background: "white",
+    border: "1px solid #ccc",
+    borderRadius: "8px",
+    boxShadow: "0px 4px 8px rgba(0,0,0,0.1)",
+    padding: "8px 0",
+    zIndex: 200,
+    minWidth: "160px",
+    whiteSpace: "nowrap",
+};
+
+const dropdownItemStyle = {
+    padding: "10px 16px",
+    cursor: "pointer",
+    fontSize: "14px",
+};
+
+const datePickerWrapperStyle = {
+    padding: "10px 16px",   
+};
+
+const datePickerInputStyle = {
+    width: "100%",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+    cursor: "pointer",
+    fontSize: "14px",
+};
+
+export default ManageShift;
