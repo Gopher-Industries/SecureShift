@@ -33,28 +33,29 @@ const Sort = Object.freeze({
     DateDesc: 'Date (Desc)',
 });
 
-// Normalize shift data from backend
 const normalizeShift = (s) => {
     let finalDate = null;
 
     if (s.date) {
-        const dateOnly = s.date.split("T")[0];     // "2025-01-10"
+        const dateOnly = s.date.split("T")[0];
         if (s.startTime) {
             finalDate = new Date(`${dateOnly}T${s.startTime}:00`);
         } else {
             finalDate = new Date(s.date);
         }
     }
+
     return {
-        // Compose dateTime string for sorting
         id: s._id,
         title: s.title || "--",
-        dateTime: finalDate,      
-        location: s.location 
-            ? [s.location.street, s.location.suburb, s.location.state].filter(Boolean).join(", ") 
+        dateTime: finalDate,
+        location: s.location
+            ? [s.location.street, s.location.suburb, s.location.state].filter(Boolean).join(", ")
             : "--",
         status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
-        price: s.price || "--"
+        price: s.payRate ?? "--",
+        description: s.description || "",
+        requirements: s.requirements || [],
     };
 };
 
@@ -67,6 +68,11 @@ const ManageShift = () => {
     const [selectedFilter, setSelectedFilter] = useState(Filter.All);
     const [sortBy, setSortBy] = useState(Sort.DateAsc);
     const [showSortModal, setShowSortModal] = useState(false);
+    
+    // States for shift details modal
+    const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+    const [selectedShift, setSelectedShift] = useState(null);
+    
     const [showStatusDropdown, setShowStatusDropdown] = useState(false); 
     const [showDateDropdown, setShowDateDropdown] = useState(false);     
     const [selectedDateFilter, setSelectedDateFilter] = useState(null);  
@@ -205,6 +211,52 @@ const ManageShift = () => {
         return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} - ${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     };
 
+    // Function to handle View Details button click
+    const handleViewDetails = (shift) => {
+        console.log("View Details clicked for shift:", shift);
+        let datePart = null;
+        let timePart = null;
+
+        if (shift.dateTime instanceof Date) {
+            datePart = shift.dateTime.toISOString().split("T")[0];
+            timePart = shift.dateTime.toTimeString().slice(0, 5);
+        }
+        let endTime = '';
+        
+        // Calculate endTime based on 4-hour shift duration
+        if (timePart) {
+            const [hour, minute] = timePart.split(":").map(Number);
+            if (!isNaN(hour) && !isNaN(minute)) {
+                // Add 4 hours to the start time
+                const endHour = (hour + 4) % 24;
+                endTime = `${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        console.log("Setting selected shift:", {
+            id: shift.id,
+            date: datePart,
+            startTime: timePart,
+            endTime: endTime
+        });
+        
+        setSelectedShift({
+            id: shift.id,
+            title: shift.title,
+            date: datePart,
+            startTime: timePart,
+            endTime: endTime,
+            location: shift.location,
+            price: shift.price,
+            status: shift.status,
+            description: shift.description || "",
+            requirements: shift.requirements || [], 
+            applicants: []
+        });
+        setIsShiftModalOpen(true);
+        console.log("Modal should open, isShiftModalOpen will be set to true");
+    };
+
     return (
         <div style={containerStyle}>
             <div style={headerStyle}>
@@ -300,6 +352,518 @@ const ManageShift = () => {
                     setShowSortModal={setShowSortModal}
                 />
             )}
+            
+            {/* SHIFT DETAILS MODAL */}
+            {isShiftModalOpen && selectedShift && (
+                <ShiftDetailsModal
+                    shift={selectedShift}
+                    onClose={() => setIsShiftModalOpen(false)}
+                />
+            )}
+        </div>
+    );
+};
+
+// Mock Data for Descriptions & Requirements
+const USE_MOCK_DATA = true; // Set to false when backend is ready
+
+// Shift Details Modal Component
+const ShiftDetailsModal = ({ shift, onClose }) => {
+    // Format currency
+    const formatCurrency = (amount) => {
+        if (!amount || amount === "--") return '$0.00';
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+        }).format(amount);
+    };
+
+    // Format date
+    const formatDate = (dateString) => {
+        if (!dateString || dateString === "--") return 'Date not set';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+    };
+
+    // Format time
+    const formatTime = (timeString) => {
+        if (!timeString || timeString === "--") return 'Time not set';
+        
+        // Handle HH:MM format
+        const [hour, minute] = timeString.split(':');
+        const hourNum = parseInt(hour, 10);
+        if (isNaN(hourNum)) return timeString;
+        
+        const period = hourNum >= 12 ? 'PM' : 'AM';
+        const displayHour = hourNum % 12 || 12;
+        return `${displayHour}:${minute || '00'} ${period}`;
+    };
+
+    // Calculate duration
+    const calculateDuration = (startTime, endTime) => {
+        if (!startTime || !endTime || startTime === "--" || endTime === "--") return '';
+        
+        try {
+            const [startHour, startMinute] = startTime.split(':').map(Number);
+            const [endHour, endMinute] = endTime.split(':').map(Number);
+            
+            let durationHours = endHour - startHour;
+            let durationMinutes = endMinute - startMinute;
+            
+            if (durationMinutes < 0) {
+                durationHours -= 1;
+                durationMinutes += 60;
+            }
+            
+            if (durationHours < 0) durationHours += 24;
+            
+            if (durationHours === 0) return `${durationMinutes} minutes`;
+            if (durationMinutes === 0) return `${durationHours} hour${durationHours !== 1 ? 's' : ''}`;
+            return `${durationHours} hour${durationHours !== 1 ? 's' : ''} ${durationMinutes} minutes`;
+        } catch {
+            return '';
+        }
+    };
+
+    // Get status color
+    const getStatusColor = (status) => {
+        if (!status) return { bg: '#eaeaea', text: '#666' };
+        
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('completed')) return { bg: '#EAFAE7', text: '#2E7D32' };
+        if (statusLower.includes('in progress')) return { bg: '#F6EFFF', text: '#7B1FA2' };
+        if (statusLower.includes('pending')) return { bg: '#FBFAE2', text: '#F57C00' };
+        if (statusLower.includes('open')) return { bg: '#E3F2FD', text: '#1565C0' };
+        return { bg: '#eaeaea', text: '#666' };
+    };
+
+    // Mock applicants for display 
+    const mockApplicants = [
+        { id: 1, name: 'John Smith', status: 'Applied', appliedDate: '2025-12-01' },
+        { id: 2, name: 'Jane Doe', status: 'Pending', appliedDate: '2025-12-02' },
+        { id: 3, name: 'Bob Johnson', status: 'Accepted', appliedDate: '2025-12-03' },
+    ];
+
+    // Mock description and requirements (you'll need to get these from your backend)
+    const mockDescription = "We are looking for a reliable worker to assist with warehouse duties including loading/unloading, inventory management, and general maintenance. The ideal candidate should be physically fit and able to work in a fast-paced environment.";
+    
+    const mockRequirements = [
+        "Must be 18 years or older",
+        "Ability to lift 50+ pounds",
+        "Valid driver's license",
+        "Previous warehouse experience preferred",
+        "Available for 4-hour shifts",
+        "Reliable transportation"
+    ];
+
+    const description = USE_MOCK_DATA ? mockDescription : (shift.description || "No description provided.");
+    const requirements = USE_MOCK_DATA ? mockRequirements : (shift.requirements || []);
+        
+    // Modal styles
+    const modalStyles = {
+        overlay: {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            padding: '20px',
+        },
+        modal: {
+            background: '#fff',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '900px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            animation: 'slideUp 0.3s ease',
+        },
+        header: {
+            padding: '24px 32px',
+            borderBottom: '1px solid #eaeaea',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#f8f9fa',
+            borderTopLeftRadius: '12px',
+            borderTopRightRadius: '12px',
+        },
+        title: {
+            fontSize: '24px',
+            fontWeight: '600',
+            color: '#000000',
+            margin: 0,
+        },
+        closeBtn: {
+            background: 'none',
+            border: 'none',
+            fontSize: '28px',
+            color: '#666',
+            cursor: 'pointer',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            transition: 'all 0.2s',
+        },
+        content: {
+            padding: '32px',
+        },
+        infoGrid: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '20px',
+            marginBottom: '32px',
+        },
+        infoCard: {
+            background: '#f8f9fa',
+            borderRadius: '8px',
+            padding: '20px',
+            borderLeft: '4px solid #274b93',
+        },
+        infoLabel: {
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#666',
+            margin: '0 0 8px 0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+        },
+        infoValue: {
+            fontSize: '18px',
+            fontWeight: '500',
+            color: '#000000',
+            margin: 0,
+        },
+        section: {
+            marginBottom: '32px',
+        },
+        sectionTitle: {
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#000000',
+            margin: '0 0 16px 0',
+            paddingBottom: '8px',
+            borderBottom: '2px solid #eaeaea',
+        },
+        statusBadge: {
+            display: 'inline-block',
+            padding: '8px 20px',
+            borderRadius: '20px',
+            fontSize: '14px',
+            fontWeight: '600',
+        },
+        applicantsList: {
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+        },
+        applicantItem: {
+            padding: '16px',
+            background: '#f8f9fa',
+            borderRadius: '8px',
+            marginBottom: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            border: '1px solid #eaeaea',
+        },
+        applicantName: {
+            fontWeight: '600',
+            fontSize: '16px',
+            color: '#000000',
+        },
+        applicantStatus: {
+            padding: '6px 16px',
+            borderRadius: '20px',
+            fontSize: '14px',
+            fontWeight: '500',
+        },
+        statusApplied: {
+            background: '#e3f2fd',
+            color: '#1565c0',
+        },
+        statusPending: {
+            background: '#fff3e0',
+            color: '#ef6c00',
+        },
+        statusAccepted: {
+            background: '#e8f5e9',
+            color: '#2e7d32',
+        },
+        emptyState: {
+            textAlign: 'center',
+            padding: '40px',
+            color: '#666',
+            fontStyle: 'italic',
+            background: '#f8f9fa',
+            borderRadius: '8px',
+            border: '2px dashed #ddd',
+        },
+        descriptionText: {
+            fontSize: '16px',
+            lineHeight: '1.6',
+            color: '#000000',
+            margin: '0 0 20px 0',
+        },
+        requirementsList: {
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+        },
+        requirementItem: {
+            padding: '12px 16px',
+            background: '#f8f9fa',
+            borderRadius: '8px',
+            marginBottom: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            borderLeft: '4px solid #274b93',
+        },
+        requirementText: {
+            fontSize: '15px',
+            color: '#000000',
+            margin: 0,
+        },
+        footer: {
+            padding: '24px 32px',
+            borderTop: '1px solid #eaeaea',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '16px',
+        },
+        actionBtn: {
+            padding: '12px 32px',
+            fontSize: '16px',
+            fontWeight: '500',
+            borderRadius: '25px',
+            cursor: 'pointer',
+            border: 'none',
+            transition: 'all 0.3s',
+            fontFamily: 'Poppins, sans-serif',
+        },
+        primaryBtn: {
+            background: '#274b93',
+            color: '#fff',
+        },
+        secondaryBtn: {
+            background: '#fff',
+            color: '#274b93',
+            border: '2px solid #274b93',
+        },
+    };
+
+    const statusColor = getStatusColor(shift.status);
+    const duration = calculateDuration(shift.startTime, shift.endTime);
+
+    return (
+        <div 
+            style={modalStyles.overlay}
+            onClick={onClose}
+        >
+            <div 
+                style={modalStyles.modal}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div style={modalStyles.header}>
+                    <h2 style={modalStyles.title}>Shift Details</h2>
+                    <button
+                        style={modalStyles.closeBtn}
+                        onClick={onClose}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                        ×
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div style={modalStyles.content}>
+                    {/* Basic Information Grid */}
+                    <div style={modalStyles.infoGrid}>
+                        <div style={modalStyles.infoCard}>
+                            <div style={modalStyles.infoLabel}>Job Title</div>
+                            <div style={modalStyles.infoValue}>{shift.title || 'Not specified'}</div>
+                        </div>
+                        
+                        <div style={modalStyles.infoCard}>
+                            <div style={modalStyles.infoLabel}>Date</div>
+                            <div style={modalStyles.infoValue}>{formatDate(shift.date)}</div>
+                        </div>
+                        
+                        <div style={modalStyles.infoCard}>
+                            <div style={modalStyles.infoLabel}>Time</div>
+                            <div style={modalStyles.infoValue}>
+                                {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
+                                {duration && (
+                                    <>
+                                        <br />
+                                        <small style={{ color: '#666', fontSize: '14px' }}>
+                                            Duration: {duration}
+                                        </small>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div style={modalStyles.infoCard}>
+                            <div style={modalStyles.infoLabel}>Location</div>
+                            <div style={modalStyles.infoValue}>
+                                {shift.location || 'Not specified'}
+                            </div>
+                        </div>
+                        
+                        <div style={modalStyles.infoCard}>
+                            <div style={modalStyles.infoLabel}>Pay Rate</div>
+                            <div style={modalStyles.infoValue}>
+                                {formatCurrency(shift.price)} per hour
+                                {shift.price && shift.price !== "--" && (
+                                    <>
+                                        <br />
+                                        <small style={{ color: '#666', fontSize: '14px' }}>
+                                            Estimated total: {formatCurrency(parseFloat(shift.price) * 4)} (4 hours)
+                                        </small>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div style={modalStyles.infoCard}>
+                            <div style={modalStyles.infoLabel}>Status</div>
+                            <div style={{ ...modalStyles.statusBadge, backgroundColor: statusColor.bg, color: statusColor.text }}>
+                                {shift.status || 'Not specified'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Description Section */}
+                    <div style={modalStyles.section}>
+                        <h3 style={modalStyles.sectionTitle}>Job Description</h3>
+                        <div style={modalStyles.infoCard}>
+                            <div style={modalStyles.descriptionText}>
+                                {description || "No description provided."}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Requirements Section */}
+                    <div style={modalStyles.section}>
+                        <h3 style={modalStyles.sectionTitle}>Requirements</h3>
+                        <ul style={modalStyles.requirementsList}>
+                            {requirements.map((requirement, index) => ( 
+                                <li key={index} style={modalStyles.requirementItem}>
+                                    <span style={modalStyles.requirementText}>• {requirement}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Applicants Section */}
+                    <div style={modalStyles.section}>
+                        <h3 style={modalStyles.sectionTitle}>
+                            Applicants ({mockApplicants.length})
+                        </h3>
+                        {mockApplicants.length > 0 ? (
+                            <ul style={modalStyles.applicantsList}>
+                                {mockApplicants.map(applicant => (
+                                    <li key={applicant.id} style={modalStyles.applicantItem}>
+                                        <div style={modalStyles.applicantName}>{applicant.name}</div>
+                                        <div style={{
+                                            ...modalStyles.applicantStatus,
+                                            ...(applicant.status === 'Accepted' ? modalStyles.statusAccepted :
+                                                 applicant.status === 'Pending' ? modalStyles.statusPending : 
+                                                 modalStyles.statusApplied)
+                                        }}>
+                                            {applicant.status}
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <div style={modalStyles.emptyState}>
+                                No applicants yet. Check back later!
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div style={modalStyles.footer}>
+                    <button
+                        style={{ ...modalStyles.actionBtn, ...modalStyles.secondaryBtn }}
+                        onClick={onClose}
+                        onMouseOver={(e) => {
+                            e.target.style.background = '#f0f5ff';
+                            e.target.style.color = '#1a3a7a';
+                            e.target.style.borderColor = '#1a3a7a';
+                        }}
+                        onMouseOut={(e) => {
+                            e.target.style.background = '#fff';
+                            e.target.style.color = '#274b93';
+                            e.target.style.borderColor = '#274b93';
+                        }}
+                    >
+                        Close
+                    </button>
+                    <button
+                        style={{ ...modalStyles.actionBtn, ...modalStyles.primaryBtn }}
+                        onClick={() => {
+                            console.log('Edit shift:', shift);
+                            onClose();
+                        }}
+                        onMouseOver={(e) => e.target.style.background = '#1a3a7a'}
+                        onMouseOut={(e) => e.target.style.background = '#274b93'}
+                    >
+                        Edit Shift
+                    </button>
+                </div>
+            </div>
+            
+            {/* CSS Animation */}
+            <style>{`
+                @keyframes slideUp {
+                    from { 
+                        opacity: 0;
+                        transform: translateY(30px);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                @media (max-width: 768px) {
+                    .modal-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                    
+                    .modal-footer {
+                        flex-direction: column;
+                        gap: 12px;
+                    }
+                    
+                    .modal-footer button {
+                        width: 100%;
+                    }
+                }
+            `}</style>
         </div>
     );
 };
