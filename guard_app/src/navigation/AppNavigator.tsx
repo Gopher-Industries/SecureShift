@@ -23,12 +23,19 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+  // TEMP (Dev Only): bypass auth screens so you can complete UI tasks without backend
+  const DEV_BYPASS_AUTH = __DEV__ && true;
+
   return (
-    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      initialRouteName={DEV_BYPASS_AUTH ? 'AppTabs' : 'Splash'}
+      screenOptions={{ headerShown: false }}
+    >
       <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
+
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
@@ -47,7 +54,7 @@ export default function AppNavigator() {
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
-        options={{ headerShown: false }}
+        options={{ headerShown: true, title: 'Edit Profile' }}
       />
     </Stack.Navigator>
   );
