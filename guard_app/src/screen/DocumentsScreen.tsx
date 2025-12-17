@@ -4,14 +4,12 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  FlatList,
   Alert,
   ScrollView,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { COLORS } from '../theme/colors';
 
 // Document types available for guards
 const DOCUMENT_TYPES = [
@@ -43,7 +41,7 @@ export default function DocumentsScreen() {
   const [uploading, setUploading] = useState(false);
 
   // Load documents from storage
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       const storedDocs = await AsyncStorage.getItem('uploadedDocuments');
       if (storedDocs) {
@@ -54,12 +52,12 @@ export default function DocumentsScreen() {
     } catch (error) {
       console.error('Error loading documents:', error);
     }
-  };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       loadDocuments();
-    }, [])
+    }, [loadDocuments])
   );
 
   // Pick and upload document
@@ -71,19 +69,13 @@ export default function DocumentsScreen() {
 
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: [
-          'application/pdf',
-          'image/jpeg',
-          'image/jpg',
-          'image/png',
-        ],
+        type: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
-        
-        // Check file size (max 10MB)
+
         const maxSize = 10 * 1024 * 1024;
         if (file.size && file.size > maxSize) {
           Alert.alert('File Too Large', 'Please select a file smaller than 10MB');
@@ -91,9 +83,9 @@ export default function DocumentsScreen() {
         }
 
         setUploading(true);
-        
-        const documentTypeInfo = DOCUMENT_TYPES.find(dt => dt.id === selectedDocType);
-        
+
+        const documentTypeInfo = DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType);
+
         const newDocument: UploadedDocument = {
           id: Date.now().toString(),
           name: file.name,
@@ -103,19 +95,20 @@ export default function DocumentsScreen() {
           size: file.size || 0,
           uri: file.uri,
           uploadedAt: new Date().toISOString(),
-          verified: false, // Initially not verified
+          verified: false,
         };
 
         const storedDocs = await AsyncStorage.getItem('uploadedDocuments');
         const allDocs: UploadedDocument[] = storedDocs ? JSON.parse(storedDocs) : [];
         allDocs.push(newDocument);
-        
+
         await AsyncStorage.setItem('uploadedDocuments', JSON.stringify(allDocs));
-        
-        setDocuments(allDocs.sort((a, b) => 
-          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
-        ));
-        
+
+        const sortedDocs = allDocs.sort(
+          (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+        );
+        setDocuments(sortedDocs);
+
         setSelectedDocType('');
         Alert.alert('Success', 'Document uploaded successfully!');
       }
@@ -129,39 +122,33 @@ export default function DocumentsScreen() {
 
   // Delete document
   const deleteDocument = (docId: string) => {
-    Alert.alert(
-      'Delete Document',
-      'Are you sure you want to delete this document?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const updatedDocs = documents.filter(doc => doc.id !== docId);
-              await AsyncStorage.setItem('uploadedDocuments', JSON.stringify(updatedDocs));
-              setDocuments(updatedDocs);
-            } catch (error) {
-              console.error('Error deleting document:', error);
-              Alert.alert('Error', 'Failed to delete document');
-            }
-          },
+    Alert.alert('Delete Document', 'Are you sure you want to delete this document?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const updatedDocs = documents.filter((doc) => doc.id !== docId);
+            await AsyncStorage.setItem('uploadedDocuments', JSON.stringify(updatedDocs));
+            setDocuments(updatedDocs);
+          } catch (error) {
+            console.error('Error deleting document:', error);
+            Alert.alert('Error', 'Failed to delete document');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  // Format file size
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 10) / 10 + ' ' + sizes[i];
+    return `${Math.round((bytes / Math.pow(k, i)) * 10) / 10} ${sizes[i]}`;
   };
 
-  // Format date
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -171,40 +158,32 @@ export default function DocumentsScreen() {
     });
   };
 
-  const selectedDocTypeLabel = DOCUMENT_TYPES.find(dt => dt.id === selectedDocType)?.label;
+  const selectedDocTypeLabel = DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType)?.label;
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Text style={styles.backButtonText}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Documents</Text>
-      </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Info Card */}
         <View style={styles.infoCard}>
           <Text style={styles.infoText}>
-            Keep your documents up to date. Upload your licenses and certifications to apply for shifts.
+            Keep your documents up to date. Upload your licenses and certifications to apply for
+            shifts.
           </Text>
         </View>
 
-        {/* Document Type Selector */}
         <Text style={styles.label}>Document Type</Text>
         <TouchableOpacity
           style={styles.dropdown}
           onPress={() => setShowDropdown(!showDropdown)}
           disabled={uploading}
         >
-          <Text style={selectedDocType ? styles.dropdownTextSelected : styles.dropdownTextPlaceholder}>
+          <Text
+            style={selectedDocType ? styles.dropdownTextSelected : styles.dropdownTextPlaceholder}
+          >
             {selectedDocTypeLabel || 'Select document type'}
           </Text>
           <Text style={styles.dropdownIcon}>{showDropdown ? '▲' : '▼'}</Text>
         </TouchableOpacity>
 
-        {/* Dropdown Menu */}
         {showDropdown && (
           <View style={styles.dropdownMenu}>
             {DOCUMENT_TYPES.map((docType) => (
@@ -232,12 +211,8 @@ export default function DocumentsScreen() {
           </View>
         )}
 
-        {/* Upload Area */}
         <TouchableOpacity
-          style={[
-            styles.uploadArea,
-            !selectedDocType && styles.uploadAreaDisabled,
-          ]}
+          style={[styles.uploadArea, !selectedDocType && styles.uploadAreaDisabled]}
           onPress={pickAndUploadDocument}
           disabled={!selectedDocType || uploading}
         >
@@ -250,10 +225,7 @@ export default function DocumentsScreen() {
           <Text style={styles.uploadSubtext}>PDF, JPG, or PNG up to 10MB</Text>
         </TouchableOpacity>
 
-        {/* Uploaded Documents */}
-        <Text style={styles.sectionTitle}>
-          Uploaded Documents ({documents.length})
-        </Text>
+        <Text style={styles.sectionTitle}>Uploaded Documents ({documents.length})</Text>
 
         {documents.length === 0 ? (
           <View style={styles.emptyState}>
@@ -302,66 +274,11 @@ export default function DocumentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-  },
-  
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#274289',
-    paddingTop: 50,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backButtonText: {
-    fontSize: 32,
-    color: '#FFFFFF',
-    fontWeight: '300',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 8,
-  },
-
-  // Content
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-
-  // Info Card
-  infoCard: {
-    backgroundColor: '#E8EEF7',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#374151',
-    lineHeight: 20,
-  },
-
-  // Label
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 8,
-  },
-
-  // Dropdown
+  container: { flex: 1, backgroundColor: '#F5F7FA' },
+  content: { flex: 1, padding: 16 },
+  infoCard: { backgroundColor: '#E8EEF7', borderRadius: 12, padding: 16, marginBottom: 24 },
+  infoText: { fontSize: 14, color: '#374151', lineHeight: 20 },
+  label: { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 8 },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -373,19 +290,9 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 24,
   },
-  dropdownTextPlaceholder: {
-    fontSize: 15,
-    color: '#9CA3AF',
-  },
-  dropdownTextSelected: {
-    fontSize: 15,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  dropdownIcon: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
+  dropdownTextPlaceholder: { fontSize: 15, color: '#9CA3AF' },
+  dropdownTextSelected: { fontSize: 15, color: '#111827', fontWeight: '500' },
+  dropdownIcon: { fontSize: 12, color: '#6B7280' },
   dropdownMenu: {
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
@@ -398,25 +305,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+    maxHeight: 250,
   },
-  dropdownItem: {
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  dropdownItemSelected: {
-    backgroundColor: '#F0F9FF',
-  },
-  dropdownItemText: {
-    fontSize: 15,
-    color: '#111827',
-  },
-  dropdownItemTextSelected: {
-    color: '#274289',
-    fontWeight: '600',
-  },
-
-  // Upload Area
+  dropdownItem: { padding: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  dropdownItemSelected: { backgroundColor: '#F0F9FF' },
+  dropdownItemText: { fontSize: 15, color: '#111827' },
+  dropdownItemTextSelected: { color: '#274289', fontWeight: '600' },
   uploadArea: {
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
@@ -427,9 +321,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  uploadAreaDisabled: {
-    opacity: 0.5,
-  },
+  uploadAreaDisabled: { opacity: 0.5 },
   uploadIconContainer: {
     width: 64,
     height: 64,
@@ -439,35 +331,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 12,
   },
-  uploadIcon: {
-    fontSize: 28,
-    color: '#6B7280',
-  },
-  uploadText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  uploadSubtext: {
-    fontSize: 13,
-    color: '#9CA3AF',
-  },
-
-  // Section Title
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 16,
-  },
-
-  // Documents List
-  documentsList: {
-    gap: 12,
-  },
-
-  // Document Card
+  uploadIcon: { fontSize: 28, color: '#6B7280' },
+  uploadText: { fontSize: 15, fontWeight: '500', color: '#6B7280', marginBottom: 4 },
+  uploadSubtext: { fontSize: 13, color: '#9CA3AF' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 16 },
+  documentsList: { gap: 12, paddingBottom: 20 },
   documentCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -489,38 +357,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  documentIcon: {
-    fontSize: 24,
-  },
-  documentInfo: {
-    flex: 1,
-  },
-  documentName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  documentType: {
-    fontSize: 13,
-    color: '#274289',
-    marginBottom: 4,
-  },
-  documentMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  documentMetaText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  documentMetaDot: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginHorizontal: 6,
-  },
-
-  // Verified Badge
+  documentIcon: { fontSize: 24 },
+  documentInfo: { flex: 1 },
+  documentName: { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 2 },
+  documentType: { fontSize: 13, color: '#274289', marginBottom: 4 },
+  documentMeta: { flexDirection: 'row', alignItems: 'center' },
+  documentMetaText: { fontSize: 12, color: '#6B7280' },
+  documentMetaDot: { fontSize: 12, color: '#6B7280', marginHorizontal: 6 },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -531,35 +374,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
     gap: 4,
   },
-  verifiedIcon: {
-    fontSize: 14,
-    color: '#059669',
-  },
-  verifiedText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#059669',
-  },
-
-  // Delete Button
-  deleteButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteButtonText: {
-    fontSize: 20,
-    color: '#9CA3AF',
-  },
-
-  // Empty State
-  emptyState: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
+  verifiedIcon: { fontSize: 14, color: '#059669' },
+  verifiedText: { fontSize: 12, fontWeight: '600', color: '#059669' },
+  deleteButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  deleteButtonText: { fontSize: 20, color: '#9CA3AF' },
+  emptyState: { padding: 40, alignItems: 'center' },
+  emptyStateText: { fontSize: 14, color: '#9CA3AF' },
 });
