@@ -327,7 +327,7 @@ const ManageShift = () => {
                                     </div>
                                 </div>
                                 <button style={viewDetailsButtonStyle}
-                                        onClick={() => navigate(`/shift/${shift.id}`)}
+                                        onClick={() => handleViewDetails(shift)}
                                 >View Details</button>
                             </div>
                         </div>
