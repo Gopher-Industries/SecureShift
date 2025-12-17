@@ -1,42 +1,30 @@
+import mongoose from 'mongoose';
+import Availability from '../models/Availability.js';
 import { ACTIONS } from "../middleware/logger.js";
 
 /**
  * controllers/availability.controller.js
- *
- * Exports:
- * - createOrUpdateAvailability(req, res)
- * - getAvailability(req, res)
- *
- * Notes:
- * - Users can only create/update/fetch their own availability unless req.user.role === 'Admin'
- * - POST does upsert (create or update) so each user always has at most one availability document
+ * * Implements CRUD for Guard Availability.
  */
 
-import Availability from '../models/Availability.js';
-import mongoose from 'mongoose';
-
-/** Utility: validate time slot format */
+// Helper: validate time slot format
 const timeSlotRegex = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
 
-/** POST /api/availability
- * Body expected:
- * {
- *   user?: "<userId>" (optional - ignored unless admin),
- *   days: ["Monday", "Tuesday"],
- *   timeSlots: ["09:00-12:00", "14:00-18:00"]
- * }
+/**
+ * POST /api/availability
+ * Create or Update (Upsert) Availability
  */
 export const createOrUpdateAvailability = async (req, res) => {
   try {
-    const requester = req.user; // set by auth middleware (id, role)
+    const requester = req.user; 
     if (!requester || !requester.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const bodyUserId = req.body.user; // optional
+    const bodyUserId = req.body.user; 
     let targetUserId = requester.id;
 
-    // Admins may set availability for other users
+    // Admin override check
     if (bodyUserId) {
       if (!mongoose.Types.ObjectId.isValid(bodyUserId)) {
         return res.status(400).json({ message: 'Invalid user id provided.' });
@@ -54,7 +42,7 @@ export const createOrUpdateAvailability = async (req, res) => {
 
     const { days, timeSlots } = req.body;
 
-    // Basic validations
+    // Validations
     if (!Array.isArray(days) || days.length === 0) {
       return res.status(400).json({ message: 'Please select at least one day.' });
     }
@@ -65,7 +53,6 @@ export const createOrUpdateAvailability = async (req, res) => {
         .json({ message: 'Please provide at least one time slot in format HH:MM-HH:MM.' });
     }
 
-    // Validate time slot format and logical order (start < end)
     for (const ts of timeSlots) {
       if (typeof ts !== 'string' || !timeSlotRegex.test(ts)) {
         return res.status(400).json({
@@ -84,7 +71,7 @@ export const createOrUpdateAvailability = async (req, res) => {
       }
     }
 
-    // Perform upsert: if availability exists for this user -> update, otherwise create
+    // Upsert Logic
     const filter = { user: targetUserId };
     const update = {
       user: targetUserId,
@@ -93,41 +80,36 @@ export const createOrUpdateAvailability = async (req, res) => {
       updatedAt: Date.now(),
     };
 
-    const options = {
-      new: true, // return the updated document
-      upsert: true, // create if not exists
-      setDefaultsOnInsert: true,
-    };
+    const options = { new: true, upsert: true, setDefaultsOnInsert: true };
 
     const availability = await Availability.findOneAndUpdate(filter, update, options).populate(
       'user',
-      'name email role' // optional fields if User has these
+      'name email role'
     );
-    await req.audit.log(req.user.id, ACTIONS.AVAILABILITY_UPDATED, {
-      availabilityId: availability._id,
-      targetUserId: targetUserId,
-      days,
-      timeSlots
-    });
+    
+    // Audit Log
+    if(req.audit) {
+        await req.audit.log(req.user.id, ACTIONS.AVAILABILITY_UPDATED, {
+        availabilityId: availability._id,
+        targetUserId: targetUserId,
+        days,
+        timeSlots
+        });
+    }
+    
     return res.status(200).json({
       message: 'Availability saved.',
       availability,
     });
   } catch (err) {
     console.error('Availability POST error:', err);
-    // Handle duplicate key error specifically (shouldn't occur because of upsert, but just in case)
-    if (err.code === 11000) {
-      return res
-        .status(409)
-        .json({ message: 'An availability entry for this user already exists.' });
-    }
     return res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-/** GET /api/availability/:userId
- * - requester can fetch their own availability
- * - Admin can fetch any user's availability
+/**
+ * GET /api/availability/:userId
+ * Read Availability
  */
 export const getAvailability = async (req, res) => {
   try {
@@ -158,6 +140,43 @@ export const getAvailability = async (req, res) => {
     return res.status(200).json({ availability });
   } catch (err) {
     console.error('Availability GET error:', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+/**
+ * DELETE /api/availability/:userId
+ * Delete Availability
+ */
+export const deleteAvailability = async (req, res) => {
+  try {
+    const requester = req.user;
+    const { userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'Invalid user id.' });
+    }
+
+    // Only Admin or the user themselves can delete
+    if (requester.role !== 'admin' && requester.id !== userId) {
+      return res.status(403).json({ message: 'Forbidden: cannot delete other user availability.' });
+    }
+
+    const deleted = await Availability.findOneAndDelete({ user: userId });
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'No availability found to delete.' });
+    }
+
+    if(req.audit) {
+        await req.audit.log(requester.id, 'AVAILABILITY_DELETED', {
+        targetUserId: userId
+        });
+    }
+
+    return res.status(200).json({ message: 'Availability deleted successfully.' });
+  } catch (err) {
+    console.error('Availability DELETE error:', err);
     return res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
