@@ -5,6 +5,7 @@ import {
     adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs, 
     getUserById, getAllMessages, deleteUserById, deleteMessageById,
     listPendingLicenses, verifyGuardLicense, rejectGuardLicense,
+    getSmtpSettings, updateSmtpSettings, testSmtpSettings,
 } from '../controllers/admin.controller.js';
 
 import auth from '../middleware/auth.js';
@@ -416,5 +417,104 @@ router.patch('/guards/:id/license/verify', auth, adminOnly, verifyGuardLicense);
  *         description: Server error
  */
 router.patch('/guards/:id/license/reject', auth, adminOnly, rejectGuardLicense);
+
+/**
+ * @swagger
+ * /api/v1/admin/smtp-settings:
+ *   get:
+ *     summary: Get SMTP settings (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: SMTP settings (password is hidden)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (admin only)
+ */
+router.get('/smtp-settings', auth, adminOnly, getSmtpSettings);
+
+/**
+ * @swagger
+ * /api/v1/admin/smtp-settings:
+ *   put:
+ *     summary: Update SMTP settings (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - SMTP_HOST
+ *               - SMTP_USER
+ *               - SMTP_PASS
+ *             properties:
+ *               SMTP_HOST:
+ *                 type: string
+ *                 example: smtp.gmail.com
+ *               SMTP_PORT:
+ *                 type: string
+ *                 example: "587"
+ *               SMTP_SECURE:
+ *                 type: string
+ *                 example: "false"
+ *               SMTP_USER:
+ *                 type: string
+ *                 example: your-email@gmail.com
+ *               SMTP_PASS:
+ *                 type: string
+ *                 example: your-app-password
+ *     responses:
+ *       200:
+ *         description: SMTP settings updated successfully
+ *       400:
+ *         description: Missing required fields
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (admin only)
+ */
+router.put('/smtp-settings', auth, adminOnly, updateSmtpSettings);
+
+/**
+ * @swagger
+ * /api/v1/admin/smtp-settings/test:
+ *   post:
+ *     summary: Test SMTP settings by sending a test email (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - testEmail
+ *             properties:
+ *               testEmail:
+ *                 type: string
+ *                 format: email
+ *                 example: test@example.com
+ *     responses:
+ *       200:
+ *         description: Test email sent successfully
+ *       400:
+ *         description: Missing testEmail
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (admin only)
+ *       500:
+ *         description: Failed to send test email
+ */
+router.post('/smtp-settings/test', auth, adminOnly, testSmtpSettings);
 
 export default router;

@@ -9,6 +9,7 @@ import {
   rateShift,
   listAvailableShifts, // dynamic by role
   getShiftHistory,
+  updateShift,
 } from '../controllers/shift.controller.js';
 
 const router = express.Router();
@@ -133,6 +134,14 @@ router
   .route('/')
   .get(protect, authorizeRole('guard', 'employer', 'admin'), listAvailableShifts)
   .post(protect, authorizeRole('employer'), createShift);
+
+/**
+ * PATCH /api/v1/shifts/:id
+ * Allows employers (owners) or admins to update editable fields.
+ */
+router
+  .route('/:id')
+  .patch(protect, authorizeRole('employer', 'admin'), updateShift);
 
 /**
  * @swagger

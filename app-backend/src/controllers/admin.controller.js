@@ -1,11 +1,18 @@
 import User from '../models/User.js';
 import Shift from '../models/Shift.js';
 import AuditLog from '../models/AuditLogs.js';
-import Message from '../models/Message.js'; // Message Model
+import Message from '../models/Message.js';
 import { ACTIONS } from '../middleware/logger.js';
 import Guard from '../models/Guard.js';
+import { sendOTP } from '../utils/sendEmail.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import jwt from 'jsonwebtoken';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Generate JWT token for a user
@@ -377,5 +384,165 @@ export const rejectGuardLicense = async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to reject license', error: err.message });
+  }
+};
+
+/**
+ * @desc Get SMTP settings (Admin only)
+ * @route GET /api/v1/admin/smtp-settings
+ * @access Admin
+ */
+export const getSmtpSettings = async (req, res) => {
+  try {
+    const envPath = path.join(__dirname, '../../.env');
+    
+    const settings = {
+      SMTP_HOST: process.env.SMTP_HOST || '',
+      SMTP_PORT: process.env.SMTP_PORT || '587',
+      SMTP_SECURE: process.env.SMTP_SECURE || 'false',
+      SMTP_USER: process.env.SMTP_USER || '',
+      SMTP_PASS: process.env.SMTP_PASS ? '***hidden***' : '',
+      SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL || '',
+    };
+
+    res.status(200).json(settings);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to get SMTP settings', error: err.message });
+  }
+};
+
+/**
+ * @desc Update SMTP settings (Admin only)
+ * @route PUT /api/v1/admin/smtp-settings
+ * @access Admin
+ */
+export const updateSmtpSettings = async (req, res) => {
+  try {
+    const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, SMTP_FROM_EMAIL } = req.body;
+
+    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+      return res.status(400).json({ 
+        message: 'SMTP_HOST, SMTP_USER, and SMTP_PASS are required' 
+      });
+    }
+
+    if (!SMTP_FROM_EMAIL) {
+      return res.status(400).json({ 
+        message: 'SMTP_FROM_EMAIL is required. This must be a verified sender email address.' 
+      });
+    }
+
+    const envPath = path.join(__dirname, '../../.env');
+    let envContent = '';
+
+    if (fs.existsSync(envPath)) {
+      envContent = fs.readFileSync(envPath, 'utf8');
+    }
+
+    const lines = envContent.split('\n');
+    const updatedLines = [];
+    const newSettings = {
+      SMTP_HOST,
+      SMTP_PORT: SMTP_PORT || '587',
+      SMTP_SECURE: SMTP_SECURE || 'false',
+      SMTP_USER,
+      SMTP_PASS,
+      SMTP_FROM_EMAIL,
+    };
+
+    let smtpFound = false;
+    for (const line of lines) {
+      if (line.startsWith('SMTP_HOST=') || line.startsWith('SMTP_PORT=') || 
+          line.startsWith('SMTP_SECURE=') || line.startsWith('SMTP_USER=') || 
+          line.startsWith('SMTP_PASS=') || line.startsWith('SMTP_FROM_EMAIL=')) {
+        if (!smtpFound) {
+          updatedLines.push(`SMTP_HOST=${SMTP_HOST}`);
+          updatedLines.push(`SMTP_PORT=${newSettings.SMTP_PORT}`);
+          updatedLines.push(`SMTP_SECURE=${newSettings.SMTP_SECURE}`);
+          updatedLines.push(`SMTP_USER=${SMTP_USER}`);
+          updatedLines.push(`SMTP_PASS=${SMTP_PASS}`);
+          updatedLines.push(`SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}`);
+          smtpFound = true;
+        }
+      } else if (line.trim() && !line.startsWith('#')) {
+        updatedLines.push(line);
+      } else {
+        updatedLines.push(line);
+      }
+    }
+
+    if (!smtpFound) {
+      updatedLines.push('');
+      updatedLines.push('# SMTP Configuration');
+      updatedLines.push(`SMTP_HOST=${SMTP_HOST}`);
+      updatedLines.push(`SMTP_PORT=${newSettings.SMTP_PORT}`);
+      updatedLines.push(`SMTP_SECURE=${newSettings.SMTP_SECURE}`);
+      updatedLines.push(`SMTP_USER=${SMTP_USER}`);
+      updatedLines.push(`SMTP_PASS=${SMTP_PASS}`);
+      updatedLines.push(`SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}`);
+    }
+
+    fs.writeFileSync(envPath, updatedLines.join('\n'), 'utf8');
+
+    process.env.SMTP_HOST = SMTP_HOST;
+    process.env.SMTP_PORT = newSettings.SMTP_PORT;
+    process.env.SMTP_SECURE = newSettings.SMTP_SECURE;
+    process.env.SMTP_USER = SMTP_USER;
+    process.env.SMTP_PASS = SMTP_PASS;
+    process.env.SMTP_FROM_EMAIL = SMTP_FROM_EMAIL;
+
+    await req.audit.log(req.user.id, ACTIONS.ADMIN_ACTION, { 
+      action: 'UPDATE_SMTP_SETTINGS' 
+    });
+
+    res.status(200).json({ 
+      message: 'SMTP settings updated successfully',
+      settings: {
+        SMTP_HOST,
+        SMTP_PORT: newSettings.SMTP_PORT,
+        SMTP_SECURE: newSettings.SMTP_SECURE,
+        SMTP_USER,
+        SMTP_PASS: '***hidden***',
+        SMTP_FROM_EMAIL,
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update SMTP settings', error: err.message });
+  }
+};
+
+/**
+ * @desc Test SMTP settings by sending a test email (Admin only)
+ * @route POST /api/v1/admin/smtp-settings/test
+ * @access Admin
+ */
+export const testSmtpSettings = async (req, res) => {
+  try {
+    const { testEmail } = req.body;
+
+    if (!testEmail) {
+      return res.status(400).json({ message: 'testEmail is required' });
+    }
+
+    const testOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    try {
+      await sendOTP(testEmail, testOtp);
+      await req.audit.log(req.user.id, ACTIONS.ADMIN_ACTION, { 
+        action: 'TEST_SMTP_SETTINGS', 
+        testEmail 
+      });
+      res.status(200).json({ 
+        message: 'Test email sent successfully',
+        note: 'Check the inbox of the test email address'
+      });
+    } catch (emailError) {
+      res.status(500).json({ 
+        message: 'Failed to send test email',
+        error: emailError.message 
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to test SMTP settings', error: err.message });
   }
 };

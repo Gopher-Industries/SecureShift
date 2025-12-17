@@ -1,257 +1,197 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './createShift.css';
 import http from '../lib/http';
 
-const CreateShift = () => {
+const CreateShift = ({ isModal = false, onClose }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
-    location: '',
     date: '',
     time: '',
-    payRate: ''
+    location: '',
+    payRate: '',
+    description: '',
+    requirements: '',
   });
-
   const [errors, setErrors] = useState({});
+  const [feedback, setFeedback] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validate = () => {
     const newErrors = {};
-    Object.entries(formData).forEach(([key, value]) => {
-      if (!value.trim()) {
-        newErrors[key] = `${key.charAt(0).toUpperCase() + key.slice(1)} is required`;
-      }
-    });
+    if (!formData.title.trim()) newErrors.title = 'Job title is required';
+    if (!formData.date.trim()) newErrors.date = 'Date is required';
+    if (!formData.time.trim()) newErrors.time = 'Time is required';
+    if (!formData.location.trim()) newErrors.location = 'Location is required';
+    if (!formData.payRate || Number(formData.payRate) <= 0) newErrors.payRate = 'Enter a valid pay rate';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  // Connect to backend with Authorization and auto-generate endTime
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-
-    try {
-      // Calculate endTime as +8 hours of startTime
-      const start = formData.time;
-      let endTime = start;
-      if (start) {
-        const [hour, minute] = start.split(':').map(Number);
-        const endHour = (hour + 8) % 24;
-        endTime = `${String(endHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-      }
-
-      const payload = {
-        title: formData.title,
-        date: formData.date,
-        startTime: formData.time,
-        endTime, // backend requires this
-        location: { street: formData.location },
-        payRate: formData.payRate
-      };
-
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('You must be logged in as an employer.');
-        return;
-      }
-
-      const { data } = await http.post('/shifts', payload);
-
-      alert('Shift created successfully!');
-      console.log('Server response:', data);
-      handleReset();
-
-    } catch (err) {
-      console.error(err);
-      alert(err.message || 'Error creating shift');
-    }
   };
 
   const handleReset = () => {
     setFormData({
       title: '',
-      location: '',
       date: '',
       time: '',
-      payRate: ''
+      location: '',
+      payRate: '',
+      description: '',
+      requirements: '',
     });
     setErrors({});
+    setFeedback('');
   };
 
-  // Inline styles unchanged
-  const styles = {
-    page: {
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '100vh',
-      background: '#fafafa',
-      fontFamily: 'Poppins, sans-serif',
-    },
-    content: {
-      flex: 1,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'stretch',
-    },
-    formSection: {
-      flex: 1,
-      padding: '50px',
-      background: '#fff',
-    },
-    formTitle: { fontSize: '28px', fontWeight: '600', marginBottom: '8px' },
-    formSubtitle: { fontSize: '14px', marginBottom: '30px', color: '#555' },
-    input: {
-      width: '100%',
-      padding: '12px 16px',
-      marginBottom: '20px',
-      border: '1px solid #ababab',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontFamily: 'Poppins, sans-serif',
-      outline: 'none',
-      backgroundColor: '#f2f2f2',
-    },
-    error: { fontSize: '13px', color: '#aa0028', margin: '-15px 0 15px' },
-    buttonRow: { display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '20px' },
-    primaryBtn: {
-      padding: '12px 30px',
-      background: '#274b93',
-      color: '#fff',
-      fontSize: '16px',
-      fontWeight: '500',
-      border: 'none',
-      borderRadius: '25px',
-      cursor: 'pointer',
-      fontFamily: 'Poppins, sans-serif',
-    },
-    secondaryBtn: {
-      padding: '12px 30px',
-      background: '#fff',
-      color: '#274b93',
-      border: '2px solid #274b93',
-      fontSize: '16px',
-      fontWeight: '500',
-      borderRadius: '25px',
-      cursor: 'pointer',
-      fontFamily: 'Poppins, sans-serif',
-    },
-    logoSection: {
-      flex: 1,
-      background: '#072261',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundSize: 'contain',
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: 'center',
-    },
-    logo: { maxWidth: '300px', maxHeight: '300px', objectFit: 'contain' },
-    footer: {
-      background: '#072261',
-      color: '#fff',
-      padding: '15px 40px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    footerLeft: { display: 'flex', alignItems: 'center', gap: '10px' },
-    footerLogo: { width: '26px', height: '26px' },
-    footerLinks: { display: 'flex', alignItems: 'center', gap: '15px' },
-    footerBtn: {
-      padding: '8px 18px',
-      background: '#274b93',
-      color: '#fff',
-      fontSize: '14px',
-      fontWeight: '500',
-      border: 'none',
-      borderRadius: '20px',
-      cursor: 'pointer',
-      fontFamily: 'Poppins, sans-serif',
-    },
-    profileIcon: {
-      width: '32px',
-      height: '32px',
-      borderRadius: '50%',
-      background: '#fff',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      cursor: 'pointer',
-    },
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setSubmitting(true);
+    setFeedback('');
+    try {
+      const [hour, minute] = formData.time.split(':').map(Number);
+      const endHour = (hour + 8) % 24;
+      const endTime = `${String(endHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+      const payload = {
+        title: formData.title,
+        date: formData.date,
+        startTime: formData.time,
+        endTime,
+        location: { street: formData.location },
+        payRate: Number(formData.payRate),
+        description: formData.description,
+        requirements: formData.requirements,
+      };
+
+      await http.post('/shifts', payload);
+      setFeedback('Shift created successfully');
+      handleReset();
+    } catch (err) {
+      const message = err?.response?.data?.message || 'Error creating shift';
+      setFeedback(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.content}>
-        <div style={styles.formSection}>
-          <h2 style={styles.formTitle}>Create Shift</h2>
-          <p style={styles.formSubtitle}>Post a new shift and connect with reliable staff.</p>
-          <form onSubmit={handleSubmit}>
-            <input
-              style={styles.input}
-              type="text"
-              name="title"
-              placeholder="Job Title*"
-              value={formData.title}
-              onChange={handleChange}
-            />
-            {errors.title && <p style={styles.error}>{errors.title}</p>}
+    <div className="create-shift-modal-backdrop">
+      <div className="create-shift-modal">
+        <div className="create-shift-card">
+          <header className="create-shift-header">
+            <div>
+              <p className="overline">Secure Shift</p>
+              <h1>Create Shift</h1>
+              <p className="subtitle">Post a new shift and connect with reliable staff. All fields are mandatory.</p>
+            </div>
+            <button className="close-btn" onClick={() => (onClose ? onClose() : navigate(-1))}>×</button>
+          </header>
 
-            <input
-              style={styles.input}
-              type="date"
-              name="date"
-              placeholder="Date*"
-              value={formData.date}
-              onChange={handleChange}
-            />
-            {errors.date && <p style={styles.error}>{errors.date}</p>}
+          <form className="create-shift-form" onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <div className="form-group full">
+                <label>Job Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="Job title"
+                  className={errors.title ? 'error' : ''}
+                />
+                {errors.title && <span className="error-text">{errors.title}</span>}
+              </div>
 
-            <input
-              style={styles.input}
-              type="time"
-              name="time"
-              placeholder="Time*"
-              value={formData.time}
-              onChange={handleChange}
-            />
-            {errors.time && <p style={styles.error}>{errors.time}</p>}
+              <div className="form-group">
+                <label>Date</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className={errors.date ? 'error' : ''}
+                />
+                {errors.date && <span className="error-text">{errors.date}</span>}
+              </div>
 
-            <input
-              style={styles.input}
-              type="text"
-              name="location"
-              placeholder="Location*"
-              value={formData.location}
-              onChange={handleChange}
-            />
-            {errors.location && <p style={styles.error}>{errors.location}</p>}
+              <div className="form-group">
+                <label>Time</label>
+                <input
+                  type="time"
+                  name="time"
+                  value={formData.time}
+                  onChange={handleChange}
+                  className={errors.time ? 'error' : ''}
+                />
+                {errors.time && <span className="error-text">{errors.time}</span>}
+              </div>
 
-            <input
-              style={styles.input}
-              type="number"
-              name="payRate"
-              placeholder="Pay rate*"
-              value={formData.payRate}
-              onChange={handleChange}
-            />
-            {errors.payRate && <p style={styles.error}>{errors.payRate}</p>}
+              <div className="form-group">
+                <label>Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="Location"
+                  className={errors.location ? 'error' : ''}
+                />
+                {errors.location && <span className="error-text">{errors.location}</span>}
+              </div>
 
-            <div style={styles.buttonRow}>
-              <button type="submit" style={styles.primaryBtn}>Post Shift</button>
-              <button type="button" style={styles.secondaryBtn} onClick={handleReset}>Clear / Reset</button>
+              <div className="form-group">
+                <label>Pay rate</label>
+                <input
+                  type="number"
+                  name="payRate"
+                  value={formData.payRate}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className={errors.payRate ? 'error' : ''}
+                />
+                {errors.payRate && <span className="error-text">{errors.payRate}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Enter description"
+                  rows={4}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Requirements</label>
+                <textarea
+                  name="requirements"
+                  value={formData.requirements}
+                  onChange={handleChange}
+                  placeholder="Enter requirements"
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            {feedback && <div className="feedback">{feedback}</div>}
+
+            <div className="actions">
+              <button type="submit" className="primary" disabled={submitting}>
+                {submitting ? 'Posting...' : 'Post Shift'}
+              </button>
+              <button type="button" className="secondary" onClick={handleReset}>
+                Clear / Reset
+              </button>
             </div>
           </form>
-        </div>
-        <div style={styles.logoSection}>
-          <img style={styles.logo} src="logo.svg" alt="Secure Shift Logo" style={{ width: '400px', height: 'auto' }} />
         </div>
       </div>
     </div>

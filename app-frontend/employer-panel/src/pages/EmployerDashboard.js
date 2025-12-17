@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
+import CreateShift from "./createShift";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -55,7 +55,7 @@ export default function EmployerDashboard() {
   const [view, setView] = useState("list"); // default list view
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
-  const navigate = useNavigate();   
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const shifts = useMemo(() => [
     { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Confirmed", tone: "confirmed" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
@@ -88,7 +88,7 @@ export default function EmployerDashboard() {
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-              onClick={() => navigate("/create-shift")}
+                onClick={() => setShowCreateModal(true)}
             >
               <IconPlus className="ss-plus" /> Create Shift
             </button>
@@ -117,7 +117,7 @@ export default function EmployerDashboard() {
 
               {/* Create Shift Card (only in grid view) */}
               {view === "grid" && (
-                <div className="ss-card ss-card--create" onClick={() => navigate("/create-shift")}>
+                <div className="ss-card ss-card--create" onClick={() => setShowCreateModal(true)}>
                   <div className="ss-card__createicon"><IconPlus /></div>
                   <div className="ss-card__createtext">Create Shift</div>
                 </div>
@@ -183,6 +183,12 @@ export default function EmployerDashboard() {
           <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(reviewScroller, 300)}>›</button>
         </div>
       </main>
+      {showCreateModal && (
+        <CreateShift
+          isModal
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
     </div>
   );
 }

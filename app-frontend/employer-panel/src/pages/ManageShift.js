@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import http from '../lib/http';
 
 // Map backend status to filter display
 const statusDisplayMap = {
@@ -26,13 +27,19 @@ const Sort = Object.freeze({
 const normalizeShift = (s) => ({
     id: s._id,
     title: s.title || "--",
-    // Compose dateTime string for sorting
+    date: s.date,
+    startTime: s.startTime,
+    endTime: s.endTime,
     dateTime: s.date && s.startTime ? `${s.date} ${s.startTime}` : s.date || "",
-    location: s.location 
-        ? `${s.location.street}, ${s.location.suburb}, ${s.location.state}` 
+    locationLabel: s.location 
+        ? [s.location.street, s.location.suburb, s.location.state].filter(Boolean).join(', ')
         : "--",
+    location: s.location || {},
     status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
-    price: s.price || "--"
+    payRate: s.payRate ?? s.price ?? "--",
+    urgency: s.urgency || 'normal',
+    field: s.field || '',
+    applicantCount: s.applicantCount ?? (Array.isArray(s.applicants) ? s.applicants.length : 0),
 });
 
 const ManageShift = () => {
@@ -44,32 +51,19 @@ const ManageShift = () => {
     const [selectedFilter, setSelectedFilter] = useState(Filter.All);
     const [sortBy, setSortBy] = useState(Sort.DateAsc);
     const [showSortModal, setShowSortModal] = useState(false);
+    const [selectedShift, setSelectedShift] = useState(null);
+    const [detailForm, setDetailForm] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [feedback, setFeedback] = useState('');
+    const [formErrors, setFormErrors] = useState({});
+    const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
     const itemsPerPage = 8;
 
     useEffect(() => {
     const fetchShifts = async () => {
         try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                setError("No token found. Please log in.");
-                setLoading(false);
-                return;
-            }
-            const res = await fetch("http://localhost:5000/api/v1/shifts", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                setError(`Failed to fetch shifts (${res.status}): ${text}`);
-                setLoading(false);
-                return;
-            }
-            const data = await res.json();
-            console.log("Raw API response:", data); // Debug
+            const { data } = await http.get('/shifts');
             let apiShifts;
             if (Array.isArray(data)) {
                 apiShifts = data;
@@ -80,11 +74,10 @@ const ManageShift = () => {
             } else {
                 apiShifts = [];
             }
-            console.log("Normalized shift array:", apiShifts); // Debug
             setShifts(apiShifts.map(normalizeShift));
         } catch (err) {
-            setError("Error fetching shifts.");
-            console.error(err); // Debug
+            const message = err?.response?.data?.message || 'Error fetching shifts.';
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -153,13 +146,115 @@ const ManageShift = () => {
         return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    const formatTime = (dateTimeString) => {
-        if (!dateTimeString) return "--";
-        const timePart = dateTimeString.split(' ')[1] || dateTimeString;
-        const [hour, minute] = timePart.split(":").map(Number);
-        if (isNaN(hour) || isNaN(minute)) return "--";
-        const endHour = (hour + 4) % 24;
-        return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} - ${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    const formatTimeRange = (start, end) => {
+        if (!start || !end) return "--";
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+        if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return "--";
+        return `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')} - ${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+    };
+
+    const openShiftModal = (shift) => {
+        setSelectedShift(shift);
+        setDetailForm({
+            title: shift.title || '',
+            date: shift.date ? shift.date.substring(0, 10) : '',
+            startTime: shift.startTime || '',
+            endTime: shift.endTime || '',
+            payRate: shift.payRate === "--" ? '' : shift.payRate ?? '',
+            street: shift.location?.street || '',
+            suburb: shift.location?.suburb || '',
+            state: shift.location?.state || '',
+            postcode: shift.location?.postcode || '',
+            field: shift.field || '',
+            urgency: shift.urgency || 'normal',
+        });
+        setIsEditing(false);
+        setFeedback('');
+    };
+
+    const closeShiftModal = () => {
+        setSelectedShift(null);
+        setDetailForm(null);
+        setIsEditing(false);
+        setSaving(false);
+        setFeedback('');
+    };
+
+    const handleDetailChange = (e) => {
+        const { name, value } = e.target;
+        setDetailForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const validateDetailForm = () => {
+        const errs = {};
+        if (!detailForm.title?.trim()) errs.title = 'Title required';
+        if (!detailForm.date?.trim()) errs.date = 'Date required';
+        if (!detailForm.startTime?.trim()) errs.startTime = 'Start time required';
+        if (!detailForm.endTime?.trim()) errs.endTime = 'End time required';
+        if (detailForm.payRate !== '' && Number(detailForm.payRate) < 0) errs.payRate = 'Pay rate must be positive';
+        setFormErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
+
+    const handleSaveShift = async () => {
+        if (!selectedShift || !detailForm) return;
+        if (!validateDetailForm()) return;
+        setSaving(true);
+        setFeedback('');
+        try {
+            const cleanedLocation = {
+                street: detailForm.street?.trim() || undefined,
+                suburb: detailForm.suburb?.trim() || undefined,
+                state: detailForm.state?.trim() || undefined,
+                postcode: detailForm.postcode?.trim() || undefined,
+            };
+            const hasLocation = Object.values(cleanedLocation).some(Boolean);
+            const payload = {
+                title: detailForm.title,
+                date: detailForm.date,
+                startTime: detailForm.startTime,
+                endTime: detailForm.endTime,
+                payRate: detailForm.payRate === '' ? undefined : Number(detailForm.payRate),
+                field: detailForm.field,
+                urgency: detailForm.urgency,
+                ...(hasLocation ? { location: cleanedLocation } : {}),
+            };
+            // optimistic update snapshot
+            setOptimisticSnapshot({ shifts, selectedShift });
+            const optimistic = { ...selectedShift, ...payload };
+            setShifts((prev) => prev.map((s) => s.id === selectedShift.id ? { ...s, ...optimistic } : s));
+            setFeedback('Saving...');
+
+            const { data } = await http.patch(`/shifts/${selectedShift.id}`, payload);
+            const updated = normalizeShift(data.shift || { ...selectedShift, ...payload });
+            setShifts((prev) => prev.map((s) => s.id === updated.id ? { ...s, ...updated } : s));
+            setSelectedShift(updated);
+            setDetailForm({
+                title: updated.title || '',
+                date: updated.date ? updated.date.substring(0, 10) : '',
+                startTime: updated.startTime || '',
+                endTime: updated.endTime || '',
+                payRate: updated.payRate === "--" ? '' : updated.payRate ?? '',
+                street: updated.location?.street || '',
+                suburb: updated.location?.suburb || '',
+                state: updated.location?.state || '',
+                postcode: updated.location?.postcode || '',
+                field: updated.field || '',
+                urgency: updated.urgency || 'normal',
+            });
+            setIsEditing(false);
+            setFeedback('Saved successfully');
+        } catch (err) {
+            const message = err?.response?.data?.message || 'Failed to update shift';
+            setFeedback(message);
+            if (optimisticSnapshot) {
+                setShifts(optimisticSnapshot.shifts);
+                setSelectedShift(optimisticSnapshot.selectedShift);
+            }
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -195,13 +290,13 @@ const ManageShift = () => {
                                 <h3 style={cardTitleStyle}>{shift.title}</h3>
                                 <div style={cardHeaderStyle}>
                                     <div style={getStatusTagStyle(shift.status)}>{shift.status}</div>
-                                    <div style={priceStyle}>${shift.price}</div>
+                                    <div style={priceStyle}>{shift.payRate !== "--" ? `$${shift.payRate}` : '--'}</div>
                                 </div>
                             </div>
                             <div style={cardDetailsStyle}>
                                 <div style={detailRowStyle}>
                                     <img src={"/ic-location.svg"} alt="Location" style={smallIconStyle} />
-                                    <span style={detailTextStyle}>{shift.location}</span>
+                                    <span style={detailTextStyle}>{shift.locationLabel}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
                                     <div style={detailRowStyle}>
@@ -210,10 +305,10 @@ const ManageShift = () => {
                                     </div>
                                     <div style={detailRowStyle}>
                                         <img src={"/ic-clock.svg"} alt="Time" style={smallIconStyle} />
-                                        <span style={detailTextStyle}>{formatTime(shift.dateTime)}</span>
+                                        <span style={detailTextStyle}>{formatTimeRange(shift.startTime, shift.endTime)}</span>
                                     </div>
                                 </div>
-                                <button style={viewDetailsButtonStyle}>View Details</button>
+                                <button style={viewDetailsButtonStyle} onClick={() => openShiftModal(shift)}>View Details</button>
                             </div>
                         </div>
                     );
@@ -236,6 +331,135 @@ const ManageShift = () => {
                     selectSortBy={selectSortBy}
                     setShowSortModal={setShowSortModal}
                 />
+            )}
+            {selectedShift && detailForm && (
+                <div style={detailModalOverlay} onClick={closeShiftModal}>
+                    <div style={detailModalContent} onClick={(e) => e.stopPropagation()}>
+                        <div style={detailModalHeader}>
+                            <div>
+                                <p style={detailModalOverline}>Secure Shift</p>
+                                <h2 style={detailModalTitle}>{isEditing ? 'Edit Shift' : 'Shift Details'}</h2>
+                                <p style={detailModalSubtitle}>Review and update shift fields. All fields are required.</p>
+                            </div>
+                            <button style={modalCloseButton} onClick={closeShiftModal}>×</button>
+                        </div>
+
+                        {feedback && <div style={feedbackStyle}>{feedback}</div>}
+
+                        <div style={detailGrid}>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Job Title</label>
+                                <input
+                                    name="title"
+                                    value={detailForm.title}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                    placeholder="Job title"
+                                />
+                                {formErrors.title && <span style={inlineError}>{formErrors.title}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Date</label>
+                                <input
+                                    type="date"
+                                    name="date"
+                                    value={detailForm.date}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                />
+                                {formErrors.date && <span style={inlineError}>{formErrors.date}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Start Time</label>
+                                <input
+                                    type="time"
+                                    name="startTime"
+                                    value={detailForm.startTime}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                />
+                                {formErrors.startTime && <span style={inlineError}>{formErrors.startTime}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>End Time</label>
+                                <input
+                                    type="time"
+                                    name="endTime"
+                                    value={detailForm.endTime}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                />
+                                {formErrors.endTime && <span style={inlineError}>{formErrors.endTime}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Location</label>
+                                <input
+                                    name="street"
+                                    value={detailForm.street}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                    placeholder="Street"
+                                />
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Pay Rate</label>
+                                <input
+                                    type="number"
+                                    name="payRate"
+                                    value={detailForm.payRate}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                    placeholder="0.00"
+                                />
+                                {formErrors.payRate && <span style={inlineError}>{formErrors.payRate}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Field</label>
+                                <input
+                                    name="field"
+                                    value={detailForm.field}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                    placeholder="e.g. Security"
+                                />
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Urgency</label>
+                                <select
+                                    name="urgency"
+                                    value={detailForm.urgency}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                >
+                                    <option value="normal">Normal</option>
+                                    <option value="priority">Priority</option>
+                                    <option value="last-minute">Last-minute</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style={detailActions}>
+                            {!isEditing ? (
+                                <button style={primaryButton} onClick={() => setIsEditing(true)}>Edit Shift</button>
+                            ) : (
+                                <>
+                                    <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>
+                                        {saving ? 'Saving...' : 'Save changes'}
+                                    </button>
+                                    <button style={secondaryButton} onClick={() => setIsEditing(false)}>Cancel edit</button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -668,4 +892,141 @@ const activeSortOptionStyle = {
 const checkmarkStyle = {
     color: '#274b93',
     fontWeight: 'bold',
+};
+
+// Detail modal styles (aligned to create shift design)
+const detailModalOverlay = {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.45)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1100,
+    padding: '20px',
+};
+
+const detailModalContent = {
+    background: '#fff',
+    borderRadius: '14px',
+    width: 'min(960px, 100%)',
+    padding: '28px 32px 32px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+    fontFamily: 'Poppins, sans-serif',
+};
+
+const detailModalHeader = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '16px',
+    alignItems: 'flex-start',
+    marginBottom: '12px',
+};
+
+const detailModalOverline = {
+    margin: 0,
+    color: '#566074',
+    fontSize: '12px',
+    letterSpacing: '0.4px',
+    fontWeight: 600,
+};
+
+const detailModalTitle = {
+    margin: '4px 0',
+    fontSize: '22px',
+    fontWeight: 700,
+    color: '#1d1f2e',
+};
+
+const detailModalSubtitle = {
+    margin: 0,
+    color: '#6b7280',
+    fontSize: '14px',
+};
+
+const modalCloseButton = {
+    background: '#f3f4f6',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    width: '36px',
+    height: '36px',
+    fontSize: '22px',
+    cursor: 'pointer',
+    color: '#374151',
+};
+
+const detailGrid = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '16px',
+    marginTop: '16px',
+};
+
+const detailField = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+};
+
+const detailLabel = {
+    fontSize: '13px',
+    color: '#374151',
+    fontWeight: 600,
+};
+
+const inputStyle = {
+    width: '100%',
+    padding: '12px 14px',
+    borderRadius: '10px',
+    border: '1px solid #d1d5db',
+    background: '#f3f4f6',
+    fontSize: '14px',
+    color: '#111827',
+    outline: 'none',
+};
+
+const detailActions = {
+    marginTop: '20px',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'flex-end',
+};
+
+const primaryButton = {
+    backgroundColor: '#274b93',
+    color: 'white',
+    border: 'none',
+    borderRadius: '20px',
+    padding: '12px 24px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+};
+
+const secondaryButton = {
+    backgroundColor: 'white',
+    color: '#d14343',
+    border: '1px solid #d14343',
+    borderRadius: '20px',
+    padding: '12px 20px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+};
+
+const feedbackStyle = {
+    marginTop: '8px',
+    marginBottom: '8px',
+    padding: '10px 12px',
+    borderRadius: '10px',
+    backgroundColor: '#f8fafc',
+    color: '#0f172a',
+    border: '1px solid #e2e8f0',
+    fontSize: '13px',
+};
+
+const inlineError = {
+    color: '#d14343',
+    fontSize: '12px',
+    marginTop: '2px',
 };
