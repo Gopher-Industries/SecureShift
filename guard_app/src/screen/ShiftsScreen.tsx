@@ -292,20 +292,28 @@ function CalendarMonth<T extends { date: string }>({
   return (
     <View style={s.calWrap}>
       <View style={s.calHeader}>
-        <TouchableOpacity onPress={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))}>
+        <TouchableOpacity
+          onPress={() =>
+            setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))
+          }
+        >
           <Text style={s.calNav}>‹</Text>
         </TouchableOpacity>
 
         <Text style={s.calTitle}>{monthLabel}</Text>
 
-        <TouchableOpacity onPress={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))}>
+        <TouchableOpacity
+          onPress={() =>
+            setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))
+          }
+        >
           <Text style={s.calNav}>›</Text>
         </TouchableOpacity>
       </View>
 
       <View style={s.calWeekRow}>
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d,i) => (
-          <Text key={$(d)-$(i) } style={s.calWeekTxt}>
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+          <Text key={`${d}-${i}`} style={s.calWeekTxt}>
             {d}
           </Text>
         ))}
@@ -322,11 +330,7 @@ function CalendarMonth<T extends { date: string }>({
             <TouchableOpacity
               key={key}
               onPress={() => onSelectDate(d)}
-              style={[
-                s.calCell,
-                !inMonth && s.calCellDim,
-                isSelected && s.calCellSelected,
-              ]}
+              style={[s.calCell, !inMonth && s.calCellDim, isSelected && s.calCellSelected]}
             >
               <Text style={[s.calDay, !inMonth && s.calDayDim, isSelected && s.calDaySelected]}>
                 {d.getDate()}
@@ -401,7 +405,7 @@ function AppliedTab() {
         q={q}
         setQ={setQ}
         right={
-          <View style={{ marginLeft: 8 }}>
+          <View style={s.segmentWrap}>
             <Segment value={mode} onChange={setMode} />
           </View>
         }
@@ -411,7 +415,11 @@ function AppliedTab() {
 
       {mode === 'calendar' ? (
         <>
-          <CalendarMonth rows={filtered} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <CalendarMonth
+            rows={filtered}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
 
           <Text style={s.sectionLabel}>
             {selectedDate.toLocaleDateString()} • {listForSelectedDay.length} shift(s)
@@ -505,7 +513,7 @@ function CompletedTab() {
         q={q}
         setQ={setQ}
         right={
-          <View style={{ marginLeft: 8 }}>
+          <View style={s.segmentWrap}>
             <Segment value={mode} onChange={setMode} />
           </View>
         }
@@ -515,7 +523,11 @@ function CompletedTab() {
 
       {mode === 'calendar' ? (
         <>
-          <CalendarMonth rows={filtered} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <CalendarMonth
+            rows={filtered}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
 
           <Text style={s.sectionLabel}>
             {selectedDate.toLocaleDateString()} • {listForSelectedDay.length} shift(s)
@@ -574,6 +586,8 @@ const s = StyleSheet.create({
 
   searchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   search: { flex: 1, backgroundColor: '#fff', padding: 10, borderRadius: 8 },
+
+  segmentWrap: { marginLeft: 8 },
 
   segment: {
     flexDirection: 'row',

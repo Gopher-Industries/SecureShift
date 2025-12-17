@@ -1,14 +1,5 @@
 // guard_app/src/screen/AvailabilityScreen.tsx
 
-// ✅ DEV MOCK TO BYPASS BACKEND
-const DEV_MOCK_AVAILABILITY = __DEV__ && true;
-
-// IMPORTANT: days must match WEEK_DAYS values (full names), because the UI checks days.includes(day)
-const mockAvailability = {
-  days: ['Monday', 'Wednesday'],
-  timeSlots: ['Monday 09:00 - 17:00', 'Wednesday 10:00 - 14:00'],
-};
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 
@@ -16,7 +7,22 @@ import { getMe } from '../api/auth';
 import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
 import AddAvailabilityModal from '../components/AddAvailabilityModal';
 
+/* ✅ DEV MOCK TO BYPASS BACKEND */
+const DEV_MOCK_AVAILABILITY = __DEV__ && true;
+
+// IMPORTANT: days must match WEEK_DAYS values (full names), because the UI checks days.includes(day)
+const mockAvailability: { days: string[]; timeSlots: string[] } = {
+  days: ['Monday', 'Wednesday'],
+  timeSlots: ['Monday 09:00 - 17:00', 'Wednesday 10:00 - 14:00'],
+};
+
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function extractTimeSlots(data: unknown): string[] {
+  if (!data || typeof data !== 'object') return [];
+  const maybe = (data as { timeSlots?: unknown }).timeSlots;
+  return Array.isArray(maybe) ? maybe.filter((x): x is string => typeof x === 'string') : [];
+}
 
 export default function AvailabilityScreen() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -34,15 +40,6 @@ export default function AvailabilityScreen() {
         setLoading(true);
         setError(null);
 
-      // ✅ FORCE MOCK: no backend calls at all
-if (DEV_MOCK_AVAILABILITY) {
-  setUserId('dev-user');
-  setDays(mockAvailability.days);
-  setTimeSlots(mockAvailability.timeSlots);
-  setLoading(false);
-  return;
-}
-        
         // ✅ MOCK MODE: never call backend
         if (DEV_MOCK_AVAILABILITY) {
           setUserId('dev-user');
@@ -51,10 +48,9 @@ if (DEV_MOCK_AVAILABILITY) {
           return;
         }
 
-        // ✅ REAL MODE: call backend
+        // ✅ REAL MODE
         const me = await getMe();
         const id = me?._id ?? me?.id;
-
         if (!id) throw new Error('Unable to determine user ID');
 
         setUserId(id);
@@ -62,7 +58,7 @@ if (DEV_MOCK_AVAILABILITY) {
         const data = await getAvailability(id);
         if (data) {
           setDays(Array.isArray(data.days) ? data.days : []);
-          setTimeSlots(Array.isArray((data as any).timeSlots) ? (data as any).timeSlots : []);
+          setTimeSlots(extractTimeSlots(data));
         }
       } catch (e) {
         console.error(e);
@@ -161,16 +157,18 @@ if (DEV_MOCK_AVAILABILITY) {
 
       <Text style={styles.sectionTitle}>Time slots</Text>
 
-      {timeSlots.length === 0 && <Text style={styles.helperTextMuted}>No time slots added yet.</Text>}
-
-      {timeSlots.map((slot) => (
-        <View key={slot} style={styles.slotRow}>
-          <Text style={styles.slotItem}>• {slot}</Text>
-          <TouchableOpacity onPress={() => handleRemoveSlot(slot)} style={styles.removeButton}>
-            <Text style={styles.removeButtonText}>Remove</Text>
-          </TouchableOpacity>
-        </View>
-      ))}
+      {timeSlots.length === 0 ? (
+        <Text style={styles.helperTextMuted}>No time slots added yet.</Text>
+      ) : (
+        timeSlots.map((slot) => (
+          <View key={slot} style={styles.slotRow}>
+            <Text style={styles.slotItem}>• {slot}</Text>
+            <TouchableOpacity onPress={() => handleRemoveSlot(slot)} style={styles.removeButton}>
+              <Text style={styles.removeButtonText}>Remove</Text>
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
 
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.primaryButton} onPress={() => setModalVisible(true)}>
