@@ -1,12 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -57,7 +50,7 @@ export default function DocumentsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadDocuments();
-    }, [loadDocuments])
+    }, [loadDocuments]),
   );
 
   // Pick and upload document
@@ -102,7 +95,7 @@ export default function DocumentsScreen() {
         const allDocs: UploadedDocument[] = storedDocs ? JSON.parse(storedDocs) : [];
         allDocs.push(newDocument);
 
-        await AsyncStorage.setItem('uploadedDocuments', JSON.stringify(allDocs));
+        await AsyncStorage.setItem('uploadedDocuments', JSON.stringify(allDocs));;
 
         const sortedDocs = allDocs.sort(
           (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()

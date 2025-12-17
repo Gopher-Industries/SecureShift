@@ -21,7 +21,7 @@ import { formatDate } from '../utils/date';
 
 const { width } = Dimensions.get('window');
 
-/* -------------------- ✅ DEV MOCK (no backend) -------------------- */
+/* -------------------- DEV MOCK (no backend) -------------------- */
 const DEV_MOCK_SHIFTS = __DEV__ && true;
 
 type AppliedShift = {
@@ -198,12 +198,7 @@ function ShiftDetailsModal({
   if (!shift) return null;
 
   const status = 'status' in shift ? shift.status : 'Completed';
-  const statusColor =
-    status === 'Confirmed'
-      ? '#10B981'
-      : status === 'Pending'
-      ? '#3B82F6'
-      : '#6B7280';
+  const statusColor = status === 'Confirmed' ? '#10B981' : status === 'Pending' ? '#3B82F6' : '#6B7280';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -352,19 +347,11 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
               onPress={() => hasShifts && onShiftPress(dayShifts[0])}
               disabled={!hasShifts}
             >
-              <Text style={[s.calDayNumber, !inMonth && s.calDayNumberDim]}>
-                {d.getDate()}
-              </Text>
+              <Text style={[s.calDayNumber, !inMonth && s.calDayNumberDim]}>{d.getDate()}</Text>
               {hasShifts && (
                 <View style={s.calShiftIndicators}>
                   {dayShifts.slice(0, 3).map((shift, i) => (
-                    <View
-                      key={i}
-                      style={[
-                        s.calShiftDot,
-                        { backgroundColor: getStatusColor(shift.status) },
-                      ]}
-                    />
+                    <View key={i} style={[s.calShiftDot, { backgroundColor: getStatusColor(shift.status) }]} />
                   ))}
                 </View>
               )}
@@ -401,12 +388,7 @@ function ShiftCard({
   onPress?: () => void;
 }) {
   const status = 'status' in shift ? shift.status : 'Completed';
-  const statusColor =
-    status === 'Confirmed'
-      ? '#10B981'
-      : status === 'Pending'
-      ? '#3B82F6'
-      : '#6B7280';
+  const statusColor = status === 'Confirmed' ? '#10B981' : status === 'Pending' ? '#3B82F6' : '#6B7280';
 
   return (
     <TouchableOpacity style={s.card} onPress={onPress}>
@@ -452,7 +434,7 @@ function ViewToggle({
   onViewChange,
 }: {
   view: 'list' | 'calendar';
-  onViewChange: (view: 'list' | 'calendar') => void;
+  onViewChange: (v: 'list' | 'calendar') => void;
 }) {
   return (
     <View style={s.viewToggle}>
@@ -504,7 +486,7 @@ function AppliedTab() {
   useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
 
   const filtered = rows.filter((r) =>
-    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase())
+    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
   return (
@@ -576,7 +558,7 @@ function CompletedTab() {
   useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
 
   const filtered = rows.filter((r) =>
-    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase())
+    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
   return (
@@ -599,7 +581,7 @@ function CompletedTab() {
 
       {view === 'calendar' ? (
         <CalendarView
-          shifts={filtered.map(s => ({ ...s, status: 'Completed' }))}
+          shifts={filtered.map((s) => ({ ...s, status: 'Completed' }))}
           onShiftPress={setSelectedShift}
         />
       ) : (
