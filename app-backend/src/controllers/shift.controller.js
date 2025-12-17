@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
+import Availability from '../models/Availability.js'; // Import added for filtering
 import { ACTIONS } from "../middleware/logger.js";
 import User from "../models/User.js";
 import Message from "../models/Message.js";
@@ -7,6 +8,13 @@ import Message from "../models/Message.js";
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
 const isValidHHMM = (s) => typeof s === 'string' && HHMM.test(s);
+
+// Helper: Convert HH:MM string to minutes for comparison
+const toMinutes = (str) => {
+  if (!str) return 0;
+  const [h, m] = str.split(':').map(Number);
+  return h * 60 + m;
+};
 
 // Returns true if now is at/after the shift start datetime
 const isInPastOrStarted = (shift) => {
@@ -86,7 +94,8 @@ export const createShift = async (req, res) => {
 };
 
 /**
- * GET /api/v1/shifts  (dynamic by role)
+ * GET /api/v1/shifts
+ * UPDATED: Filters by Guard Availability
  */
 export const listAvailableShifts = async (req, res) => {
   try {
@@ -102,8 +111,20 @@ export const listAvailableShifts = async (req, res) => {
     const withApplicantsOnly = String(req.query.withApplicantsOnly) === 'true';
 
     let query = {};
+    let availability = null;
+
     if (role === 'guard') {
-      const today = new Date(); today.setHours(0,0,0,0);
+      // 1. Fetch Guard Availability first
+      availability = await Availability.findOne({ user: uid });
+      
+      // Strict filtering: If guard has NO availability set, return empty list immediately
+      if (!availability) {
+         return res.json({ page, limit, total: 0, items: [] });
+      }
+
+      const today = new Date(); 
+      today.setHours(0,0,0,0);
+      
       query = {
         status: { $in: ['open', 'applied'] },
         createdBy: { $ne: uid },
@@ -127,54 +148,92 @@ export const listAvailableShifts = async (req, res) => {
     if (urgency && ['normal','priority','last-minute'].includes(urgency)) {
       query.urgency = urgency;
     }
-    if (status) {
-      const allowedStatuses = ["open", "applied", "assigned", "completed"];
-      if (allowedStatuses.includes(status.toLowerCase())) {
-        query.status = status.toLowerCase();
-      }
-    }
-    if (date) {
-      const d = new Date(date);
-      if (!isNaN(d)) {
-        const start = new Date(d); start.setHours(0,0,0,0);
-        const end   = new Date(d); end.setHours(23,59,59,999);
-        query.date = { $gte: start, $lte: end };
-      }
-    }
-    if (location && location.trim()) {
-      const rx = new RegExp(location.trim(), "i");
-      query.$or = [
-        { "location.street": { $regex: rx } },
-        { "location.suburb": { $regex: rx } },
-        { "location.state": { $regex: rx } },
-        { "location.postcode": { $regex: rx } },
-      ];
-    } 
-    if (req.query.guard && mongoose.isValidObjectId) {
-        query.assignedGuard = req.query.guard;
-      }   
-    let sortOrder = { date: 1, startTime: 1 };
-    if (req.query.sort === "desc") {
-      sortOrder = { date: -1, startTime: -1 };
-    }
-    const findQ = Shift.find(query)
-      .sort(sortOrder)
-      .skip(skip).limit(limit)
-      .populate('createdBy', 'name');
+if (status) {
+  const allowedStatuses = ["open", "applied", "assigned", "completed"];
+  if (allowedStatuses.includes(status.toLowerCase())) {
+    query.status = status.toLowerCase();
+  }
+}
+
+if (date) {
+  const d = new Date(date);
+  if (!isNaN(d)) {
+    const start = new Date(d); start.setHours(0,0,0,0);
+    const end   = new Date(d); end.setHours(23,59,59,999);
+    query.date = { $gte: start, $lte: end };
+  }
+}
+
+if (location && location.trim()) {
+  const rx = new RegExp(location.trim(), "i");
+  query.$or = [
+    { "location.street": { $regex: rx } },
+    { "location.suburb": { $regex: rx } },
+    { "location.state": { $regex: rx } },
+    { "location.postcode": { $regex: rx } },
+  ];
+}
+
+if (req.query.guard && mongoose.isValidObjectId(req.query.guard)) {
+  query.assignedGuard = req.query.guard;
+}
+
+let sortOrder = { date: 1, startTime: 1 };
+if (req.query.sort === "desc") {
+  sortOrder = { date: -1, startTime: -1 };
+}
+
+const findQ = Shift.find(query)
+  .sort(sortOrder)
+  .skip(skip)
+  .limit(limit)
+  .populate('createdBy', 'name');
 
     if (role === 'employer' || role === 'admin') {
       findQ.populate('applicants', 'name email');
     }
 
-    const [docs, total] = await Promise.all([findQ.lean(), Shift.countDocuments(query)]);
+    let docs = await findQ.lean();
+
+    // --- LOGIC CHANGE: Apply Availability Filter (Guard Only) ---
+    if (role === 'guard' && availability) {
+        docs = docs.filter(shift => {
+            // 1. Check Day of Week (e.g. "Monday")
+            const shiftDate = new Date(shift.date);
+            const shiftDayName = shiftDate.toLocaleDateString('en-US', { weekday: 'long' });
+            
+            if (!availability.days.includes(shiftDayName)) {
+                return false; // Guard doesn't work this day
+            }
+
+            // 2. Check Time Slot (Shift must be fully within a slot)
+            const shiftStart = toMinutes(shift.startTime);
+            const shiftEnd = toMinutes(shift.endTime);
+
+            const hasValidSlot = availability.timeSlots.some(slot => {
+                const [slotStartStr, slotEndStr] = slot.split('-');
+                const slotStart = toMinutes(slotStartStr);
+                const slotEnd = toMinutes(slotEndStr);
+                
+                // Shift starts after slot starts AND Shift ends before slot ends
+                return shiftStart >= slotStart && shiftEnd <= slotEnd;
+            });
+
+            return hasValidSlot;
+        });
+    }
+
+    // Pagination (manual slice since we filtered in memory)
+    const total = docs.length;
+    const paginatedItems = docs.slice(skip, skip + limit);
 
     const items = (role === 'employer' || role === 'admin')
-      ? docs.map(d => ({
+      ? paginatedItems.map(d => ({
           ...d,
           applicantCount: Array.isArray(d.applicants) ? d.applicants.length : 0,
           hasApplicants: Array.isArray(d.applicants) && d.applicants.length > 0,
         }))
-      : docs;
+      : paginatedItems;
 
     res.json({ page, limit, total, items });
   } catch (e) {
@@ -183,7 +242,7 @@ export const listAvailableShifts = async (req, res) => {
 };
 
 /**
- * PUT /api/v1/shifts/:id/apply  (guard only)
+ * PUT /api/v1/shifts/:id/apply
  */
 export const applyForShift = async (req, res) => {
   try {
@@ -223,7 +282,12 @@ export const applyForShift = async (req, res) => {
     });
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, { shiftId: shift._id }, shift._id);
+    
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, {
+        shiftId: shift._id
+        });
+    }
     return res.json({ message: 'Application submitted', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
@@ -231,7 +295,7 @@ export const applyForShift = async (req, res) => {
 };
 
 /**
- * PUT /api/v1/shifts/:id/approve  (employer/admin)
+ * PUT /api/v1/shifts/:id/approve
  */
 export const approveShift = async (req, res) => {
   try {
@@ -257,7 +321,7 @@ export const approveShift = async (req, res) => {
       return res.status(400).json({ message: 'Guard did not apply for this shift' });
     }
 
-    shift.assignedGuard = guardId;
+    shift.assignedGuard = guardId; 
     shift.status = 'assigned';
     if (!keepOthers) shift.applicants = [guardId];
 
@@ -268,11 +332,14 @@ export const approveShift = async (req, res) => {
     });
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPROVED, {
-      shiftId: shift._id,
-      approvedGuardId: guardId,
-      keepOthers
-    }, shift._id);
+    
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.SHIFT_APPROVED, {
+        shiftId: shift._id,
+        approvedGuardId: guardId,
+        keepOthers
+        });
+    }
 
     return res.json({ message: 'Guard approved', shift });
   } catch (e) {
@@ -350,7 +417,12 @@ export const completeShift = async (req, res) => {
     });
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, { shiftId: shift._id }, shift._id);
+    
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, {
+        shiftId: shift._id 
+        });
+    }
 
     return res.json({ message: 'Shift completed', shift });
   } catch (e) {
@@ -372,7 +444,7 @@ export const getMyShifts = async (req, res) => {
       query = { $or: [{ applicants: uid }, { acceptedBy: uid }] };
     } else if (role === 'employer') {
       query = { createdBy: uid };
-    }
+    } 
 
     if (pastOnly) query = { ...query, status: 'completed' };
 
@@ -431,11 +503,14 @@ export const rateShift = async (req, res) => {
     }
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.RATINGS_SUBMITTED, {
-      shiftId: shift._id,
-      rating: r,
-      role: req.user.role
-    }, shift._id);
+    
+    if(req.audit) {
+        await req.audit.log(req.user._id, ACTIONS.RATINGS_SUBMITTED, {
+        shiftId: shift._id,
+        rating: r,
+        role: req.user.role
+        });
+    }
 
     return res.json({ message: 'Rating saved', shift });
   } catch (e) {
