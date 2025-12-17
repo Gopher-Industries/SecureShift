@@ -53,7 +53,7 @@ const normalizeShift = (s) => {
             ? [s.location.street, s.location.suburb, s.location.state].filter(Boolean).join(", ")
             : "--",
         status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
-        price: s.payRate ?? "--",
+        price: s.payRate != null ? `${s.payRate} p/h` : "--",
         description: s.description || "",
         requirements: s.requirements || [],
     };
