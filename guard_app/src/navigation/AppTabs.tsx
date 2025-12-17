@@ -5,10 +5,12 @@ import AvailabilityScreen from '../screen/AvailabilityScreen';
 import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
 import ShiftsScreen from '../screen/ShiftsScreen';
+import DocumentsScreen from '../screen/DocumentsScreen';
 
 export type AppTabParamList = {
   Home: undefined;
   Shifts: undefined;
+  Documents: undefined;
   Availability: undefined;
   Profile: undefined;
 };
@@ -27,6 +29,8 @@ export default function AppTabs() {
             iconName = 'home-outline';
           } else if (route.name === 'Shifts') {
             iconName = 'briefcase-outline';
+          } else if (route.name === 'Documents') {
+            iconName = 'document-text-outline';
           } else if (route.name === 'Availability') {
             iconName = 'calendar-outline';
           } else if (route.name === 'Profile') {
@@ -41,10 +45,8 @@ export default function AppTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Shifts" component={ShiftsScreen} />
-
-      {/* ✅ Your new Availability tab */}
+      <Tab.Screen name="Documents" component={DocumentsScreen} />
       <Tab.Screen name="Availability" component={AvailabilityScreen} />
-
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
