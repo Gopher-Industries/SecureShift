@@ -6,7 +6,7 @@ services:
       context: ./app-backend
     container_name: secureshift-backend
     ports:
-      - "5000:5000"
+      - "5001:5000"
     env_file:
       - ./app-backend/.env
     depends_on:
