@@ -53,16 +53,13 @@ export default function MessagesScreen() {
       text: input.trim(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
-    setMessages(prev => [...prev, newMsg]);
+    setMessages((prev) => [...prev, newMsg]);
     setInput('');
   };
 
   const renderMessage = ({ item }: { item: Message }) => (
     <View
-      style={[
-        styles.bubble,
-        item.from === 'guard' ? styles.bubbleGuard : styles.bubbleEmployer,
-      ]}
+      style={[styles.bubble, item.from === 'guard' ? styles.bubbleGuard : styles.bubbleEmployer]}
     >
       <Text style={styles.msgText}>{item.text}</Text>
       <Text style={styles.msgTime}>{item.time}</Text>
@@ -83,7 +80,7 @@ export default function MessagesScreen() {
 
         <FlatList
           data={messages}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           renderItem={renderMessage}
           contentContainerStyle={styles.chat}
         />
