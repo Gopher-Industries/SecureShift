@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EmployerDashboard.css";
 import http from "../lib/http";
@@ -6,7 +6,16 @@ import http from "../lib/http";
 /* ---------------- ICONS ---------------- */
 const IconCalendar = () => (
   <svg viewBox="0 0 24 24">
-    <rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+    <rect
+      x="3"
+      y="4"
+      width="18"
+      height="18"
+      rx="3"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
     <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" />
     <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" />
     <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" />
@@ -34,14 +43,13 @@ export default function EmployerDashboard() {
   const [shifts, setShifts] = useState([]);
 
   /* ---------------- HELPERS ---------------- */
-  const formatTime = (start, end) =>
-    start && end ? `${start} - ${end}` : "N/A";
+  const formatTime = (start, end) => (start && end ? `${start} - ${end}` : "N/A");
 
-  /* ---------------- FETCH SHIFTS ---------------- */
-  async function fetchShifts() {
+  /* ---------------- FETCH SHIFTS (memoized) ---------------- */
+  const fetchShifts = useCallback(async () => {
     try {
       const { data } = await http.get("/shifts");
-      const list = data.items || [];
+      const list = data?.items || [];
 
       setShifts(
         list.map((s) => ({
@@ -49,7 +57,7 @@ export default function EmployerDashboard() {
           title: s.title,
           venue: s.location?.street || s.location?.suburb || "Unknown",
           rate: s.payRate || 0,
-          date: new Date(s.date).toLocaleDateString(),
+          date: s.date ? new Date(s.date).toLocaleDateString() : "N/A",
           time: formatTime(s.startTime, s.endTime),
           status: (s.status || "open").toLowerCase(),
           applicantCount: s.applicantCount || 0,
@@ -58,13 +66,18 @@ export default function EmployerDashboard() {
     } catch (err) {
       console.error("❌ ERROR FETCHING SHIFTS:", err);
     }
-  }
+  }, []);
 
+  /* ---------------- AUTO REFRESH ---------------- */
   useEffect(() => {
     fetchShifts();
-    const interval = setInterval(fetchShifts, 8000);
+
+    const interval = setInterval(() => {
+      fetchShifts();
+    }, 8000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchShifts]);
 
   /* ---------------- STATUS COUNTS (LIVE) ---------------- */
   const openCount = shifts.filter((s) => s.status === "open").length;
@@ -74,13 +87,8 @@ export default function EmployerDashboard() {
 
   /* ---------------- ANALYTICS ---------------- */
   const totalShifts = shifts.length;
-  const filledShifts = shifts.filter(
-    (s) => s.status === "assigned" || s.status === "completed"
-  );
-  const fillRate =
-    totalShifts === 0
-      ? 0
-      : Math.round((filledShifts.length / totalShifts) * 100);
+  const filledShifts = shifts.filter((s) => s.status === "assigned" || s.status === "completed");
+  const fillRate = totalShifts === 0 ? 0 : Math.round((filledShifts.length / totalShifts) * 100);
 
   const timelineSteps = ["open", "applied", "assigned", "completed"];
 
@@ -134,33 +142,27 @@ export default function EmployerDashboard() {
                 <IconClock /> {s.time}
               </div>
 
-              <div className={`status-badge badge-${s.status}`}>
-                {s.status}
-              </div>
+              <div className={`status-badge badge-${s.status}`}>{s.status}</div>
 
               {/* ---------------- HOVER CARD ---------------- */}
               <div className="shift-hover-card">
-              <div className="hover-meta">{s.venue}</div>
+                <div className="hover-meta">{s.venue}</div>
 
-              <div className="hover-status">
-              {timelineSteps.map((step) => (
-              <span
-              key={step}
-              className={s.status === step ? "active" : ""}
-            >
-            {step}
-                </span>
-           ))}
-            </div>
+                <div className="hover-status">
+                  {timelineSteps.map((step) => (
+                    <span key={step} className={s.status === step ? "active" : ""}>
+                      {step}
+                    </span>
+                  ))}
+                </div>
 
-              <button
-                className="hover-btn"
-                onClick={() => navigate(`/shift/${s.id}/applicants`)}
-              >
-                View Applicants ({s.applicantCount})
-              </button>
-            </div>
-
+                <button
+                  className="hover-btn"
+                  onClick={() => navigate(`/shift/${s.id}/applicants`)}
+                >
+                  View Applicants ({s.applicantCount})
+                </button>
+              </div>
             </div>
           ))}
         </div>
