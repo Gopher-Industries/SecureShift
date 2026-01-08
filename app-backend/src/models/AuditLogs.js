@@ -7,7 +7,6 @@ const AuditLogSchema = new mongoose.Schema(
     action: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     metadata: { type: Object },
-    shift: { type: mongoose.Schema.Types.ObjectId, ref: "Shift", required: false },
   },
   { versionKey: false }
 );

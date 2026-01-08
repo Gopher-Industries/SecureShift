@@ -12,20 +12,6 @@ export const getMyProfile = async (req, res) => {
 };
 
 /**
- * @desc    Admin: List all users
- * @route   GET /api/v1/users
- * @access  Private/Admins
- */
-export const listUsers = async (req, res) => {
-  try {
-    const users = await User.find().select('-password');
-    res.json({ total: users.length, users });
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-};
-
-/**
  * @desc    Update logged-in user's profile
  * @route   PUT /api/v1/users/me
  * @access  Private (all roles)
@@ -88,27 +74,4 @@ export const adminUpdateUserProfile = async (req, res) => {
 export const getAllGuards = async (req, res) => {
   const guards = await User.find({ role: 'guard' }).select('-password');
   res.json(guards);
-};
-
-/**
- * @desc    Admin: Delete a user
- * @route   DELETE /api/v1/users/:userId
- * @access  Private (Admin, Super Admin)
- */
-export const deleteUser = async (req, res) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    await req.audit?.log(req.user.id, ACTIONS.USER_DELETED, {
-      deletedUserId: req.params.userId,
-      deletedUserEmail: user.email,
-    });
-
-    return res.json({ message: 'User deleted successfully' });
-  } catch (e) {
-    return res.status(500).json({ message: e.message });
-  }
 };

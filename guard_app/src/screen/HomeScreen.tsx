@@ -1,10 +1,9 @@
 /* eslint-disable react-native/no-inline-styles */
 // src/screen/HomeScreen.tsx
-
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   Dimensions,
   RefreshControl,
@@ -33,9 +32,6 @@ type Shift = {
 };
 type Metrics = { confirmed: number; pending: number; earnings: number; rating: number };
 
-// ✅ FORCE mock mode so Home never calls backend
-const DEV_MOCK_HOME = true;
-
 const NAVY = '#244B7A';
 const BORDER = '#E7EBF2';
 const MUTED = '#5C667A';
@@ -55,7 +51,6 @@ function minutesBetween(startHHMM: string, endHHMM: string): number {
   if (duration === 0) duration = 1440;
   return duration;
 }
-
 function moneyForShift(s: Shift): string | undefined {
   if (!s.payRate || !s.startTime || !s.endTime) return undefined;
   const hours = minutesBetween(s.startTime, s.endTime) / 60;
@@ -147,23 +142,6 @@ export default function HomeScreen() {
   }, [navigation]);
 
   const load = async () => {
-    // ✅ MOCK MODE: never call backend
-    if (DEV_MOCK_HOME) {
-      const mockUser: User = { name: 'Guard', rating: 4.7 };
-
-      setUser(mockUser);
-      setMetrics({
-        confirmed: 0,
-        pending: 0,
-        earnings: 0,
-        rating: mockUser.rating ?? 0,
-      });
-      setTodayShifts([]);
-      setUpcomingShifts([]);
-      return;
-    }
-
-    // REAL MODE (for later, when backend works)
     try {
       const { data: u } = await http.get<User>('/users/me');
       setUser(u);
