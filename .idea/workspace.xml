@@ -6,8 +6,21 @@
   <component name="ChangeListManager">
     <list default="true" id="64ef35b3-52d4-4317-b7d9-cb52d9efacc4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-backend/src/config/connectDB.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/config/connectDB.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-backend/src/controllers/admin.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/controllers/admin.controller.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app-backend/src/controllers/auth.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/controllers/auth.controller.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-backend/src/routes/admin.routes.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/routes/admin.routes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-backend/src/utils/sendEmail.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/utils/sendEmail.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-frontend/employer-panel/.env" beforeDir="false" afterPath="$PROJECT_DIR$/app-frontend/employer-panel/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-frontend/employer-panel/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/app-frontend/employer-panel/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-frontend/employer-panel/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-frontend/employer-panel/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-frontend/employer-panel/src/components/Header.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-frontend/employer-panel/src/components/Header.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,19 +59,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "feature/availability-api-and-lint",
-    "kotlin-language-version-configured": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Secureshift-myVersion&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/Scure shift(TP)&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;
   }
-}]]></component>
+}</component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">

@@ -1,22 +1,12 @@
-// app-backend/src/routes/user.routes.js
 import express from 'express';
-import auth from '../middleware/auth.js';
-import loadUser from '../middleware/loadUser.js';
-import {
-  authorizeRoles,
-  authorizePermissions,
-  requireSameBranchAsTargetUser,
-  ROLES,
-} from '../middleware/rbac.js';
 import {
   getMyProfile,
   updateMyProfile,
   adminGetUserProfile,
   adminUpdateUserProfile,
-  getAllGuards,
-  listUsers,
-  deleteUser
+  getAllGuards
 } from '../controllers/user.controller.js';
+import protect from '../middleware/auth.js'; // only default export available
 
 const router = express.Router();
 
@@ -73,60 +63,19 @@ const router = express.Router();
  *       422:
  *         description: Validation error
  */
+
+// Middleware to restrict access to admin users only
+const authorizeAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
+  }
+  next();
+};
+
 router
   .route('/me')
-  .get(auth, loadUser, getMyProfile)
-  .put(auth, loadUser, updateMyProfile);
-
-/**
- * @swagger
- * /api/v1/users/guards:
- *   get:
- *     summary: Get all guards (Admin + Employee only)
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved all guards.
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- */
-router.get(
-  '/guards',
-  auth,
-  loadUser,
-  authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE),
-  authorizePermissions('user:read'),
-  getAllGuards
-);
-
-/**
- * @swagger
- * /api/v1/users:
- *   get:
- *     summary: List users
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved users.
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- */
-router.get(
-  '/',
-  auth,
-  loadUser,
-  authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
-  authorizePermissions('user:read', { any: true }),
-  listUsers
-);
+  .get(protect, getMyProfile)
+  .put(protect, updateMyProfile);
 
 /**
  * @swagger
@@ -194,29 +143,35 @@ router.get(
  *       403:
  *         description: Forbidden
  */
+
+  /**
+ * @swagger
+ * /api/v1/users/guards:
+ *   get:
+ *     summary: Get all guards (Admin + Employee only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all guards.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+// must be above the "/:id" route
+router.get('/guards', protect, (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'employee') {
+    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
+  }
+  next();
+}, getAllGuards);
+
 router
-  .route('/:userId')
-  .get(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN),
-    authorizePermissions('user:read'),
-    adminGetUserProfile
-  )
-  .put(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
-    authorizePermissions('user:write'),
-    requireSameBranchAsTargetUser({ paramKey: 'userId' }),
-    adminUpdateUserProfile
-  )
-  .delete(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN),
-    authorizePermissions('user:delete'),
-    deleteUser
-  );
+  .route('/:id')
+  .get(protect, authorizeAdmin, adminGetUserProfile)
+  .put(protect, authorizeAdmin, adminUpdateUserProfile);
+
 
 export default router;
