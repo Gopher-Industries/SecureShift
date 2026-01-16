@@ -13,12 +13,13 @@ const branchSchema = new mongoose.Schema(
       country: { type: String, trim: true },
     },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    employerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
-branchSchema.index({ code: 1 }, { unique: true });
+branchSchema.index({ code: 1, employerId: 1 }, { unique: true });
 
 const Branch = mongoose.model('Branch', branchSchema);
 export default Branch;
