@@ -1,12 +1,24 @@
+// app-backend/src/routes/user.routes.js
 import express from 'express';
+import auth from '../middleware/auth.js';
+import loadUser from '../middleware/loadUser.js';
+import {
+  authorizeRoles,
+  authorizePermissions,
+  requireSameBranchAsTargetUser,
+  ROLES,
+} from '../middleware/rbac.js';
 import {
   getMyProfile,
   updateMyProfile,
+  getEmployerProfile,
+  updateEmployerProfile,
   adminGetUserProfile,
   adminUpdateUserProfile,
-  getAllGuards
+  getAllGuards,
+  listUsers,
+  deleteUser
 } from '../controllers/user.controller.js';
-import protect from '../middleware/auth.js'; // only default export available
 
 const router = express.Router();
 
@@ -63,19 +75,114 @@ const router = express.Router();
  *       422:
  *         description: Validation error
  */
-
-// Middleware to restrict access to admin users only
-const authorizeAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
-  }
-  next();
-};
-
 router
   .route('/me')
-  .get(protect, getMyProfile)
-  .put(protect, updateMyProfile);
+  .get(auth, loadUser, getMyProfile)
+  .put(auth, loadUser, updateMyProfile);
+
+/**
+ * @swagger
+ * /api/v1/users/profile:
+ *   get:
+ *     summary: Get logged-in employer's profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved employer profile.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (only employers)
+ *   put:
+ *     summary: Update logged-in employer's profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Krish Uppal"
+ *               email:
+ *                 type: string
+ *                 example: "krish@example.com"
+ *               phone:
+ *                 type: string
+ *                 example: "+61400123456"
+ *               address:
+ *                 type: string
+ *                 example: "123 Main Street"
+ *     responses:
+ *       200:
+ *         description: Successfully updated employer profile.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       422:
+ *         description: Validation error
+ */
+router
+  .route('/profile')
+  .get(auth, loadUser, getEmployerProfile)
+  .put(auth, loadUser, updateEmployerProfile);
+
+/**
+ * @swagger
+ * /api/v1/users/guards:
+ *   get:
+ *     summary: Get all guards (Admin + Employee only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all guards.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+  '/guards',
+  auth,
+  loadUser,
+  authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE),
+  authorizePermissions('user:read'),
+  getAllGuards
+);
+
+/**
+ * @swagger
+ * /api/v1/users:
+ *   get:
+ *     summary: List users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved users.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+  '/',
+  auth,
+  loadUser,
+  authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
+  authorizePermissions('user:read', { any: true }),
+  listUsers
+);
 
 /**
  * @swagger
@@ -143,35 +250,29 @@ router
  *       403:
  *         description: Forbidden
  */
-
-  /**
- * @swagger
- * /api/v1/users/guards:
- *   get:
- *     summary: Get all guards (Admin + Employee only)
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Successfully retrieved all guards.
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- */
-// must be above the "/:id" route
-router.get('/guards', protect, (req, res, next) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'employee') {
-    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
-  }
-  next();
-}, getAllGuards);
-
 router
-  .route('/:id')
-  .get(protect, authorizeAdmin, adminGetUserProfile)
-  .put(protect, authorizeAdmin, adminUpdateUserProfile);
-
+  .route('/:userId')
+  .get(
+    auth,
+    loadUser,
+    authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+    authorizePermissions('user:read'),
+    adminGetUserProfile
+  )
+  .put(
+    auth,
+    loadUser,
+    authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
+    authorizePermissions('user:write'),
+    requireSameBranchAsTargetUser({ paramKey: 'userId' }),
+    adminUpdateUserProfile
+  )
+  .delete(
+    auth,
+    loadUser,
+    authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN),
+    authorizePermissions('user:delete'),
+    deleteUser
+  );
 
 export default router;
