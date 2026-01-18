@@ -520,7 +520,7 @@ export const getShiftHistory = async (req, res) => {
     const shifts = await Shift.find(query)
       .sort({ date: -1, createdAt: -1 })
       .populate('createdBy', 'name email')
-      .populate('assignedGuard', 'name email');
+      .populate('acceptedBy', 'name email');
 
     return res.json({ total: shifts.length, items: shifts });
   } catch (e) {
