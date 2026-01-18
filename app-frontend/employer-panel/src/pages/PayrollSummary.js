@@ -35,7 +35,7 @@ const calculateShiftEarnings = (shift) => {
     return { hours, earnings };
 };
 
-// Get start of week (Monday)
+// Get start of week (Monday) - calendar week
 const getWeekStart = (date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -43,6 +43,16 @@ const getWeekStart = (date) => {
     d.setDate(diff);
     d.setHours(0, 0, 0, 0);
     return d;
+};
+
+// Get ISO week number
+const getWeekNumber = (date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7)); // Set to nearest Thursday
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return weekNo;
 };
 
 // Group shifts by guard
@@ -68,15 +78,19 @@ const groupByGuard = (shifts, calculateShiftEarnings) => {
     return Object.values(groups).sort((a, b) => a.guardName.localeCompare(b.guardName));
 };
 
-// Group shifts by week
+// Group shifts by calendar week
 const groupByWeek = (shifts, calculateShiftEarnings) => {
     const groups = {};
     shifts.forEach(shift => {
         const date = new Date(shift.date);
         const weekStart = getWeekStart(date);
-        const weekKey = weekStart.toISOString().split('T')[0];
+        const weekNumber = getWeekNumber(date);
+        const year = weekStart.getFullYear();
+        const weekKey = `${year}-W${String(weekNumber).padStart(2, '0')}`;
         if (!groups[weekKey]) {
             groups[weekKey] = {
+                weekKey: weekKey,
+                weekLabel: `Week ${weekNumber}, ${year}`,
                 weekStart: weekStart,
                 weekEnd: new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000),
                 totalHours: 0,
@@ -89,7 +103,7 @@ const groupByWeek = (shifts, calculateShiftEarnings) => {
         groups[weekKey].totalEarnings += earnings;
         groups[weekKey].shiftCount += 1;
     });
-    return Object.values(groups).sort((a, b) => b.weekStart - a.weekStart);
+    return Object.values(groups).sort((a, b) => b.weekKey.localeCompare(a.weekKey));
 };
 
 // Group shifts by month
@@ -197,7 +211,7 @@ const PayrollSummary = () => {
         const headers = {
             guard: ['Guard Name', 'Email', 'Total Hours', 'Total Earnings ($)', 'Shift Count'],
             shift: ['Shift Title', 'Date', 'Guard', 'Hours', 'Pay Rate ($)', 'Earnings ($)'],
-            weekly: ['Week Start', 'Week End', 'Total Hours', 'Total Earnings ($)', 'Shift Count'],
+            weekly: ['Week', 'Date Range', 'Total Hours', 'Total Earnings ($)', 'Shift Count'],
             monthly: ['Month', 'Total Hours', 'Total Earnings ($)', 'Shift Count']
         };
 
@@ -207,7 +221,7 @@ const PayrollSummary = () => {
                     return [item.guardName, item.guardEmail, item.totalHours.toFixed(1),
                             item.totalEarnings.toFixed(2), item.shiftCount];
                 case GroupBy.Weekly:
-                    return [formatDate(item.weekStart), formatDate(item.weekEnd),
+                    return [item.weekLabel, `${formatDate(item.weekStart)} - ${formatDate(item.weekEnd)}`,
                             item.totalHours.toFixed(1), item.totalEarnings.toFixed(2), item.shiftCount];
                 case GroupBy.Monthly:
                     return [item.monthName, item.totalHours.toFixed(1),
@@ -280,7 +294,8 @@ const PayrollSummary = () => {
                     <table className="payroll-table">
                         <thead>
                             <tr>
-                                <th>Week Period</th>
+                                <th>Week</th>
+                                <th>Date Range</th>
                                 <th>Hours</th>
                                 <th>Earnings ($)</th>
                                 <th>Shifts</th>
@@ -289,6 +304,7 @@ const PayrollSummary = () => {
                         <tbody>
                             {groupedData.map((item, idx) => (
                                 <tr key={idx}>
+                                    <td>{item.weekLabel}</td>
                                     <td>{formatDate(item.weekStart)} - {formatDate(item.weekEnd)}</td>
                                     <td>{item.totalHours.toFixed(1)}</td>
                                     <td>${item.totalEarnings.toFixed(2)}</td>
