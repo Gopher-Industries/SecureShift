@@ -10,6 +10,7 @@ import SubmissionConfirmation from './pages/SubmissionConfirmation';
 import CompanyProfile from './pages/CompanyProfile';
 import EmailSettings from './pages/EmailSettings';
 import TaskDetail from './pages/TaskDetail';
+import PayrollSummary from './pages/PayrollSummary';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import PageTitleHandler from './components/PageTitleHandler';
@@ -44,6 +45,7 @@ function AppContent() {
           <Route path="/guard-profiles" element={<GuardProfiles />} />
           <Route path="/company-profile" element={<CompanyProfile />} />
           <Route path="/email-settings" element={<EmailSettings />} />
+          <Route path="/payroll-summary" element={<PayrollSummary />} />
           <Route path="/submission" element={<SubmissionConfirmation />} />
           <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
         </Routes>
