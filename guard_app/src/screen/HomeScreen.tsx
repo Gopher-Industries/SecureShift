@@ -1,5 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 // src/screen/HomeScreen.tsx
+import * as Notifications from 'expo-notifications';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +15,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 
 import http from '../lib/http';
@@ -111,6 +113,26 @@ export default function HomeScreen() {
   const [upcomingShifts, setUpcomingShifts] = useState<Shift[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
+  // LOCAL NOTIFICATION TRIGGER
+  const triggerShiftNotification = async () => {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please enable notifications in settings to test this feature.');
+      return;
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Upcoming Shift',
+        body: 'Reminder: Your shift starts in 30 minutes!',
+        data: { screen: 'Shifts' },
+      },
+      trigger: { seconds: 2 }, 
+    });
+    
+    Alert.alert("Success", "Notification scheduled for 2 seconds from now.");
+  };
+
   useLayoutEffect(() => {
     navigation.setOptions({
       title: 'Home',
@@ -201,6 +223,18 @@ export default function HomeScreen() {
           <View style={styles.heading}>
             <Text style={styles.h1}>Welcome back, {user?.name || 'Guard'}!</Text>
             <Text style={styles.h2}>Here’s your dashboard</Text>
+          </View>
+
+          {/* NOTIFICATION TEST BUTTON */}
+          <View style={{ paddingHorizontal: P, marginVertical: 15 }}>
+            <TouchableOpacity 
+              style={styles.notifTestButton} 
+              onPress={triggerShiftNotification}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="notifications-circle" size={24} color="#fff" />
+              <Text style={styles.notifTestText}>Test 30min Shift Alert</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Metrics */}
@@ -308,7 +342,27 @@ const styles = StyleSheet.create({
   },
   h2: { fontSize: 14, color: '#6B7280', marginTop: 6, textAlign: 'center' },
 
-  // Metrics
+  // Notification Test Button Styles
+  notifTestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: BLUE, 
+    paddingVertical: 14,
+    borderRadius: 16,
+    shadowColor: BLUE,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  notifTestText: {
+    color: '#fff',
+    fontWeight: '800',
+    marginLeft: 10,
+    fontSize: 16,
+  },
+// Metrics
   grid: {
     paddingHorizontal: P,
     marginTop: 18,

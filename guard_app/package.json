@@ -33,7 +33,8 @@
     "react-native-progress": "^5.0.1",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-tab-view": "^4.1.3"
+    "react-native-tab-view": "^4.1.3",
+    "expo-notifications": "~0.31.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
