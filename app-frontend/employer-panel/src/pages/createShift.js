@@ -1,112 +1,199 @@
-// --- CreateShift.js ---
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './createShift.css';
 import http from '../lib/http';
 
-const CreateShift = () => {
+const CreateShift = ({ isModal = false, onClose }) => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
-    title: "",
-    street: "",
-    suburb: "",
-    state: "",
-    postcode: "",
-    date: "",
-    time: "",
-    payRate: ""
+    title: '',
+    date: '',
+    time: '',
+    location: '',
+    payRate: '',
+    description: '',
+    requirements: '',
   });
-
   const [errors, setErrors] = useState({});
+  const [feedback, setFeedback] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validate = () => {
-    const required = ["title", "street", "date", "time", "payRate"];
     const newErrors = {};
-
-    required.forEach((field) => {
-      if (!formData[field].trim()) {
-        newErrors[field] = `${field} is required`;
-      }
-    });
-
+    if (!formData.title.trim()) newErrors.title = 'Job title is required';
+    if (!formData.date.trim()) newErrors.date = 'Date is required';
+    if (!formData.time.trim()) newErrors.time = 'Time is required';
+    if (!formData.location.trim()) newErrors.location = 'Location is required';
+    if (!formData.payRate || Number(formData.payRate) <= 0) newErrors.payRate = 'Enter a valid pay rate';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleReset = () => {
+    setFormData({
+      title: '',
+      date: '',
+      time: '',
+      location: '',
+      payRate: '',
+      description: '',
+      requirements: '',
+    });
+    setErrors({});
+    setFeedback('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
-    // Auto-generate endTime = start + 8h
-    const [hour, minute] = formData.time.split(":").map(Number);
-    const endHour = (hour + 8) % 24;
-    const endTime = `${String(endHour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-
-    const payload = {
-      title: formData.title,
-      date: formData.date,
-      startTime: formData.time,
-      endTime,
-      location: {
-        street: formData.street,
-        suburb: formData.suburb || "",
-        state: formData.state || "",
-        postcode: formData.postcode || ""
-      },
-      payRate: formData.payRate,
-    };
-
+    setSubmitting(true);
+    setFeedback('');
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return alert("Please log in first.");
+      const [hour, minute] = formData.time.split(':').map(Number);
+      const endHour = (hour + 8) % 24;
+      const endTime = `${String(endHour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 
-      await http.post("/shifts", payload);
+      const payload = {
+        title: formData.title,
+        date: formData.date,
+        startTime: formData.time,
+        endTime,
+        location: { street: formData.location },
+        payRate: Number(formData.payRate),
+        description: formData.description,
+        requirements: formData.requirements,
+      };
 
-      alert("Shift created successfully!");
-
-      // Now navigate is used → no warnings
-      navigate("/manage-shifts");
-
+      await http.post('/shifts', payload);
+      setFeedback('Shift created successfully');
+      handleReset();
     } catch (err) {
-      console.error(err);
-      alert("Error creating shift");
+      const message = err?.response?.data?.message || 'Error creating shift';
+      setFeedback(message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h2>Create Shift</h2>
+    <div className="create-shift-modal-backdrop">
+      <div className="create-shift-modal">
+        <div className="create-shift-card">
+          <header className="create-shift-header">
+            <div>
+              <p className="overline">Secure Shift</p>
+              <h1>Create Shift</h1>
+              <p className="subtitle">Post a new shift and connect with reliable staff. All fields are mandatory.</p>
+            </div>
+            <button className="close-btn" onClick={() => (onClose ? onClose() : navigate(-1))}>×</button>
+          </header>
 
-      <form onSubmit={handleSubmit}>
+          <form className="create-shift-form" onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <div className="form-group full">
+                <label>Job Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="Job title"
+                  className={errors.title ? 'error' : ''}
+                />
+                {errors.title && <span className="error-text">{errors.title}</span>}
+              </div>
 
-        <input name="title" placeholder="Job title*" onChange={handleChange} value={formData.title} />
-        {errors.title && <p style={{ color: "red" }}>{errors.title}</p>}
+              <div className="form-group">
+                <label>Date</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className={errors.date ? 'error' : ''}
+                />
+                {errors.date && <span className="error-text">{errors.date}</span>}
+              </div>
 
-        <input name="date" type="date" onChange={handleChange} value={formData.date} />
-        {errors.date && <p style={{ color: "red" }}>{errors.date}</p>}
+              <div className="form-group">
+                <label>Time</label>
+                <input
+                  type="time"
+                  name="time"
+                  value={formData.time}
+                  onChange={handleChange}
+                  className={errors.time ? 'error' : ''}
+                />
+                {errors.time && <span className="error-text">{errors.time}</span>}
+              </div>
 
-        <input name="time" type="time" onChange={handleChange} value={formData.time} />
-        {errors.time && <p style={{ color: "red" }}>{errors.time}</p>}
+              <div className="form-group">
+                <label>Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="Location"
+                  className={errors.location ? 'error' : ''}
+                />
+                {errors.location && <span className="error-text">{errors.location}</span>}
+              </div>
 
-        <input name="street" placeholder="Street*" onChange={handleChange} value={formData.street} />
-        {errors.street && <p style={{ color: "red" }}>{errors.street}</p>}
+              <div className="form-group">
+                <label>Pay rate</label>
+                <input
+                  type="number"
+                  name="payRate"
+                  value={formData.payRate}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className={errors.payRate ? 'error' : ''}
+                />
+                {errors.payRate && <span className="error-text">{errors.payRate}</span>}
+              </div>
 
-        <input name="suburb" placeholder="Suburb" onChange={handleChange} value={formData.suburb} />
-        <input name="state" placeholder="State" onChange={handleChange} value={formData.state} />
-        <input name="postcode" placeholder="Postcode" onChange={handleChange} value={formData.postcode} />
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Enter description"
+                  rows={4}
+                />
+              </div>
 
-        <input name="payRate" type="number" placeholder="Pay rate*" onChange={handleChange} value={formData.payRate} />
-        {errors.payRate && <p style={{ color: "red" }}>{errors.payRate}</p>}
+              <div className="form-group">
+                <label>Requirements</label>
+                <textarea
+                  name="requirements"
+                  value={formData.requirements}
+                  onChange={handleChange}
+                  placeholder="Enter requirements"
+                  rows={4}
+                />
+              </div>
+            </div>
 
-        <button type="submit">Create Shift</button>
-      </form>
+            {feedback && <div className="feedback">{feedback}</div>}
+
+            <div className="actions">
+              <button type="submit" className="primary" disabled={submitting}>
+                {submitting ? 'Posting...' : 'Post Shift'}
+              </button>
+              <button type="button" className="secondary" onClick={handleReset}>
+                Clear / Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };

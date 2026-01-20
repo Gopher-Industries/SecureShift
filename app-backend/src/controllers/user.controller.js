@@ -112,3 +112,53 @@ export const deleteUser = async (req, res) => {
     return res.status(500).json({ message: e.message });
   }
 };
+
+/**
+ * @desc    Get logged-in employer's profile (Employer only)
+ * @route   GET /api/v1/users/profile
+ * @access  Private (Employer only)
+ */
+export const getEmployerProfile = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Access denied.' });
+    }
+
+    const employer = await User.findById(req.user.id).select('-password');
+    if (!employer) {
+      return res.status(404).json({ message: 'Employer not found' });
+    }
+
+    res.status(200).json(employer);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * @desc    Update logged-in employer's profile (Employer only)
+ * @route   PUT /api/v1/users/profile
+ * @access  Private (Employer only)
+ */
+export const updateEmployerProfile = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Access denied.' });
+    }
+
+    const fieldsToUpdate = { ...req.body };
+    delete fieldsToUpdate.role;
+    delete fieldsToUpdate.password;
+
+    const updatedEmployer = await User.findByIdAndUpdate(
+      req.user.id,
+      fieldsToUpdate,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedEmployer) return res.status(404).json({ message: 'Employer not found' });
+    res.status(200).json(updatedEmployer);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

@@ -1,27 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import http from '../lib/http';
 
 // Map backend status to filter display
 const statusDisplayMap = {
     completed: "Completed",
-    assigned: "In Progress",
-    applied: "Pending",
+    inprogress: "In Progress",
+    pending: "Pending",
     open: "Open",
-};
-
-const frontToBackendStatus = {
-    "Completed": "completed",
-    "Open": "open",
-    "In Progress": "assigned",
-    "Pending": "applied"
 };
 
 const Filter = Object.freeze({
     All: 'All',
-    Status: 'Status',     
-    Date: 'Date',         
-    Location: 'Location', 
-    Guard: "Guard",
     Completed: 'Completed',
     InProgress: 'In Progress',
     Pending: 'Pending',
@@ -33,31 +23,24 @@ const Sort = Object.freeze({
     DateDesc: 'Date (Desc)',
 });
 
-const normalizeShift = (s) => {
-    let finalDate = null;
-
-    if (s.date) {
-        const dateOnly = s.date.split("T")[0];
-        if (s.startTime) {
-            finalDate = new Date(`${dateOnly}T${s.startTime}:00`);
-        } else {
-            finalDate = new Date(s.date);
-        }
-    }
-
-    return {
-        id: s._id,
-        title: s.title || "--",
-        dateTime: finalDate,
-        location: s.location
-            ? [s.location.street, s.location.suburb, s.location.state].filter(Boolean).join(", ")
-            : "--",
-        status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
-        price: s.payRate != null ? `${s.payRate} p/h` : "--",
-        description: s.description || "",
-        requirements: s.requirements || [],
-    };
-};
+// Normalize shift data from backend
+const normalizeShift = (s) => ({
+    id: s._id,
+    title: s.title || "--",
+    date: s.date,
+    startTime: s.startTime,
+    endTime: s.endTime,
+    dateTime: s.date && s.startTime ? `${s.date} ${s.startTime}` : s.date || "",
+    locationLabel: s.location 
+        ? [s.location.street, s.location.suburb, s.location.state].filter(Boolean).join(', ')
+        : "--",
+    location: s.location || {},
+    status: statusDisplayMap[s.status?.toLowerCase()] || "Open",
+    payRate: s.payRate ?? s.price ?? "--",
+    urgency: s.urgency || 'normal',
+    field: s.field || '',
+    applicantCount: s.applicantCount ?? (Array.isArray(s.applicants) ? s.applicants.length : 0),
+});
 
 const ManageShift = () => {
     const navigate = useNavigate();
@@ -68,101 +51,59 @@ const ManageShift = () => {
     const [selectedFilter, setSelectedFilter] = useState(Filter.All);
     const [sortBy, setSortBy] = useState(Sort.DateAsc);
     const [showSortModal, setShowSortModal] = useState(false);
-    
-    // States for shift details modal
-    const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
-    
-    const [showStatusDropdown, setShowStatusDropdown] = useState(false); 
-    const [showDateDropdown, setShowDateDropdown] = useState(false);     
-    const [selectedDateFilter, setSelectedDateFilter] = useState(null);  
-    const [selectedLocationFilter, setSelectedLocationFilter] = useState("");
-    const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-    const [guards, setGuards] = useState([]);           
-    const [selectedGuardFilter, setSelectedGuardFilter] = useState(""); 
-    const [showGuardDropdown, setShowGuardDropdown] = useState(false); 
+    const [detailForm, setDetailForm] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [feedback, setFeedback] = useState('');
+    const [formErrors, setFormErrors] = useState({});
+    const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
     const itemsPerPage = 8;
 
     useEffect(() => {
-        const fetchGuards = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                const res = await fetch("http://localhost:5000/api/v1/shifts/guards", {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                const data = await res.json();
-                setGuards(data);
-            } catch (err) {
-                console.error("Failed to load guards:", err);
+    const fetchShifts = async () => {
+        try {
+            const { data } = await http.get('/shifts');
+            let apiShifts;
+            if (Array.isArray(data)) {
+                apiShifts = data;
+            } else if (Array.isArray(data.shifts)) {
+                apiShifts = data.shifts;
+            } else if (data.items && Array.isArray(data.items)) {
+                apiShifts = data.items;
+            } else {
+                apiShifts = [];
             }
-        };
-        fetchGuards();
-    }, []);  
+            setShifts(apiShifts.map(normalizeShift));
+        } catch (err) {
+            const message = err?.response?.data?.message || 'Error fetching shifts.';
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchShifts();
+}, []);
 
-    useEffect(() => {    
-        const fetchShifts = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    setError("No token found. Please log in.");
-                    setLoading(false);
-                    return;
-                }
-                const params = new URLSearchParams();
 
-                if (["Completed", "In Progress", "Pending", "Open"].includes(selectedFilter)) {
-                    const backendStatus = frontToBackendStatus[selectedFilter];
-                    params.append("status", backendStatus);
-                }
+    // Map frontend filter values to backend status
+    const filterToBackendStatus = {
+        Completed: "Completed",
+        InProgress: "In Progress",
+        Pending: "Pending",
+        Open: "Open",
+    };
 
-                if (sortBy === "Date (Asc)") params.append("sort", "asc");
-                if (sortBy === "Date (Desc)") params.append("sort", "desc");
+    const filteredShifts = selectedFilter === Filter.All
+        ? shifts
+        : shifts.filter(shift => shift.status === filterToBackendStatus[selectedFilter]);
 
-                if (selectedFilter === "Date" && selectedDateFilter) {
-                    params.append("date", selectedDateFilter);
-                }
+    const sortedShifts = [...filteredShifts].sort((a, b) => {
+        const dateA = new Date(a?.dateTime || 0);
+        const dateB = new Date(b?.dateTime || 0);
+        return sortBy === Sort.DateAsc ? dateA - dateB : dateB - dateA;
+    });
 
-                if (selectedFilter === "Location" && selectedLocationFilter.trim() !== "") {
-                    params.append("location", selectedLocationFilter.trim());
-                }
-
-                if (selectedFilter === "Guard" && selectedGuardFilter) {
-                    params.append("guard", selectedGuardFilter);
-                }
-
-                const url = `http://localhost:5000/api/v1/shifts?${params.toString()}`;
-
-                const res = await fetch(url, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (!res.ok) {
-                    const text = await res.text();
-                    setError(`Failed to fetch shifts (${res.status}): ${text}`);
-                    setLoading(false);
-                    return;
-                }
-
-                const data = await res.json();
-                const apiShifts = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : [];
-                setShifts(apiShifts.map(normalizeShift));
-
-            } catch (err) {
-                setError("Error fetching shifts.");
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchShifts();
-    }, [selectedFilter, selectedDateFilter, selectedLocationFilter, sortBy]);
-
-    const sortedShifts = shifts;
     const totalPages = Math.ceil(sortedShifts.length / itemsPerPage);
     const indexStart = (currentPage - 1) * itemsPerPage;
     const currentItems = sortedShifts.slice(indexStart, indexStart + itemsPerPage);
@@ -198,63 +139,122 @@ const ManageShift = () => {
         setShowSortModal(false);
     };
 
-    const formatDate = (dateObj) => {
-        if (!(dateObj instanceof Date)) return "--";
-        return dateObj.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formatDate = (dateString) => {
+        if (!dateString) return "--";
+        const date = new Date(dateString);
+        if (isNaN(date)) return "--";
+        return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    const formatTime = (dateObj) => {
-         if (!(dateObj instanceof Date)) return "--";
-        const hour = dateObj.getHours();
-        const minute = dateObj.getMinutes();
-        const endHour = (hour + 4) % 24;
-        return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} - ${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    const formatTimeRange = (start, end) => {
+        if (!start || !end) return "--";
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+        if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return "--";
+        return `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')} - ${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
     };
 
-    // Function to handle View Details button click
-    const handleViewDetails = (shift) => {
-        console.log("View Details clicked for shift:", shift);
-        let datePart = null;
-        let timePart = null;
+    const openShiftModal = (shift) => {
+        setSelectedShift(shift);
+        setDetailForm({
+            title: shift.title || '',
+            date: shift.date ? shift.date.substring(0, 10) : '',
+            startTime: shift.startTime || '',
+            endTime: shift.endTime || '',
+            payRate: shift.payRate === "--" ? '' : shift.payRate ?? '',
+            street: shift.location?.street || '',
+            suburb: shift.location?.suburb || '',
+            state: shift.location?.state || '',
+            postcode: shift.location?.postcode || '',
+            field: shift.field || '',
+            urgency: shift.urgency || 'normal',
+        });
+        setIsEditing(false);
+        setFeedback('');
+    };
 
-        if (shift.dateTime instanceof Date) {
-            datePart = shift.dateTime.toISOString().split("T")[0];
-            timePart = shift.dateTime.toTimeString().slice(0, 5);
-        }
-        let endTime = '';
-        
-        // Calculate endTime based on 4-hour shift duration
-        if (timePart) {
-            const [hour, minute] = timePart.split(":").map(Number);
-            if (!isNaN(hour) && !isNaN(minute)) {
-                // Add 4 hours to the start time
-                const endHour = (hour + 4) % 24;
-                endTime = `${endHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+    const closeShiftModal = () => {
+        setSelectedShift(null);
+        setDetailForm(null);
+        setIsEditing(false);
+        setSaving(false);
+        setFeedback('');
+    };
+
+    const handleDetailChange = (e) => {
+        const { name, value } = e.target;
+        setDetailForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const validateDetailForm = () => {
+        const errs = {};
+        if (!detailForm.title?.trim()) errs.title = 'Title required';
+        if (!detailForm.date?.trim()) errs.date = 'Date required';
+        if (!detailForm.startTime?.trim()) errs.startTime = 'Start time required';
+        if (!detailForm.endTime?.trim()) errs.endTime = 'End time required';
+        if (detailForm.payRate !== '' && Number(detailForm.payRate) < 0) errs.payRate = 'Pay rate must be positive';
+        setFormErrors(errs);
+        return Object.keys(errs).length === 0;
+    };
+
+    const handleSaveShift = async () => {
+        if (!selectedShift || !detailForm) return;
+        if (!validateDetailForm()) return;
+        setSaving(true);
+        setFeedback('');
+        try {
+            const cleanedLocation = {
+                street: detailForm.street?.trim() || undefined,
+                suburb: detailForm.suburb?.trim() || undefined,
+                state: detailForm.state?.trim() || undefined,
+                postcode: detailForm.postcode?.trim() || undefined,
+            };
+            const hasLocation = Object.values(cleanedLocation).some(Boolean);
+            const payload = {
+                title: detailForm.title,
+                date: detailForm.date,
+                startTime: detailForm.startTime,
+                endTime: detailForm.endTime,
+                payRate: detailForm.payRate === '' ? undefined : Number(detailForm.payRate),
+                field: detailForm.field,
+                urgency: detailForm.urgency,
+                ...(hasLocation ? { location: cleanedLocation } : {}),
+            };
+            // optimistic update snapshot
+            setOptimisticSnapshot({ shifts, selectedShift });
+            const optimistic = { ...selectedShift, ...payload };
+            setShifts((prev) => prev.map((s) => s.id === selectedShift.id ? { ...s, ...optimistic } : s));
+            setFeedback('Saving...');
+
+            const { data } = await http.patch(`/shifts/${selectedShift.id}`, payload);
+            const updated = normalizeShift(data.shift || { ...selectedShift, ...payload });
+            setShifts((prev) => prev.map((s) => s.id === updated.id ? { ...s, ...updated } : s));
+            setSelectedShift(updated);
+            setDetailForm({
+                title: updated.title || '',
+                date: updated.date ? updated.date.substring(0, 10) : '',
+                startTime: updated.startTime || '',
+                endTime: updated.endTime || '',
+                payRate: updated.payRate === "--" ? '' : updated.payRate ?? '',
+                street: updated.location?.street || '',
+                suburb: updated.location?.suburb || '',
+                state: updated.location?.state || '',
+                postcode: updated.location?.postcode || '',
+                field: updated.field || '',
+                urgency: updated.urgency || 'normal',
+            });
+            setIsEditing(false);
+            setFeedback('Saved successfully');
+        } catch (err) {
+            const message = err?.response?.data?.message || 'Failed to update shift';
+            setFeedback(message);
+            if (optimisticSnapshot) {
+                setShifts(optimisticSnapshot.shifts);
+                setSelectedShift(optimisticSnapshot.selectedShift);
             }
+        } finally {
+            setSaving(false);
         }
-        
-        console.log("Setting selected shift:", {
-            id: shift.id,
-            date: datePart,
-            startTime: timePart,
-            endTime: endTime
-        });
-        
-        setSelectedShift({
-            id: shift.id,
-            title: shift.title,
-            date: datePart,
-            startTime: timePart,
-            endTime: endTime,
-            location: shift.location,
-            price: shift.price,
-            status: shift.status,
-            description: shift.description || "",
-            requirements: shift.requirements || [], 
-            applicants: []
-        });
-        setIsShiftModalOpen(true);
-        console.log("Modal should open, isShiftModalOpen will be set to true");
     };
 
     return (
@@ -277,58 +277,38 @@ const ManageShift = () => {
                 setSelectedFilter={setSelectedFilter}
                 sortBy={sortBy}
                 setShowSortModal={setShowSortModal}
-                showStatusDropdown={showStatusDropdown}         
-                setShowStatusDropdown={setShowStatusDropdown}   
-                showDateDropdown={showDateDropdown}             
-                setShowDateDropdown={setShowDateDropdown}       
-                selectSortBy={selectSortBy}                     
-                selectedDateFilter={selectedDateFilter}         
-                setSelectedDateFilter={setSelectedDateFilter}                   
-                showLocationDropdown={showLocationDropdown}
-                setShowLocationDropdown={setShowLocationDropdown}
-                selectedLocationFilter={selectedLocationFilter}
-                setSelectedLocationFilter={setSelectedLocationFilter}
-                guards={guards}
-                selectedGuardFilter={selectedGuardFilter}
-                setSelectedGuardFilter={setSelectedGuardFilter}
-                showGuardDropdown={showGuardDropdown}
-                setShowGuardDropdown={setShowGuardDropdown}
             />
             {loading && <p>Loading shifts...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {!loading && !error && currentItems.length === 0 && <p>No shifts found.</p>}
             <div style={gridStyle}>
                 {currentItems.map((shift) => {
-                    const dateObj = shift.dateTime instanceof Date ? shift.dateTime : null;
-                    const datePart = dateObj ? dateObj.toISOString().split("T")[0] : null;
-                    const timePart = dateObj ? dateObj.toTimeString().slice(0,5) : null;
+                    const [datePart, timePart] = shift.dateTime?.split(' ') || [null, null];
                     return (
                         <div key={shift.id} style={cardStyle}>
                             <div>
                                 <h3 style={cardTitleStyle}>{shift.title}</h3>
                                 <div style={cardHeaderStyle}>
                                     <div style={getStatusTagStyle(shift.status)}>{shift.status}</div>
-                                    <div style={priceStyle}>${shift.price}</div>
+                                    <div style={priceStyle}>{shift.payRate !== "--" ? `$${shift.payRate}` : '--'}</div>
                                 </div>
                             </div>
                             <div style={cardDetailsStyle}>
                                 <div style={detailRowStyle}>
                                     <img src={"/ic-location.svg"} alt="Location" style={smallIconStyle} />
-                                    <span style={detailTextStyle}>{shift.location}</span>
+                                    <span style={detailTextStyle}>{shift.locationLabel}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
                                     <div style={detailRowStyle}>
                                         <img src={"/ic-calendar.svg"} alt="Date" style={smallIconStyle} />
-                                        <span style={detailTextStyle}>{formatDate(shift.dateTime)}</span>
+                                        <span style={detailTextStyle}>{formatDate(datePart)}</span>
                                     </div>
                                     <div style={detailRowStyle}>
                                         <img src={"/ic-clock.svg"} alt="Time" style={smallIconStyle} />
-                                        <span style={detailTextStyle}>{formatTime(shift.dateTime)}</span>
+                                        <span style={detailTextStyle}>{formatTimeRange(shift.startTime, shift.endTime)}</span>
                                     </div>
                                 </div>
-                                <button style={viewDetailsButtonStyle}
-                                        onClick={() => handleViewDetails(shift)}
-                                >View Details</button>
+                                <button style={viewDetailsButtonStyle} onClick={() => openShiftModal(shift)}>View Details</button>
                             </div>
                         </div>
                     );
@@ -352,518 +332,135 @@ const ManageShift = () => {
                     setShowSortModal={setShowSortModal}
                 />
             )}
-            
-            {/* SHIFT DETAILS MODAL */}
-            {isShiftModalOpen && selectedShift && (
-                <ShiftDetailsModal
-                    shift={selectedShift}
-                    onClose={() => setIsShiftModalOpen(false)}
-                />
+            {selectedShift && detailForm && (
+                <div style={detailModalOverlay} onClick={closeShiftModal}>
+                    <div style={detailModalContent} onClick={(e) => e.stopPropagation()}>
+                        <div style={detailModalHeader}>
+                            <div>
+                                <p style={detailModalOverline}>Secure Shift</p>
+                                <h2 style={detailModalTitle}>{isEditing ? 'Edit Shift' : 'Shift Details'}</h2>
+                                <p style={detailModalSubtitle}>Review and update shift fields. All fields are required.</p>
+                            </div>
+                            <button style={modalCloseButton} onClick={closeShiftModal}>×</button>
+                        </div>
+
+                        {feedback && <div style={feedbackStyle}>{feedback}</div>}
+
+                        <div style={detailGrid}>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Job Title</label>
+                                <input
+                                    name="title"
+                                    value={detailForm.title}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                    placeholder="Job title"
+                                />
+                                {formErrors.title && <span style={inlineError}>{formErrors.title}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Date</label>
+                                <input
+                                    type="date"
+                                    name="date"
+                                    value={detailForm.date}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                />
+                                {formErrors.date && <span style={inlineError}>{formErrors.date}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Start Time</label>
+                                <input
+                                    type="time"
+                                    name="startTime"
+                                    value={detailForm.startTime}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                />
+                                {formErrors.startTime && <span style={inlineError}>{formErrors.startTime}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>End Time</label>
+                                <input
+                                    type="time"
+                                    name="endTime"
+                                    value={detailForm.endTime}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                />
+                                {formErrors.endTime && <span style={inlineError}>{formErrors.endTime}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Location</label>
+                                <input
+                                    name="street"
+                                    value={detailForm.street}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                    placeholder="Street"
+                                />
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Pay Rate</label>
+                                <input
+                                    type="number"
+                                    name="payRate"
+                                    value={detailForm.payRate}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                    placeholder="0.00"
+                                />
+                                {formErrors.payRate && <span style={inlineError}>{formErrors.payRate}</span>}
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Field</label>
+                                <input
+                                    name="field"
+                                    value={detailForm.field}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                    placeholder="e.g. Security"
+                                />
+                            </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Urgency</label>
+                                <select
+                                    name="urgency"
+                                    value={detailForm.urgency}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                >
+                                    <option value="normal">Normal</option>
+                                    <option value="priority">Priority</option>
+                                    <option value="last-minute">Last-minute</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style={detailActions}>
+                            {!isEditing ? (
+                                <button style={primaryButton} onClick={() => setIsEditing(true)}>Edit Shift</button>
+                            ) : (
+                                <>
+                                    <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>
+                                        {saving ? 'Saving...' : 'Save changes'}
+                                    </button>
+                                    <button style={secondaryButton} onClick={() => setIsEditing(false)}>Cancel edit</button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
-        </div>
-    );
-};
-
-// Mock Data for Descriptions & Requirements
-const USE_MOCK_DATA = true; // Set to false when backend is ready
-
-// Shift Details Modal Component
-const ShiftDetailsModal = ({ shift, onClose }) => {
-    // Format currency
-    const formatCurrency = (amount) => {
-        if (!amount || amount === "--") return '$0.00';
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-        }).format(amount);
-    };
-
-    // Format date
-    const formatDate = (dateString) => {
-        if (!dateString || dateString === "--") return 'Date not set';
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return dateString;
-        
-        return date.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-    };
-
-    // Format time
-    const formatTime = (timeString) => {
-        if (!timeString || timeString === "--") return 'Time not set';
-        
-        // Handle HH:MM format
-        const [hour, minute] = timeString.split(':');
-        const hourNum = parseInt(hour, 10);
-        if (isNaN(hourNum)) return timeString;
-        
-        const period = hourNum >= 12 ? 'PM' : 'AM';
-        const displayHour = hourNum % 12 || 12;
-        return `${displayHour}:${minute || '00'} ${period}`;
-    };
-
-    // Calculate duration
-    const calculateDuration = (startTime, endTime) => {
-        if (!startTime || !endTime || startTime === "--" || endTime === "--") return '';
-        
-        try {
-            const [startHour, startMinute] = startTime.split(':').map(Number);
-            const [endHour, endMinute] = endTime.split(':').map(Number);
-            
-            let durationHours = endHour - startHour;
-            let durationMinutes = endMinute - startMinute;
-            
-            if (durationMinutes < 0) {
-                durationHours -= 1;
-                durationMinutes += 60;
-            }
-            
-            if (durationHours < 0) durationHours += 24;
-            
-            if (durationHours === 0) return `${durationMinutes} minutes`;
-            if (durationMinutes === 0) return `${durationHours} hour${durationHours !== 1 ? 's' : ''}`;
-            return `${durationHours} hour${durationHours !== 1 ? 's' : ''} ${durationMinutes} minutes`;
-        } catch {
-            return '';
-        }
-    };
-
-    // Get status color
-    const getStatusColor = (status) => {
-        if (!status) return { bg: '#eaeaea', text: '#666' };
-        
-        const statusLower = status.toLowerCase();
-        if (statusLower.includes('completed')) return { bg: '#EAFAE7', text: '#2E7D32' };
-        if (statusLower.includes('in progress')) return { bg: '#F6EFFF', text: '#7B1FA2' };
-        if (statusLower.includes('pending')) return { bg: '#FBFAE2', text: '#F57C00' };
-        if (statusLower.includes('open')) return { bg: '#E3F2FD', text: '#1565C0' };
-        return { bg: '#eaeaea', text: '#666' };
-    };
-
-    // Mock applicants for display 
-    const mockApplicants = [
-        { id: 1, name: 'John Smith', status: 'Applied', appliedDate: '2025-12-01' },
-        { id: 2, name: 'Jane Doe', status: 'Pending', appliedDate: '2025-12-02' },
-        { id: 3, name: 'Bob Johnson', status: 'Accepted', appliedDate: '2025-12-03' },
-    ];
-
-    // Mock description and requirements (you'll need to get these from your backend)
-    const mockDescription = "We are looking for a reliable worker to assist with warehouse duties including loading/unloading, inventory management, and general maintenance. The ideal candidate should be physically fit and able to work in a fast-paced environment.";
-    
-    const mockRequirements = [
-        "Must be 18 years or older",
-        "Ability to lift 50+ pounds",
-        "Valid driver's license",
-        "Previous warehouse experience preferred",
-        "Available for 4-hour shifts",
-        "Reliable transportation"
-    ];
-
-    const description = USE_MOCK_DATA ? mockDescription : (shift.description || "No description provided.");
-    const requirements = USE_MOCK_DATA ? mockRequirements : (shift.requirements || []);
-        
-    // Modal styles
-    const modalStyles = {
-        overlay: {
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-            padding: '20px',
-        },
-        modal: {
-            background: '#fff',
-            borderRadius: '12px',
-            width: '100%',
-            maxWidth: '900px',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            animation: 'slideUp 0.3s ease',
-        },
-        header: {
-            padding: '24px 32px',
-            borderBottom: '1px solid #eaeaea',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: '#f8f9fa',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px',
-        },
-        title: {
-            fontSize: '24px',
-            fontWeight: '600',
-            color: '#000000',
-            margin: 0,
-        },
-        closeBtn: {
-            background: 'none',
-            border: 'none',
-            fontSize: '28px',
-            color: '#666',
-            cursor: 'pointer',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            transition: 'all 0.2s',
-        },
-        content: {
-            padding: '32px',
-        },
-        infoGrid: {
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '20px',
-            marginBottom: '32px',
-        },
-        infoCard: {
-            background: '#f8f9fa',
-            borderRadius: '8px',
-            padding: '20px',
-            borderLeft: '4px solid #274b93',
-        },
-        infoLabel: {
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#666',
-            margin: '0 0 8px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-        },
-        infoValue: {
-            fontSize: '18px',
-            fontWeight: '500',
-            color: '#000000',
-            margin: 0,
-        },
-        section: {
-            marginBottom: '32px',
-        },
-        sectionTitle: {
-            fontSize: '20px',
-            fontWeight: '600',
-            color: '#000000',
-            margin: '0 0 16px 0',
-            paddingBottom: '8px',
-            borderBottom: '2px solid #eaeaea',
-        },
-        statusBadge: {
-            display: 'inline-block',
-            padding: '8px 20px',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '600',
-        },
-        applicantsList: {
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-        },
-        applicantItem: {
-            padding: '16px',
-            background: '#f8f9fa',
-            borderRadius: '8px',
-            marginBottom: '12px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            border: '1px solid #eaeaea',
-        },
-        applicantName: {
-            fontWeight: '600',
-            fontSize: '16px',
-            color: '#000000',
-        },
-        applicantStatus: {
-            padding: '6px 16px',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '500',
-        },
-        statusApplied: {
-            background: '#e3f2fd',
-            color: '#1565c0',
-        },
-        statusPending: {
-            background: '#fff3e0',
-            color: '#ef6c00',
-        },
-        statusAccepted: {
-            background: '#e8f5e9',
-            color: '#2e7d32',
-        },
-        emptyState: {
-            textAlign: 'center',
-            padding: '40px',
-            color: '#666',
-            fontStyle: 'italic',
-            background: '#f8f9fa',
-            borderRadius: '8px',
-            border: '2px dashed #ddd',
-        },
-        descriptionText: {
-            fontSize: '16px',
-            lineHeight: '1.6',
-            color: '#000000',
-            margin: '0 0 20px 0',
-        },
-        requirementsList: {
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-        },
-        requirementItem: {
-            padding: '12px 16px',
-            background: '#f8f9fa',
-            borderRadius: '8px',
-            marginBottom: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            borderLeft: '4px solid #274b93',
-        },
-        requirementText: {
-            fontSize: '15px',
-            color: '#000000',
-            margin: 0,
-        },
-        footer: {
-            padding: '24px 32px',
-            borderTop: '1px solid #eaeaea',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '16px',
-        },
-        actionBtn: {
-            padding: '12px 32px',
-            fontSize: '16px',
-            fontWeight: '500',
-            borderRadius: '25px',
-            cursor: 'pointer',
-            border: 'none',
-            transition: 'all 0.3s',
-            fontFamily: 'Poppins, sans-serif',
-        },
-        primaryBtn: {
-            background: '#274b93',
-            color: '#fff',
-        },
-        secondaryBtn: {
-            background: '#fff',
-            color: '#274b93',
-            border: '2px solid #274b93',
-        },
-    };
-
-    const statusColor = getStatusColor(shift.status);
-    const duration = calculateDuration(shift.startTime, shift.endTime);
-
-    return (
-        <div 
-            style={modalStyles.overlay}
-            onClick={onClose}
-        >
-            <div 
-                style={modalStyles.modal}
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div style={modalStyles.header}>
-                    <h2 style={modalStyles.title}>Shift Details</h2>
-                    <button
-                        style={modalStyles.closeBtn}
-                        onClick={onClose}
-                        onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                        onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                        ×
-                    </button>
-                </div>
-
-                {/* Content */}
-                <div style={modalStyles.content}>
-                    {/* Basic Information Grid */}
-                    <div style={modalStyles.infoGrid}>
-                        <div style={modalStyles.infoCard}>
-                            <div style={modalStyles.infoLabel}>Job Title</div>
-                            <div style={modalStyles.infoValue}>{shift.title || 'Not specified'}</div>
-                        </div>
-                        
-                        <div style={modalStyles.infoCard}>
-                            <div style={modalStyles.infoLabel}>Date</div>
-                            <div style={modalStyles.infoValue}>{formatDate(shift.date)}</div>
-                        </div>
-                        
-                        <div style={modalStyles.infoCard}>
-                            <div style={modalStyles.infoLabel}>Time</div>
-                            <div style={modalStyles.infoValue}>
-                                {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
-                                {duration && (
-                                    <>
-                                        <br />
-                                        <small style={{ color: '#666', fontSize: '14px' }}>
-                                            Duration: {duration}
-                                        </small>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                        
-                        <div style={modalStyles.infoCard}>
-                            <div style={modalStyles.infoLabel}>Location</div>
-                            <div style={modalStyles.infoValue}>
-                                {shift.location || 'Not specified'}
-                            </div>
-                        </div>
-                        
-                        <div style={modalStyles.infoCard}>
-                            <div style={modalStyles.infoLabel}>Pay Rate</div>
-                            <div style={modalStyles.infoValue}>
-                                {formatCurrency(shift.price)} per hour
-                                {shift.price && shift.price !== "--" && (
-                                    <>
-                                        <br />
-                                        <small style={{ color: '#666', fontSize: '14px' }}>
-                                            Estimated total: {formatCurrency(parseFloat(shift.price) * 4)} (4 hours)
-                                        </small>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                        
-                        <div style={modalStyles.infoCard}>
-                            <div style={modalStyles.infoLabel}>Status</div>
-                            <div style={{ ...modalStyles.statusBadge, backgroundColor: statusColor.bg, color: statusColor.text }}>
-                                {shift.status || 'Not specified'}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Description Section */}
-                    <div style={modalStyles.section}>
-                        <h3 style={modalStyles.sectionTitle}>Job Description</h3>
-                        <div style={modalStyles.infoCard}>
-                            <div style={modalStyles.descriptionText}>
-                                {description || "No description provided."}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Requirements Section */}
-                    <div style={modalStyles.section}>
-                        <h3 style={modalStyles.sectionTitle}>Requirements</h3>
-                        <ul style={modalStyles.requirementsList}>
-                            {requirements.map((requirement, index) => ( 
-                                <li key={index} style={modalStyles.requirementItem}>
-                                    <span style={modalStyles.requirementText}>• {requirement}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Applicants Section */}
-                    <div style={modalStyles.section}>
-                        <h3 style={modalStyles.sectionTitle}>
-                            Applicants ({mockApplicants.length})
-                        </h3>
-                        {mockApplicants.length > 0 ? (
-                            <ul style={modalStyles.applicantsList}>
-                                {mockApplicants.map(applicant => (
-                                    <li key={applicant.id} style={modalStyles.applicantItem}>
-                                        <div style={modalStyles.applicantName}>{applicant.name}</div>
-                                        <div style={{
-                                            ...modalStyles.applicantStatus,
-                                            ...(applicant.status === 'Accepted' ? modalStyles.statusAccepted :
-                                                 applicant.status === 'Pending' ? modalStyles.statusPending : 
-                                                 modalStyles.statusApplied)
-                                        }}>
-                                            {applicant.status}
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <div style={modalStyles.emptyState}>
-                                No applicants yet. Check back later!
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div style={modalStyles.footer}>
-                    <button
-                        style={{ ...modalStyles.actionBtn, ...modalStyles.secondaryBtn }}
-                        onClick={onClose}
-                        onMouseOver={(e) => {
-                            e.target.style.background = '#f0f5ff';
-                            e.target.style.color = '#1a3a7a';
-                            e.target.style.borderColor = '#1a3a7a';
-                        }}
-                        onMouseOut={(e) => {
-                            e.target.style.background = '#fff';
-                            e.target.style.color = '#274b93';
-                            e.target.style.borderColor = '#274b93';
-                        }}
-                    >
-                        Close
-                    </button>
-                    <button
-                        style={{ ...modalStyles.actionBtn, ...modalStyles.primaryBtn }}
-                        onClick={() => {
-                            console.log('Edit shift:', shift);
-                            onClose();
-                        }}
-                        onMouseOver={(e) => e.target.style.background = '#1a3a7a'}
-                        onMouseOut={(e) => e.target.style.background = '#274b93'}
-                    >
-                        Edit Shift
-                    </button>
-                </div>
-            </div>
-            
-            {/* CSS Animation */}
-            <style>{`
-                @keyframes slideUp {
-                    from { 
-                        opacity: 0;
-                        transform: translateY(30px);
-                    }
-                    to { 
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-                
-                @media (max-width: 768px) {
-                    .modal-grid {
-                        grid-template-columns: 1fr !important;
-                    }
-                    
-                    .modal-footer {
-                        flex-direction: column;
-                        gap: 12px;
-                    }
-                    
-                    .modal-footer button {
-                        width: 100%;
-                    }
-                }
-            `}</style>
         </div>
     );
 };
@@ -878,200 +475,19 @@ const SummaryCard = ({ label, number, icon, bg }) => (
     </div>
 );
 
-const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, setShowSortModal, showStatusDropdown, setShowStatusDropdown, showDateDropdown, setShowDateDropdown, selectSortBy, selectedDateFilter, setSelectedDateFilter, showLocationDropdown, setShowLocationDropdown, selectedLocationFilter, setSelectedLocationFilter, guards, setSelectedGuardFilter, showGuardDropdown, setShowGuardDropdown, }) => (
+const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, setShowSortModal }) => (
     <div style={filterSectionStyle}>
         <div style={filterGroupStyle}>
             <img src={"/ic-filter.svg"} alt="Filter" style={smallIconStyle} />
             <span style={filterLabelStyle}>Filter by:</span>
-   <div style={filterButtonsStyle}>
-                {Object.values(Filter).filter(f => !["Completed", "In Progress", "Pending", "Open"].includes(f)).map(f => {
-                    if (f === "Status") {
-                        return (
-                            <div key="Status" style={{ position: "relative" }}>
-                                <button
-                                    style={filterButtonStyle}
-                                    onClick={() => setShowStatusDropdown(prev => !prev)}
-                                >
-                                    Status <span style={{ fontSize: '10px' }}>▼</span>
-                                </button>
-                                {showStatusDropdown && (
-                                    <div style={dropdownStyle}>
-                                        {["Completed", "In Progress", "Pending", "Open"].map(option => (
-                                            <div
-                                                key={option}
-                                                style={dropdownItemStyle}
-                                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
-                                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
-                                                onClick={() => {
-                                                    setSelectedFilter(option);
-                                                    setSelectedDateFilter(null);   
-                                                    setShowStatusDropdown(false);
-                                                }}
-                                            >
-                                                {option}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    }
-                    if (f === "Date") {
-                        return (
-                            <div key="Date" style={{ position: "relative" }}>
-                                <button
-                                    style={filterButtonStyle}
-                                    onClick={() => setShowDateDropdown(prev => !prev)}
-                                >
-                                    Date <span style={{ fontSize: '10px' }}>▼</span>
-                                </button>
-                                {showDateDropdown && (
-                                    <div style={dropdownStyle}>
-                                        {["Date (Asc)", "Date (Desc)"].map(option => (
-                                            <div
-                                                key={option}
-                                                style={dropdownItemStyle}
-                                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
-                                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
-                                                onClick={() => {
-                                                    selectSortBy(option);
-                                                    setShowDateDropdown(false);
-                                                }}
-                                            >
-                                                {option}
-                                            </div>
-                                        ))}
-                                        <div style={{ height: "1px", background: "#ddd", margin: "6px 0" }} />
-                                        <div style={ datePickerWrapperStyle }>
-                                            {/* Calendar picker */}
-                                            <input
-                                                type="date"
-                                                value={selectedDateFilter || ""}
-                                                onChange={(e) => {
-                                                    setSelectedDateFilter(e.target.value);
-                                                    setSelectedFilter("Date");
-                                                }}
-                                                style={datePickerInputStyle}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    }
-                    if (f === "Location") {
-                        return (
-                            <div key="Location" style={{ position: "relative" }}>
-                                <button
-                                    style={filterButtonStyle}
-                                    onClick={() => setShowLocationDropdown(prev => !prev)}
-                                >
-                                    Location <span style={{ fontSize: '10px' }}>▼</span>
-                                </button>
-                                {showLocationDropdown && (
-                                    <div style={dropdownStyle}>
-                                        <div style={{ padding: "10px 16px" }}>
-                                            <input
-                                                type="text"
-                                                placeholder="Enter location"
-                                                value={selectedLocationFilter}
-                                                onChange={(e) => setSelectedLocationFilter(e.target.value)}
-                                                style={{
-                                                    width: "100%",
-                                                    padding: "8px 12px",
-                                                    borderRadius: "6px",
-                                                    border: "1px solid #ccc",
-                                                    fontSize: "14px",
-                                                }}
-                                            />
-                                        </div>
-                                        <div
-                                            style={{
-                                                ...dropdownItemStyle,
-                                                fontWeight: "600",
-                                                color: "#000000ff",
-                                            }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
-                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
-                                            onClick={() => {
-                                                setSelectedFilter("Location");
-                                                setSelectedDateFilter(null);  
-                                                setShowLocationDropdown(false);
-                                            }}
-                                        >
-                                            Apply
-                                        </div>
-                                        <div
-                                            style={{
-                                                ...dropdownItemStyle,
-                                                color: "#888",
-                                            }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
-                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
-                                            onClick={() => {
-                                                setSelectedLocationFilter("");
-                                                setSelectedFilter("All");
-                                                setShowLocationDropdown(false);
-                                            }}
-                                        >
-                                            Clear
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    }
-                    if (f === "Guard") {
-                        return (
-                            <div key="Guard" style={{ position: "relative" }}>
-                                <button
-                                    style={filterButtonStyle}
-                                    onClick={() => setShowGuardDropdown(prev => !prev)}
-                                >
-                                    Guard <span style={{ fontSize: '10px' }}>▼</span>
-                                </button>
-                                {showGuardDropdown && (
-                                    <div style={dropdownStyle}>
-                                        {guards.map(g => (
-                                            <div
-                                                key={g._id}
-                                                style={dropdownItemStyle}
-                                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f5f7fa")}
-                                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "white")}
-                                                onClick={() => {
-                                                    setSelectedGuardFilter(g._id);
-                                                    setSelectedFilter("Guard");
-                                                    setShowGuardDropdown(false);
-                                                }}
-                                            >
-                                                {g.name}
-                                            </div>
-                                        ))}
-                                        <div
-                                            style={{ ...dropdownItemStyle, color: "#888" }}
-                                            onClick={() => {
-                                                setSelectedGuardFilter("");
-                                                setSelectedFilter("All");
-                                                setShowGuardDropdown(false);
-                                            }}
-                                        >
-                                            Clear
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    }         
-                    return (
-                        <button
-                            key={f}
-                            style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle}
-                            onClick={() => setSelectedFilter(f)}
-                        >
-                            {f}
-                        </button>
-                    );
-                })}
+            <div style={filterButtonsStyle}>
+                {Object.values(Filter).map(f => (
+                    <button
+                        key={f}
+                        style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle}
+                        onClick={() => setSelectedFilter(f)}
+                    >{f}</button>
+                ))}
             </div>
         </div>
         <div style={sortGroupStyle}>
@@ -1097,7 +513,10 @@ const Pagination = ({ totalPages, currentPage, goPrevPage, goNextPage, goToPage,
                 disabled={page === '...'}
             >{page}</button>
         ))}
-      </div>
+        <button onClick={goNextPage} disabled={currentPage === totalPages} style={currentPage === totalPages ? disabledPaginationButtonStyle : paginationButtonStyle}>
+            <img src={"/ic-arrow-forward.svg"} alt="Next" style={smallIconStyle} />
+        </button>
+    </div>
 );
 
 const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
@@ -1121,6 +540,11 @@ const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
         </div>
     </div>
 );
+
+export default ManageShift;
+
+
+
 
 // Status tag styles
 const getStatusTagStyle = (status) => ({
@@ -1250,9 +674,7 @@ const filterLabelStyle = {
 
 const filterButtonsStyle = {
     display: 'flex',
-    flexWrap: 'wrap',
     gap: '8px',
-    width: '100%',
 };
 
 const filterButtonStyle = {
@@ -1264,8 +686,6 @@ const filterButtonStyle = {
     color: '#666',
     cursor: 'pointer',
     fontWeight: '500',
-    flexShrink: 0,
-    flex: "0 0 auto",
 };
 
 const activeFilterButtonStyle = {
@@ -1474,37 +894,139 @@ const checkmarkStyle = {
     fontWeight: 'bold',
 };
 
-const dropdownStyle = {
-    position: "absolute",
-    top: "42px",
-    left: "0",
-    background: "white",
-    border: "1px solid #ccc",
-    borderRadius: "8px",
-    boxShadow: "0px 4px 8px rgba(0,0,0,0.1)",
-    padding: "8px 0",
-    zIndex: 200,
-    minWidth: "160px",
-    whiteSpace: "nowrap",
+// Detail modal styles (aligned to create shift design)
+const detailModalOverlay = {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.45)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1100,
+    padding: '20px',
 };
 
-const dropdownItemStyle = {
-    padding: "10px 16px",
-    cursor: "pointer",
-    fontSize: "14px",
+const detailModalContent = {
+    background: '#fff',
+    borderRadius: '14px',
+    width: 'min(960px, 100%)',
+    padding: '28px 32px 32px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+    fontFamily: 'Poppins, sans-serif',
 };
 
-const datePickerWrapperStyle = {
-    padding: "10px 16px",   
+const detailModalHeader = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '16px',
+    alignItems: 'flex-start',
+    marginBottom: '12px',
 };
 
-const datePickerInputStyle = {
-    width: "100%",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    cursor: "pointer",
-    fontSize: "14px",
+const detailModalOverline = {
+    margin: 0,
+    color: '#566074',
+    fontSize: '12px',
+    letterSpacing: '0.4px',
+    fontWeight: 600,
 };
 
-export default ManageShift;
+const detailModalTitle = {
+    margin: '4px 0',
+    fontSize: '22px',
+    fontWeight: 700,
+    color: '#1d1f2e',
+};
+
+const detailModalSubtitle = {
+    margin: 0,
+    color: '#6b7280',
+    fontSize: '14px',
+};
+
+const modalCloseButton = {
+    background: '#f3f4f6',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    width: '36px',
+    height: '36px',
+    fontSize: '22px',
+    cursor: 'pointer',
+    color: '#374151',
+};
+
+const detailGrid = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '16px',
+    marginTop: '16px',
+};
+
+const detailField = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+};
+
+const detailLabel = {
+    fontSize: '13px',
+    color: '#374151',
+    fontWeight: 600,
+};
+
+const inputStyle = {
+    width: '100%',
+    padding: '12px 14px',
+    borderRadius: '10px',
+    border: '1px solid #d1d5db',
+    background: '#f3f4f6',
+    fontSize: '14px',
+    color: '#111827',
+    outline: 'none',
+};
+
+const detailActions = {
+    marginTop: '20px',
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'flex-end',
+};
+
+const primaryButton = {
+    backgroundColor: '#274b93',
+    color: 'white',
+    border: 'none',
+    borderRadius: '20px',
+    padding: '12px 24px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+};
+
+const secondaryButton = {
+    backgroundColor: 'white',
+    color: '#d14343',
+    border: '1px solid #d14343',
+    borderRadius: '20px',
+    padding: '12px 20px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+};
+
+const feedbackStyle = {
+    marginTop: '8px',
+    marginBottom: '8px',
+    padding: '10px 12px',
+    borderRadius: '10px',
+    backgroundColor: '#f8fafc',
+    color: '#0f172a',
+    border: '1px solid #e2e8f0',
+    fontSize: '13px',
+};
+
+const inlineError = {
+    color: '#d14343',
+    fontSize: '12px',
+    marginTop: '2px',
+};

@@ -32,10 +32,10 @@ export type ShiftDto = {
 };
 
 type ListResponse =
-  | ShiftDto[] // plain array
-  | { items?: ShiftDto[] } // paginated { items }
-  | { data?: ShiftDto[] } // alt { data }
-  | { shifts?: ShiftDto[] }; // alt { shifts }
+  | ShiftDto[]                                 // plain array
+  | { items?: ShiftDto[] }                     // paginated { items }
+  | { data?: ShiftDto[] }                      // alt { data }
+  | { shifts?: ShiftDto[] };                   // alt { shifts }
 
 type ApplyResponse = {
   message?: string;
@@ -58,7 +58,7 @@ export async function listShifts(page = 1, limit = 20) {
     items: toArray<ShiftDto>(data),
     page: data.page ?? page,
     limit: data.limit ?? limit,
-    total: data.total ?? toArray<ShiftDto>(data).length,
+    total: data.total ?? (toArray<ShiftDto>(data).length),
   };
 }
 
