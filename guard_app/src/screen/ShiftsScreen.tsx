@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,7 +13,11 @@ import {
   Modal,
   Pressable,
   Dimensions,
+  Alert,
 } from 'react-native';
+import * as Location from 'expo-location';
+
+import { checkIn, checkOut } from '../api/attendance';
 
 import { myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
@@ -32,7 +36,7 @@ type AppliedShift = {
   rate: string;
   date: string;
   time: string;
-  status?: 'Pending' | 'Confirmed' | 'Rejected';
+  status?: 'Pending' | 'Confirmed' | 'Rejected' | 'Checked In';
 };
 
 type CompletedShift = {
@@ -190,16 +194,30 @@ function ShiftDetailsModal({
   shift,
   visible,
   onClose,
+  attendanceStatus,
+  onCheckIn,
+  onCheckOut,
+  loading,
 }: {
   shift: AppliedShift | CompletedShift | null;
   visible: boolean;
   onClose: () => void;
+  attendanceStatus?: 'in' | 'out' | null;
+  onCheckIn?: () => void;
+  onCheckOut?: () => void;
+  loading?: boolean;
 }) {
   if (!shift) return null;
 
   const status = 'status' in shift ? shift.status : 'Completed';
   const statusColor =
-    status === 'Confirmed' ? '#10B981' : status === 'Pending' ? '#3B82F6' : '#6B7280';
+    status === 'Confirmed'
+      ? '#10B981'
+      : status === 'Pending'
+        ? '#3B82F6'
+        : status === 'Checked In'
+          ? '#F59E0B'
+          : '#6B7280';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -258,6 +276,37 @@ function ShiftDetailsModal({
                 </View>
               </View>
             </View>
+
+            {/* ACTION BUTTONS */}
+            {shift && 'status' in shift && shift.status === 'Confirmed' && attendanceStatus !== 'out' && (
+              <View style={s.modalActions}>
+                {attendanceStatus === 'in' ? (
+                  <TouchableOpacity
+                    style={[s.actionBtn, s.btnDanger, loading && s.btnDisabled]}
+                    onPress={onCheckOut}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFF" />
+                    ) : (
+                      <Text style={s.actionBtnText}>Check Out</Text>
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[s.actionBtn, s.btnPrimary, loading && s.btnDisabled]}
+                    onPress={onCheckIn}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFF" />
+                    ) : (
+                      <Text style={s.actionBtnText}>Check In</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
         </Pressable>
       </Pressable>
@@ -299,6 +348,7 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
   const getStatusColor = (status?: string) => {
     if (status === 'Confirmed') return '#10B981';
     if (status === 'Pending') return '#3B82F6';
+    if (status === 'Checked In') return '#F59E0B';
     return '#6B7280';
   };
 
@@ -393,7 +443,13 @@ function ShiftCard({
 }) {
   const status = 'status' in shift ? shift.status : 'Completed';
   const statusColor =
-    status === 'Confirmed' ? '#10B981' : status === 'Pending' ? '#3B82F6' : '#6B7280';
+    status === 'Confirmed'
+      ? '#10B981'
+      : status === 'Pending'
+        ? '#3B82F6'
+        : status === 'Checked In'
+          ? '#F59E0B'
+          : '#6B7280';
 
   return (
     <TouchableOpacity style={s.card} onPress={onPress}>
@@ -468,6 +524,80 @@ function AppliedTab() {
   const [selectedShift, setSelectedShift] = useState<AppliedShift | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
 
+  // Attendance State
+  const [attendanceMap, setAttendanceMap] = useState<Record<string, 'in' | 'out'>>({});
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Load attendance map
+  useEffect(() => {
+    AsyncStorage.getItem('attendance_map').then((json) => {
+      if (json) {
+        try {
+          setAttendanceMap(JSON.parse(json));
+        } catch { }
+      }
+    });
+  }, []);
+
+  const updateAttendance = async (shiftId: string, status: 'in' | 'out') => {
+    const newMap = { ...attendanceMap, [shiftId]: status };
+    setAttendanceMap(newMap);
+    await AsyncStorage.setItem('attendance_map', JSON.stringify(newMap));
+  };
+
+  const handleCheckIn = async () => {
+    if (!selectedShift) return;
+    try {
+      setActionLoading(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Allow location access to check in.');
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      await checkIn(selectedShift.id, loc.coords.latitude, loc.coords.longitude);
+
+      await updateAttendance(selectedShift.id, 'in');
+      Alert.alert('Success', 'Checked in successfully ✅');
+    } catch (err: any) {
+      if (err?.response?.data?.message) {
+        Alert.alert('Check-in Failed', err.response.data.message);
+      } else {
+        Alert.alert('Error', 'Failed to check in. Please try again.');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    if (!selectedShift) return;
+    try {
+      setActionLoading(true);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Allow location access to check out.');
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      await checkOut(selectedShift.id, loc.coords.latitude, loc.coords.longitude);
+
+      await updateAttendance(selectedShift.id, 'out');
+      Alert.alert('Success', 'Checked out successfully ✅');
+      setSelectedShift(null); // Close modal on completion? Or just update UI
+    } catch (err: any) {
+      if (err?.response?.data?.message) {
+        Alert.alert('Check-out Failed', err.response.data.message);
+      } else {
+        Alert.alert('Error', 'Failed to check out. Please try again.');
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -494,6 +624,13 @@ function AppliedTab() {
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
+  const displayRows = filtered.map((s) => {
+    if (attendanceMap[s.id] === 'in') {
+      return { ...s, status: 'Checked In' as const };
+    }
+    return s;
+  });
+
   return (
     <View style={s.screen}>
       <View style={s.searchRow}>
@@ -513,10 +650,10 @@ function AppliedTab() {
       {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
 
       {view === 'calendar' ? (
-        <CalendarView shifts={filtered} onShiftPress={setSelectedShift} />
+        <CalendarView shifts={displayRows} onShiftPress={setSelectedShift} />
       ) : (
         <FlatList
-          data={filtered}
+          data={displayRows}
           keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
@@ -530,6 +667,10 @@ function AppliedTab() {
         shift={selectedShift}
         visible={selectedShift !== null}
         onClose={() => setSelectedShift(null)}
+        attendanceStatus={selectedShift ? attendanceMap[selectedShift.id] : null}
+        onCheckIn={handleCheckIn}
+        onCheckOut={handleCheckOut}
+        loading={actionLoading}
       />
     </View>
   );
@@ -798,6 +939,34 @@ const s = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // MODAL ACTIONS
+  modalActions: {
+    marginTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 16,
+  },
+  actionBtn: {
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnPrimary: {
+    backgroundColor: COLORS.primary,
+  },
+  btnDanger: {
+    backgroundColor: '#EF4444',
+  },
+  btnDisabled: {
+    opacity: 0.7,
+  },
+  actionBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
   },
   calNavBtnText: {
     fontSize: 18,
