@@ -3,8 +3,8 @@ import http from '../lib/http';
 import './PayrollSummary.css';
 
 const GroupBy = Object.freeze({
-    Shift: 'shift',
     Guard: 'guard',
+    Shift: 'shift',
     Weekly: 'weekly',
     Monthly: 'monthly',
 });
@@ -28,11 +28,11 @@ const calculateHours = (startTime, endTime, spansMidnight) => {
     return (endMinutes - startMinutes) / 60;
 };
 
-// Calculate earnings for a single shift
-const calculateShiftEarnings = (shift) => {
+// Calculate payments for a single shift
+const calculateShiftPayments = (shift) => {
     const hours = calculateHours(shift.startTime, shift.endTime, shift.spansMidnight);
-    const earnings = hours * (shift.payRate || 0);
-    return { hours, earnings };
+    const payments = hours * (shift.payRate || 0);
+    return { hours, payments };
 };
 
 // Get start of week (Monday) - calendar week
@@ -56,7 +56,7 @@ const getWeekNumber = (date) => {
 };
 
 // Group shifts by guard
-const groupByGuard = (shifts, calculateShiftEarnings) => {
+const groupByGuard = (shifts, calculateShiftPayments) => {
     const groups = {};
     shifts.forEach(shift => {
         const guardId = shift.assignedGuard?._id || 'unknown';
@@ -66,20 +66,20 @@ const groupByGuard = (shifts, calculateShiftEarnings) => {
                 guardName: shift.assignedGuard?.name || 'Unknown',
                 guardEmail: shift.assignedGuard?.email || '',
                 totalHours: 0,
-                totalEarnings: 0,
+                totalPayments: 0,
                 shiftCount: 0
             };
         }
-        const { hours, earnings } = calculateShiftEarnings(shift);
+        const { hours, payments } = calculateShiftPayments(shift);
         groups[guardId].totalHours += hours;
-        groups[guardId].totalEarnings += earnings;
+        groups[guardId].totalPayments += payments;
         groups[guardId].shiftCount += 1;
     });
     return Object.values(groups).sort((a, b) => a.guardName.localeCompare(b.guardName));
 };
 
 // Group shifts by calendar week
-const groupByWeek = (shifts, calculateShiftEarnings) => {
+const groupByWeek = (shifts, calculateShiftPayments) => {
     const groups = {};
     shifts.forEach(shift => {
         const date = new Date(shift.date);
@@ -94,20 +94,20 @@ const groupByWeek = (shifts, calculateShiftEarnings) => {
                 weekStart: weekStart,
                 weekEnd: new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000),
                 totalHours: 0,
-                totalEarnings: 0,
+                totalPayments: 0,
                 shiftCount: 0
             };
         }
-        const { hours, earnings } = calculateShiftEarnings(shift);
+        const { hours, payments } = calculateShiftPayments(shift);
         groups[weekKey].totalHours += hours;
-        groups[weekKey].totalEarnings += earnings;
+        groups[weekKey].totalPayments += payments;
         groups[weekKey].shiftCount += 1;
     });
     return Object.values(groups).sort((a, b) => b.weekKey.localeCompare(a.weekKey));
 };
 
 // Group shifts by month
-const groupByMonth = (shifts, calculateShiftEarnings) => {
+const groupByMonth = (shifts, calculateShiftPayments) => {
     const groups = {};
     shifts.forEach(shift => {
         const date = new Date(shift.date);
@@ -117,13 +117,13 @@ const groupByMonth = (shifts, calculateShiftEarnings) => {
                 month: monthKey,
                 monthName: date.toLocaleDateString('en-AU', { year: 'numeric', month: 'long' }),
                 totalHours: 0,
-                totalEarnings: 0,
+                totalPayments: 0,
                 shiftCount: 0
             };
         }
-        const { hours, earnings } = calculateShiftEarnings(shift);
+        const { hours, payments } = calculateShiftPayments(shift);
         groups[monthKey].totalHours += hours;
-        groups[monthKey].totalEarnings += earnings;
+        groups[monthKey].totalPayments += payments;
         groups[monthKey].shiftCount += 1;
     });
     return Object.values(groups).sort((a, b) => b.month.localeCompare(a.month));
@@ -131,7 +131,7 @@ const groupByMonth = (shifts, calculateShiftEarnings) => {
 
 const PayrollSummary = () => {
     const [shifts, setShifts] = useState([]);
-    const [groupBy, setGroupBy] = useState(GroupBy.Shift);
+    const [groupBy, setGroupBy] = useState(GroupBy.Guard);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [loading, setLoading] = useState(true);
@@ -169,15 +169,15 @@ const PayrollSummary = () => {
     const groupedData = useMemo(() => {
         switch (groupBy) {
             case GroupBy.Guard:
-                return groupByGuard(filteredShifts, calculateShiftEarnings);
+                return groupByGuard(filteredShifts, calculateShiftPayments);
             case GroupBy.Weekly:
-                return groupByWeek(filteredShifts, calculateShiftEarnings);
+                return groupByWeek(filteredShifts, calculateShiftPayments);
             case GroupBy.Monthly:
-                return groupByMonth(filteredShifts, calculateShiftEarnings);
+                return groupByMonth(filteredShifts, calculateShiftPayments);
             default: // 'shift'
                 return filteredShifts.map(s => ({
                     ...s,
-                    ...calculateShiftEarnings(s),
+                    ...calculateShiftPayments(s),
                     guardName: s.assignedGuard?.name || 'Unassigned'
                 }));
         }
@@ -185,15 +185,15 @@ const PayrollSummary = () => {
 
     // Calculate overall summary
     const summary = useMemo(() => {
-        let totalHours = 0, totalEarnings = 0;
+        let totalHours = 0, totalPayments = 0;
         filteredShifts.forEach(shift => {
-            const { hours, earnings } = calculateShiftEarnings(shift);
+            const { hours, payments } = calculateShiftPayments(shift);
             totalHours += hours;
-            totalEarnings += earnings;
+            totalPayments += payments;
         });
         return {
             totalHours: totalHours.toFixed(1),
-            totalEarnings: totalEarnings.toFixed(2),
+            totalPayments: totalPayments.toFixed(2),
             totalShifts: filteredShifts.length
         };
     }, [filteredShifts]);
@@ -209,26 +209,26 @@ const PayrollSummary = () => {
     // CSV Export
     const handleExportCSV = () => {
         const headers = {
-            guard: ['Guard Name', 'Email', 'Total Hours', 'Total Earnings ($)', 'Shift Count'],
-            shift: ['Shift Title', 'Date', 'Guard', 'Hours', 'Pay Rate ($)', 'Earnings ($)'],
-            weekly: ['Week', 'Date Range', 'Total Hours', 'Total Earnings ($)', 'Shift Count'],
-            monthly: ['Month', 'Total Hours', 'Total Earnings ($)', 'Shift Count']
+            guard: ['Guard Name', 'Email', 'Total Hours', 'Total Payments ($)', 'Shift Count'],
+            shift: ['Shift Title', 'Date', 'Guard', 'Hours', 'Pay Rate ($)', 'Payments ($)'],
+            weekly: ['Week', 'Date Range', 'Total Hours', 'Total Payments ($)', 'Shift Count'],
+            monthly: ['Month', 'Total Hours', 'Total Payments ($)', 'Shift Count']
         };
 
         const rows = groupedData.map(item => {
             switch (groupBy) {
                 case GroupBy.Guard:
                     return [item.guardName, item.guardEmail, item.totalHours.toFixed(1),
-                            item.totalEarnings.toFixed(2), item.shiftCount];
+                            item.totalPayments.toFixed(2), item.shiftCount];
                 case GroupBy.Weekly:
                     return [item.weekLabel, `${formatDate(item.weekStart)} - ${formatDate(item.weekEnd)}`,
-                            item.totalHours.toFixed(1), item.totalEarnings.toFixed(2), item.shiftCount];
+                            item.totalHours.toFixed(1), item.totalPayments.toFixed(2), item.shiftCount];
                 case GroupBy.Monthly:
                     return [item.monthName, item.totalHours.toFixed(1),
-                            item.totalEarnings.toFixed(2), item.shiftCount];
+                            item.totalPayments.toFixed(2), item.shiftCount];
                 default: // shift
                     return [item.title || '--', formatDate(item.date), item.guardName,
-                            item.hours.toFixed(1), item.payRate || 0, item.earnings.toFixed(2)];
+                            item.hours.toFixed(1), item.payRate || 0, item.payments.toFixed(2)];
             }
         });
 
@@ -271,7 +271,7 @@ const PayrollSummary = () => {
                                 <th>Guard Name</th>
                                 <th>Email</th>
                                 <th>Hours</th>
-                                <th>Earnings ($)</th>
+                                <th>Payments ($)</th>
                                 <th>Shifts</th>
                             </tr>
                         </thead>
@@ -281,7 +281,7 @@ const PayrollSummary = () => {
                                     <td>{item.guardName}</td>
                                     <td>{item.guardEmail || '--'}</td>
                                     <td>{item.totalHours.toFixed(1)}</td>
-                                    <td>${item.totalEarnings.toFixed(2)}</td>
+                                    <td>${item.totalPayments.toFixed(2)}</td>
                                     <td>{item.shiftCount}</td>
                                 </tr>
                             ))}
@@ -297,7 +297,7 @@ const PayrollSummary = () => {
                                 <th>Week</th>
                                 <th>Date Range</th>
                                 <th>Hours</th>
-                                <th>Earnings ($)</th>
+                                <th>Payments ($)</th>
                                 <th>Shifts</th>
                             </tr>
                         </thead>
@@ -307,7 +307,7 @@ const PayrollSummary = () => {
                                     <td>{item.weekLabel}</td>
                                     <td>{formatDate(item.weekStart)} - {formatDate(item.weekEnd)}</td>
                                     <td>{item.totalHours.toFixed(1)}</td>
-                                    <td>${item.totalEarnings.toFixed(2)}</td>
+                                    <td>${item.totalPayments.toFixed(2)}</td>
                                     <td>{item.shiftCount}</td>
                                 </tr>
                             ))}
@@ -322,7 +322,7 @@ const PayrollSummary = () => {
                             <tr>
                                 <th>Month</th>
                                 <th>Hours</th>
-                                <th>Earnings ($)</th>
+                                <th>Payments ($)</th>
                                 <th>Shifts</th>
                             </tr>
                         </thead>
@@ -331,7 +331,7 @@ const PayrollSummary = () => {
                                 <tr key={idx}>
                                     <td>{item.monthName}</td>
                                     <td>{item.totalHours.toFixed(1)}</td>
-                                    <td>${item.totalEarnings.toFixed(2)}</td>
+                                    <td>${item.totalPayments.toFixed(2)}</td>
                                     <td>{item.shiftCount}</td>
                                 </tr>
                             ))}
@@ -349,7 +349,7 @@ const PayrollSummary = () => {
                                 <th>Guard</th>
                                 <th>Hours</th>
                                 <th>Rate ($)</th>
-                                <th>Earnings ($)</th>
+                                <th>Payments ($)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -360,7 +360,7 @@ const PayrollSummary = () => {
                                     <td>{item.guardName}</td>
                                     <td>{item.hours.toFixed(1)}</td>
                                     <td>${item.payRate || 0}</td>
-                                    <td>${item.earnings.toFixed(2)}</td>
+                                    <td>${item.payments.toFixed(2)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -389,12 +389,12 @@ const PayrollSummary = () => {
                     </div>
                     <img src="/ic-clock.svg" alt="Hours" className="payroll-card-icon" />
                 </div>
-                <div className="payroll-summary-card payroll-card-earnings">
+                <div className="payroll-summary-card payroll-card-payments">
                     <div>
-                        <p className="payroll-summary-label">Total Earnings</p>
-                        <p className="payroll-summary-number">${summary.totalEarnings}</p>
+                        <p className="payroll-summary-label">Total Payments</p>
+                        <p className="payroll-summary-number">${summary.totalPayments}</p>
                     </div>
-                    <img src="/ic-dollar.svg" alt="Earnings" className="payroll-card-icon" onError={(e) => e.target.style.display = 'none'} />
+                    <img src="/ic-dollar.svg" alt="Payments" className="payroll-card-icon" onError={(e) => e.target.style.display = 'none'} />
                 </div>
                 <div className="payroll-summary-card payroll-card-shifts">
                     <div>
