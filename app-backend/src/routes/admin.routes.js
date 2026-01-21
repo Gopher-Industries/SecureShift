@@ -5,7 +5,7 @@ import {
     adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs, 
     getUserById, getAllMessages, deleteUserById, deleteMessageById,
     listPendingLicenses, verifyGuardLicense, rejectGuardLicense,
-    getAdminSummary, 
+    getSmtpSettings, updateSmtpSettings, testSmtpSettings,
 } from '../controllers/admin.controller.js';
 
 import auth from '../middleware/auth.js';
@@ -418,102 +418,103 @@ router.patch('/guards/:id/license/verify', auth, adminOnly, verifyGuardLicense);
  */
 router.patch('/guards/:id/license/reject', auth, adminOnly, rejectGuardLicense);
 
-
-
 /**
  * @swagger
- * /api/v1/admin/summary:
+ * /api/v1/admin/smtp-settings:
  *   get:
- *     summary: Real-time summary metrics for the Admin Dashboard
- *     description: |
- *       Returns up-to-date counts for users, shifts, messages, and (optionally) payments.
- *       Payments may be zeroed if the payments model is not yet implemented.
+ *     summary: Get SMTP settings (Admin only)
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Platform metrics payload
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 totalUsers:
- *                   type: integer
- *                   example: 100
- *                 totalGuards:
- *                   type: integer
- *                   example: 60
- *                 totalEmployers:
- *                   type: integer
- *                   example: 35
- *                 totalAdmins:
- *                   type: integer
- *                   example: 5
- *                 shifts:
- *                   type: object
- *                   properties:
- *                     totalShifts:
- *                       type: integer
- *                       example: 250
- *                     openShifts:
- *                       type: integer
- *                       example: 40
- *                     assignedShifts:
- *                       type: integer
- *                       example: 120
- *                     completedShifts:
- *                       type: integer
- *                       example: 90
- *                     shiftsToday:
- *                       type: integer
- *                       example: 10
- *                 payments:
- *                   type: object
- *                   description: May return zeros until Payment model is added.
- *                   properties:
- *                     totalPayments:
- *                       type: integer
- *                       example: 90
- *                     paid:
- *                       type: integer
- *                       example: 80
- *                     pending:
- *                       type: integer
- *                       example: 10
- *                     totalAmountPaid:
- *                       type: number
- *                       example: 15200
- *                 messages:
- *                   type: object
- *                   properties:
- *                     totalMessages:
- *                       type: integer
- *                       example: 420
- *                     todayMessages:
- *                       type: integer
- *                       example: 35
- *                 activity:
- *                   type: object
- *                   properties:
- *                     newUsersToday:
- *                       type: integer
- *                       example: 4
- *                     shiftsCreatedToday:
- *                       type: integer
- *                       example: 6
- *                     paymentsProcessedToday:
- *                       type: integer
- *                       example: 3
+ *         description: SMTP settings (password is hidden)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (admin only)
+ */
+router.get('/smtp-settings', auth, adminOnly, getSmtpSettings);
+
+/**
+ * @swagger
+ * /api/v1/admin/smtp-settings:
+ *   put:
+ *     summary: Update SMTP settings (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - SMTP_HOST
+ *               - SMTP_USER
+ *               - SMTP_PASS
+ *             properties:
+ *               SMTP_HOST:
+ *                 type: string
+ *                 example: smtp.gmail.com
+ *               SMTP_PORT:
+ *                 type: string
+ *                 example: "587"
+ *               SMTP_SECURE:
+ *                 type: string
+ *                 example: "false"
+ *               SMTP_USER:
+ *                 type: string
+ *                 example: your-email@gmail.com
+ *               SMTP_PASS:
+ *                 type: string
+ *                 example: your-app-password
+ *     responses:
+ *       200:
+ *         description: SMTP settings updated successfully
+ *       400:
+ *         description: Missing required fields
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (admin only)
+ */
+router.put('/smtp-settings', auth, adminOnly, updateSmtpSettings);
+
+/**
+ * @swagger
+ * /api/v1/admin/smtp-settings/test:
+ *   post:
+ *     summary: Test SMTP settings by sending a test email (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - testEmail
+ *             properties:
+ *               testEmail:
+ *                 type: string
+ *                 format: email
+ *                 example: test@example.com
+ *     responses:
+ *       200:
+ *         description: Test email sent successfully
+ *       400:
+ *         description: Missing testEmail
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden (admin only)
  *       500:
- *         description: Server error
+ *         description: Failed to send test email
  */
-
-router.get('/summary', auth, adminOnly, getAdminSummary);
+router.post('/smtp-settings/test', auth, adminOnly, testSmtpSettings);
 
 export default router;
