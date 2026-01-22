@@ -1,4 +1,3 @@
-
 import http from '../lib/http';
 
 export type Attendance = {
@@ -13,7 +12,7 @@ export type Attendance = {
 export async function checkIn(shiftId: string, latitude: number, longitude: number) {
   const { data } = await http.post<{ message: string; attendance: Attendance }>(
     `/attendance/checkin/${shiftId}`,
-    { latitude, longitude }
+    { latitude, longitude },
   );
   return data;
 }
@@ -21,7 +20,7 @@ export async function checkIn(shiftId: string, latitude: number, longitude: numb
 export async function checkOut(shiftId: string, latitude: number, longitude: number) {
   const { data } = await http.post<{ message: string; attendance: Attendance }>(
     `/attendance/checkout/${shiftId}`,
-    { latitude, longitude }
+    { latitude, longitude },
   );
   return data;
 }
