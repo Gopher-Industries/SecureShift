@@ -412,16 +412,16 @@ function AppliedTab() {
         prev.map((r) =>
           r.id === id
             ? {
-              ...r,
-              status:
-                newStatus === 'pending'
-                  ? 'Pending'
-                  : newStatus === 'confirmed'
-                    ? 'Confirmed'
-                    : newStatus === 'rejected'
-                      ? 'Rejected'
-                      : r.status,
-            }
+                ...r,
+                status:
+                  newStatus === 'pending'
+                    ? 'Pending'
+                    : newStatus === 'confirmed'
+                      ? 'Confirmed'
+                      : newStatus === 'rejected'
+                        ? 'Rejected'
+                        : r.status,
+              }
             : r,
         ),
       );
