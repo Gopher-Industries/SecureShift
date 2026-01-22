@@ -1,15 +1,25 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator, Alert,
-} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 // Auto refresh when navigating back
-import { useFocusEffect } from '@react-navigation/native';
+
+import { listShifts, myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
 // From Shifts API
-import { listShifts, myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 
 function parseJwt(token: string) {
   try {
@@ -27,10 +37,14 @@ function parseJwt(token: string) {
   }
 }
 
-
 type AppliedShift = {
-  id: string; title: string; company: string; site: string;
-  rate: string; date: string; time: string;
+  id: string;
+  title: string;
+  company: string;
+  site: string;
+  rate: string;
+  date: string;
+  time: string;
   status?: 'Pending' | 'Confirmed' | 'Rejected';
 };
 
@@ -47,7 +61,7 @@ type CompletedShift = {
 };
 
 /* To rate helper to backend */
-const toRate = (r?: number | string) => typeof r === 'number' ? `$${r} p/h` : (r ?? '$—');
+const toRate = (r?: number | string) => (typeof r === 'number' ? `$${r} p/h` : (r ?? '$—'));
 
 /* Show Apply only for shifts that have not been applied for */
 const canApply = (st?: AppliedShift['status']) => !st; // only show if status is undefined/null
@@ -59,8 +73,11 @@ function mapMineShifts(s: ShiftDto[] | unknown, myUid: string): AppliedShift[] {
     .map((x) => {
       let status: AppliedShift['status'] | undefined;
 
-      const acceptedId = typeof x.acceptedBy === 'object' ? x.acceptedBy?._id : String(x.acceptedBy ?? '');
-      const applicants = Array.isArray(x.applicants) ? x.applicants.map(a => (typeof a === 'object' ? a._id : String(a))) : [];
+      const acceptedId =
+        typeof x.acceptedBy === 'object' ? x.acceptedBy?._id : String(x.acceptedBy ?? '');
+      const applicants = Array.isArray(x.applicants)
+        ? x.applicants.map((a: any) => (typeof a === 'object' ? a._id : String(a)))
+        : [];
 
       if (x.status === 'assigned' && acceptedId === myUid) {
         status = 'Confirmed';
@@ -123,12 +140,24 @@ function mapCompleted(s: ShiftDto[] | unknown): CompletedShift[] {
     }));
 }
 
-
-
+// Shared filter state type
+type FilterState = {
+  status: null | 'Pending' | 'Confirmed' | 'Rejected';
+  company: string[];
+  site: string[];
+};
 
 // FilterModal with FlatList
-function FilterModal({ visible, onClose, filters, setFilters, data }) {
-  const toggleStatus = (status) => {
+type FilterModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  filters: FilterState;
+  setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
+  data: { company: string; site: string }[];
+};
+
+function FilterModal({ visible, onClose, filters, setFilters, data }: FilterModalProps) {
+  const toggleStatus = (status: 'Pending' | 'Confirmed' | 'Rejected') => {
     setFilters((prev) => ({ ...prev, status: prev.status === status ? null : status }));
   };
 
@@ -212,18 +241,28 @@ function FilterModal({ visible, onClose, filters, setFilters, data }) {
   );
 }
 
-function filterShifts(data, q, filters) {
-  return data.filter(x => {
-    const qMatch = (x.title + x.createdBy?.company + x.site).toLowerCase().includes(q.toLowerCase());
-    const statusMatch = !filters.status || x.status === filters.status;
-    const companyMatch = filters.company.length === 0 || filters.company.includes(x.createdBy?.company);
+function filterShifts<T extends AppliedShift | CompletedShift>(
+  data: T[],
+  q: string,
+  filters: { status: string | null; company: string[]; site: string[] },
+): T[] {
+  return data.filter((x) => {
+    const qMatch = (x.title + x.company + x.site).toLowerCase().includes(q.toLowerCase());
+    const statusMatch = !filters.status || (x as any).status === filters.status;
+    const companyMatch = filters.company.length === 0 || filters.company.includes(x.company);
     const siteMatch = filters.site.length === 0 || filters.site.includes(x.site);
     return qMatch && statusMatch && companyMatch && siteMatch;
   });
 }
 
 /* Search Bar (Shared for each tab) */
-function Search({ q, setQ, onFilterPress }) {
+interface SearchProps {
+  q: string;
+  setQ: (text: string) => void;
+  onFilterPress: () => void;
+}
+
+function Search({ q, setQ, onFilterPress }: SearchProps) {
   return (
     <View style={s.searchRow}>
       <TextInput
@@ -248,8 +287,19 @@ function Search({ q, setQ, onFilterPress }) {
 }
 
 function Card({
-  title, company, site, rate, children, onApply,
-}: React.PropsWithChildren<{ title: string; company: string; site: string; rate: string; onApply?: () => void }>) {
+  title,
+  company,
+  site,
+  rate,
+  children,
+  onApply,
+}: React.PropsWithChildren<{
+  title: string;
+  company: string;
+  site: string;
+  rate: string;
+  onApply?: () => void;
+}>) {
   return (
     <View style={s.card}>
       <View style={s.headerRow}>
@@ -274,7 +324,8 @@ function Card({
 function AppliedTab() {
   const [q, setQ] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ status: null as null | 'Pending' | 'Confirmed' | 'Rejected', company: [] as string[], site: [] as string[] });
+  const [filters, setFilters] = useState<FilterState>({ status: null, company: [], site: [] });
+  const navigation = useNavigation<any>();
 
   const [rows, setRows] = useState<AppliedShift[]>([]);
   const [loading, setLoading] = useState(false);
@@ -300,8 +351,8 @@ function AppliedTab() {
       setErr(null);
 
       // Fetch User Data
-      const token = await AsyncStorage.getItem("auth_token");
-      if (!token) throw new Error("No auth token found in storage");
+      const token = await AsyncStorage.getItem('auth_token');
+      if (!token) throw new Error('No auth token found in storage');
 
       const decoded = parseJwt(token);
       const myUid = decoded?.id;
@@ -356,6 +407,7 @@ function AppliedTab() {
       const newStatus = (res?.shift?.status ?? '').toString().toLowerCase();
 
       // trust backend-mapped status ('pending' for guard)
+<<<<<<< Updated upstream
       setRows(prev => prev.map(r =>
         r.id === id ? {
           ...r, status: newStatus === 'pending' ? 'Pending' :
@@ -364,12 +416,31 @@ function AppliedTab() {
                 r.status
         } : r
       ));
+=======
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                status:
+                  newStatus === 'pending'
+                    ? 'Pending'
+                    : newStatus === 'confirmed'
+                      ? 'Confirmed'
+                      : newStatus === 'rejected'
+                        ? 'Rejected'
+                        : r.status,
+              }
+            : r,
+        ),
+      );
+>>>>>>> Stashed changes
 
       Alert.alert('Applied', 'Your application has been sent.');
     } catch (e: any) {
       setErr(e?.response?.data?.message ?? e?.message ?? 'Failed to apply');
       // rollback on error
-      setRows(prev => prev.map(r => r.id === id ? { ...r, status: undefined } : r));
+      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: undefined } : r)));
     }
   };
 
@@ -395,23 +466,29 @@ function AppliedTab() {
         keyExtractor={(i) => i.id}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
-          <Card
-            title={item.title}
-            company={item.company}
-            site={item.site}
-            rate={item.rate}
-            onApply={canApply(item.status) ? () => onApply(item.id) : undefined}
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('ShiftDetails', { shift: item as any, refresh: fetchData })
+            }
           >
-            <Text style={s.status}>
-              <Text style={{ color: '#000' }}>Status: </Text>
-              <Text style={{ color: colorFor(item.status) }}>{item.status ?? 'Available'}</Text>
-            </Text>
-            <View style={s.row}>
-              <Text style={s.muted}>{formatDate(item.date)}</Text>
-              <Text style={s.dot}> • </Text>
-              <Text style={s.muted}>{item.time}</Text>
-            </View>
-          </Card>
+            <Card
+              title={item.title}
+              company={item.company}
+              site={item.site}
+              rate={item.rate}
+              onApply={canApply(item.status) ? () => onApply(item.id) : undefined}
+            >
+              <Text style={s.status}>
+                <Text style={{ color: '#000' }}>Status: </Text>
+                <Text style={{ color: colorFor(item.status) }}>{item.status ?? 'Available'}</Text>
+              </Text>
+              <View style={s.row}>
+                <Text style={s.muted}>{formatDate(item.date)}</Text>
+                <Text style={s.dot}> • </Text>
+                <Text style={s.muted}>{item.time}</Text>
+              </View>
+            </Card>
+          </TouchableOpacity>
         )}
       />
 
@@ -439,7 +516,8 @@ function Stars({ n }: { n: number }) {
 function CompletedTab() {
   const [q, setQ] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ status: null, company: [] as string[], site: [] as string[] });
+  const [filters, setFilters] = useState<FilterState>({ status: null, company: [], site: [] });
+  const navigation = useNavigation<any>();
 
   const [rows, setRows] = useState<CompletedShift[]>([]);
   const [loading, setLoading] = useState(false);
@@ -467,6 +545,7 @@ function CompletedTab() {
     }, [fetchData]),
   );
 
+<<<<<<< Updated upstream
   // Completed shifts do not have AppliedStatus, so filter by q/company/site only.
   const filtered = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -478,6 +557,9 @@ function CompletedTab() {
       return qMatch && companyMatch && siteMatch;
     });
   }, [rows, q, filters.company, filters.site]);
+=======
+  const filtered = filterShifts(rows, q, filters);
+>>>>>>> Stashed changes
 
   return (
     <View style={s.screen}>
@@ -494,28 +576,36 @@ function CompletedTab() {
         keyExtractor={(i) => i.id}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
-          <View style={s.card}>
-            <View style={s.headerRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.title}>{item.title}</Text>
-                <Text style={s.muted}>{item.company}</Text>
-                <Text style={s.muted}>{item.site}</Text>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('ShiftDetails', { shift: item as any, refresh: fetchData })
+            }
+          >
+            <View style={s.card}>
+              <View style={s.headerRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.title}>{item.title}</Text>
+                  <Text style={s.muted}>{item.company}</Text>
+                  <Text style={s.muted}>{item.site}</Text>
+                </View>
+                <Text style={s.rate}>{item.rate}</Text>
               </View>
-              <Text style={s.rate}>{item.rate}</Text>
+              <View style={s.rowSpace}>
+                <Text style={s.status}>
+                  <Text style={{ color: '#000' }}>Status: </Text>
+                  <Text style={{ color: COLORS.link }}>
+                    Completed {item.rated ? '(Rated)' : '(Unrated)'}
+                  </Text>
+                </Text>
+                <Stars n={item.rating} />
+              </View>
+              <View style={s.row}>
+                <Text style={s.muted}>{formatDate(item.date)}</Text>
+                <Text style={s.dot}> • </Text>
+                <Text style={s.muted}>{item.time}</Text>
+              </View>
             </View>
-            <View style={s.rowSpace}>
-              <Text style={s.status}>
-                <Text style={{ color: '#000' }}>Status: </Text>
-                <Text style={{ color: COLORS.link }}>Completed {item.rated ? '(Rated)' : '(Unrated)'}</Text>
-              </Text>
-              <Stars n={item.rating} />
-            </View>
-            <View style={s.row}>
-              <Text style={s.muted}>{formatDate(item.date)}</Text>
-              <Text style={s.dot}> • </Text>
-              <Text style={s.muted}>{item.time}</Text>
-            </View>
-          </View>
+          </TouchableOpacity>
         )}
       />
 
@@ -546,16 +636,16 @@ export default function ShiftScreen() {
           overflow: 'hidden',
         },
         tabBarIndicatorStyle: {
-          backgroundColor: "#274289", // blue background
-          height: '100%',              // fill the tab height
+          backgroundColor: '#274289', // blue background
+          height: '100%', // fill the tab height
           borderRadius: 12,
         },
         tabBarLabelStyle: {
           fontWeight: '700',
           textTransform: 'none',
         },
-        tabBarActiveTintColor: "#fff", // white text when active
-        tabBarInactiveTintColor: "#000", // black text when inactive
+        tabBarActiveTintColor: '#fff', // white text when active
+        tabBarInactiveTintColor: '#000', // black text when inactive
       })}
     >
       <Top.Screen name="Applied" component={AppliedTab} />
@@ -563,7 +653,6 @@ export default function ShiftScreen() {
     </Top.Navigator>
   );
 }
-
 
 /* Styles */
 const s = StyleSheet.create({
@@ -622,7 +711,12 @@ const s = StyleSheet.create({
   status: { marginTop: 6, color: COLORS.muted },
 
   // Filter Menu Styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalContent: { width: '90%', backgroundColor: '#fff', padding: 20, borderRadius: 12 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
   modalLabel: { marginTop: 10, fontWeight: '600' },
@@ -638,6 +732,12 @@ const s = StyleSheet.create({
   modalCloseText: { color: '#fff', fontWeight: 'bold' },
 
   // Apply
-  applyBtn: { marginTop: 10, backgroundColor: COLORS.primary, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  applyBtn: {
+    marginTop: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
   applyText: { color: '#fff', fontWeight: '700' },
 });
