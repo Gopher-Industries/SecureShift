@@ -1,24 +1,15 @@
-// ShiftScreen.tsx
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator, Alert,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+// Auto refresh when navigating back
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-
-import { listShifts, myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
+// From Shifts API
+import { listShifts, myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 
 function parseJwt(token: string) {
   try {
@@ -36,18 +27,11 @@ function parseJwt(token: string) {
   }
 }
 
-type AppliedStatus = 'Pending' | 'Confirmed' | 'Rejected';
-type AttendanceStatus = 'in' | 'out';
 
 type AppliedShift = {
-  id: string;
-  title: string;
-  company: string;
-  site: string;
-  rate: string;
-  date: string;
-  time: string;
-  status?: AppliedStatus; // undefined => Available
+  id: string; title: string; company: string; site: string;
+  rate: string; date: string; time: string;
+  status?: 'Pending' | 'Confirmed' | 'Rejected';
 };
 
 type CompletedShift = {
@@ -62,14 +46,10 @@ type CompletedShift = {
   rating: number;
 };
 
-type FilterState = {
-  status: null | AppliedStatus;
-  company: string[];
-  site: string[];
-};
+/* To rate helper to backend */
+const toRate = (r?: number | string) => typeof r === 'number' ? `$${r} p/h` : (r ?? '$—');
 
-type ShiftLike = { title: string; company: string; site: string; status?: AppliedStatus };
-
+/* Show Apply only for shifts that have not been applied for */
 const canApply = (st?: AppliedShift['status']) => !st; // only show if status is undefined/null
 
 function mapMineShifts(s: ShiftDto[] | unknown, myUid: string): AppliedShift[] {
@@ -79,11 +59,8 @@ function mapMineShifts(s: ShiftDto[] | unknown, myUid: string): AppliedShift[] {
     .map((x) => {
       let status: AppliedShift['status'] | undefined;
 
-      const acceptedId =
-        typeof x.acceptedBy === 'object' ? x.acceptedBy?._id : String(x.acceptedBy ?? '');
-      const applicants = Array.isArray(x.applicants)
-        ? x.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
-        : [];
+      const acceptedId = typeof x.acceptedBy === 'object' ? x.acceptedBy?._id : String(x.acceptedBy ?? '');
+      const applicants = Array.isArray(x.applicants) ? x.applicants.map(a => (typeof a === 'object' ? a._id : String(a))) : [];
 
       if (x.status === 'assigned' && acceptedId === myUid) {
         status = 'Confirmed';
@@ -92,6 +69,10 @@ function mapMineShifts(s: ShiftDto[] | unknown, myUid: string): AppliedShift[] {
       } else if (x.status === 'applied') {
         status = 'Pending';
       }
+      // Map other statuses if needed, e.g. in-progress
+      if (x.status === 'in-progress') status = 'Confirmed'; // Treat in-progress as Confirmed for filter purposes?
+      // Or just leave undefined if it doesn't match 'Pending'/'Confirmed'/'Rejected' exactly as per previous logic.
+      // But since we added 'in-progress' to API, let's make sure it doesn't break.
 
       return {
         id: x._id,
@@ -142,101 +123,12 @@ function mapCompleted(s: ShiftDto[] | unknown): CompletedShift[] {
     }));
 }
 
-function filterShifts<T extends ShiftLike>(data: T[], q: string, filters: FilterState) {
-  const qq = q.trim().toLowerCase();
 
-  return data.filter((x) => {
-    const qMatch =
-      qq.length === 0 || `${x.title} ${x.company} ${x.site}`.toLowerCase().includes(qq);
 
-    const statusMatch = !filters.status || x.status === filters.status;
-    const companyMatch = filters.company.length === 0 || filters.company.includes(x.company);
-    const siteMatch = filters.site.length === 0 || filters.site.includes(x.site);
 
-    return qMatch && statusMatch && companyMatch && siteMatch;
-  });
-}
-
-function Search({
-  q,
-  setQ,
-  onFilterPress,
-}: {
-  q: string;
-  setQ: (v: string) => void;
-  onFilterPress: () => void;
-}) {
-  return (
-    <View style={s.searchRow}>
-      <TextInput
-        value={q}
-        onChangeText={setQ}
-        placeholder="Search shifts..."
-        placeholderTextColor="#A0A7B1"
-        style={s.search}
-        accessibilityLabel="Search shifts"
-        accessibilityRole="search"
-      />
-      <TouchableOpacity
-        onPress={onFilterPress}
-        style={s.filterBtn}
-        accessibilityRole="button"
-        accessibilityLabel="Open filter options"
-      >
-        <Text style={s.filterText}>☰</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function Card({
-  title,
-  company,
-  site,
-  rate,
-  children,
-  onApply,
-}: React.PropsWithChildren<{
-  title: string;
-  company: string;
-  site: string;
-  rate: string;
-  onApply?: () => void;
-}>) {
-  return (
-    <View style={s.card}>
-      <View style={s.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>{title}</Text>
-          <Text style={s.muted}>{company}</Text>
-          <Text style={s.muted}>{site}</Text>
-        </View>
-        <Text style={s.rate}>{rate}</Text>
-      </View>
-      {children}
-      {onApply && (
-        <TouchableOpacity style={s.applyBtn} onPress={onApply}>
-          <Text style={s.applyText}>Apply</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-
-function FilterModal<T extends { company: string; site: string }>({
-  visible,
-  onClose,
-  filters,
-  setFilters,
-  data,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  filters: FilterState;
-  setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
-  data: T[];
-}) {
-  const toggleStatus = (status: AppliedStatus) => {
+// FilterModal with FlatList
+function FilterModal({ visible, onClose, filters, setFilters, data }) {
+  const toggleStatus = (status) => {
     setFilters((prev) => ({ ...prev, status: prev.status === status ? null : status }));
   };
 
@@ -320,15 +212,69 @@ function FilterModal<T extends { company: string; site: string }>({
   );
 }
 
+function filterShifts(data, q, filters) {
+  return data.filter(x => {
+    const qMatch = (x.title + x.createdBy?.company + x.site).toLowerCase().includes(q.toLowerCase());
+    const statusMatch = !filters.status || x.status === filters.status;
+    const companyMatch = filters.company.length === 0 || filters.company.includes(x.createdBy?.company);
+    const siteMatch = filters.site.length === 0 || filters.site.includes(x.site);
+    return qMatch && statusMatch && companyMatch && siteMatch;
+  });
+}
+
+/* Search Bar (Shared for each tab) */
+function Search({ q, setQ, onFilterPress }) {
+  return (
+    <View style={s.searchRow}>
+      <TextInput
+        value={q}
+        onChangeText={setQ}
+        placeholder="Search shifts..."
+        placeholderTextColor="#A0A7B1"
+        style={s.search}
+        accessibilityLabel="Search shifts"
+        accessibilityRole="search"
+      />
+      <TouchableOpacity
+        onPress={onFilterPress}
+        style={s.filterBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Open filter options"
+      >
+        <Text style={s.filterText}>☰</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function Card({
+  title, company, site, rate, children, onApply,
+}: React.PropsWithChildren<{ title: string; company: string; site: string; rate: string; onApply?: () => void }>) {
+  return (
+    <View style={s.card}>
+      <View style={s.headerRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.title}>{title}</Text>
+          <Text style={s.muted}>{company}</Text>
+          <Text style={s.muted}>{site}</Text>
+        </View>
+        <Text style={s.rate}>{rate}</Text>
+      </View>
+      {children}
+      {onApply && (
+        <TouchableOpacity style={s.applyBtn} onPress={onApply}>
+          <Text style={s.applyText}>Apply</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
 /* --- Applied tab --- */
 function AppliedTab() {
   const [q, setQ] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({
-    status: null,
-    company: [],
-    site: [],
-  });
+  const [filters, setFilters] = useState({ status: null as null | 'Pending' | 'Confirmed' | 'Rejected', company: [] as string[], site: [] as string[] });
 
   const [rows, setRows] = useState<AppliedShift[]>([]);
   const [loading, setLoading] = useState(false);
@@ -353,8 +299,9 @@ function AppliedTab() {
       setLoading(true);
       setErr(null);
 
-      const token = await AsyncStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found in storage');
+      // Fetch User Data
+      const token = await AsyncStorage.getItem("auth_token");
+      if (!token) throw new Error("No auth token found in storage");
 
       const decoded = parseJwt(token);
       const myUid = decoded?.id;
@@ -408,28 +355,21 @@ function AppliedTab() {
       const res = await applyToShift(id);
       const newStatus = (res?.shift?.status ?? '').toString().toLowerCase();
 
-      setRows((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? {
-                ...r,
-                status:
-                  newStatus === 'pending'
-                    ? 'Pending'
-                    : newStatus === 'confirmed'
-                      ? 'Confirmed'
-                      : newStatus === 'rejected'
-                        ? 'Rejected'
-                        : r.status,
-              }
-            : r,
-        ),
-      );
+      // trust backend-mapped status ('pending' for guard)
+      setRows(prev => prev.map(r =>
+        r.id === id ? {
+          ...r, status: newStatus === 'pending' ? 'Pending' :
+            newStatus === 'confirmed' ? 'Confirmed' :
+              newStatus === 'rejected' ? 'Rejected' :
+                r.status
+        } : r
+      ));
 
       Alert.alert('Applied', 'Your application has been sent.');
     } catch (e: any) {
       setErr(e?.response?.data?.message ?? e?.message ?? 'Failed to apply');
-      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: undefined } : r)));
+      // rollback on error
+      setRows(prev => prev.map(r => r.id === id ? { ...r, status: undefined } : r));
     }
   };
 
@@ -454,32 +394,25 @@ function AppliedTab() {
         data={filtered}
         keyExtractor={(i) => i.id}
         contentContainerStyle={{ paddingBottom: 24 }}
-        renderItem={({ item }) => {
-          const displayStatus = getDisplayStatus(item);
-          const allowApply = canApply(item.status) && !attendanceMap[item.id];
-
-          return (
-            <Card
-              title={item.title}
-              company={item.company}
-              site={item.site}
-              rate={item.rate}
-              onApply={allowApply ? () => onApply(item.id) : undefined}
-            >
-              <Text style={s.status}>
-                <Text style={{ color: '#000' }}>Status: </Text>
-                <Text style={{ color: item.status ? colorFor(item.status) : COLORS.link }}>
-                  {displayStatus}
-                </Text>
-              </Text>
-              <View style={s.row}>
-                <Text style={s.muted}>{formatDate(item.date)}</Text>
-                <Text style={s.dot}> • </Text>
-                <Text style={s.muted}>{item.time}</Text>
-              </View>
-            </Card>
-          );
-        }}
+        renderItem={({ item }) => (
+          <Card
+            title={item.title}
+            company={item.company}
+            site={item.site}
+            rate={item.rate}
+            onApply={canApply(item.status) ? () => onApply(item.id) : undefined}
+          >
+            <Text style={s.status}>
+              <Text style={{ color: '#000' }}>Status: </Text>
+              <Text style={{ color: colorFor(item.status) }}>{item.status ?? 'Available'}</Text>
+            </Text>
+            <View style={s.row}>
+              <Text style={s.muted}>{formatDate(item.date)}</Text>
+              <Text style={s.dot}> • </Text>
+              <Text style={s.muted}>{item.time}</Text>
+            </View>
+          </Card>
+        )}
       />
 
       <FilterModal
@@ -506,11 +439,7 @@ function Stars({ n }: { n: number }) {
 function CompletedTab() {
   const [q, setQ] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({
-    status: null,
-    company: [],
-    site: [],
-  });
+  const [filters, setFilters] = useState({ status: null, company: [] as string[], site: [] as string[] });
 
   const [rows, setRows] = useState<CompletedShift[]>([]);
   const [loading, setLoading] = useState(false);
@@ -577,9 +506,7 @@ function CompletedTab() {
             <View style={s.rowSpace}>
               <Text style={s.status}>
                 <Text style={{ color: '#000' }}>Status: </Text>
-                <Text style={{ color: COLORS.link }}>
-                  Completed {item.rated ? '(Rated)' : '(Unrated)'}
-                </Text>
+                <Text style={{ color: COLORS.link }}>Completed {item.rated ? '(Rated)' : '(Unrated)'}</Text>
               </Text>
               <Stars n={item.rating} />
             </View>
@@ -619,16 +546,16 @@ export default function ShiftScreen() {
           overflow: 'hidden',
         },
         tabBarIndicatorStyle: {
-          backgroundColor: '#274289',
-          height: '100%',
+          backgroundColor: "#274289", // blue background
+          height: '100%',              // fill the tab height
           borderRadius: 12,
         },
         tabBarLabelStyle: {
           fontWeight: '700',
           textTransform: 'none',
         },
-        tabBarActiveTintColor: '#fff',
-        tabBarInactiveTintColor: '#000',
+        tabBarActiveTintColor: "#fff", // white text when active
+        tabBarInactiveTintColor: "#000", // black text when inactive
       })}
     >
       <Top.Screen name="Applied" component={AppliedTab} />
@@ -637,6 +564,8 @@ export default function ShiftScreen() {
   );
 }
 
+
+/* Styles */
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 16, paddingTop: 8 },
 
@@ -692,12 +621,8 @@ const s = StyleSheet.create({
 
   status: { marginTop: 6, color: COLORS.muted },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  // Filter Menu Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: '#fff', padding: 20, borderRadius: 12 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
   modalLabel: { marginTop: 10, fontWeight: '600' },
@@ -712,12 +637,7 @@ const s = StyleSheet.create({
   },
   modalCloseText: { color: '#fff', fontWeight: 'bold' },
 
-  applyBtn: {
-    marginTop: 10,
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
+  // Apply
+  applyBtn: { marginTop: 10, backgroundColor: COLORS.primary, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
   applyText: { color: '#fff', fontWeight: '700' },
 });

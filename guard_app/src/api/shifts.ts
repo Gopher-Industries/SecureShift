@@ -16,7 +16,15 @@ export type ShiftDto = {
   };
 
   // backend states
-  status?: 'open' | 'applied' | 'assigned' | 'completed';
+  status?:
+    | 'open'
+    | 'applied'
+    | 'assigned'
+    | 'completed'
+    | 'in-progress'
+    | 'confirmed'
+    | 'rejected'
+    | string;
 
   payRate?: number;
 
@@ -74,4 +82,28 @@ export async function myShifts(status?: 'past') {
 export async function applyToShift(id: string) {
   const { data } = await http.put<ApplyResponse>(`/shifts/${id}/apply`);
   return data; // { message, shift }
+}
+
+export type LocationPayload = {
+  latitude: number;
+  longitude: number;
+  timestamp?: number;
+};
+
+// POST /api/v1/shifts/:id/check-in
+export async function checkIn(id: string, loc: LocationPayload) {
+  const { data } = await http.post<{ message: string; shift: ShiftDto }>(
+    `/shifts/${id}/check-in`,
+    loc,
+  );
+  return data;
+}
+
+// POST /api/v1/shifts/:id/check-out
+export async function checkOut(id: string, loc: LocationPayload) {
+  const { data } = await http.post<{ message: string; shift: ShiftDto }>(
+    `/shifts/${id}/check-out`,
+    loc,
+  );
+  return data;
 }

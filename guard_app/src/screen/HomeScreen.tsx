@@ -242,13 +242,19 @@ export default function HomeScreen() {
 
             {todayShifts.length > 0 ? (
               todayShifts.map((s, i) => (
-                <RowItem
+                <TouchableOpacity
                   key={`${s.title}-${i}`}
-                  title={s.title}
-                  time={`${s.startTime ?? '--:--'} – ${s.endTime ?? '--:--'}`}
-                  amount={moneyForShift(s)}
-                  highlight
-                />
+                  onPress={() =>
+                    navigation.navigate('ShiftDetails', { shift: s as any, refresh: load })
+                  }
+                >
+                  <RowItem
+                    title={s.title}
+                    time={`${s.startTime ?? '--:--'} – ${s.endTime ?? '--:--'}`}
+                    amount={moneyForShift(s)}
+                    highlight
+                  />
+                </TouchableOpacity>
               ))
             ) : (
               <Text style={styles.emptyText}>No shifts scheduled for today</Text>
@@ -262,24 +268,30 @@ export default function HomeScreen() {
                 <Feather name="clock" size={16} color={MUTED} />
                 <Text style={styles.cardHeadTxt}>Upcoming Shifts</Text>
               </View>
-              <TouchableOpacity onPress={() => navigation.navigate('Shifts')}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('AppTabs' as any, { screen: 'Shifts' })}
+              >
                 <Text style={styles.viewAll}>View All ›</Text>
               </TouchableOpacity>
             </View>
 
             {upcomingShifts.length > 0 ? (
-              upcomingShifts
-                .slice(0, 2)
-                .map((s, i) => (
+              upcomingShifts.slice(0, 2).map((s, i) => (
+                <TouchableOpacity
+                  key={`${s.title}-${i}`}
+                  onPress={() =>
+                    navigation.navigate('ShiftDetails', { shift: s as any, refresh: load })
+                  }
+                >
                   <RowItem
-                    key={`${s.title}-${i}`}
                     title={s.title}
                     time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${
                       s.endTime ?? '--:--'
                     }`}
                     amount={moneyForShift(s)}
                   />
-                ))
+                </TouchableOpacity>
+              ))
             ) : (
               <Text style={styles.emptyText}>No upcoming shifts</Text>
             )}
