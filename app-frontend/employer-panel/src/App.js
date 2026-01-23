@@ -10,6 +10,7 @@ import SubmissionConfirmation from './pages/SubmissionConfirmation';
 import CompanyProfile from './pages/CompanyProfile';
 import EmailSettings from './pages/EmailSettings';
 import TaskDetail from './pages/TaskDetail';
+import Timesheets from './pages/Timesheets';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import PageTitleHandler from './components/PageTitleHandler';
@@ -37,6 +38,7 @@ function AppContent() {
           <Route path="/employer-dashboard" element={<EmployerDashboard />} />
           <Route path="/create-shift" element={<CreateShift />} />
           <Route path="/manage-shift" element={<ManageShift />} />
+          <Route path="/timesheets" element={<Timesheets />} />
           <Route path="/guard-profiles" element={<GuardProfiles />} />
           <Route path="/company-profile" element={<CompanyProfile />} />
           <Route path="/email-settings" element={<EmailSettings />} />

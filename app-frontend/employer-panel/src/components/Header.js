@@ -48,6 +48,7 @@ export default function Header() {
 
                 {/* Other buttons using Link to avoid full page reload */}
                 <Link to="/manage-shift" style={navButtonStyle}>Shifts</Link>
+                <Link to="/timesheets" style={navButtonStyle}>Timesheets</Link>
                 <Link to="/guard-profiles" style={navButtonStyle}>Guard</Link>
                 
                 {/* Email Settings - Admin only (backend will enforce) */}
