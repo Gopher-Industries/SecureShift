@@ -1,6 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator, Alert,
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+  Switch,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
@@ -8,8 +18,9 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
-// From Shifts API
 import { listShifts, myShifts, applyToShift, type ShiftDto } from '../api/shifts';
+import { getMyAvailability, type Availability } from '../api/availability';
+import { shiftMatchesAvailability } from '../utils/availability';
 
 function parseJwt(token: string) {
   try {
@@ -204,9 +215,9 @@ function FilterModal({ visible, onClose, filters, setFilters, data }) {
 
 function filterShifts(data, q, filters) {
   return data.filter(x => {
-    const qMatch = (x.title + x.createdBy?.company + x.site).toLowerCase().includes(q.toLowerCase());
+    const qMatch = (x.title + x.company + x.site).toLowerCase().includes(q.toLowerCase());
     const statusMatch = !filters.status || x.status === filters.status;
-    const companyMatch = filters.company.length === 0 || filters.company.includes(x.createdBy?.company);
+    const companyMatch = filters.company.length === 0 || filters.company.includes(x.company);
     const siteMatch = filters.site.length === 0 || filters.site.includes(x.site);
     return qMatch && statusMatch && companyMatch && siteMatch;
   });
@@ -265,8 +276,11 @@ function AppliedTab() {
   const [q, setQ] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ status: null as null | 'Pending' | 'Confirmed' | 'Rejected', company: [] as string[], site: [] as string[] });
+  const [filterByAvailability, setFilterByAvailability] = useState(false);
 
   const [rows, setRows] = useState<AppliedShift[]>([]);
+  const [shiftDtos, setShiftDtos] = useState<Map<string, ShiftDto>>(new Map());
+  const [availability, setAvailability] = useState<Availability | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -275,7 +289,6 @@ function AppliedTab() {
       setLoading(true);
       setErr(null);
 
-      // Fetch User Data
       const token = await AsyncStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found in storage");
 
@@ -283,16 +296,24 @@ function AppliedTab() {
       const myUid = decoded?.id;
       if (!myUid) throw new Error("No user ID in token");
 
-      const [mine, allResp] = await Promise.all([
+      const [mine, allResp, avail] = await Promise.all([
         myShifts(),
-        listShifts()
+        listShifts(),
+        getMyAvailability()
       ]);
+
+      setAvailability(avail);
 
       const mineMapped = mapMineShifts(mine, myUid);
       const myIds = new Set(mineMapped.map(m => m.id));
       const globalMapped = mapGlobalShifts(allResp.items, myIds);
 
-      // dedupe by ID → prefer myShifts if exists
+      const dtosMap = new Map<string, ShiftDto>();
+      [...mine, ...allResp.items].forEach((dto: ShiftDto) => {
+        dtosMap.set(dto._id, dto);
+      });
+      setShiftDtos(dtosMap);
+
       const merged: AppliedShift[] = [];
       const seen = new Set<string>();
 
@@ -316,13 +337,18 @@ function AppliedTab() {
   useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
 
   const colorFor = (st?: AppliedShift['status']) => {
-    if (!st) return COLORS.link; // available
+    if (!st) return COLORS.link;
     if (st === 'Pending') return COLORS.status.pending;
     if (st === 'Confirmed') return COLORS.status.confirmed;
-    return COLORS.status.rejected; // Rejected
+    return COLORS.status.rejected;
   };
 
-  const filtered = filterShifts(rows, q, filters);
+  const filtered = filterShifts(rows, q, filters).filter(shift => {
+    if (!filterByAvailability) return true;
+    const dto = shiftDtos.get(shift.id);
+    if (!dto) return true;
+    return shiftMatchesAvailability(dto, availability);
+  });
 
   const onApply = async (id: string) => {
     try {
@@ -354,9 +380,31 @@ function AppliedTab() {
     <View style={s.screen}>
       <Search q={q} setQ={setQ} onFilterPress={() => setShowFilters(true)} />
 
+      <View style={s.availabilityCard}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.availabilityTitle}>Filter by availability</Text>
+          <Text style={s.availabilitySubtitle}>
+            {filterByAvailability
+              ? "Only showing shifts that match your saved availability."
+              : "Showing all open shifts, regardless of availability."}
+          </Text>
+        </View>
+        <Switch
+          value={filterByAvailability}
+          onValueChange={setFilterByAvailability}
+          trackColor={{ false: '#D1D5DB', true: COLORS.primary }}
+          thumbColor="#FFFFFF"
+          accessibilityLabel="Toggle to show only shifts that match your availability"
+        />
+      </View>
+
       {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
       {err && !loading && <Text style={{ color: '#B00020', marginVertical: 8 }}>{err}</Text>}
-      {!loading && !err && filtered.length === 0 && <Text style={{ color: COLORS.muted, marginTop: 12 }}>No shifts found.</Text>}
+      {!loading && !err && filtered.length === 0 && (
+        <Text style={{ color: COLORS.muted, marginTop: 12, textAlign: 'center' }}>
+          {filterByAvailability ? "No shifts match your availability" : "No shifts found."}
+        </Text>
+      )}
 
       <FlatList
         data={filtered}
@@ -556,7 +604,28 @@ const s = StyleSheet.create({
   modalCloseBtn: { marginTop: 20, backgroundColor: COLORS.primary, padding: 10, borderRadius: 8, alignItems: 'center' },
   modalCloseText: { color: '#fff', fontWeight: 'bold' },
 
-  // Apply
   applyBtn: { marginTop: 10, backgroundColor: COLORS.primary, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
   applyText: { color: '#fff', fontWeight: '700' },
+
+  availabilityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  availabilityTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  availabilitySubtitle: {
+    marginTop: 4,
+    fontSize: 12,
+    color: COLORS.muted,
+  },
 });
