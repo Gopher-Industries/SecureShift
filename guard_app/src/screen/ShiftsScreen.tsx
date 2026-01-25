@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+
+import ShiftDetailsModal from '../components/ShiftDetailsModal';
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Modal, Pressable, ActivityIndicator, Alert,
@@ -262,11 +265,32 @@ function Card({
 
 /* --- Applied tab --- */
 function AppliedTab() {
+    const [selectedShift, setSelectedShift] = useState<any>(null);
+    const [detailsVisible, setDetailsVisible] = useState(false);
+
   const [q, setQ] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ status: null as null | 'Pending' | 'Confirmed' | 'Rejected', company: [] as string[], site: [] as string[] });
 
   const [rows, setRows] = useState<AppliedShift[]>([]);
+
+
+//   // testing
+//   useEffect(() => {
+//     setRows([
+//       {
+//         id: 'demo',
+//         title: 'Security Guard',
+//         company: 'Demo Co',
+//         site: 'Melbourne CBD',
+//         rate: '$35 p/h',
+//         date: '2026-01-20',
+//         time: '18:00 - 02:00',
+//         status: 'Rejected',
+//       },
+//     ]);
+//   }, []);
+
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -275,7 +299,6 @@ function AppliedTab() {
       setLoading(true);
       setErr(null);
 
-      // Fetch User Data
       const token = await AsyncStorage.getItem("auth_token");
       if (!token) throw new Error("No auth token found in storage");
 
@@ -292,7 +315,6 @@ function AppliedTab() {
       const myIds = new Set(mineMapped.map(m => m.id));
       const globalMapped = mapGlobalShifts(allResp.items, myIds);
 
-      // dedupe by ID → prefer myShifts if exists
       const merged: AppliedShift[] = [];
       const seen = new Set<string>();
 
@@ -310,10 +332,6 @@ function AppliedTab() {
       setLoading(false);
     }
   }, []);
-
-
-
-  useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
 
   const colorFor = (st?: AppliedShift['status']) => {
     if (!st) return COLORS.link; // available
@@ -363,35 +381,53 @@ function AppliedTab() {
         keyExtractor={i => i.id}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={({ item }) => (
-          <Card
-            title={item.title}
-            company={item.company}
-            site={item.site}
-            rate={item.rate}
-            onApply={canApply(item.status) ? () => onApply(item.id) : undefined}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => {
+              setSelectedShift(item);
+              setDetailsVisible(true);
+            }}
           >
-            <Text style={s.status}>
-              <Text style={{ color: '#000' }}>Status: </Text>
-              <Text style={{ color: colorFor(item.status) }}>{item.status ?? 'Available'}</Text>
-            </Text>
-            <View style={s.row}>
-              <Text style={s.muted}>{formatDate(item.date)}</Text>
-              <Text style={s.dot}> • </Text>
-              <Text style={s.muted}>{item.time}</Text>
-            </View>
-          </Card>
+            <Card
+              title={item.title}
+              company={item.company}
+              site={item.site}
+              rate={item.rate}
+              onApply={canApply(item.status) ? () => onApply(item.id) : undefined}
+            >
+              <Text style={s.status}>
+                <Text style={{ color: '#000' }}>Status: </Text>
+                <Text style={{ color: colorFor(item.status) }}>
+                  {item.status ?? 'Available'}
+                </Text>
+              </Text>
+              <View style={s.row}>
+                <Text style={s.muted}>{formatDate(item.date)}</Text>
+                <Text style={s.dot}> • </Text>
+                <Text style={s.muted}>{item.time}</Text>
+              </View>
+            </Card>
+          </TouchableOpacity>
         )}
+
       />
 
-      <FilterModal
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        filters={filters}
-        setFilters={setFilters}
-        data={rows}
-      />
-    </View>
-  );
+            <FilterModal
+              visible={showFilters}
+              onClose={() => setShowFilters(false)}
+              filters={filters}
+              setFilters={setFilters}
+              data={rows}
+            />
+
+            <ShiftDetailsModal
+              visible={detailsVisible}
+              shift={selectedShift}
+              onClose={() => setDetailsVisible(false)}
+            />
+          </View>
+        );
+
 }
 
 function Stars({ n }: { n: number }) {
@@ -415,7 +451,6 @@ function CompletedTab() {
 
       const resp = await myShifts('past');
       const completedMapped = mapCompleted(resp);
-
       setRows(completedMapped);
     } catch (e: any) {
       setErr(e?.response?.data?.message ?? e?.message ?? 'Failed to load shifts');
@@ -423,6 +458,13 @@ function CompletedTab() {
       setLoading(false);
     }
   }, []);
+
+useFocusEffect(
+  useCallback(() => {
+    fetchData();
+  }, [fetchData])
+);
+
 
 
   useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));

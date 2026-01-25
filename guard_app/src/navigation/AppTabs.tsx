@@ -3,11 +3,13 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
+import IncidentReportScreen from '../screen/IncidentReportScreen';
 import ShiftsScreen from '../screen/ShiftsScreen';
 
 export type AppTabParamList = {
   Home: undefined;
   Shifts: undefined;
+  Incident: undefined;
   Profile: undefined;
 };
 
@@ -33,6 +35,7 @@ export default function AppTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Shifts" component={ShiftsScreen} />
+      <Tab.Screen name="Incident"component={IncidentReportScreen}/>
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
