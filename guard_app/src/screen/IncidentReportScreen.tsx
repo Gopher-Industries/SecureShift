@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -11,18 +12,21 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { COLORS } from '../theme/colors';
 
 type Severity = 'Low' | 'Medium' | 'High';
 
+/* --- date & time */
+const getNowDateTime = () => new Date().toISOString().slice(0, 16).replace('T', ' ');
+
 export default function IncidentReportScreen() {
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [severity, setSeverity] = useState<Severity | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  /* --- auto date & time (CHANGED) --- */
+  const [dateTime] = useState(getNowDateTime());
 
   /* Pick image */
   const pickImage = async () => {
@@ -55,7 +59,6 @@ export default function IncidentReportScreen() {
       setDescription('');
       setSeverity(null);
       setImages([]);
-      setDate(new Date());
     }, 1200);
   };
 
@@ -73,22 +76,9 @@ export default function IncidentReportScreen() {
         style={s.textArea}
       />
 
-      {/* Date & Time */}
+      {/* Date & Time (CHANGED) */}
       <Text style={s.label}>Date & Time *</Text>
-      <TouchableOpacity style={s.input} onPress={() => setShowDatePicker(true)}>
-        <Text>{date.toLocaleString()}</Text>
-      </TouchableOpacity>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="datetime"
-          onChange={(_, selected) => {
-            setShowDatePicker(false);
-            if (selected) setDate(selected);
-          }}
-        />
-      )}
+      <Text style={s.readOnly}>{dateTime}</Text>
 
       {/* Severity */}
       <Text style={s.label}>Severity *</Text>
@@ -169,6 +159,12 @@ const s = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  readOnly: {
+    backgroundColor: '#F3F4F6',
+    padding: 12,
+    borderRadius: 12,
+    color: '#6B7280',
   },
   row: {
     flexDirection: 'row',
