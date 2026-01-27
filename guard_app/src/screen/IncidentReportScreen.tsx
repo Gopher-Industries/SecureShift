@@ -33,7 +33,7 @@ export default function IncidentReportScreen() {
     });
 
     if (!res.canceled) {
-      setImages(prev => [...prev, ...res.assets.map(a => a.uri)]);
+      setImages((prev) => [...prev, ...res.assets.map((a) => a.uri)]);
     }
   };
 
@@ -75,10 +75,7 @@ export default function IncidentReportScreen() {
 
       {/* Date & Time */}
       <Text style={s.label}>Date & Time *</Text>
-      <TouchableOpacity
-        style={s.input}
-        onPress={() => setShowDatePicker(true)}
-      >
+      <TouchableOpacity style={s.input} onPress={() => setShowDatePicker(true)}>
         <Text>{date.toLocaleString()}</Text>
       </TouchableOpacity>
 
@@ -96,13 +93,10 @@ export default function IncidentReportScreen() {
       {/* Severity */}
       <Text style={s.label}>Severity *</Text>
       <View style={s.row}>
-        {(['Low', 'Medium', 'High'] as Severity[]).map(lvl => (
+        {(['Low', 'Medium', 'High'] as Severity[]).map((lvl) => (
           <TouchableOpacity
             key={lvl}
-            style={[
-              s.severityBtn,
-              severity === lvl && s.severitySelected,
-            ]}
+            style={[s.severityBtn, severity === lvl && s.severitySelected]}
             onPress={() => setSeverity(lvl)}
           >
             <Text
@@ -120,23 +114,17 @@ export default function IncidentReportScreen() {
       {/* Photos */}
       <Text style={s.label}>Photos (optional)</Text>
       <TouchableOpacity style={s.photoBtn} onPress={pickImage}>
-        <Text style={{ color: '#fff', fontWeight: '600' }}>
-          Add Photos
-        </Text>
+        <Text style={{ color: '#fff', fontWeight: '600' }}>Add Photos</Text>
       </TouchableOpacity>
 
       <ScrollView horizontal style={{ marginTop: 10 }}>
-        {images.map(uri => (
+        {images.map((uri) => (
           <Image key={uri} source={{ uri }} style={s.preview} />
         ))}
       </ScrollView>
 
       {/* Submit */}
-      <TouchableOpacity
-        style={s.submitBtn}
-        onPress={submitReport}
-        disabled={submitting}
-      >
+      <TouchableOpacity style={s.submitBtn} onPress={submitReport} disabled={submitting}>
         {submitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
