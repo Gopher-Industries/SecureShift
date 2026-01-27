@@ -1,84 +1,50 @@
 import React from 'react';
-import {
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export interface ShiftDetailsModalProps {
   visible: boolean;
-  shift: any;
+  shift: unknown;
   onClose: () => void;
 }
 
-export default function ShiftDetailsModal(
-  { visible, shift, onClose }: ShiftDetailsModalProps,
-) {
-  if (!shift) {
-    return null;
-  }
+export default function ShiftDetailsModal({ visible, shift, onClose }: ShiftDetailsModalProps) {
+  if (!shift || typeof shift !== 'object') return null;
+
+  const s = shift as any;
 
   const statusColor =
-    shift.status === 'Confirmed'
+    s.status === 'Confirmed'
       ? '#22c55e'
-      : shift.status === 'Pending'
-        ? '#3b82f6'
-        : '#9ca3af';
+      : s.status === 'Pending'
+      ? '#3b82f6'
+      : '#9ca3af';
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <View
-            style={[
-              styles.statusPill,
-              { backgroundColor: statusColor },
-            ]}
-          />
+          <View style={[styles.statusPill, { backgroundColor: statusColor }]} />
 
-          <Text style={styles.title}>
-            {shift.title ?? 'Shift Details'}
-          </Text>
+          <Text style={styles.title}>{s.title ?? 'Shift Details'}</Text>
 
           <Text style={styles.text}>
-            {shift.date} · {shift.time}
+            {s.date} · {s.time}
           </Text>
 
-          {shift.site && (
-            <Text style={styles.text}>{shift.site}</Text>
-          )}
+          {s.site && <Text style={styles.text}>{s.site}</Text>}
+          {s.rate && <Text style={styles.text}>{s.rate}</Text>}
 
-          {shift.rate && (
-            <Text style={styles.text}>{shift.rate}</Text>
-          )}
-
-          <Text style={styles.status}>
-            Status: {shift.status}
-          </Text>
+          <Text style={styles.status}>Status: {s.status}</Text>
 
           <View style={styles.buttonsRow}>
-            {shift.status === 'applied' && (
+            {s.status === 'applied' && (
               <TouchableOpacity style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonText}>
-                  Cancel Application
-                </Text>
+                <Text style={styles.secondaryButtonText}>Cancel Application</Text>
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={onClose}
-            >
-              <Text style={styles.primaryButtonText}>
-                Close
-              </Text>
+            <TouchableOpacity style={styles.primaryButton} onPress={onClose}>
+              <Text style={styles.primaryButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
