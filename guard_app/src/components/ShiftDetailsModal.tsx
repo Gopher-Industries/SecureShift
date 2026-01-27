@@ -1,46 +1,84 @@
 import React from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-// types + component
 export interface ShiftDetailsModalProps {
   visible: boolean;
   shift: any;
   onClose: () => void;
 }
 
-export default function ShiftDetailsModal({ visible, shift, onClose }: ShiftDetailsModalProps) {
-  if (!shift) return null;
+export default function ShiftDetailsModal(
+  { visible, shift, onClose }: ShiftDetailsModalProps,
+) {
+  if (!shift) {
+    return null;
+  }
 
   const statusColor =
-    shift.status === 'Confirmed' ? '#22c55e' : shift.status === 'Pending' ? '#3b82f6' : '#9ca3af';
+    shift.status === 'Confirmed'
+      ? '#22c55e'
+      : shift.status === 'Pending'
+        ? '#3b82f6'
+        : '#9ca3af';
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <View style={[styles.statusPill, { backgroundColor: statusColor }]} />
+          <View
+            style={[
+              styles.statusPill,
+              { backgroundColor: statusColor },
+            ]}
+          />
 
-          <Text style={styles.title}>{shift.title ?? 'Shift Details'}</Text>
+          <Text style={styles.title}>
+            {shift.title ?? 'Shift Details'}
+          </Text>
 
           <Text style={styles.text}>
             {shift.date} · {shift.time}
           </Text>
 
-          {shift.site && <Text style={styles.text}>{shift.site}</Text>}
+          {shift.site && (
+            <Text style={styles.text}>{shift.site}</Text>
+          )}
 
-          {shift.rate && <Text style={styles.text}>{shift.rate}</Text>}
+          {shift.rate && (
+            <Text style={styles.text}>{shift.rate}</Text>
+          )}
 
-          <Text style={styles.status}>Status: {shift.status}</Text>
+          <Text style={styles.status}>
+            Status: {shift.status}
+          </Text>
 
           <View style={styles.buttonsRow}>
             {shift.status === 'applied' && (
               <TouchableOpacity style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonText}>Cancel Application</Text>
+                <Text style={styles.secondaryButtonText}>
+                  Cancel Application
+                </Text>
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity style={styles.primaryButton} onPress={onClose}>
-              <Text style={styles.primaryButtonText}>Close</Text>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={onClose}
+            >
+              <Text style={styles.primaryButtonText}>
+                Close
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -49,7 +87,6 @@ export default function ShiftDetailsModal({ visible, shift, onClose }: ShiftDeta
   );
 }
 
-// styles
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
