@@ -10,6 +10,46 @@ const availabilityOptions = ["Available","Unavailable","On Leave"];
 const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
                                           // NEW
 
+// =======================
+// DEV MODE – Sprint 2
+// Temporary mock guards for compliance UI
+// TODO: remove once auth token issue is fixed
+// =======================
+
+const DEV_GUARDS = [
+  {
+    id: "1",
+    name: "John Guard",
+    skills: ["Patrolling", "First Aid"],
+    availability: "Available",
+    license: {
+      status: "pending",
+      expiryDate: "2026-06-01",
+    },
+  },
+  {
+    id: "2",
+    name: "Sarah Guard",
+    skills: ["CCTV Monitoring"],
+    availability: "Available",
+    license: {
+      status: "verified",
+      expiryDate: "2026-02-05", // expiring soon
+    },
+  },
+  {
+    id: "3",
+    name: "Mike Guard",
+    skills: ["Crowd Control"],
+    availability: "Available",
+    license: {
+      status: "verified",
+      expiryDate: "2025-01-01", // expired
+    },
+  },
+];
+
+
 function GuardProfiles() {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,6 +64,7 @@ function GuardProfiles() {
   // NEW: state for API data / loading / error ---------------------------------
   const [guards, setGuards] = useState([]);                           // NEW
   const [loading, setLoading] = useState(true);                        // NEW
+  const [showExpiredOnly, setShowExpiredOnly] = useState(false);
   const [error, setError] = useState("");                              // NEW
 
   useEffect(() => {
@@ -35,70 +76,136 @@ function GuardProfiles() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // TODO: replace DEV_GUARDS with API once auth token issue is resolved
+  useEffect(() => {
+  setGuards(DEV_GUARDS);
+  setLoading(false);
+}, []);
+
+    // TODO:
+  // Replace mocked guard compliance data with real API response.
+  // Backend endpoint planned: GET /api/v1/users/guards (employer role)
+  // Expected fields:
+  //  - guard.license.status (pending | verified | rejected)
+  //  - guard.license.expiryDate
+  //  - guard.documents[] (ID, RSA, First Aid, Certificates)
+  // Frontend compliance logic (expiry, warnings, assignment blocking)
+  // is already implemented and matches Guard App behaviour.
+
+  // Current data is mocked to validate compliance rules and UX.  
   // NEW: fetch guards from backend --------------------------------------------
-  useEffect(() => {                                                    // NEW
-    let mounted = true;                                                // NEW
-    (async () => {                                                     // NEW
-      try {                                                            // NEW
-        setLoading(true);                                              // NEW
-        setError("");                                                  // NEW
+//   useEffect(() => {                                                    // NEW
+//     let mounted = true;                                                // NEW
+//     (async () => {                                                     // NEW
+//       try {                                                            // NEW
+//         setLoading(true);                                              // NEW
+//         setError("");                                                  // NEW
 
-        const token = localStorage.getItem("token");                   // NEW (if you use JWT)
-        const res = await fetch(`${API_BASE}/api/v1/users/guards`, {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`, // ✅ send token
-  }
-});                                            // NEW
+//         const token = localStorage.getItem("token");                   // NEW (if you use JWT)
+//         const res = await fetch(`${API_BASE}/api/v1/users/guards`, {
+//   method: "GET",
+//   headers: {
+//     "Content-Type": "application/json",
+//     Authorization: `Bearer ${token}`, // ✅ send token
+//   }
+// });                                            // NEW
 
-        if (!res.ok) {                                                 // NEW
-          const text = await res.text().catch(() => "");               // NEW
-          throw new Error(text || `Request failed (${res.status})`);   // NEW
-        }                                                              // NEW
+//         if (!res.ok) {                                                 // NEW
+//           const text = await res.text().catch(() => "");               // NEW
+//           throw new Error(text || `Request failed (${res.status})`);   // NEW
+//         }                                                              // NEW
 
-        const data = await res.json();                                 // NEW
+//         const data = await res.json();                                 // NEW
 
-        // Accept both shapes: array OR {guards:[...]} ----------------- // NEW
-        const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : []; // NEW
+//         // Accept both shapes: array OR {guards:[...]} ----------------- // NEW
+//         const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : []; // NEW
 
-        // Normalize fields so UI always has name/skills/availability/photo
-        const normalized = list.map((g, i) => ({                       // NEW
-          id: g._id || g.id || String(i),                              // NEW
-          name:
-            g.name ||
-            [g.firstName, g.lastName].filter(Boolean).join(" ") ||
-            "Unknown",                                                 // NEW
-          skills: Array.isArray(g.skills)
-            ? g.skills
-            : typeof g.skills === "string"
-            ? g.skills.split(",").map((s) => s.trim())
-            : Array.isArray(g.skillset)
-            ? g.skillset
-            : [],                                                      // NEW
-          availability:
-            g.availability ?? g.status ?? (g.available ? "Available" : "Unavailable"), // NEW
-          photo: g.photo?.url || g.photo || g.avatar || g.imageUrl || "/GuardPicPlaceholder.png", // NEW
-        }));                                                           // NEW
+//         // Normalize fields so UI always has name/skills/availability/photo
+//         const normalized = list.map((g, i) => ({                       // NEW
+//           id: g._id || g.id || String(i),                              // NEW
+//           name:
+//             g.name ||
+//             [g.firstName, g.lastName].filter(Boolean).join(" ") ||
+//             "Unknown",                                                 // NEW
+//           skills: Array.isArray(g.skills)
+//             ? g.skills
+//             : typeof g.skills === "string"
+//             ? g.skills.split(",").map((s) => s.trim())
+//             : Array.isArray(g.skillset)
+//             ? g.skillset
+//             : [],                                                      // NEW
+//           availability:
+//             g.availability ?? g.status ?? (g.available ? "Available" : "Unavailable"), // NEW
+//           photo: g.photo?.url || g.photo || g.avatar || g.imageUrl || "/GuardPicPlaceholder.png", // NEW
 
-        if (mounted) setGuards(normalized);                            // NEW
-      } catch (e) {                                                    // NEW
-        if (mounted) setError(e.message || "Failed to fetch guards");  // NEW
-      } finally {                                                      // NEW
-        if (mounted) setLoading(false);                                // NEW
-      }                                                                // NEW
-    })();                                                              // NEW
-    return () => { mounted = false; };                                 // NEW
-  }, []);                                                              // NEW
+//           licenseStatus: g.license?.status || "none",
+//         }));                                                           // NEW
+
+//         if (mounted) setGuards(normalized);                            // NEW
+//       } catch (e) {                                                    // NEW
+//         if (mounted) setError(e.message || "Failed to fetch guards");  // NEW
+//       } finally {                                                      // NEW
+//         if (mounted) setLoading(false);                                // NEW
+//       }                                                                // NEW
+//     })();                                                              // NEW
+//     return () => { mounted = false; };                                 // NEW
+//   }, []);                                                              // NEW
 
   const toggleSkill = (skill) => setSelectedSkills(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
   const toggleAvailability = (avail) => setSelectedAvailability(prev => prev.includes(avail) ? prev.filter(a => a !== avail) : [...prev, avail]);
 
-  // UPDATED: filter the fetched guards (not the old dummy array) --------------
-  const filteredGuards = guards.filter(guard =>                       // UPDATED
-    (selectedSkills.length === 0 || selectedSkills.every(skill => (guard.skills || []).includes(skill))) &&
-    (selectedAvailability.length === 0 || selectedAvailability.includes(guard.availability))
-  );                                                                  // UPDATED
+  // =======================
+  // Compliance helpers
+  // =======================
+
+  const getComplianceStatus = (expiryDate) => {
+    if (!expiryDate) return "unknown";
+    const today = new Date();
+    const exp = new Date(expiryDate);
+    const diffDays = (exp - today) / (1000 * 60 * 60 * 24);
+
+    if (diffDays < 0) return "expired";
+    if (diffDays <= 30) return "expiring";
+    return "valid";
+  };
+
+  const canAssignGuard = (guard) => {
+    const status = getComplianceStatus(guard.license?.expiryDate);
+    if (status === "expired") {
+      alert("This guard has an expired license and cannot be assigned.");
+      return false;
+    }
+    return true;
+  };
+
+    // Style helper for license status badge
+  const licenseStatusStyle = (status) => {
+    switch (status) {
+      case "verified":
+        return { color: "green", fontWeight: 600 };
+      case "pending":
+        return { color: "orange", fontWeight: 600 };
+      case "rejected":
+        return { color: "red", fontWeight: 600 };
+      default:
+        return { color: "#555" };
+    }
+  };
+
+  // UPDATED: filter the fetched guards (not the old dummy array) -------------- 
+  // 2nd update: updated to filter by expired status
+  const filteredGuards = guards.filter((guard) => {
+    const expiryStatus = getComplianceStatus(guard.license?.expiryDate);
+
+    if (showExpiredOnly && expiryStatus !== "expired") return false;
+
+    return (
+      (selectedSkills.length === 0 ||
+        selectedSkills.every(skill => (guard.skills || []).includes(skill))) &&
+      (selectedAvailability.length === 0 ||
+        selectedAvailability.includes(guard.availability))
+    );
+  });                                                                 // UPDATED
 
   const indexOfLastCard = currentPage * cardsPerPage;
   const indexOfFirstCard = indexOfLastCard - cardsPerPage;
@@ -171,7 +278,10 @@ function GuardProfiles() {
         {/* Filters */}
         <div style={filtersStyle}>
           <div style={dropdownStyle} ref={skillsRef}>
-            <button style={dropdownButtonStyle(skillsOpen, selectedSkills.length)} onClick={() => setSkillsOpen(!skillsOpen)}>
+            <button
+              style={dropdownButtonStyle(skillsOpen, selectedSkills.length)}
+              onClick={() => setSkillsOpen(!skillsOpen)}
+            >
               Filter by Skills {selectedSkills.length > 0 ? `(${selectedSkills.length})` : ""}
               <span style={{ marginLeft: "8px" }}>▼</span>
             </button>
@@ -179,7 +289,12 @@ function GuardProfiles() {
               <div style={dropdownContentStyle}>
                 {allSkills.map(skill => (
                   <label key={skill} style={dropdownLabelStyle}>
-                    <input type="checkbox" checked={selectedSkills.includes(skill)} onChange={() => toggleSkill(skill)} style={checkboxStyle} />
+                    <input
+                      type="checkbox"
+                      checked={selectedSkills.includes(skill)}
+                      onChange={() => toggleSkill(skill)}
+                      style={checkboxStyle}
+                    />
                     {skill}
                   </label>
                 ))}
@@ -188,7 +303,10 @@ function GuardProfiles() {
           </div>
 
           <div style={dropdownStyle} ref={availabilityRef}>
-            <button style={dropdownButtonStyle(availabilityOpen, selectedAvailability.length)} onClick={() => setAvailabilityOpen(!availabilityOpen)}>
+            <button
+              style={dropdownButtonStyle(availabilityOpen, selectedAvailability.length)}
+              onClick={() => setAvailabilityOpen(!availabilityOpen)}
+            >
               Filter by Availability {selectedAvailability.length > 0 ? `(${selectedAvailability.length})` : ""}
               <span style={{ marginLeft: "8px" }}>▼</span>
             </button>
@@ -196,23 +314,82 @@ function GuardProfiles() {
               <div style={dropdownContentStyle}>
                 {availabilityOptions.map(avail => (
                   <label key={avail} style={dropdownLabelStyle}>
-                    <input type="checkbox" checked={selectedAvailability.includes(avail)} onChange={() => toggleAvailability(avail)} style={checkboxStyle} />
+                    <input
+                      type="checkbox"
+                      checked={selectedAvailability.includes(avail)}
+                      onChange={() => toggleAvailability(avail)}
+                      style={checkboxStyle}
+                    />
                     {avail}
                   </label>
                 ))}
               </div>
             )}
           </div>
+
+          {/* NEW: Expired documents filter */}
+          <label
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              fontSize: "14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer"
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showExpiredOnly}
+              onChange={() => setShowExpiredOnly(!showExpiredOnly)}
+            />
+            Show expired documents only
+          </label>
         </div>
 
         {/* Guard Cards */}
         <div style={guardContainerStyle}>
           {currentCards.map(guard => (
             <div key={guard.id} style={guardCardStyle}>
-              <img src={guard.photo} alt={guard.name} style={guardImageStyle} />
+              <img
+                src={guard.photo || "/GuardPicPlaceholder.png"}
+                alt={guard.name}
+                style={guardImageStyle}
+              />
               <h3>{guard.name}</h3>
+              
+              <span
+                style={{
+                  display: "inline-block",
+                  marginBottom: "8px",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  ...licenseStatusStyle(guard.license?.status),
+                }}
+              >
+                {guard.license?.status?.toUpperCase() || "UNKNOWN"}
+              </span>
+              
               <p><strong>Skills:</strong> {(guard.skills || []).join(", ")}</p>
               <p><strong>Availability:</strong> {guard.availability}</p>
+              <p>
+                <strong>License Status:</strong>{" "}
+                {guard.license?.status || "unknown"}
+              </p>
+
+              {(() => {
+                const status = getComplianceStatus(guard.license?.expiryDate);
+
+                if (status === "expired") {
+                  return <p style={{ color: "red" }}>❌ License Expired</p>;
+                }
+                if (status === "expiring") {
+                  return <p style={{ color: "orange" }}>⚠️ Expiring Soon</p>;
+                }
+                return <p style={{ color: "green" }}>✅ Valid</p>;
+              })()}
             </div>
           ))}
         </div>
