@@ -1,7 +1,15 @@
+<<<<<<< Updated upstream
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useState, useCallback } from 'react';
+=======
+// ShiftScreen.tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+>>>>>>> Stashed changes
 import {
   View,
   Text,
@@ -14,12 +22,18 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+<<<<<<< Updated upstream
 // Auto refresh when navigating back
+=======
+>>>>>>> Stashed changes
 
 import { listShifts, myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
+<<<<<<< Updated upstream
 // From Shifts API
+=======
+>>>>>>> Stashed changes
 
 function parseJwt(token: string) {
   try {
@@ -37,6 +51,12 @@ function parseJwt(token: string) {
   }
 }
 
+<<<<<<< Updated upstream
+=======
+type AppliedStatus = 'Pending' | 'Confirmed' | 'Rejected';
+type AttendanceStatus = 'in' | 'out';
+
+>>>>>>> Stashed changes
 type AppliedShift = {
   id: string;
   title: string;
@@ -45,7 +65,11 @@ type AppliedShift = {
   rate: string;
   date: string;
   time: string;
+<<<<<<< Updated upstream
   status?: 'Pending' | 'Confirmed' | 'Rejected';
+=======
+  status?: AppliedStatus; // undefined => Available
+>>>>>>> Stashed changes
 };
 
 type CompletedShift = {
@@ -60,10 +84,19 @@ type CompletedShift = {
   rating: number;
 };
 
+<<<<<<< Updated upstream
 /* To rate helper to backend */
 const toRate = (r?: number | string) => (typeof r === 'number' ? `$${r} p/h` : (r ?? '$—'));
+=======
+type FilterState = {
+  status: null | AppliedStatus;
+  company: string[];
+  site: string[];
+};
 
-/* Show Apply only for shifts that have not been applied for */
+type ShiftLike = { title: string; company: string; site: string; status?: AppliedStatus };
+>>>>>>> Stashed changes
+
 const canApply = (st?: AppliedShift['status']) => !st; // only show if status is undefined/null
 
 function mapMineShifts(s: ShiftDto[] | unknown, myUid: string): AppliedShift[] {
@@ -76,7 +109,11 @@ function mapMineShifts(s: ShiftDto[] | unknown, myUid: string): AppliedShift[] {
       const acceptedId =
         typeof x.acceptedBy === 'object' ? x.acceptedBy?._id : String(x.acceptedBy ?? '');
       const applicants = Array.isArray(x.applicants)
+<<<<<<< Updated upstream
         ? x.applicants.map((a: any) => (typeof a === 'object' ? a._id : String(a)))
+=======
+        ? x.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
+>>>>>>> Stashed changes
         : [];
 
       if (x.status === 'assigned' && acceptedId === myUid) {
@@ -140,6 +177,7 @@ function mapCompleted(s: ShiftDto[] | unknown): CompletedShift[] {
     }));
 }
 
+<<<<<<< Updated upstream
 // Shared filter state type
 type FilterState = {
   status: null | 'Pending' | 'Confirmed' | 'Rejected';
@@ -149,15 +187,111 @@ type FilterState = {
 
 // FilterModal with FlatList
 type FilterModalProps = {
+=======
+function filterShifts<T extends ShiftLike>(data: T[], q: string, filters: FilterState) {
+  const qq = q.trim().toLowerCase();
+
+  return data.filter((x) => {
+    const qMatch =
+      qq.length === 0 || `${x.title} ${x.company} ${x.site}`.toLowerCase().includes(qq);
+
+    const statusMatch = !filters.status || x.status === filters.status;
+    const companyMatch = filters.company.length === 0 || filters.company.includes(x.company);
+    const siteMatch = filters.site.length === 0 || filters.site.includes(x.site);
+
+    return qMatch && statusMatch && companyMatch && siteMatch;
+  });
+}
+
+function Search({
+  q,
+  setQ,
+  onFilterPress,
+}: {
+  q: string;
+  setQ: (v: string) => void;
+  onFilterPress: () => void;
+}) {
+  return (
+    <View style={s.searchRow}>
+      <TextInput
+        value={q}
+        onChangeText={setQ}
+        placeholder="Search shifts..."
+        placeholderTextColor="#A0A7B1"
+        style={s.search}
+        accessibilityLabel="Search shifts"
+        accessibilityRole="search"
+      />
+      <TouchableOpacity
+        onPress={onFilterPress}
+        style={s.filterBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Open filter options"
+      >
+        <Text style={s.filterText}>☰</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function Card({
+  title,
+  company,
+  site,
+  rate,
+  children,
+  onApply,
+}: React.PropsWithChildren<{
+  title: string;
+  company: string;
+  site: string;
+  rate: string;
+  onApply?: () => void;
+}>) {
+  return (
+    <View style={s.card}>
+      <View style={s.headerRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.title}>{title}</Text>
+          <Text style={s.muted}>{company}</Text>
+          <Text style={s.muted}>{site}</Text>
+        </View>
+        <Text style={s.rate}>{rate}</Text>
+      </View>
+      {children}
+      {onApply && (
+        <TouchableOpacity style={s.applyBtn} onPress={onApply}>
+          <Text style={s.applyText}>Apply</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+function FilterModal<T extends { company: string; site: string }>({
+  visible,
+  onClose,
+  filters,
+  setFilters,
+  data,
+}: {
+>>>>>>> Stashed changes
   visible: boolean;
   onClose: () => void;
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
+<<<<<<< Updated upstream
   data: { company: string; site: string }[];
 };
 
 function FilterModal({ visible, onClose, filters, setFilters, data }: FilterModalProps) {
   const toggleStatus = (status: 'Pending' | 'Confirmed' | 'Rejected') => {
+=======
+  data: T[];
+}) {
+  const toggleStatus = (status: AppliedStatus) => {
+>>>>>>> Stashed changes
     setFilters((prev) => ({ ...prev, status: prev.status === status ? null : status }));
   };
 
@@ -241,6 +375,7 @@ function FilterModal({ visible, onClose, filters, setFilters, data }: FilterModa
   );
 }
 
+<<<<<<< Updated upstream
 function filterShifts<T extends AppliedShift | CompletedShift>(
   data: T[],
   q: string,
@@ -320,12 +455,22 @@ function Card({
   );
 }
 
+=======
+>>>>>>> Stashed changes
 /* --- Applied tab --- */
 function AppliedTab() {
   const [q, setQ] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+<<<<<<< Updated upstream
   const [filters, setFilters] = useState<FilterState>({ status: null, company: [], site: [] });
   const navigation = useNavigation<any>();
+=======
+  const [filters, setFilters] = useState<FilterState>({
+    status: null,
+    company: [],
+    site: [],
+  });
+>>>>>>> Stashed changes
 
   const [rows, setRows] = useState<AppliedShift[]>([]);
   const [loading, setLoading] = useState(false);
@@ -350,7 +495,10 @@ function AppliedTab() {
       setLoading(true);
       setErr(null);
 
+<<<<<<< Updated upstream
       // Fetch User Data
+=======
+>>>>>>> Stashed changes
       const token = await AsyncStorage.getItem('auth_token');
       if (!token) throw new Error('No auth token found in storage');
 
@@ -406,6 +554,7 @@ function AppliedTab() {
       const res = await applyToShift(id);
       const newStatus = (res?.shift?.status ?? '').toString().toLowerCase();
 
+<<<<<<< Updated upstream
       // trust backend-mapped status ('pending' for guard)
 <<<<<<< Updated upstream
       setRows(prev => prev.map(r =>
@@ -417,6 +566,8 @@ function AppliedTab() {
         } : r
       ));
 =======
+=======
+>>>>>>> Stashed changes
       setRows((prev) =>
         prev.map((r) =>
           r.id === id
@@ -434,12 +585,18 @@ function AppliedTab() {
             : r,
         ),
       );
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
       Alert.alert('Applied', 'Your application has been sent.');
     } catch (e: any) {
       setErr(e?.response?.data?.message ?? e?.message ?? 'Failed to apply');
+<<<<<<< Updated upstream
       // rollback on error
+=======
+>>>>>>> Stashed changes
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: undefined } : r)));
     }
   };
@@ -465,22 +622,40 @@ function AppliedTab() {
         data={filtered}
         keyExtractor={(i) => i.id}
         contentContainerStyle={{ paddingBottom: 24 }}
+<<<<<<< Updated upstream
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() =>
               navigation.navigate('ShiftDetails', { shift: item as any, refresh: fetchData })
             }
           >
+=======
+        renderItem={({ item }) => {
+          const displayStatus = getDisplayStatus(item);
+          const allowApply = canApply(item.status) && !attendanceMap[item.id];
+
+          return (
+>>>>>>> Stashed changes
             <Card
               title={item.title}
               company={item.company}
               site={item.site}
               rate={item.rate}
+<<<<<<< Updated upstream
               onApply={canApply(item.status) ? () => onApply(item.id) : undefined}
             >
               <Text style={s.status}>
                 <Text style={{ color: '#000' }}>Status: </Text>
                 <Text style={{ color: colorFor(item.status) }}>{item.status ?? 'Available'}</Text>
+=======
+              onApply={allowApply ? () => onApply(item.id) : undefined}
+            >
+              <Text style={s.status}>
+                <Text style={{ color: '#000' }}>Status: </Text>
+                <Text style={{ color: item.status ? colorFor(item.status) : COLORS.link }}>
+                  {displayStatus}
+                </Text>
+>>>>>>> Stashed changes
               </Text>
               <View style={s.row}>
                 <Text style={s.muted}>{formatDate(item.date)}</Text>
@@ -488,8 +663,13 @@ function AppliedTab() {
                 <Text style={s.muted}>{item.time}</Text>
               </View>
             </Card>
+<<<<<<< Updated upstream
           </TouchableOpacity>
         )}
+=======
+          );
+        }}
+>>>>>>> Stashed changes
       />
 
       <FilterModal
@@ -516,8 +696,16 @@ function Stars({ n }: { n: number }) {
 function CompletedTab() {
   const [q, setQ] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+<<<<<<< Updated upstream
   const [filters, setFilters] = useState<FilterState>({ status: null, company: [], site: [] });
   const navigation = useNavigation<any>();
+=======
+  const [filters, setFilters] = useState<FilterState>({
+    status: null,
+    company: [],
+    site: [],
+  });
+>>>>>>> Stashed changes
 
   const [rows, setRows] = useState<CompletedShift[]>([]);
   const [loading, setLoading] = useState(false);
@@ -546,6 +734,9 @@ function CompletedTab() {
   );
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
   // Completed shifts do not have AppliedStatus, so filter by q/company/site only.
   const filtered = useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -557,8 +748,11 @@ function CompletedTab() {
       return qMatch && companyMatch && siteMatch;
     });
   }, [rows, q, filters.company, filters.site]);
+<<<<<<< Updated upstream
 =======
   const filtered = filterShifts(rows, q, filters);
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
   return (
@@ -605,7 +799,25 @@ function CompletedTab() {
                 <Text style={s.muted}>{item.time}</Text>
               </View>
             </View>
+<<<<<<< Updated upstream
           </TouchableOpacity>
+=======
+            <View style={s.rowSpace}>
+              <Text style={s.status}>
+                <Text style={{ color: '#000' }}>Status: </Text>
+                <Text style={{ color: COLORS.link }}>
+                  Completed {item.rated ? '(Rated)' : '(Unrated)'}
+                </Text>
+              </Text>
+              <Stars n={item.rating} />
+            </View>
+            <View style={s.row}>
+              <Text style={s.muted}>{formatDate(item.date)}</Text>
+              <Text style={s.dot}> • </Text>
+              <Text style={s.muted}>{item.time}</Text>
+            </View>
+          </View>
+>>>>>>> Stashed changes
         )}
       />
 
@@ -636,16 +848,26 @@ export default function ShiftScreen() {
           overflow: 'hidden',
         },
         tabBarIndicatorStyle: {
+<<<<<<< Updated upstream
           backgroundColor: '#274289', // blue background
           height: '100%', // fill the tab height
+=======
+          backgroundColor: '#274289',
+          height: '100%',
+>>>>>>> Stashed changes
           borderRadius: 12,
         },
         tabBarLabelStyle: {
           fontWeight: '700',
           textTransform: 'none',
         },
+<<<<<<< Updated upstream
         tabBarActiveTintColor: '#fff', // white text when active
         tabBarInactiveTintColor: '#000', // black text when inactive
+=======
+        tabBarActiveTintColor: '#fff',
+        tabBarInactiveTintColor: '#000',
+>>>>>>> Stashed changes
       })}
     >
       <Top.Screen name="Applied" component={AppliedTab} />
@@ -654,7 +876,10 @@ export default function ShiftScreen() {
   );
 }
 
+<<<<<<< Updated upstream
 /* Styles */
+=======
+>>>>>>> Stashed changes
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 16, paddingTop: 8 },
 
@@ -710,7 +935,10 @@ const s = StyleSheet.create({
 
   status: { marginTop: 6, color: COLORS.muted },
 
+<<<<<<< Updated upstream
   // Filter Menu Styles
+=======
+>>>>>>> Stashed changes
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -731,7 +959,10 @@ const s = StyleSheet.create({
   },
   modalCloseText: { color: '#fff', fontWeight: 'bold' },
 
+<<<<<<< Updated upstream
   // Apply
+=======
+>>>>>>> Stashed changes
   applyBtn: {
     marginTop: 10,
     backgroundColor: COLORS.primary,

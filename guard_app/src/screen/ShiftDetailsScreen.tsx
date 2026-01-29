@@ -1,20 +1,42 @@
 import { Ionicons } from '@expo/vector-icons';
+<<<<<<< Updated upstream
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 
 import { checkIn, checkOut, type ShiftDto } from '../api/shifts';
+=======
+import { useRoute, RouteProp } from '@react-navigation/native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+
+import type { ShiftDto } from '../api/shifts';
+import { checkIn, checkOut } from '../api/attendance';
+>>>>>>> Stashed changes
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
 
+<<<<<<< Updated upstream
 // Manually defining route params here since we haven't updated AppNavigator yet
+=======
+
+// Route params
+>>>>>>> Stashed changes
 type RootStackParamList = {
   ShiftDetails: { shift: ShiftDto; refresh?: () => void };
 };
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'ShiftDetails'>;
+<<<<<<< Updated upstream
 type ScreenNavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ShiftDetailsScreen() {
@@ -24,6 +46,17 @@ export default function ShiftDetailsScreen() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [actionType, setActionType] = useState<'check-in' | 'check-out'>('check-in');
+=======
+
+export default function ShiftDetailsScreen() {
+  const route = useRoute<ScreenRouteProp>();
+  const [shift, setShift] = useState<ShiftDto>(route.params.shift);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [actionType, setActionType] = useState<'check-in' | 'check-out'>(
+    'check-in',
+  );
+>>>>>>> Stashed changes
 
   const onCheckPress = (type: 'check-in' | 'check-out') => {
     setActionType(type);
@@ -36,6 +69,7 @@ export default function ShiftDetailsScreen() {
     timestamp: number;
   }) => {
     try {
+<<<<<<< Updated upstream
       // Keep modal open or show spinner?
       // For now, let's close modal and show global loading, or handle inside modal.
       // The modal currently stays open on success until we close it, so we can close it now.
@@ -63,6 +97,35 @@ export default function ShiftDetailsScreen() {
       const msg = e?.response?.data?.message ?? e?.message ?? 'Action failed';
 
       if (msg.includes('not at the shift location')) {
+=======
+      setModalVisible(false);
+
+      if (actionType === 'check-in') {
+        await checkIn(
+          shift._id,
+          loc.latitude,
+          loc.longitude,
+          loc.timestamp,
+        );
+        Alert.alert('Success', 'Checked in successfully ✅');
+      } else {
+        await checkOut(
+          shift._id,
+          loc.latitude,
+          loc.longitude,
+          loc.timestamp,
+        );
+        Alert.alert('Success', 'Checked out successfully ✅');
+      }
+
+      // refresh parent list
+      route.params.refresh?.();
+    } catch (e: any) {
+      setModalVisible(false);
+      const msg = e?.response?.data?.message ?? 'Action failed';
+
+      if (msg.toLowerCase().includes('location')) {
+>>>>>>> Stashed changes
         Alert.alert('Location Error', 'You are not at the shift location ❌');
       } else {
         Alert.alert('Error', msg);
@@ -70,10 +133,15 @@ export default function ShiftDetailsScreen() {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
   const StatusBadge = ({ status }: { status: string }) => {
     let color = COLORS.link;
     if (status === 'assigned') color = COLORS.status.confirmed;
     if (status === 'completed') color = COLORS.primary;
+<<<<<<< Updated upstream
     // Map backend status to display
     return <Text style={{ color, fontWeight: '700' }}>{status.toUpperCase()}</Text>;
   };
@@ -98,6 +166,18 @@ export default function ShiftDetailsScreen() {
   // Let's assume we can also Check Out if status is 'in-progress' OR if we just checked in.
   // Without backend changes documentation, I'll provide both buttons for testing if status is ambiguous,
   // OR standard flow: 'assigned' -> Check In -> 'in-progress' -> Check Out -> 'completed'.
+=======
+
+    return (
+      <Text style={{ color, fontWeight: '700' }}>
+        {status.toUpperCase()}
+      </Text>
+    );
+  };
+
+  // Status-based buttons
+  const showCheckIn = shift.status === 'assigned';
+>>>>>>> Stashed changes
   const showCheckOut = shift.status === 'in-progress';
 
   return (
@@ -113,7 +193,13 @@ export default function ShiftDetailsScreen() {
             <Ionicons name="location-outline" size={20} color="#666" />
             <Text style={s.rowText}>
               {shift.location
+<<<<<<< Updated upstream
                 ? `${shift.location.street ?? ''}, ${shift.location.suburb ?? ''}`
+=======
+                ? `${shift.location.street ?? ''}, ${
+                    shift.location.suburb ?? ''
+                  }`
+>>>>>>> Stashed changes
                 : 'Location N/A'}
             </Text>
           </View>
@@ -143,16 +229,28 @@ export default function ShiftDetailsScreen() {
 
         {/* Action Buttons */}
         <View style={s.actions}>
+<<<<<<< Updated upstream
           {(showCheckIn || shift.status === 'assigned') && (
+=======
+          {showCheckIn && (
+>>>>>>> Stashed changes
             <TouchableOpacity
               style={[s.btn, { backgroundColor: COLORS.status.confirmed }]}
               onPress={() => onCheckPress('check-in')}
             >
+<<<<<<< Updated upstream
               <Text style={s.btnText}>Check Check-In</Text>
             </TouchableOpacity>
           )}
 
           {(showCheckOut || shift.status === 'in-progress') && (
+=======
+              <Text style={s.btnText}>Check In</Text>
+            </TouchableOpacity>
+          )}
+
+          {showCheckOut && (
+>>>>>>> Stashed changes
             <TouchableOpacity
               style={[s.btn, { backgroundColor: COLORS.status.rejected }]}
               onPress={() => onCheckPress('check-out')}
@@ -190,7 +288,11 @@ const s = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
   },
+<<<<<<< Updated upstream
   title: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+=======
+  title: { fontSize: 22, fontWeight: '800', color: COLORS.text },
+>>>>>>> Stashed changes
   company: { fontSize: 16, color: COLORS.muted, marginBottom: 12 },
   divider: { height: 1, backgroundColor: '#eee', marginVertical: 12 },
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
@@ -203,7 +305,10 @@ const s = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
+<<<<<<< Updated upstream
     elevation: 2,
+=======
+>>>>>>> Stashed changes
   },
   btnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 
@@ -215,5 +320,13 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D4F0DC',
   },
+<<<<<<< Updated upstream
   completedText: { color: '#1A936F', fontWeight: 'bold', fontSize: 16 },
+=======
+  completedText: {
+    color: '#1A936F',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+>>>>>>> Stashed changes
 });

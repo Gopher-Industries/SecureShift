@@ -16,6 +16,7 @@ export type ShiftDto = {
   };
 
   // backend states
+<<<<<<< Updated upstream
   status?:
     | 'open'
     | 'applied'
@@ -25,6 +26,15 @@ export type ShiftDto = {
     | 'confirmed'
     | 'rejected'
     | string;
+=======
+  status?: 
+  | 'open'
+  | 'applied'
+  | 'assigned'
+  | 'in-progress'
+  | 'completed';
+
+>>>>>>> Stashed changes
 
   payRate?: number;
 
