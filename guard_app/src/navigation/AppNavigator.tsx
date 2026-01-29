@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import AppTabs from './AppTabs';
+import CertificatesScreen from '../screen/CertificatesScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
@@ -8,7 +9,6 @@ import NotificationsScreen from '../screen/notifications';
 import SettingsScreen from '../screen/SettingsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
-import CertificatesScreen from "../screen/CertificatesScreen";
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -54,7 +54,7 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Certificates"
         component={CertificatesScreen}
-        options={{ headerShown: true, title: "Certificates" }}
+        options={{ headerShown: true, title: 'Certificates' }}
       />
     </Stack.Navigator>
   );

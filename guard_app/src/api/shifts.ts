@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // src/api/shifts.ts
 import http from '../lib/http';
 
