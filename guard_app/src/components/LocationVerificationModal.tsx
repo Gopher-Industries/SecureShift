@@ -29,6 +29,10 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
 
   useEffect(() => {
     if (visible) startCheck();
+    else {
+      setStatus('idle');
+      setErrorMsg(null);
+    }
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -51,7 +55,6 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
 
       // 1) permission
       const perm = await Location.requestForegroundPermissionsAsync();
-
       if (perm.status !== 'granted') {
         if (perm.canAskAgain === false) setStatus('permanentDenied');
         else setStatus('denied');
@@ -74,18 +77,17 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
         longitude: loc.coords.longitude,
         timestamp: loc.timestamp ?? Date.now(),
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = null;
 
       setStatus('failed');
-      setErrorMsg(e?.message || 'Failed to get location');
+      setErrorMsg(e instanceof Error ? e.message : 'Failed to get location');
     }
   };
 
   const openSettings = async () => {
     try {
-      // Works in most modern RN/Expo setups
       await Linking.openSettings();
     } catch {
       Alert.alert(
@@ -161,14 +163,7 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
   };
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={() => {
-        // Prevent accidental Android back dismiss (parent controls closing)
-      }}
-    >
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={() => {}}>
       <View style={s.overlay}>
         <View style={s.card}>
           <Text style={s.title}>Location Verification</Text>
@@ -190,7 +185,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20, // ✅ fixed (was p: 20)
+    padding: 20,
   },
   card: {
     width: '85%',

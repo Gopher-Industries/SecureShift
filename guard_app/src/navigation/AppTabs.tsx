@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import HomeScreen from '../screen/HomeScreen';
-import ShiftsScreen from '../screen/ShiftsScreen';
 import AvailabilityScreen from '../screen/AvailabilityScreen';
+import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
+import ShiftsScreen from '../screen/ShiftsScreen';
 
 export type AppTabParamList = {
   Home: undefined;
@@ -20,7 +20,6 @@ export default function AppTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
-        tabBarStyle: { backgroundColor: 'red' },
         tabBarIcon: ({ color, size }) => {
           const name =
             route.name === 'Home'

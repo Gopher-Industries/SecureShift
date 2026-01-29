@@ -1,3 +1,4 @@
+// src/api/attendance.ts
 import http from '../lib/http';
 
 export type Attendance = {
@@ -9,42 +10,32 @@ export type Attendance = {
   locationVerified: boolean;
 };
 
-<<<<<<< Updated upstream
-export async function checkIn(shiftId: string, latitude: number, longitude: number) {
+type LocationPayload = {
+  latitude: number;
+  longitude: number;
+  timestamp?: number;
+};
+
+export async function checkIn(shiftId: string, loc: LocationPayload) {
   const { data } = await http.post<{ message: string; attendance: Attendance }>(
     `/attendance/checkin/${shiftId}`,
-    { latitude, longitude },
-=======
-export async function checkIn(
-  shiftId: string,
-  latitude: number,
-  longitude: number,
-  timestamp?: number,
-) {
-  const { data } = await http.post<{ message: string; attendance: Attendance }>(
-    `/attendance/checkin/${shiftId}`,
-    { latitude, longitude, timestamp },
->>>>>>> Stashed changes
+    {
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      timestamp: loc.timestamp,
+    },
   );
   return data;
 }
 
-<<<<<<< Updated upstream
-export async function checkOut(shiftId: string, latitude: number, longitude: number) {
+export async function checkOut(shiftId: string, loc: LocationPayload) {
   const { data } = await http.post<{ message: string; attendance: Attendance }>(
     `/attendance/checkout/${shiftId}`,
-    { latitude, longitude },
-=======
-export async function checkOut(
-  shiftId: string,
-  latitude: number,
-  longitude: number,
-  timestamp?: number,
-) {
-  const { data } = await http.post<{ message: string; attendance: Attendance }>(
-    `/attendance/checkout/${shiftId}`,
-    { latitude, longitude, timestamp },
->>>>>>> Stashed changes
+    {
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      timestamp: loc.timestamp,
+    },
   );
   return data;
 }
