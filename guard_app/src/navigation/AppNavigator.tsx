@@ -8,6 +8,7 @@ import NotificationsScreen from '../screen/notifications';
 import SettingsScreen from '../screen/SettingsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
+import DocumentsScreen from "../screen/DocumentsScreen";
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -18,17 +19,19 @@ export type RootStackParamList = {
   EditProfile: undefined;
   Messages: undefined;
   Notifications: undefined;
+  Documents: { docType?: string} | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="AppTabs" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
+      <Stack.Screen name="Documents" component={DocumentsScreen} />
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
