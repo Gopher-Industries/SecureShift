@@ -45,6 +45,52 @@ export const updateMyProfile = async (req, res) => {
 };
 
 /**
+ * @desc    Register or refresh a user's push token
+ * @route   POST /api/v1/users/me/push-token
+ * @access  Private (all roles)
+ */
+export const registerPushToken = async (req, res) => {
+  try {
+    const { token, platform, deviceName } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: 'Push token is required.' });
+    }
+
+    const user = req.userDoc || (await User.findById(req.user.id));
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const now = new Date();
+    const existing = user.pushTokens?.find((entry) => entry.token === token);
+
+    if (existing) {
+      existing.platform = platform || existing.platform || 'unknown';
+      existing.deviceName = deviceName ?? existing.deviceName ?? null;
+      existing.updatedAt = now;
+    } else {
+      user.pushTokens = user.pushTokens ?? [];
+      user.pushTokens.push({
+        token,
+        platform: platform || 'unknown',
+        deviceName: deviceName ?? null,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    await user.save();
+    return res.json({
+      message: 'Push token registered',
+      token,
+      total: user.pushTokens?.length ?? 0,
+    });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
  * @desc    Admin: View any user profile
  * @route   GET /api/v1/users/:id
  * @access  Private/Admin

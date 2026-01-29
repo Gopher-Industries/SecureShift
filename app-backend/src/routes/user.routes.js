@@ -11,6 +11,7 @@ import {
 import {
   getMyProfile,
   updateMyProfile,
+  registerPushToken,
   adminGetUserProfile,
   adminUpdateUserProfile,
   getAllGuards,
@@ -77,6 +78,8 @@ router
   .route('/me')
   .get(auth, loadUser, getMyProfile)
   .put(auth, loadUser, updateMyProfile);
+
+router.post('/me/push-token', auth, loadUser, registerPushToken);
 
 /**
  * @swagger
