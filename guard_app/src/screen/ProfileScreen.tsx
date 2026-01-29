@@ -10,6 +10,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Pressable,
 } from 'react-native';
 
 import { getUserProfile } from '../api/profile';
@@ -194,16 +195,22 @@ export default function ProfileScreen({ navigation, route }: any) {
         )}
 
         {/* Certifications */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Certifications</Text>
-          <View style={styles.badgesRow}>
-            {['Security License', 'CPR', 'First Aid'].map((badge, index) => (
-              <View key={index} style={styles.badge}>
-                <Text style={styles.badgeText}>{badge}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
+
+<TouchableOpacity
+  activeOpacity={0.85}
+  style={styles.card}
+  onPress={() => navigation.navigate('Certificates')}
+>
+  <Text style={styles.cardTitle}>Certifications</Text>
+  <View style={styles.badgesRow}>
+    {['Security License', 'CPR', 'First Aid'].map((badge, index) => (
+      <View key={index} style={styles.badge}>
+        <Text style={styles.badgeText}>{badge}</Text>
+      </View>
+    ))}
+  </View>
+</TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );
