@@ -7,6 +7,7 @@ import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
 import SettingsScreen from '../screen/SettingsScreen';
+import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
 
@@ -18,8 +19,10 @@ export type RootStackParamList = {
   Settings: undefined;
   EditProfile: undefined;
   Messages: undefined;
+
   Notifications: undefined;
   Certificates: undefined;
+  ShiftDetails: { shift: any; refresh?: () => void };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -55,6 +58,9 @@ export default function AppNavigator() {
         name="Certificates"
         component={CertificatesScreen}
         options={{ headerShown: true, title: 'Certificates' }}
+        name="ShiftDetails"
+        component={ShiftDetailsScreen}
+        options={{ headerShown: true, title: 'Shift Details' }}
       />
     </Stack.Navigator>
   );
