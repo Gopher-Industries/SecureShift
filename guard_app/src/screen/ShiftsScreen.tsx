@@ -13,16 +13,17 @@ import {
   Modal,
   Pressable,
   Dimensions,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 
 import { myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
-import { formatDate } from '../utils/date';
 
 const { width } = Dimensions.get('window');
 
 /* -------------------- DEV MOCK (no backend) -------------------- */
-const DEV_MOCK_SHIFTS = __DEV__ && true;
+const DEV_MOCK_SHIFTS = false; // Set to true for development, false for production
 
 type AppliedShift = {
   id: string;
@@ -248,24 +249,22 @@ function ShiftDetailsModal({
             </View>
 
             <View style={s.modalRequirements}>
-              <Text style={s.modalRequirementsTitle}>Requirements:</Text>
-              <View style={s.modalTags}>
-                <View style={s.modalTag}>
-                  <Text style={s.modalTagText}>Security License</Text>
-                </View>
-                <View style={s.modalTag}>
-                  <Text style={s.modalTagText}>First Aid</Text>
-                </View>
-              </View>
+              <Text style={s.modalLabel}>Requirements:</Text>
+              <Text style={s.modalReqText}>• Security License</Text>
+              <Text style={s.modalReqText}>• First Aid Certificate</Text>
             </View>
           </View>
+
+          <TouchableOpacity style={s.modalCloseButton} onPress={onClose}>
+            <Text style={s.modalCloseButtonText}>Close</Text>
+          </TouchableOpacity>
         </Pressable>
       </Pressable>
     </Modal>
   );
 }
 
-/* -------------------- Calendar Component -------------------- */
+/* -------------------- Calendar View -------------------- */
 
 function CalendarView<T extends { id: string; date: string; title: string; status?: string }>({
   shifts,
@@ -371,11 +370,11 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
         </View>
         <View style={s.calLegendItem}>
           <View style={[s.calLegendDot, { backgroundColor: '#10B981' }]} />
-          <Text style={s.calLegendText}>Accepted</Text>
+          <Text style={s.calLegendText}>Confirmed</Text>
         </View>
         <View style={s.calLegendItem}>
           <View style={[s.calLegendDot, { backgroundColor: '#6B7280' }]} />
-          <Text style={s.calLegendText}>Completed</Text>
+          <Text style={s.calLegendText}>Rejected</Text>
         </View>
       </View>
     </View>
@@ -465,30 +464,79 @@ function AppliedTab() {
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<AppliedShift[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedShift, setSelectedShift] = useState<AppliedShift | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+
       if (DEV_MOCK_SHIFTS) {
+        // Development mode: use mock data
         setRows(mockApplied);
         return;
       }
+
+      // Production mode: fetch from real API
       const token = await AsyncStorage.getItem('auth_token');
-      if (!token) throw new Error('No token');
+      if (!token) {
+        console.warn('No auth token found');
+        setRows([]);
+        return;
+      }
+
       const decoded = parseJwt(token);
-      const myUid = decoded?.id;
+      const myUid = decoded?.id || decoded?.userId;
+
+      if (!myUid) {
+        console.warn('Could not decode user ID from token');
+        setRows([]);
+        return;
+      }
+
+      // GET /api/v1/shifts/myshifts
       const mine = await myShifts();
-      setRows(mapMineShifts(mine, myUid));
-    } catch {
-      setRows(mockApplied);
+      console.log('✅ Fetched shifts from API:', mine.length);
+
+      // Map backend data to frontend format
+      const mapped = mapMineShifts(mine, myUid);
+      setRows(mapped);
+
+      // Cache for offline access
+      await AsyncStorage.setItem('cached_applied_shifts', JSON.stringify(mapped));
+    } catch (error) {
+      console.error('❌ Error fetching applied shifts:', error);
+
+      // Fallback to cached data
+      try {
+        const cached = await AsyncStorage.getItem('cached_applied_shifts');
+        if (cached) {
+          console.log('📦 Using cached applied shifts');
+          setRows(JSON.parse(cached));
+        } else {
+          setRows([]);
+        }
+      } catch (cacheError) {
+        console.error('Error reading cache:', cacheError);
+        setRows([]);
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
+  useFocusEffect(
+    useCallback(() => {
+      void fetchData();
+    }, [fetchData]),
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
 
   const filtered = rows.filter((r) =>
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
@@ -510,7 +558,7 @@ function AppliedTab() {
         <ViewToggle view={view} onViewChange={setView} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
+      {loading && !refreshing && <ActivityIndicator size="large" color={COLORS.primary} />}
 
       {view === 'calendar' ? (
         <CalendarView shifts={filtered} onShiftPress={setSelectedShift} />
@@ -523,6 +571,13 @@ function AppliedTab() {
             <ShiftCard shift={item} onPress={() => setSelectedShift(item)} />
           )}
           ListEmptyComponent={<Text style={s.emptyText}>No shifts found</Text>}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+            />
+          }
         />
       )}
 
@@ -541,26 +596,63 @@ function CompletedTab() {
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<CompletedShift[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedShift, setSelectedShift] = useState<CompletedShift | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+
       if (DEV_MOCK_SHIFTS) {
+        // Development mode: use mock data
         setRows(mockCompleted);
         return;
       }
+
+      // Production mode: fetch from real API
+      // GET /api/v1/shifts/myshifts?status=past
       const resp = await myShifts('past');
-      setRows(mapCompleted(resp));
-    } catch {
-      setRows(mockCompleted);
+      console.log('✅ Fetched completed shifts from API:', resp.length);
+
+      // Map backend data to frontend format
+      const mapped = mapCompleted(resp);
+      setRows(mapped);
+
+      // Cache for offline access
+      await AsyncStorage.setItem('cached_completed_shifts', JSON.stringify(mapped));
+    } catch (error) {
+      console.error('❌ Error fetching completed shifts:', error);
+
+      // Fallback to cached data
+      try {
+        const cached = await AsyncStorage.getItem('cached_completed_shifts');
+        if (cached) {
+          console.log('📦 Using cached completed shifts');
+          setRows(JSON.parse(cached));
+        } else {
+          setRows([]);
+        }
+      } catch (cacheError) {
+        console.error('Error reading cache:', cacheError);
+        setRows([]);
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
+  useFocusEffect(
+    useCallback(() => {
+      void fetchData();
+    }, [fetchData]),
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
 
   const filtered = rows.filter((r) =>
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
@@ -582,7 +674,7 @@ function CompletedTab() {
         <ViewToggle view={view} onViewChange={setView} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
+      {loading && !refreshing && <ActivityIndicator size="large" color={COLORS.primary} />}
 
       {view === 'calendar' ? (
         <CalendarView
@@ -598,6 +690,13 @@ function CompletedTab() {
             <ShiftCard shift={item} onPress={() => setSelectedShift(item)} />
           )}
           ListEmptyComponent={<Text style={s.emptyText}>No completed shifts found</Text>}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+            />
+          }
         />
       )}
 
@@ -628,7 +727,7 @@ export default function ShiftsScreen() {
         tabBarIndicatorStyle: {
           backgroundColor: COLORS.primary,
           height: '100%',
-          borderRadius: 12,
+          borderRadius: 10,
         },
         tabBarLabelStyle: {
           fontWeight: '700',
@@ -648,18 +747,12 @@ export default function ShiftsScreen() {
 /* -------------------- Styles -------------------- */
 
 const s = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-
-  // Search Bar
+  screen: { flex: 1, backgroundColor: '#F5F7FA' },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     gap: 8,
   },
   searchContainer: {
@@ -667,319 +760,169 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    paddingVertical: 8,
   },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#111827',
-  },
-
-  // View Toggle
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 15, color: '#111827' },
   viewToggle: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    overflow: 'hidden',
+    borderRadius: 10,
+    padding: 4,
   },
   viewToggleBtn: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 8,
   },
-  viewToggleBtnActive: {
-    backgroundColor: COLORS.primary,
-  },
-  viewToggleIcon: {
-    fontSize: 18,
-    color: '#6B7280',
-  },
-  viewToggleIconActive: {
-    color: '#FFFFFF',
+  viewToggleBtnActive: { backgroundColor: COLORS.primary },
+  viewToggleIcon: { fontSize: 18 },
+  viewToggleIconActive: { opacity: 1 },
+  emptyText: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    marginTop: 40,
+    fontSize: 15,
   },
 
-  // Shift Card
+  // Card
   card: {
     backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginVertical: 6,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  cardHeader: {
-    marginBottom: 8,
-  },
+  cardHeader: { marginBottom: 8 },
   cardTitleSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    flex: 1,
-  },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#111827', flex: 1 },
   cardStatusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  cardStatusText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  cardCompany: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 12,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    marginBottom: 6,
-  },
-  cardLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-    width: 60,
-  },
-  cardValue: {
-    fontSize: 13,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  cardPay: {
-    fontSize: 13,
-    color: '#10B981',
-    fontWeight: '700',
-  },
+  cardStatusText: { fontSize: 12, fontWeight: '600', color: '#FFFFFF' },
+  cardCompany: { fontSize: 14, color: '#6B7280', marginBottom: 12 },
+  cardRow: { flexDirection: 'row', marginBottom: 4 },
+  cardLabel: { fontSize: 14, color: '#6B7280', width: 60 },
+  cardValue: { fontSize: 14, color: '#111827', flex: 1 },
+  cardPay: { fontSize: 14, color: COLORS.primary, fontWeight: '600', flex: 1 },
 
   // Calendar
-  calendarContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
+  calendarContainer: { flex: 1 },
   calHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
   },
-  calMonthText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  calNavButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  calMonthText: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  calNavButtons: { flexDirection: 'row', gap: 8 },
   calNavBtn: {
     width: 32,
     height: 32,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
   },
-  calNavBtnText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-  },
+  calNavBtnText: { fontSize: 20, fontWeight: '600', color: COLORS.primary },
   calWeekHeader: {
     flexDirection: 'row',
-    marginBottom: 8,
-  },
-  calWeekCell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  calWeekText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  calGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  calDayCell: {
-    width: (width - 32 - 16 * 2 - 24) / 7,
-    aspectRatio: 1,
-    borderRadius: 8,
-    borderWidth: 1,
+    backgroundColor: '#F9FAFB',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
     borderColor: '#E5E7EB',
+  },
+  calWeekCell: { flex: 1, alignItems: 'center', paddingVertical: 8 },
+  calWeekText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  calGrid: { flexDirection: 'row', flexWrap: 'wrap', backgroundColor: '#FFFFFF' },
+  calDayCell: {
+    width: width / 7,
+    aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 0.5,
+    borderColor: '#E5E7EB',
     padding: 4,
   },
-  calDayCellDim: {
-    opacity: 0.3,
-  },
-  calDayNumber: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  calDayNumberDim: {
-    color: '#9CA3AF',
-  },
-  calShiftIndicators: {
-    flexDirection: 'row',
-    gap: 3,
-    marginTop: 4,
-  },
-  calShiftDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
+  calDayCellDim: { opacity: 0.3 },
+  calDayNumber: { fontSize: 14, fontWeight: '600', color: '#111827', marginBottom: 4 },
+  calDayNumberDim: { color: '#9CA3AF' },
+  calShiftIndicators: { flexDirection: 'row', gap: 2 },
+  calShiftDot: { width: 6, height: 6, borderRadius: 3 },
   calLegend: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 16,
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
   },
-  calLegendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  calLegendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  calLegendText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
+  calLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  calLegendDot: { width: 10, height: 10, borderRadius: 5 },
+  calLegendText: { fontSize: 12, color: '#6B7280' },
 
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#2D3748',
-    width: width - 48,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
+    width: width * 0.9,
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  modalCloseBtn: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCloseText: {
-    fontSize: 20,
-    color: '#9CA3AF',
-  },
-  modalBody: {
-    gap: 12,
-  },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
+  modalCloseBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  modalCloseText: { fontSize: 24, color: '#6B7280' },
+  modalBody: { padding: 20 },
   modalTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  modalShiftTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    flex: 1,
+  modalShiftTitle: { fontSize: 18, fontWeight: '700', color: '#111827', flex: 1 },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  statusBadgeText: { fontSize: 12, fontWeight: '600', color: '#FFFFFF' },
+  modalDetail: { flexDirection: 'row', marginBottom: 12 },
+  modalLabel: { fontSize: 14, fontWeight: '600', color: '#6B7280', width: 80 },
+  modalValue: { fontSize: 14, color: '#111827', flex: 1 },
+  modalRequirements: { marginTop: 8 },
+  modalReqText: { fontSize: 14, color: '#111827', marginLeft: 12, marginTop: 4 },
+  modalCloseButton: {
+    backgroundColor: COLORS.primary,
+    margin: 20,
+    marginTop: 0,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
   },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  modalDetail: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalLabel: {
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-  modalValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  modalRequirements: {
-    marginTop: 12,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#4A5568',
-  },
-  modalRequirementsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  modalTags: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  modalTag: {
-    backgroundColor: '#4A5568',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  modalTagText: {
-    fontSize: 12,
-    color: '#E5E7EB',
-  },
-
-  emptyText: {
-    textAlign: 'center',
-    color: '#9CA3AF',
-    marginTop: 40,
-    fontSize: 14,
-  },
+  modalCloseButtonText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 });

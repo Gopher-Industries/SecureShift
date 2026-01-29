@@ -8,7 +8,6 @@ import NotificationsScreen from '../screen/notifications';
 import SettingsScreen from '../screen/SettingsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
-
 export type RootStackParamList = {
   AppTabs: undefined;
   Splash: undefined;
