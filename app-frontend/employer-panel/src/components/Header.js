@@ -49,7 +49,6 @@ export default function Header() {
                 {/* Other buttons using Link to avoid full page reload */}
                 <Link to="/manage-shift" style={navButtonStyle}>Shifts</Link>
                 <Link to="/guard-profiles" style={navButtonStyle}>Guard</Link>
-                <Link to="/payroll-summary" style={navButtonStyle}>Payroll</Link>
                 
                 {/* Email Settings - Admin only (backend will enforce) */}
                 {localStorage.getItem("userRole") === "admin" && (
