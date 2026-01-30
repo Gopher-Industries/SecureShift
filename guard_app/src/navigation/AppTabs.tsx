@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import AvailabilityScreen from '../screen/AvailabilityScreen';
-import HomeScreen from '../screen/HomeScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
+import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
 import ShiftsScreen from '../screen/ShiftsScreen';
 
@@ -11,7 +11,7 @@ export type AppTabParamList = {
   Home: undefined;
   Shifts: undefined;
   Availability: undefined;
-    Documents: undefined;
+  Documents: undefined;
   Profile: undefined;
 };
 

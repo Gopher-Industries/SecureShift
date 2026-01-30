@@ -5,11 +5,12 @@ import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { checkIn, checkOut } from '../api/attendance';
-import type { ShiftDto } from '../api/shifts';
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
+
+import type { ShiftDto } from '../api/shifts';
 
 // ✅ Keep this local if you don't have a shared RootStackParamList updated
 type RootStackParamList = {
@@ -190,7 +191,8 @@ export default function ShiftDetailsScreen() {
           {/* Helpful message if not assigned */}
           {!canDoAttendance && (
             <Text style={s.hint}>
-              You can only check in/out when the shift is <Text style={{ fontWeight: '700' }}>ASSIGNED</Text>.
+              You can only check in/out when the shift is{' '}
+              <Text style={{ fontWeight: '700' }}>ASSIGNED</Text>.
             </Text>
           )}
         </View>

@@ -1,5 +1,4 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -13,8 +12,10 @@ import {
 } from 'react-native';
 
 import { applyToShift, listShifts } from '../api/shifts';
-import type { ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
+
+import type { ShiftDto } from '../api/shifts';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   ShiftDetails: { shift: ShiftDto; refresh?: () => void };
@@ -52,9 +53,7 @@ export default function ShiftsScreen() {
       setItems(res.items ?? []);
     } catch (e: any) {
       const msg =
-        e?.response?.data?.message ??
-        e?.message ??
-        'Failed to load shifts. Check backend + token.';
+        e?.response?.data?.message ?? e?.message ?? 'Failed to load shifts. Check backend + token.';
       Alert.alert('Error', msg);
     } finally {
       setLoading(false);

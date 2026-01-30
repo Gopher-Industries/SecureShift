@@ -166,7 +166,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   column: { flex: 1 },
   buttonsRow: { flexDirection: 'row', marginTop: 8, justifyContent: 'flex-end', gap: 8 },
-  primaryButton: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#003f88' },
+  primaryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#003f88',
+  },
   primaryButtonText: { color: '#fff', fontWeight: '600' },
   secondaryButton: {
     paddingVertical: 10,
