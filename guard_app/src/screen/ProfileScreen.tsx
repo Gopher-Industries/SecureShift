@@ -9,8 +9,8 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   Image,
-  Pressable
 } from 'react-native';
 
 import { getUserProfile } from '../api/profile';
@@ -198,15 +198,15 @@ export default function ProfileScreen({ navigation, route }: any) {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Certifications</Text>
           <View style={styles.badgesRow}>
-{['Security License', 'CPR', 'First Aid'].map((badge) => (
-  <Pressable
-    key={badge}
-    style={({ pressed }) => [styles.badge, pressed && { opacity: 0.7 }]}
-    onPress={() => navigation.navigate("Documents", { docType: badge })}
-  >
-    <Text style={styles.badgeText}>{badge}</Text>
-  </Pressable>
-))}
+            {['Security License', 'CPR', 'First Aid'].map((badge) => (
+              <Pressable
+                key={badge}
+                style={({ pressed }) => [styles.badge, pressed && { opacity: 0.7 }]}
+                onPress={() => navigation.navigate('Documents', { docType: badge })}
+              >
+                <Text style={styles.badgeText}>{badge}</Text>
+              </Pressable>
+            ))}
           </View>
         </View>
       </ScrollView>
