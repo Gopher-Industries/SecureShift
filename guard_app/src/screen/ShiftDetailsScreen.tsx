@@ -1,29 +1,48 @@
+// src/screen/ShiftDetailsScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
-import { useRoute, RouteProp } from '@react-navigation/native';
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { checkIn, checkOut } from '../api/attendance';
+import type { ShiftDto } from '../api/shifts';
 import LocationVerificationModal from '../components/LocationVerificationModal';
+import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
 
-import type { ShiftDto } from '../api/shifts';
-
+// ✅ Keep this local if you don't have a shared RootStackParamList updated
 type RootStackParamList = {
   ShiftDetails: { shift: ShiftDto; refresh?: () => void };
 };
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'ShiftDetails'>;
 
+type AttendanceState = {
+  checkInTime?: string;
+  checkOutTime?: string;
+};
+
 export default function ShiftDetailsScreen() {
   const route = useRoute<ScreenRouteProp>();
+
   const [shift, setShift] = useState<ShiftDto>(route.params.shift);
+
+  const [attendance, setAttendance] = useState<AttendanceState | null>(null);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [actionType, setActionType] = useState<'check-in' | 'check-out'>('check-in');
 
-  const onCheckPress = (type: 'check-in' | 'check-out') => {
+  // Load attendance from AsyncStorage when screen opens
+  useEffect(() => {
+    (async () => {
+      const a = await getAttendanceForShift(shift._id);
+      setAttendance(a);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shift._id]);
+
+  const openModalFor = (type: 'check-in' | 'check-out') => {
     setActionType(type);
     setModalVisible(true);
   };
@@ -37,20 +56,39 @@ export default function ShiftDetailsScreen() {
       setModalVisible(false);
 
       if (actionType === 'check-in') {
-        await checkIn(shift._id, loc);
+        const res = await checkIn(shift._id, loc);
+
+        // ✅ persist attendance
+        const next = {
+          checkInTime: res.attendance.checkInTime,
+          checkOutTime: undefined,
+        };
+        await setAttendanceForShift(shift._id, next);
+        setAttendance(next);
+
         Alert.alert('Success', 'Checked in successfully ✅');
       } else {
-        await checkOut(shift._id, loc);
+        const res = await checkOut(shift._id, loc);
+
+        // ✅ persist attendance
+        const next = {
+          checkInTime: res.attendance.checkInTime,
+          checkOutTime: res.attendance.checkOutTime,
+        };
+        await setAttendanceForShift(shift._id, next);
+        setAttendance(next);
+
         Alert.alert('Success', 'Checked out successfully ✅');
       }
 
-      // Optional: tell parent to refresh list
-      route.params.refresh?.();
+      // Refresh parent list if callback exists
+      if (route.params.refresh) route.params.refresh();
     } catch (e: any) {
       setModalVisible(false);
       const msg = e?.response?.data?.message ?? e?.message ?? 'Action failed';
 
-      if (String(msg).toLowerCase().includes('not at the shift location')) {
+      // Optional: friendlier location error if backend returns message
+      if (typeof msg === 'string' && msg.toLowerCase().includes('location')) {
         Alert.alert('Location Error', 'You are not at the shift location ❌');
       } else {
         Alert.alert('Error', msg);
@@ -65,15 +103,20 @@ export default function ShiftDetailsScreen() {
     return <Text style={{ color, fontWeight: '700' }}>{status.toUpperCase()}</Text>;
   };
 
-  // Only allow check-in when assigned (based on your ShiftDto)
-  const showCheckIn = shift.status === 'assigned';
+  // ✅ Correct button rules (no in-progress)
+  const canDoAttendance = shift.status === 'assigned';
+  const hasCheckedIn = !!attendance?.checkInTime;
+  const hasCheckedOut = !!attendance?.checkOutTime;
+
+  const showCheckIn = canDoAttendance && !hasCheckedIn;
+  const showCheckOut = canDoAttendance && hasCheckedIn && !hasCheckedOut;
 
   return (
     <View style={s.screen}>
       <ScrollView contentContainerStyle={s.content}>
         <View style={s.card}>
           <Text style={s.title}>{shift.title}</Text>
-          <Text style={s.company}>{shift.createdBy?.company}</Text>
+          <Text style={s.company}>{shift.createdBy?.company ?? 'Company N/A'}</Text>
 
           <View style={s.divider} />
 
@@ -107,20 +150,49 @@ export default function ShiftDetailsScreen() {
             <Text style={s.label}>Status: </Text>
             <StatusBadge status={shift.status ?? 'open'} />
           </View>
+
+          {/* Optional: show attendance info */}
+          {attendance?.checkInTime && (
+            <Text style={s.metaText}>✅ Checked in: {attendance.checkInTime}</Text>
+          )}
+          {attendance?.checkOutTime && (
+            <Text style={s.metaText}>✅ Checked out: {attendance.checkOutTime}</Text>
+          )}
         </View>
 
+        {/* Action Buttons */}
         <View style={s.actions}>
           {showCheckIn && (
             <TouchableOpacity
               style={[s.btn, { backgroundColor: COLORS.status.confirmed }]}
-              onPress={() => onCheckPress('check-in')}
+              onPress={() => openModalFor('check-in')}
             >
               <Text style={s.btnText}>Check In</Text>
             </TouchableOpacity>
           )}
 
-          {/* NOTE: Check-out button requires backend state/attendance info to know if checked-in */}
-          {/* We can enable it later once backend tells us check-in happened */}
+          {showCheckOut && (
+            <TouchableOpacity
+              style={[s.btn, { backgroundColor: COLORS.status.rejected }]}
+              onPress={() => openModalFor('check-out')}
+            >
+              <Text style={s.btnText}>Check Out</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Completed UI */}
+          {shift.status === 'completed' && (
+            <View style={s.completedBox}>
+              <Text style={s.completedText}>Shift Completed ✅</Text>
+            </View>
+          )}
+
+          {/* Helpful message if not assigned */}
+          {!canDoAttendance && (
+            <Text style={s.hint}>
+              You can only check in/out when the shift is <Text style={{ fontWeight: '700' }}>ASSIGNED</Text>.
+            </Text>
+          )}
         </View>
       </ScrollView>
 
@@ -151,6 +223,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   rowText: { marginLeft: 10, fontSize: 16, color: '#333' },
   label: { fontSize: 16, fontWeight: '600', color: '#333' },
+  metaText: { marginTop: 6, color: COLORS.muted },
 
   actions: { marginTop: 24 },
   btn: {
@@ -161,4 +234,16 @@ const s = StyleSheet.create({
     elevation: 2,
   },
   btnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+
+  completedBox: {
+    backgroundColor: '#EAF7EF',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D4F0DC',
+  },
+  completedText: { color: '#1A936F', fontWeight: 'bold', fontSize: 16 },
+
+  hint: { marginTop: 8, color: COLORS.muted, textAlign: 'center' },
 });

@@ -1,4 +1,5 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -11,18 +12,32 @@ import {
   RefreshControl,
 } from 'react-native';
 
-import { applyToShift, listShifts, type ShiftDto } from '../api/shifts';
+import { applyToShift, listShifts } from '../api/shifts';
+import type { ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
 
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-// If you have a central RootStackParamList in AppNavigator, use it instead.
-// Otherwise this local type works for navigation typing.
 type RootStackParamList = {
   ShiftDetails: { shift: ShiftDto; refresh?: () => void };
 };
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+function safeStatus(s?: string) {
+  return (s ?? 'open').toLowerCase();
+}
+
+function formatDatePretty(dateStr?: string) {
+  if (!dateStr) return 'Date N/A';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+}
+
+function formatTimeRange(start?: string, end?: string) {
+  if (!start && !end) return '';
+  if (start && end) return `${start} - ${end}`;
+  return start ?? end ?? '';
+}
 
 export default function ShiftsScreen() {
   const navigation = useNavigation<Nav>();
@@ -31,29 +46,30 @@ export default function ShiftsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [items, setItems] = useState<ShiftDto[]>([]);
 
-  const fetchShifts = async () => {
+  const fetchShifts = useCallback(async () => {
     try {
       const res = await listShifts(1, 50);
       setItems(res.items ?? []);
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load shifts';
+      const msg =
+        e?.response?.data?.message ??
+        e?.message ??
+        'Failed to load shifts. Check backend + token.';
       Alert.alert('Error', msg);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchShifts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchShifts]);
 
   useFocusEffect(
     useCallback(() => {
       fetchShifts();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []),
+    }, [fetchShifts]),
   );
 
   const onRefresh = async () => {
@@ -67,17 +83,29 @@ export default function ShiftsScreen() {
       Alert.alert('Applied', res?.message ?? 'Applied successfully ✅');
       await fetchShifts();
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to apply';
+      const statusCode = e?.response?.status;
+      const backendMsg = e?.response?.data?.message;
+      const msg = backendMsg ?? e?.message ?? 'Failed to apply';
+
+      if (statusCode === 403) {
+        Alert.alert(
+          'Forbidden',
+          'Forbidden: insufficient permissions.\n\nYou might be logged in with a non-guard role. Log out, clear app storage, and login as a guard.',
+        );
+        return;
+      }
+
       Alert.alert('Error', msg);
     }
   };
 
   const renderItem = ({ item }: { item: ShiftDto }) => {
-    const status = item.status ?? 'open';
+    const status = safeStatus(item.status);
 
     return (
       <TouchableOpacity
         style={s.card}
+        activeOpacity={0.9}
         onPress={() =>
           navigation.navigate('ShiftDetails', {
             shift: item,
@@ -86,13 +114,21 @@ export default function ShiftsScreen() {
         }
       >
         <View style={s.rowBetween}>
-          <Text style={s.title}>{item.title}</Text>
-          <Text style={s.badge}>{status.toUpperCase()}</Text>
+          <Text style={s.title} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <Text style={[s.badge, status === 'open' ? s.badgeOpen : s.badgeOther]}>
+            {status.toUpperCase()}
+          </Text>
         </View>
 
         <Text style={s.subText}>{item.createdBy?.company ?? 'Company N/A'}</Text>
+
         <Text style={s.subText}>
-          {item.date} • {item.startTime} - {item.endTime}
+          {formatDatePretty(item.date)}
+          {formatTimeRange(item.startTime, item.endTime)
+            ? ` • ${formatTimeRange(item.startTime, item.endTime)}`
+            : ''}
         </Text>
 
         <View style={s.rowBetween}>
@@ -131,7 +167,7 @@ export default function ShiftsScreen() {
     <View style={s.container}>
       <FlatList
         data={items}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(it) => it._id}
         renderItem={renderItem}
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -156,17 +192,25 @@ const s = StyleSheet.create({
     marginBottom: 12,
     elevation: 2,
   },
+
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 
   title: { fontSize: 18, fontWeight: '800', color: COLORS.text, flex: 1, paddingRight: 10 },
+
   badge: {
     fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.primary,
+    fontWeight: '800',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    overflow: 'hidden',
   },
+  badgeOpen: { backgroundColor: '#E8F0FF', color: COLORS.primary },
+  badgeOther: { backgroundColor: '#F2F2F2', color: '#444' },
 
-  subText: { color: COLORS.muted, marginTop: 4 },
-  pay: { fontWeight: '700', color: COLORS.text, marginTop: 12 },
+  subText: { color: COLORS.muted, marginTop: 6 },
+
+  pay: { fontWeight: '800', color: COLORS.text, marginTop: 12 },
 
   applyBtn: {
     marginTop: 12,
@@ -175,6 +219,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 10,
   },
-  applyBtnText: { color: '#fff', fontWeight: '700' },
-  dimText: { marginTop: 12, color: COLORS.muted, fontWeight: '600' },
+  applyBtnText: { color: '#fff', fontWeight: '800' },
+
+  dimText: { marginTop: 12, color: COLORS.muted, fontWeight: '700' },
 });

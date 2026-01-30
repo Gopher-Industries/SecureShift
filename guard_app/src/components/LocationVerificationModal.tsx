@@ -1,3 +1,4 @@
+// src/components/LocationVerificationModal.tsx
 import * as Location from 'expo-location';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -28,8 +29,10 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (visible) startCheck();
-    else {
+    if (visible) {
+      startCheck();
+    } else {
+      // ✅ reset when modal closes
       setStatus('idle');
       setErrorMsg(null);
     }
@@ -46,16 +49,22 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
       setStatus('requesting');
       setErrorMsg(null);
 
-      // timeout after 15s
+      // ✅ timeout after 15s (auto-close)
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         setStatus('failed');
         setErrorMsg('Timed out while getting your location. Please try again.');
+        onClose(); // ✅ close on timeout (per Task 2 requirement)
       }, 15000);
 
       // 1) permission
       const perm = await Location.requestForegroundPermissionsAsync();
+
       if (perm.status !== 'granted') {
+        // stop timeout
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = null;
+
         if (perm.canAskAgain === false) setStatus('permanentDenied');
         else setStatus('denied');
         return;
@@ -81,8 +90,9 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = null;
 
+      const msg = e instanceof Error ? e.message : 'Failed to get location';
       setStatus('failed');
-      setErrorMsg(e instanceof Error ? e.message : 'Failed to get location');
+      setErrorMsg(msg);
     }
   };
 
@@ -163,7 +173,14 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
   };
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={() => {}}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={() => {
+        // ✅ Android back button: parent controls close (prevents accidental dismiss)
+      }}
+    >
       <View style={s.overlay}>
         <View style={s.card}>
           <Text style={s.title}>Location Verification</Text>
