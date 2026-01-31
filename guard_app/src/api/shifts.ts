@@ -15,7 +15,7 @@ export type ShiftDto = {
     company?: string;
   };
 
-  // backend states
+  // backend states (keep only what backend supports)
   status?: 'open' | 'applied' | 'assigned' | 'completed';
 
   payRate?: number;
@@ -32,37 +32,39 @@ export type ShiftDto = {
 };
 
 type ListResponse =
-  | ShiftDto[] // plain array
-  | { items?: ShiftDto[] } // paginated { items }
-  | { data?: ShiftDto[] } // alt { data }
-  | { shifts?: ShiftDto[] }; // alt { shifts }
+  | ShiftDto[]
+  | { items?: ShiftDto[] }
+  | { data?: ShiftDto[] }
+  | { shifts?: ShiftDto[] };
 
 type ApplyResponse = {
   message?: string;
   shift?: ShiftDto;
 };
 
-// small util
 function toArray<T>(payload: ListResponse | any): T[] {
   if (Array.isArray(payload)) return payload;
-  if (Array.isArray((payload as any)?.items)) return (payload as any).items;
-  if (Array.isArray((payload as any)?.data)) return (payload as any).data;
-  if (Array.isArray((payload as any)?.shifts)) return (payload as any).shifts;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.shifts)) return payload.shifts;
   return [];
 }
 
 // GET /api/v1/shifts
 export async function listShifts(page = 1, limit = 20) {
   const { data } = await http.get('/shifts', { params: { page, limit } });
+
+  const items = toArray<ShiftDto>(data);
+
   return {
-    items: toArray<ShiftDto>(data),
-    page: data.page ?? page,
-    limit: data.limit ?? limit,
-    total: data.total ?? toArray<ShiftDto>(data).length,
+    items,
+    page: data?.page ?? page,
+    limit: data?.limit ?? limit,
+    total: data?.total ?? items.length,
   };
 }
 
-// GET /api/v1/shifts/myshifts   (?status=past optional)
+// GET /api/v1/shifts/myshifts (?status=past optional)
 export async function myShifts(status?: 'past') {
   const { data } = await http.get<ListResponse>('/shifts/myshifts', {
     params: status ? { status } : undefined,

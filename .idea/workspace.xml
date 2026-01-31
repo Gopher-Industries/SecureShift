@@ -6,8 +6,16 @@
   <component name="ChangeListManager">
     <list default="true" id="64ef35b3-52d4-4317-b7d9-cb52d9efacc4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app-backend/src/controllers/auth.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/controllers/auth.controller.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-frontend/employer-panel/.env" beforeDir="false" afterPath="$PROJECT_DIR$/app-frontend/employer-panel/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/src/components/AddAvailabilityModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/components/AddAvailabilityModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/src/components/LocationVerificationModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/components/LocationVerificationModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/src/navigation/AppTabs.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/navigation/AppTabs.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/src/screen/ShiftDetailsScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/screen/ShiftDetailsScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guard_app/src/screen/ShiftsScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/screen/ShiftsScreen.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,7 +28,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="frontend/guard-app" />
+        <entry key="$PROJECT_DIR$" value="Sanjolika6788/feature/add-availability-modal" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -53,10 +61,13 @@
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "ToolWindow.Device Manager 2.ShowToolbar": "false",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "feature/availability-api-and-lint",
-    "kotlin-language-version-configured": "true"
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "E:/Scure shift(TP)",
+    "settings.editor.selected.configurable": "preferences.keymap"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />

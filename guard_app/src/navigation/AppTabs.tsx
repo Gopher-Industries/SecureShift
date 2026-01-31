@@ -2,16 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import AvailabilityScreen from '../screen/AvailabilityScreen';
+import DocumentsScreen from '../screen/DocumentsScreen';
 import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
 import ShiftsScreen from '../screen/ShiftsScreen';
-import DocumentsScreen from '../screen/DocumentsScreen';
 
 export type AppTabParamList = {
   Home: undefined;
   Shifts: undefined;
-  Documents: undefined;
   Availability: undefined;
+  Documents: undefined;
   Profile: undefined;
 };
 
@@ -23,21 +23,16 @@ export default function AppTabs() {
       screenOptions={({ route }) => ({
         headerShown: true,
         tabBarIcon: ({ color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
+          const name =
+            route.name === 'Home'
+              ? ('home-outline' as const)
+              : route.name === 'Shifts'
+                ? ('briefcase-outline' as const)
+                : route.name === 'Availability'
+                  ? ('calendar-outline' as const)
+                  : ('person-outline' as const);
 
-          if (route.name === 'Home') {
-            iconName = 'home-outline';
-          } else if (route.name === 'Shifts') {
-            iconName = 'briefcase-outline';
-          } else if (route.name === 'Documents') {
-            iconName = 'document-text-outline';
-          } else if (route.name === 'Availability') {
-            iconName = 'calendar-outline';
-          } else if (route.name === 'Profile') {
-            iconName = 'person-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={name} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#1E3A8A',
         tabBarInactiveTintColor: '#888',
@@ -45,8 +40,8 @@ export default function AppTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Shifts" component={ShiftsScreen} />
-      <Tab.Screen name="Documents" component={DocumentsScreen} />
       <Tab.Screen name="Availability" component={AvailabilityScreen} />
+      <Tab.Screen name="Documents" component={DocumentsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

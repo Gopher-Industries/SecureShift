@@ -14,6 +14,7 @@ import {
   Alert,
 } from 'react-native';
 
+import logo from '../../assets/logo.png';
 import {
   login as apiLogin,
   verifyOtp as apiVerifyOtp,
@@ -98,16 +99,13 @@ export default function LoginScreen({ navigation }: any) {
       const reason = license.rejectionReason;
 
       if (status === 'verified') {
-        // If verified, go to app
         await goToApp();
       } else if (status === 'pending') {
-        // If pending, show info message
         Alert.alert(
           'License Pending',
           'Your license is currently under review. You will be notified once it is verified.',
         );
       } else if (status === 'rejected') {
-        // If rejected, show rejection reason
         Alert.alert(
           'License Rejected',
           `Your license was rejected.\n\nReason: ${reason || 'No reason provided'}.\n\nPlease check your email for more details.`,
@@ -130,11 +128,10 @@ export default function LoginScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.container}>
-        <Image source={require('../../assets/logo.png')} style={styles.logo} />
+        <Image source={logo} style={styles.logo} />
         <Text style={styles.subtitle}>Login with your email and password</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {/* Email input */}
         <Text style={styles.label}>Email*</Text>
         <View style={styles.inputWrap}>
           <TextInput
@@ -157,7 +154,6 @@ export default function LoginScreen({ navigation }: any) {
           />
         </View>
 
-        {/* Password input */}
         <Text style={[styles.label, styles.mt16]}>Password*</Text>
         <View style={styles.inputWrap}>
           <TextInput
@@ -185,7 +181,6 @@ export default function LoginScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Login button */}
         <TouchableOpacity
           style={[styles.button, submitting && { opacity: 0.6 }]}
           onPress={handleLogin}
@@ -194,7 +189,6 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Login'}</Text>
         </TouchableOpacity>
 
-        {/* OTP input */}
         {otpMode && (
           <>
             <Text style={styles.label}>Enter OTP*</Text>
@@ -230,7 +224,6 @@ export default function LoginScreen({ navigation }: any) {
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F5F6FA' },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 80 },

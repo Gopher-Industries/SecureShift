@@ -1,6 +1,6 @@
 // guard_app/src/screen/AvailabilityScreen.tsx
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,44 +12,15 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { getMe } from '../api/auth';
-import {
-  getAvailability,
-  upsertAvailability,
-  addAvailabilitySlot,
-  getMyAvailabilitySlots,
-  removeAvailabilitySlot,
-  type AvailabilityData,
-  type AvailabilitySlotDto,
-} from '../api/availability';
+import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
 import AddAvailabilityModal from '../components/AddAvailabilityModal';
-
-/* ✅ DEV MOCK TO BYPASS BACKEND */
-const DEV_MOCK_AVAILABILITY = __DEV__ && true;
-
-const mockAvailability: { days: string[]; timeSlots: string[] } = {
-  days: ['Monday', 'Wednesday'],
-  timeSlots: ['Monday 09:00 - 17:00', 'Wednesday 10:00 - 14:00'],
-};
 
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const TIME_SLOTS = Array.from({ length: 17 }, (_, i) => i + 6); // 6am to 10pm
 
 type ViewMode = 'simple' | 'weekly' | 'monthly';
-
-interface CalendarSlot {
-  id: string;
-  _id?: string;
-  date: string;
-  dayOfWeek: string;
-  fromTime: string;
-  toTime: string;
-  createdAt: string;
-}
 
 function extractTimeSlots(data: unknown): string[] {
   if (!data || typeof data !== 'object') return [];
@@ -63,8 +34,7 @@ export default function AvailabilityScreen() {
   const [days, setDays] = useState<string[]>([]);
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
 
-  // Calendar mode state (new)
-  const [calendarSlots, setCalendarSlots] = useState<CalendarSlot[]>([]);
+  // Calendar mode state
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -106,38 +76,56 @@ export default function AvailabilityScreen() {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0);
   };
 
-  const mapDtoToCalendarSlot = (dto: AvailabilitySlotDto): CalendarSlot => {
-    const date = new Date(dto.date);
+  const parseTimeRange = (slot: string) => {
+    const [start, end] = slot.split('-');
+    if (!start || !end) return null;
+    const [startHour, startMin] = start.split(':').map(Number);
+    const [endHour, endMin] = end.split(':').map(Number);
+    if ([startHour, startMin, endHour, endMin].some((n) => Number.isNaN(n))) return null;
     return {
-      id: dto._id,
-      _id: dto._id,
-      date: dto.date,
-      dayOfWeek: getDayName(date),
-      fromTime: dto.fromTime,
-      toTime: dto.toTime,
-      createdAt: dto.createdAt,
+      startMinutes: startHour * 60 + startMin,
+      endMinutes: endHour * 60 + endMin,
     };
   };
 
-  // Load both simple and calendar availability
+  const persistAvailability = async (
+    nextDays: string[],
+    nextTimeSlots: string[],
+    options?: { showSuccess?: boolean },
+  ) => {
+    if (!userId) {
+      Alert.alert('Error', 'User not loaded');
+      return false;
+    }
+
+    if (nextDays.length === 0 || nextTimeSlots.length === 0) {
+      Alert.alert('Validation', 'Please select at least one day and one time slot.');
+      return false;
+    }
+
+    try {
+      setSaving(true);
+      const payload: AvailabilityData = { userId, days: nextDays, timeSlots: nextTimeSlots };
+      await upsertAvailability(payload);
+      if (options?.showSuccess) {
+        Alert.alert('Success', 'Availability saved');
+      }
+      return true;
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Failed to save availability');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Load simple availability
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        if (DEV_MOCK_AVAILABILITY) {
-          setUserId('dev-user');
-          setDays(mockAvailability.days);
-          setTimeSlots(mockAvailability.timeSlots);
-          
-          // Load calendar slots from storage
-          const stored = await AsyncStorage.getItem('availability_calendar_slots');
-          if (stored) {
-            setCalendarSlots(JSON.parse(stored));
-          }
-          return;
-        }
 
         // Real mode - load from API
         const me = await getMe();
@@ -152,11 +140,6 @@ export default function AvailabilityScreen() {
           setTimeSlots(extractTimeSlots(data));
         }
 
-        // Load calendar slots
-        const slots = await getMyAvailabilitySlots();
-        const mapped = slots.map(mapDtoToCalendarSlot);
-        setCalendarSlots(mapped);
-        await AsyncStorage.setItem('availability_calendar_slots', JSON.stringify(mapped));
       } catch (e) {
         console.error(e);
         setError('Failed to load availability');
@@ -187,32 +170,7 @@ export default function AvailabilityScreen() {
   };
 
   const handleSave = async () => {
-    if (!userId) {
-      Alert.alert('Error', 'User not loaded');
-      return;
-    }
-
-    if (days.length === 0 || timeSlots.length === 0) {
-      Alert.alert('Validation', 'Please select at least one day and one time slot.');
-      return;
-    }
-
-    if (DEV_MOCK_AVAILABILITY) {
-      Alert.alert('Success', 'Availability saved (mock)');
-      return;
-    }
-
-    try {
-      setSaving(true);
-      const payload: AvailabilityData = { userId, days, timeSlots };
-      await upsertAvailability(payload);
-      Alert.alert('Success', 'Availability saved');
-    } catch (e) {
-      console.error(e);
-      Alert.alert('Error', 'Failed to save availability');
-    } finally {
-      setSaving(false);
-    }
+    await persistAvailability(days, timeSlots, { showSuccess: true });
   };
 
   // Calendar mode functions (new)
@@ -234,8 +192,9 @@ export default function AvailabilityScreen() {
   }, [currentDate]);
 
   const getSlotsForDate = (date: Date) => {
-    const dateStr = formatDate(date);
-    return calendarSlots.filter((slot) => slot.date === dateStr);
+    const dayName = getDayName(date);
+    if (!days.includes(dayName)) return [];
+    return timeSlots;
   };
 
   const handleAddCalendarSlot = async () => {
@@ -251,67 +210,37 @@ export default function AvailabilityScreen() {
       return;
     }
 
-    try {
-      setSaving(true);
+    const dayName = getDayName(selectedDate);
+    const slotLabel = `${fromTime}-${toTime}`;
+    const nextDays = days.includes(dayName) ? days : [...days, dayName];
+    const nextTimeSlots = timeSlots.includes(slotLabel) ? timeSlots : [...timeSlots, slotLabel];
+    setDays(nextDays);
+    setTimeSlots(nextTimeSlots);
 
-      if (DEV_MOCK_AVAILABILITY) {
-        const newSlot: CalendarSlot = {
-          id: Date.now().toString(),
-          date: formatDate(selectedDate),
-          dayOfWeek: getDayName(selectedDate),
-          fromTime,
-          toTime,
-          createdAt: new Date().toISOString(),
-        };
+    const saved = await persistAvailability(nextDays, nextTimeSlots, { showSuccess: true });
+    if (!saved) return;
 
-        const updated = [...calendarSlots, newSlot];
-        await AsyncStorage.setItem('availability_calendar_slots', JSON.stringify(updated));
-        setCalendarSlots(updated);
-      } else {
-        const result = await addAvailabilitySlot({
-          date: formatDate(selectedDate),
-          fromTime,
-          toTime,
-        });
-
-        const newSlot = mapDtoToCalendarSlot(result as AvailabilitySlotDto);
-        const updated = [...calendarSlots, newSlot];
-        setCalendarSlots(updated);
-        await AsyncStorage.setItem('availability_calendar_slots', JSON.stringify(updated));
-      }
-
-      setShowCalendarModal(false);
-      setFromTime('09:00');
-      setToTime('17:00');
-      setSelectedDate(null);
-      Alert.alert('Success', 'Availability added');
-    } catch (e) {
-      console.error(e);
-      Alert.alert('Error', 'Failed to add availability');
-    } finally {
-      setSaving(false);
-    }
+    setShowCalendarModal(false);
+    setFromTime('09:00');
+    setToTime('17:00');
+    setSelectedDate(null);
   };
 
-  const handleRemoveCalendarSlot = async (slot: CalendarSlot) => {
+  const handleRemoveCalendarSlot = async (slotLabel: string) => {
     Alert.alert('Remove', 'Remove this time slot?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove',
         style: 'destructive',
         onPress: async () => {
-          try {
-            if (!DEV_MOCK_AVAILABILITY && slot._id) {
-              await removeAvailabilitySlot(slot._id);
-            }
-
-            const updated = calendarSlots.filter((s) => s.id !== slot.id);
-            await AsyncStorage.setItem('availability_calendar_slots', JSON.stringify(updated));
-            setCalendarSlots(updated);
-          } catch (e) {
-            console.error(e);
-            Alert.alert('Error', 'Failed to remove');
+          const nextTimeSlots = timeSlots.filter((s) => s !== slotLabel);
+          if (nextTimeSlots.length === 0) {
+            Alert.alert('Validation', 'Please keep at least one time slot.');
+            return;
           }
+
+          setTimeSlots(nextTimeSlots);
+          await persistAvailability(days, nextTimeSlots);
         },
       },
     ]);
@@ -424,10 +353,12 @@ export default function AvailabilityScreen() {
 
             {weekDays.map((day, idx) => {
               const daySlots = getSlotsForDate(day);
+              const hourStartMinutes = hour * 60;
+              const hourEndMinutes = hour * 60 + 60;
               const hasSlot = daySlots.some((slot) => {
-                const slotHour = parseInt(slot.fromTime.split(':')[0], 10);
-                const slotEndHour = parseInt(slot.toTime.split(':')[0], 10);
-                return hour >= slotHour && hour < slotEndHour;
+                const range = parseTimeRange(slot);
+                if (!range) return false;
+                return range.startMinutes < hourEndMinutes && range.endMinutes > hourStartMinutes;
               });
 
               return (
@@ -459,10 +390,8 @@ export default function AvailabilityScreen() {
                 {SHORT_DAYS[idx]} {day.getDate()}
               </Text>
               {daySlots.map((slot) => (
-                <View key={slot.id} style={styles.slotItemRow}>
-                  <Text style={styles.slotTime}>
-                    {slot.fromTime} - {slot.toTime}
-                  </Text>
+                <View key={slot} style={styles.slotItemRow}>
+                  <Text style={styles.slotTime}>{slot}</Text>
                   <TouchableOpacity onPress={() => handleRemoveCalendarSlot(slot)}>
                     <Text style={styles.removeButtonText}>Remove</Text>
                   </TouchableOpacity>
@@ -517,7 +446,7 @@ export default function AvailabilityScreen() {
                 {hasSlots && (
                   <View style={styles.monthSlotIndicators}>
                     {daySlots.slice(0, 3).map((slot) => (
-                      <View key={slot.id} style={styles.monthSlotDot} />
+                      <View key={slot} style={styles.monthSlotDot} />
                     ))}
                   </View>
                 )}
