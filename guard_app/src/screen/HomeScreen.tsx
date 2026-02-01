@@ -173,10 +173,6 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
-
   useFocusEffect(
     useCallback(() => {
       load();
