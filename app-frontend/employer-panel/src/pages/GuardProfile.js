@@ -10,46 +10,6 @@ const availabilityOptions = ["Available","Unavailable","On Leave"];
 const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
                                           // NEW
 
-// =======================
-// DEV MODE – Sprint 2
-// Temporary mock guards for compliance UI
-// TODO: remove once auth token issue is fixed
-// =======================
-
-const DEV_GUARDS = [
-  {
-    id: "1",
-    name: "John Guard",
-    skills: ["Patrolling", "First Aid"],
-    availability: "Available",
-    license: {
-      status: "pending",
-      expiryDate: "2026-06-01",
-    },
-  },
-  {
-    id: "2",
-    name: "Sarah Guard",
-    skills: ["CCTV Monitoring"],
-    availability: "Available",
-    license: {
-      status: "verified",
-      expiryDate: "2026-02-05", // expiring soon
-    },
-  },
-  {
-    id: "3",
-    name: "Mike Guard",
-    skills: ["Crowd Control"],
-    availability: "Available",
-    license: {
-      status: "verified",
-      expiryDate: "2025-01-01", // expired
-    },
-  },
-];
-
-
 function GuardProfiles() {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
@@ -76,80 +36,64 @@ function GuardProfiles() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // TODO: replace DEV_GUARDS with API once auth token issue is resolved
-  useEffect(() => {
-  setGuards(DEV_GUARDS);
-  setLoading(false);
-}, []);
 
-    // TODO:
-  // Replace mocked guard compliance data with real API response.
-  // Backend endpoint planned: GET /api/v1/users/guards (employer role)
-  // Expected fields:
-  //  - guard.license.status (pending | verified | rejected)
-  //  - guard.license.expiryDate
-  //  - guard.documents[] (ID, RSA, First Aid, Certificates)
-  // Frontend compliance logic (expiry, warnings, assignment blocking)
-  // is already implemented and matches Guard App behaviour.
-
-  // Current data is mocked to validate compliance rules and UX.  
   // NEW: fetch guards from backend --------------------------------------------
-//   useEffect(() => {                                                    // NEW
-//     let mounted = true;                                                // NEW
-//     (async () => {                                                     // NEW
-//       try {                                                            // NEW
-//         setLoading(true);                                              // NEW
-//         setError("");                                                  // NEW
+  useEffect(() => {                                                    // NEW
+    let mounted = true;                                                // NEW
+    (async () => {                                                     // NEW
+      try {                                                            // NEW
+        setLoading(true);                                              // NEW
+        setError("");                                                  // NEW
 
-//         const token = localStorage.getItem("token");                   // NEW (if you use JWT)
-//         const res = await fetch(`${API_BASE}/api/v1/users/guards`, {
-//   method: "GET",
-//   headers: {
-//     "Content-Type": "application/json",
-//     Authorization: `Bearer ${token}`, // ✅ send token
-//   }
-// });                                            // NEW
+        const token = localStorage.getItem("token");                   // NEW (if you use JWT)
+        const res = await fetch(`${API_BASE}/api/v1/users/guards`, {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`, // ✅ send token
+  }
+});                                            // NEW
 
-//         if (!res.ok) {                                                 // NEW
-//           const text = await res.text().catch(() => "");               // NEW
-//           throw new Error(text || `Request failed (${res.status})`);   // NEW
-//         }                                                              // NEW
+        if (!res.ok) {                                                 // NEW
+          const text = await res.text().catch(() => "");               // NEW
+          throw new Error(text || `Request failed (${res.status})`);   // NEW
+        }                                                              // NEW
 
-//         const data = await res.json();                                 // NEW
+        const data = await res.json();                                 // NEW
 
-//         // Accept both shapes: array OR {guards:[...]} ----------------- // NEW
-//         const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : []; // NEW
+        // Accept both shapes: array OR {guards:[...]} ----------------- // NEW
+        const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : []; // NEW
 
-//         // Normalize fields so UI always has name/skills/availability/photo
-//         const normalized = list.map((g, i) => ({                       // NEW
-//           id: g._id || g.id || String(i),                              // NEW
-//           name:
-//             g.name ||
-//             [g.firstName, g.lastName].filter(Boolean).join(" ") ||
-//             "Unknown",                                                 // NEW
-//           skills: Array.isArray(g.skills)
-//             ? g.skills
-//             : typeof g.skills === "string"
-//             ? g.skills.split(",").map((s) => s.trim())
-//             : Array.isArray(g.skillset)
-//             ? g.skillset
-//             : [],                                                      // NEW
-//           availability:
-//             g.availability ?? g.status ?? (g.available ? "Available" : "Unavailable"), // NEW
-//           photo: g.photo?.url || g.photo || g.avatar || g.imageUrl || "/GuardPicPlaceholder.png", // NEW
+        // Normalize fields so UI always has name/skills/availability/photo
+        const normalized = list.map((g, i) => ({                       // NEW
+          id: g._id || g.id || String(i),                              // NEW
+          name:
+            g.name ||
+            [g.firstName, g.lastName].filter(Boolean).join(" ") ||
+            "Unknown",                                                 // NEW
+          skills: Array.isArray(g.skills)
+            ? g.skills
+            : typeof g.skills === "string"
+            ? g.skills.split(",").map((s) => s.trim())
+            : Array.isArray(g.skillset)
+            ? g.skillset
+            : [],                                                      // NEW
+          availability:
+            g.availability ?? g.status ?? (g.available ? "Available" : "Unavailable"), // NEW
+          photo: g.photo?.url || g.photo || g.avatar || g.imageUrl || "/GuardPicPlaceholder.png", // NEW
 
-//           licenseStatus: g.license?.status || "none",
-//         }));                                                           // NEW
+          licenseStatus: g.license?.status || "none",
+        }));                                                           // NEW
 
-//         if (mounted) setGuards(normalized);                            // NEW
-//       } catch (e) {                                                    // NEW
-//         if (mounted) setError(e.message || "Failed to fetch guards");  // NEW
-//       } finally {                                                      // NEW
-//         if (mounted) setLoading(false);                                // NEW
-//       }                                                                // NEW
-//     })();                                                              // NEW
-//     return () => { mounted = false; };                                 // NEW
-//   }, []);                                                              // NEW
+        if (mounted) setGuards(normalized);                            // NEW
+      } catch (e) {                                                    // NEW
+        if (mounted) setError(e.message || "Failed to fetch guards");  // NEW
+      } finally {                                                      // NEW
+        if (mounted) setLoading(false);                                // NEW
+      }                                                                // NEW
+    })();                                                              // NEW
+    return () => { mounted = false; };                                 // NEW
+  }, []);                                                              // NEW
 
   const toggleSkill = (skill) => setSelectedSkills(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
   const toggleAvailability = (avail) => setSelectedAvailability(prev => prev.includes(avail) ? prev.filter(a => a !== avail) : [...prev, avail]);
