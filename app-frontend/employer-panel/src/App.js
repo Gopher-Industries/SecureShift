@@ -6,6 +6,10 @@ import EmployerDashboard from './pages/EmployerDashboard';
 import CreateShift from './pages/createShift';
 import ManageShift from './pages/ManageShift';
 import GuardProfiles from './pages/GuardProfile';
+
+//guard profile page
+import GuardProfilePage from './pages/GuardProfilePage';
+
 import SubmissionConfirmation from './pages/SubmissionConfirmation';
 import CompanyProfile from './pages/CompanyProfile';
 import Header from './components/Header';
@@ -27,6 +31,9 @@ function App() {
             <Route path="/create-shift" element={<CreateShift />} />
             <Route path="/manage-shift" element={<ManageShift />} />
             <Route path="/guard-profiles" element={<GuardProfiles />} />
+            
+            <Route path="/guard-profiles/:guardId" element={<GuardProfilePage />} />
+
             <Route path="/company-profile" element={<CompanyProfile />} />
             <Route path="/submission" element={<SubmissionConfirmation />} />
             <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
