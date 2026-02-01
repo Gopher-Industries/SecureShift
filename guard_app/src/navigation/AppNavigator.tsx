@@ -16,7 +16,16 @@ export type RootStackParamList = {
   Signup: undefined;
   Settings: undefined;
   EditProfile: undefined;
-  Messages: undefined;
+  Messages:
+    | {
+        context?: 'shift' | 'general';
+        shiftParticipantId?: string;
+        shiftParticipantName?: string;
+        shiftTitle?: string;
+        generalParticipantId?: string;
+        generalParticipantName?: string;
+      }
+    | undefined;
 
   Notifications: undefined;
   ShiftDetails: { shift: any; refresh?: () => void };
