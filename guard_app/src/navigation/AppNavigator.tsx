@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import AppTabs from './AppTabs';
+import CertificatesScreen from '../screen/CertificatesScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
@@ -21,7 +22,7 @@ export type RootStackParamList = {
   Messages: undefined;
 
   Notifications: undefined;
-  Documents: { docType?: string } | undefined;
+  Certificates: undefined;
   ShiftDetails: { shift: any; refresh?: () => void };
 };
 
@@ -56,6 +57,9 @@ export default function AppNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="Certificates"
+        component={CertificatesScreen}
+        options={{ headerShown: true, title: 'Certificates' }}
         name="ShiftDetails"
         component={ShiftDetailsScreen}
         options={{ headerShown: true, title: 'Shift Details' }}

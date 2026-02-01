@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import http from '../lib/http';
 
 export interface AvailabilityData {

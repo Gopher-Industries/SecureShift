@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-native/no-inline-styles */
+
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import {
@@ -195,7 +196,12 @@ export default function ProfileScreen({ navigation, route }: any) {
         )}
 
         {/* Certifications */}
-        <View style={styles.card}>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.card}
+          onPress={() => navigation.navigate('Certificates')}
+        >
           <Text style={styles.cardTitle}>Certifications</Text>
           <View style={styles.badgesRow}>
             {['Security License', 'CPR', 'First Aid'].map((badge) => (
@@ -208,7 +214,7 @@ export default function ProfileScreen({ navigation, route }: any) {
               </Pressable>
             ))}
           </View>
-        </View>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
