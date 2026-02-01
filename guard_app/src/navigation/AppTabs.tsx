@@ -1,22 +1,24 @@
+// src/navigation/AppTabs.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
+import HomeScreen from '../screen/HomeScreen';
+import ShiftsScreen from '../screen/ShiftsScreen';
 import AvailabilityScreen from '../screen/AvailabilityScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
-import HomeScreen from '../screen/HomeScreen';
+import TimesheetsScreen from '../screen/TimeSheetsScreen';
 import ProfileScreen from '../screen/ProfileScreen';
-import ShiftsScreen from '../screen/ShiftsScreen';
 
 export type AppTabParamList = {
   Home: undefined;
   Shifts: undefined;
   Availability: undefined;
   Documents: undefined;
+  Timesheets: undefined;
   Profile: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
-
 export default function AppTabs() {
   return (
     <Tab.Navigator
@@ -30,7 +32,11 @@ export default function AppTabs() {
                 ? ('briefcase-outline' as const)
                 : route.name === 'Availability'
                   ? ('calendar-outline' as const)
-                  : ('person-outline' as const);
+                  : route.name === 'Documents'
+                    ? ('folder-outline' as const)
+                    : route.name === 'Timesheets'
+                      ? ('clipboard-outline' as const)
+                      : ('person-outline' as const);
 
           return <Ionicons name={name} size={size} color={color} />;
         },
@@ -42,6 +48,7 @@ export default function AppTabs() {
       <Tab.Screen name="Shifts" component={ShiftsScreen} />
       <Tab.Screen name="Availability" component={AvailabilityScreen} />
       <Tab.Screen name="Documents" component={DocumentsScreen} />
+      <Tab.Screen name="Timesheets" component={TimesheetsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

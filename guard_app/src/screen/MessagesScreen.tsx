@@ -42,6 +42,15 @@ type Message = {
   status?: 'sending' | 'sent' | 'delivered' | 'read';
 };
 
+type ConversationItem = {
+  id: string;
+  name: string;
+  role?: string;
+  lastMessage: string;
+  lastTimestamp: string;
+  unreadCount: number;
+};
+
 export default function MessagesScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'Messages'>>();
   const initialContext =
@@ -72,6 +81,9 @@ export default function MessagesScreen() {
     email?: string;
     role?: string;
   } | null>(null);
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [newRecipientId, setNewRecipientId] = useState('');
+  const [newRecipientName, setNewRecipientName] = useState('');
 
   const contextMessages = useMemo(
     () => messagesByContext[activeContext],
@@ -114,6 +126,36 @@ export default function MessagesScreen() {
     };
   };
 
+  const buildConversationList = (inbox: MessageDto[], sent: MessageDto[], meId: string) => {
+    const byUser = new Map<string, ConversationItem & { lastTime: number }>();
+    const all = [...inbox, ...sent];
+    all.forEach((msg) => {
+      const participant = buildParticipantFromMessage(msg, meId);
+      if (!participant) return;
+      const timestamp = new Date(msg.timestamp).getTime();
+      const existing = byUser.get(participant.id);
+      const isUnread = msg.receiver && getUserId(msg.receiver) === meId && !msg.isRead;
+      const next = {
+        id: participant.id,
+        name: participant.name,
+        role: participant.role,
+        lastMessage: msg.content,
+        lastTimestamp: msg.timestamp,
+        unreadCount: (existing?.unreadCount ?? 0) + (isUnread ? 1 : 0),
+        lastTime: Math.max(existing?.lastTime ?? 0, timestamp),
+      };
+      if (!existing || timestamp >= existing.lastTime) {
+        byUser.set(participant.id, next);
+      } else {
+        byUser.set(participant.id, { ...existing, unreadCount: next.unreadCount });
+      }
+    });
+
+    return Array.from(byUser.values())
+      .sort((a, b) => b.lastTime - a.lastTime)
+      .map(({ lastTime, ...rest }) => rest);
+  };
+
   useEffect(() => {
     const loadParticipants = async () => {
       try {
@@ -137,18 +179,11 @@ export default function MessagesScreen() {
             id: route.params.generalParticipantId,
             name: route.params.generalParticipantName ?? 'Conversation',
           });
-          return;
         }
 
         const [inbox, sent] = await Promise.all([getInboxMessages(), getSentMessages()]);
-        const combined = [...inbox, ...sent].sort(
-          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-        );
-        const first = combined[0];
-        const participant = first ? buildParticipantFromMessage(first, meId) : null;
-        if (participant) {
-          setGeneralParticipant(participant);
-        }
+        const list = buildConversationList(inbox, sent, meId);
+        setConversations(list);
       } catch (e) {
         console.error(e);
         setError('Failed to load messages');
@@ -272,6 +307,50 @@ export default function MessagesScreen() {
     </View>
   );
 
+  const renderConversation = ({ item }: { item: ConversationItem }) => (
+    <TouchableOpacity
+      style={styles.conversationRow}
+      onPress={() => {
+        setGeneralParticipant({
+          id: item.id,
+          name: item.name,
+          role: item.role,
+        });
+        setActiveContext('general');
+      }}
+    >
+      <View style={styles.conversationInfo}>
+        <View style={styles.conversationHeader}>
+          <Text style={styles.conversationName}>{item.name}</Text>
+          <Text style={styles.conversationTime}>{formatTime(item.lastTimestamp)}</Text>
+        </View>
+        <Text style={styles.conversationPreview} numberOfLines={1}>
+          {item.lastMessage}
+        </Text>
+      </View>
+      {item.unreadCount > 0 && (
+        <View style={styles.unreadBadge}>
+          <Text style={styles.unreadText}>{item.unreadCount}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
+  const handleStartConversation = () => {
+    const id = newRecipientId.trim();
+    if (!id) {
+      Alert.alert('Missing info', 'Enter a recipient ID to start a conversation.');
+      return;
+    }
+    setGeneralParticipant({
+      id,
+      name: newRecipientName.trim() || 'Conversation',
+    });
+    setActiveContext('general');
+    setNewRecipientId('');
+    setNewRecipientName('');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -331,31 +410,81 @@ export default function MessagesScreen() {
 
         {error && <Text style={styles.errorText}>{error}</Text>}
 
-        <FlatList
-          data={contextMessages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
-          contentContainerStyle={[
-            styles.chat,
-            contextMessages.length === 0 && styles.chatEmpty,
-          ]}
-          ListEmptyComponent={
-            loading ? (
-              <View style={styles.placeholder}>
-                <ActivityIndicator />
-                <Text style={styles.placeholderTitle}>Loading messages…</Text>
-              </View>
-            ) : (
-              <View style={styles.placeholder}>
-                <Ionicons name="chatbubble-ellipses-outline" size={36} color="#9ca3af" />
-                <Text style={styles.placeholderTitle}>No messages yet</Text>
-                <Text style={styles.placeholderText}>
-                  Start the conversation to coordinate shifts or share updates.
-                </Text>
-              </View>
-            )
-          }
-        />
+        {activeContext === 'general' && !activeParticipant?.id ? (
+          <View style={styles.conversationListWrap}>
+            <Text style={styles.sectionTitle}>Conversations</Text>
+            <View style={styles.newConversationCard}>
+              <Text style={styles.newConversationTitle}>Start a new conversation</Text>
+              <TextInput
+                style={styles.newConversationInput}
+                placeholder="Recipient user ID"
+                value={newRecipientId}
+                onChangeText={setNewRecipientId}
+                autoCapitalize="none"
+              />
+              <TextInput
+                style={styles.newConversationInput}
+                placeholder="Recipient name (optional)"
+                value={newRecipientName}
+                onChangeText={setNewRecipientName}
+              />
+              <TouchableOpacity style={styles.newConversationBtn} onPress={handleStartConversation}>
+                <Text style={styles.newConversationBtnText}>Start</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={conversations}
+              keyExtractor={(item) => item.id}
+              renderItem={renderConversation}
+              contentContainerStyle={[
+                styles.chat,
+                conversations.length === 0 && styles.chatEmpty,
+              ]}
+              ListEmptyComponent={
+                loading ? (
+                  <View style={styles.placeholder}>
+                    <ActivityIndicator />
+                    <Text style={styles.placeholderTitle}>Loading conversations…</Text>
+                  </View>
+                ) : (
+                  <View style={styles.placeholder}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={36} color="#9ca3af" />
+                    <Text style={styles.placeholderTitle}>No conversations yet</Text>
+                    <Text style={styles.placeholderText}>
+                      Start a new chat from a shift or by selecting a contact.
+                    </Text>
+                  </View>
+                )
+              }
+            />
+          </View>
+        ) : (
+          <FlatList
+            data={contextMessages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderMessage}
+            contentContainerStyle={[
+              styles.chat,
+              contextMessages.length === 0 && styles.chatEmpty,
+            ]}
+            ListEmptyComponent={
+              loading ? (
+                <View style={styles.placeholder}>
+                  <ActivityIndicator />
+                  <Text style={styles.placeholderTitle}>Loading messages…</Text>
+                </View>
+              ) : (
+                <View style={styles.placeholder}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={36} color="#9ca3af" />
+                  <Text style={styles.placeholderTitle}>No messages yet</Text>
+                  <Text style={styles.placeholderText}>
+                    Start the conversation to coordinate shifts or share updates.
+                  </Text>
+                </View>
+              )
+            }
+          />
+        )}
 
         {isTyping && (
           <View style={styles.typingRow}>
@@ -444,6 +573,75 @@ const styles = StyleSheet.create({
   placeholder: { alignItems: 'center', paddingHorizontal: 24 },
   placeholderTitle: { marginTop: 8, fontSize: 16, fontWeight: '700', color: SLATE },
   placeholderText: { marginTop: 4, textAlign: 'center', color: '#6b7280' },
+
+  conversationListWrap: { flex: 1 },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: SLATE,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  conversationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  conversationInfo: { flex: 1 },
+  conversationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  conversationName: { fontSize: 14, fontWeight: '700', color: SLATE },
+  conversationTime: { fontSize: 11, color: '#6b7280' },
+  conversationPreview: { fontSize: 12, color: '#6b7280' },
+  unreadBadge: {
+    minWidth: 20,
+    paddingHorizontal: 6,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: NAVY,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadText: { color: '#ffffff', fontSize: 11, fontWeight: '700' },
+  newConversationCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  newConversationTitle: { fontSize: 13, fontWeight: '700', color: SLATE, marginBottom: 8 },
+  newConversationInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 8,
+    fontSize: 13,
+    color: SLATE,
+    backgroundColor: '#F9FAFB',
+  },
+  newConversationBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: NAVY,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  newConversationBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
 
   messageRow: { marginBottom: 10 },
   bubble: {
