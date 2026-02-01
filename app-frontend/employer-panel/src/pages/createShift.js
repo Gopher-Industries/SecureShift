@@ -35,6 +35,11 @@ const shiftSchema = yup.object({
     .min(0, "Break time cannot be negative")
     .max(180, "Break time seems too long")
     .required("Break time is required"),
+  payRate: yup
+    .number()
+    .typeError("Pay rate must be a number")
+    .min(0, "Pay rate cannot be negative")
+    .required("Pay rate is required"),
   shiftType: yup.string().oneOf(["day", "night"]).required(),
   instructions: yup
     .string()
@@ -171,6 +176,7 @@ const CreateShift = () => {
       startTime: "",
       endTime: "",
       breakMinutes: 30,
+      payRate: 0,
       shiftType: "day",
       instructions: "",
       location: "",
@@ -368,6 +374,7 @@ const CreateShift = () => {
       startTime: values.startTime,
       endTime: values.endTime,
       breakMinutes: values.breakMinutes,
+      payRate: values.payRate,
       shiftType: values.shiftType,
       instructions: values.instructions,
       guards: values.guards || [],
@@ -533,6 +540,11 @@ const CreateShift = () => {
                 <input id="breakMinutes" type="number" min="0" max="180" {...register("breakMinutes")} />
                 {renderFieldError("breakMinutes")}
               </div>
+              <div className="cs-field">
+                <label htmlFor="payRate">Pay rate ($/hr)</label>
+                <input id="payRate" type="number" min="0" step="0.01" {...register("payRate")} />
+                {renderFieldError("payRate")}
+              </div>
             </div>
 
             <div className="cs-field">
@@ -644,6 +656,7 @@ const CreateShift = () => {
                   {previewData.date} · {previewData.startTime} – {previewData.endTime}
                 </h4>
                 <p className="cs-subtle">Break: {previewData.breakMinutes} min</p>
+                <p className="cs-subtle">Pay rate: ${previewData.payRate}/hr</p>
               </div>
               <div>
                 <p className="cs-label">Shift type</p>
