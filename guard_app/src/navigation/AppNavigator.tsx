@@ -9,6 +9,7 @@ import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
+import DocumentsScreen from '../screen/DocumentsScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   Messages: undefined;
 
   Notifications: undefined;
+  Documents: { docType?: string } | undefined;
   ShiftDetails: { shift: any; refresh?: () => void };
 };
 
@@ -27,11 +29,12 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="AppTabs" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
+      <Stack.Screen name="Documents" component={DocumentsScreen} />
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
