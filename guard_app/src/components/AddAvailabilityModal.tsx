@@ -69,8 +69,15 @@ export default function AddAvailabilityModal({
       return;
     }
 
-    // JS: 0 = Sunday, 1 = Monday, ... 6 = Saturday
-    // Our WEEK_DAYS array starts with Monday → shift index by +6 mod 7
+    // ✅ validate time order
+    const fromMinutes = fromTime.getHours() * 60 + fromTime.getMinutes();
+    const toMinutes = toTime.getHours() * 60 + toTime.getMinutes();
+    if (toMinutes <= fromMinutes) {
+      Alert.alert('Invalid time', 'End time must be after start time.');
+      return;
+    }
+
+    // JS: 0 = Sunday ... 6 = Saturday
     const weekdayIndex = slotDate.getDay();
     const weekdayName = WEEK_DAYS[(weekdayIndex + 6) % 7];
 
@@ -88,36 +95,21 @@ export default function AddAvailabilityModal({
           <Text style={styles.title}>Add Availability</Text>
 
           <Text style={styles.label}>Date</Text>
-          <TouchableOpacity
-            style={styles.inputLike}
-            onPress={() => openPicker('date')}
-            accessibilityRole="button"
-            accessibilityLabel="Select date"
-          >
+          <TouchableOpacity style={styles.inputLike} onPress={() => openPicker('date')}>
             <Text>{slotDate ? slotDate.toDateString() : 'Select date'}</Text>
           </TouchableOpacity>
 
           <View style={styles.row}>
             <View style={styles.column}>
               <Text style={styles.label}>From</Text>
-              <TouchableOpacity
-                style={styles.inputLike}
-                onPress={() => openPicker('from')}
-                accessibilityRole="button"
-                accessibilityLabel="Select start time"
-              >
+              <TouchableOpacity style={styles.inputLike} onPress={() => openPicker('from')}>
                 <Text>{fromTime ? formatTime(fromTime) : 'Start time'}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.column}>
               <Text style={styles.label}>To</Text>
-              <TouchableOpacity
-                style={styles.inputLike}
-                onPress={() => openPicker('to')}
-                accessibilityRole="button"
-                accessibilityLabel="Select end time"
-              >
+              <TouchableOpacity style={styles.inputLike} onPress={() => openPicker('to')}>
                 <Text>{toTime ? formatTime(toTime) : 'End time'}</Text>
               </TouchableOpacity>
             </View>
@@ -144,7 +136,7 @@ export default function AddAvailabilityModal({
                   : (toTime ?? new Date())
             }
             mode={activePicker === 'date' ? 'date' : 'time'}
-            display="default"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={handlePickerChange}
           />
         )}
@@ -160,20 +152,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
   },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  label: {
-    fontWeight: '600',
-    marginBottom: 4,
-  },
+  card: { backgroundColor: 'white', borderRadius: 12, padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  label: { fontWeight: '600', marginBottom: 4 },
   inputLike: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -182,30 +163,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 12,
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  column: {
-    flex: 1,
-  },
-  buttonsRow: {
-    flexDirection: 'row',
-    marginTop: 8,
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
+  row: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  column: { flex: 1 },
+  buttonsRow: { flexDirection: 'row', marginTop: 8, justifyContent: 'flex-end', gap: 8 },
   primaryButton: {
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
     backgroundColor: '#003f88',
   },
-  primaryButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
+  primaryButtonText: { color: '#fff', fontWeight: '600' },
   secondaryButton: {
     paddingVertical: 10,
     paddingHorizontal: 16,
@@ -214,8 +181,5 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     backgroundColor: '#f5f5f5',
   },
-  secondaryButtonText: {
-    color: '#333',
-    fontWeight: '500',
-  },
+  secondaryButtonText: { color: '#333', fontWeight: '500' },
 });

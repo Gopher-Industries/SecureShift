@@ -1,384 +1,82 @@
-import { useEffect } from 'react';
-
-import ShiftDetailsModal from '../components/ShiftDetailsModal';
-import React, { useState, useCallback } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
+  StyleSheet,
   FlatList,
   TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Pressable,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-// Auto refresh when navigating back
-import { useFocusEffect } from '@react-navigation/native';
+
+import { applyToShift, listShifts } from '../api/shifts';
 import { COLORS } from '../theme/colors';
-import { formatDate } from '../utils/date';
-// From Shifts API
-import { listShifts, myShifts, applyToShift, type ShiftDto } from '../api/shifts';
 
-function parseJwt(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join(''),
-    );
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    return null;
-  }
-}
+import type { ShiftDto } from '../api/shifts';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type AppliedShift = {
-  id: string;
-  title: string;
-  company: string;
-  site: string;
-  rate: string;
-  date: string;
-  time: string;
-  status?: 'Pending' | 'Confirmed' | 'Rejected';
+type RootStackParamList = {
+  ShiftDetails: { shift: ShiftDto; refresh?: () => void };
 };
 
-type CompletedShift = {
-  id: string;
-  title: string;
-  company: string;
-  site: string;
-  rate: string;
-  date: string;
-  time: string;
-  rated: boolean;
-  rating: number;
-};
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-/* To rate helper to backend */
-const toRate = (r?: number | string) => (typeof r === 'number' ? `$${r} p/h` : (r ?? '$—'));
-
-/* Show Apply only for shifts that have not been applied for */
-const canApply = (st?: AppliedShift['status']) => !st; // only show if status is undefined/null
-
-// Applied / My Shifts
-function mapMineShifts(s: ShiftDto[] | unknown, myUid: string): AppliedShift[] {
-  const arr = Array.isArray(s) ? s : [];
-  return arr
-    .filter((x) => x.status !== 'completed')
-    .map((x) => {
-      let status: AppliedShift['status'] | undefined;
-
-      const acceptedId =
-        typeof x.acceptedBy === 'object' ? x.acceptedBy?._id : String(x.acceptedBy ?? '');
-      const applicants = Array.isArray(x.applicants)
-        ? x.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
-        : [];
-
-      if (x.status === 'assigned' && acceptedId === myUid) {
-        status = 'Confirmed';
-      } else if (x.status === 'assigned' && applicants.includes(myUid)) {
-        status = 'Rejected';
-      } else if (x.status === 'applied') {
-        status = 'Pending';
-      }
-
-      return {
-        id: x._id,
-        title: x.title,
-        company: x.createdBy?.company ?? '—',
-        site: x.location
-          ? `${x.location.suburb ?? ''} ${x.location.state ?? ''}`.trim() || '—'
-          : '—',
-        rate: typeof x.payRate === 'number' ? `$${x.payRate} p/h` : (x.payRate ?? '$—'),
-        date: x.date,
-        time: `${x.startTime} - ${x.endTime}`,
-        status,
-      };
-    });
+function safeStatus(s?: string) {
+  return (s ?? 'open').toLowerCase();
 }
 
-// Global list = "Available"
-function mapGlobalShifts(s: ShiftDto[] | unknown, myIds: Set<string>): AppliedShift[] {
-  const arr = Array.isArray(s) ? s : [];
-  return arr
-    .filter((x) => ['open', 'applied'].includes((x.status ?? 'open').toLowerCase()))
-    .filter((x) => !myIds.has(x._id))
-    .map((x) => ({
-      id: x._id,
-      title: x.title,
-      company: x.createdBy?.company ?? '—',
-      site: x.location ? `${x.location.suburb ?? ''} ${x.location.state ?? ''}`.trim() || '—' : '—',
-      rate: typeof x.payRate === 'number' ? `$${x.payRate} p/h` : (x.payRate ?? '$—'),
-      date: x.date,
-      time: `${x.startTime} - ${x.endTime}`,
-      status: undefined, // show as "Available"
-    }));
+function formatDatePretty(dateStr?: string) {
+  if (!dateStr) return 'Date N/A';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
 }
 
-// Completed Shifts
-function mapCompleted(s: ShiftDto[] | unknown): CompletedShift[] {
-  const arr = Array.isArray(s) ? s : [];
-  return arr
-    .filter((x) => x.status === 'completed')
-    .map((x) => ({
-      id: x._id,
-      title: x.title,
-      company: x.createdBy?.company ?? '—',
-      site: x.location ? `${x.location.suburb ?? ''} ${x.location.state ?? ''}`.trim() || '—' : '—',
-      rate: typeof x.payRate === 'number' ? `$${x.payRate} p/h` : (x.payRate ?? '$—'),
-      date: x.date,
-      time: `${x.startTime} - ${x.endTime}`,
-      rated: false,
-      rating: 0,
-    }));
+function formatTimeRange(start?: string, end?: string) {
+  if (!start && !end) return '';
+  if (start && end) return `${start} - ${end}`;
+  return start ?? end ?? '';
 }
 
-// FilterModal with FlatList
-function FilterModal({ visible, onClose, filters, setFilters, data }) {
-  const toggleStatus = (status) => {
-    setFilters((prev) => ({ ...prev, status: prev.status === status ? null : status }));
-  };
+export default function ShiftsScreen() {
+  const navigation = useNavigation<Nav>();
 
-  const toggleItem = (field: 'company' | 'site', item: string) => {
-    setFilters((prev) => {
-      const current = prev[field];
-      const updated = current.includes(item)
-        ? current.filter((i) => i !== item)
-        : [...current, item];
-      return { ...prev, [field]: updated };
-    });
-  };
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [items, setItems] = useState<ShiftDto[]>([]);
 
-  const resetFilters = () => {
-    setFilters({ status: null, company: [], site: [] });
-    onClose();
-  };
-
-  const companies = [...new Set(data.map((s) => s.company))];
-  const sites = [...new Set(data.map((s) => s.site))];
-
-  return (
-    <Modal transparent animationType="slide" visible={visible}>
-      <View style={s.modalOverlay}>
-        <View style={s.modalContent}>
-          <Text style={s.modalTitle}>Filter Shifts</Text>
-
-          <Text style={s.modalLabel}>Status</Text>
-          <View style={s.rowSpace}>
-            {['Pending', 'Confirmed', 'Rejected'].map((status) => (
-              <Pressable
-                key={status}
-                style={[s.tag, filters.status === status && s.tagSelected]}
-                onPress={() => toggleStatus(status)}
-              >
-                <Text>{status}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={s.modalLabel}>Company</Text>
-          <FlatList
-            horizontal
-            data={companies}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[s.tag, filters.company.includes(item) && s.tagSelected]}
-                onPress={() => toggleItem('company', item)}
-              >
-                <Text>{item}</Text>
-              </TouchableOpacity>
-            )}
-          />
-
-          <Text style={s.modalLabel}>Location</Text>
-          <FlatList
-            horizontal
-            data={sites}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[s.tag, filters.site.includes(item) && s.tagSelected]}
-                onPress={() => toggleItem('site', item)}
-              >
-                <Text>{item}</Text>
-              </TouchableOpacity>
-            )}
-          />
-
-          <Pressable onPress={resetFilters} style={[s.modalCloseBtn, { backgroundColor: '#ccc' }]}>
-            <Text style={{ color: '#000', fontWeight: 'bold' }}>Reset Filters</Text>
-          </Pressable>
-
-          <Pressable onPress={onClose} style={s.modalCloseBtn}>
-            <Text style={s.modalCloseText}>Apply Filters</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function filterShifts(data, q, filters) {
-  return data.filter((x) => {
-    const qMatch = (x.title + x.createdBy?.company + x.site)
-      .toLowerCase()
-      .includes(q.toLowerCase());
-    const statusMatch = !filters.status || x.status === filters.status;
-    const companyMatch =
-      filters.company.length === 0 || filters.company.includes(x.createdBy?.company);
-    const siteMatch = filters.site.length === 0 || filters.site.includes(x.site);
-    return qMatch && statusMatch && companyMatch && siteMatch;
-  });
-}
-
-/* Search Bar (Shared for each tab) */
-function Search({ q, setQ, onFilterPress }) {
-  return (
-    <View style={s.searchRow}>
-      <TextInput
-        value={q}
-        onChangeText={setQ}
-        placeholder="Search shifts..."
-        placeholderTextColor="#A0A7B1"
-        style={s.search}
-        accessibilityLabel="Search shifts"
-        accessibilityRole="search"
-      />
-      <TouchableOpacity
-        onPress={onFilterPress}
-        style={s.filterBtn}
-        accessibilityRole="button"
-        accessibilityLabel="Open filter options"
-      >
-        <Text style={s.filterText}>☰</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function Card({
-  title,
-  company,
-  site,
-  rate,
-  children,
-  onApply,
-}: React.PropsWithChildren<{
-  title: string;
-  company: string;
-  site: string;
-  rate: string;
-  onApply?: () => void;
-}>) {
-  return (
-    <View style={s.card}>
-      <View style={s.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>{title}</Text>
-          <Text style={s.muted}>{company}</Text>
-          <Text style={s.muted}>{site}</Text>
-        </View>
-        <Text style={s.rate}>{rate}</Text>
-      </View>
-      {children}
-      {onApply && (
-        <TouchableOpacity style={s.applyBtn} onPress={onApply}>
-          <Text style={s.applyText}>Apply</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-
-/* --- Applied tab --- */
-function AppliedTab() {
-  const [selectedShift, setSelectedShift] = useState<any>(null);
-  const [detailsVisible, setDetailsVisible] = useState(false);
-
-  const [q, setQ] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    status: null as null | 'Pending' | 'Confirmed' | 'Rejected',
-    company: [] as string[],
-    site: [] as string[],
-  });
-
-  const [rows, setRows] = useState<AppliedShift[]>([]);
-
-  //   // testing
-  //   useEffect(() => {
-  //     setRows([
-  //       {
-  //         id: 'demo',
-  //         title: 'Security Guard',
-  //         company: 'Demo Co',
-  //         site: 'Melbourne CBD',
-  //         rate: '$35 p/h',
-  //         date: '2026-01-20',
-  //         time: '18:00 - 02:00',
-  //         status: 'Rejected',
-  //       },
-  //     ]);
-  //   }, []);
-
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
+  const fetchShifts = useCallback(async () => {
     try {
-      setLoading(true);
-      setErr(null);
-
-      const token = await AsyncStorage.getItem('auth_token');
-      if (!token) throw new Error('No auth token found in storage');
-
-      const decoded = parseJwt(token);
-      const myUid = decoded?.id;
-      if (!myUid) throw new Error('No user ID in token');
-
-      const [mine, allResp] = await Promise.all([myShifts(), listShifts()]);
-
-      const mineMapped = mapMineShifts(mine, myUid);
-      const myIds = new Set(mineMapped.map((m) => m.id));
-      const globalMapped = mapGlobalShifts(allResp.items, myIds);
-
-      const merged: AppliedShift[] = [];
-      const seen = new Set<string>();
-
-      [...mineMapped, ...globalMapped].forEach((shift) => {
-        if (!seen.has(shift.id)) {
-          seen.add(shift.id);
-          merged.push(shift);
-        }
-      });
-
-      setRows(merged);
+      const res = await listShifts(1, 50);
+      setItems(res.items ?? []);
     } catch (e: any) {
-      setErr(e?.response?.data?.message ?? e?.message ?? 'Failed to load shifts');
+      const msg =
+        e?.response?.data?.message ?? e?.message ?? 'Failed to load shifts. Check backend + token.';
+      Alert.alert('Error', msg);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
-  const colorFor = (st?: AppliedShift['status']) => {
-    if (!st) return COLORS.link; // available
-    if (st === 'Pending') return COLORS.status.pending;
-    if (st === 'Confirmed') return COLORS.status.confirmed;
-    return COLORS.status.rejected; // Rejected
+  useEffect(() => {
+    fetchShifts();
+  }, [fetchShifts]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchShifts();
+    }, [fetchShifts]),
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchShifts();
   };
 
-  const filtered = filterShifts(rows, q, filters);
-
-  const onApply = async (id: string) => {
+  const onApply = async (shiftId: string) => {
     try {
       // optimistic: set pending
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'Pending' } : r)));
@@ -415,9 +113,8 @@ function AppliedTab() {
     }
   };
 
-  return (
-    <View style={s.screen}>
-      <Search q={q} setQ={setQ} onFilterPress={() => setShowFilters(true)} />
+  const renderItem = ({ item }: { item: ShiftDto }) => {
+    const status = safeStatus(item.status);
 
       {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
       {err && !loading && <Text style={{ color: '#B00020', marginVertical: 8 }}>{err}</Text>}
@@ -458,12 +155,15 @@ function AppliedTab() {
         )}
       />
 
-      <FilterModal
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        filters={filters}
-        setFilters={setFilters}
-        data={rows}
+  return (
+    <View style={s.container}>
+      <FlatList
+        data={items}
+        keyExtractor={(it) => it._id}
+        renderItem={renderItem}
+        contentContainerStyle={{ padding: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListEmptyComponent={<Text style={s.empty}>No shifts found.</Text>}
       />
 
       <ShiftDetailsModal
@@ -527,9 +227,8 @@ function CompletedTab() {
 
   const filtered = filterShifts(rows, q, filters);
 
-  return (
-    <View style={s.screen}>
-      <Search q={q} setQ={setQ} onFilterPress={() => setShowFilters(true)} />
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 10, color: COLORS.muted },
 
       {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
       {err && !loading && <Text style={{ color: '#B00020', marginVertical: 8 }}>{err}</Text>}
@@ -569,19 +268,9 @@ function CompletedTab() {
         )}
       />
 
-      <FilterModal
-        visible={showFilters}
-        onClose={() => setShowFilters(false)}
-        filters={filters}
-        setFilters={setFilters}
-        data={rows}
-      />
-    </View>
-  );
-}
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 
-/* Top Bar Container */
-const Top = createMaterialTopTabNavigator();
+  title: { fontSize: 18, fontWeight: '800', color: COLORS.text, flex: 1, paddingRight: 10 },
 
 export default function ShiftScreen() {
   return (
@@ -643,6 +332,7 @@ const s = StyleSheet.create({
     fontSize: 18,
     color: COLORS.text,
   },
+  applyBtnText: { color: '#fff', fontWeight: '800' },
 
   card: {
     backgroundColor: COLORS.card,

@@ -1,20 +1,24 @@
+// src/navigation/AppTabs.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import HomeScreen from '../screen/HomeScreen';
-import ProfileScreen from '../screen/ProfileScreen';
-import IncidentReportScreen from '../screen/IncidentReportScreen';
 import ShiftsScreen from '../screen/ShiftsScreen';
+import AvailabilityScreen from '../screen/AvailabilityScreen';
+import DocumentsScreen from '../screen/DocumentsScreen';
+import TimesheetsScreen from '../screen/TimeSheetsScreen';
+import ProfileScreen from '../screen/ProfileScreen';
 
 export type AppTabParamList = {
   Home: undefined;
   Shifts: undefined;
-  Incident: undefined;
+  Availability: undefined;
+  Documents: undefined;
+  Timesheets: undefined;
   Profile: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
-
 export default function AppTabs() {
   return (
     <Tab.Navigator
@@ -26,7 +30,14 @@ export default function AppTabs() {
               ? ('home-outline' as const)
               : route.name === 'Shifts'
                 ? ('briefcase-outline' as const)
-                : ('person-outline' as const);
+                : route.name === 'Availability'
+                  ? ('calendar-outline' as const)
+                  : route.name === 'Documents'
+                    ? ('folder-outline' as const)
+                    : route.name === 'Timesheets'
+                      ? ('clipboard-outline' as const)
+                      : ('person-outline' as const);
+
           return <Ionicons name={name} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#1E3A8A',
@@ -35,7 +46,9 @@ export default function AppTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Shifts" component={ShiftsScreen} />
-      <Tab.Screen name="Incident" component={IncidentReportScreen} />
+      <Tab.Screen name="Availability" component={AvailabilityScreen} />
+      <Tab.Screen name="Documents" component={DocumentsScreen} />
+      <Tab.Screen name="Timesheets" component={TimesheetsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 
+import logo from '../../assets/logo.png';
 import { registerUser } from '../api/auth';
 
 type SignupNav = { replace: (name: string) => void };
@@ -118,7 +119,7 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
         contentContainerStyle={[styles.container, styles.containerGrow]}
         keyboardShouldPersistTaps="handled"
       >
-        <Image source={require('../../assets/logo.png')} style={styles.logo} />
+        <Image source={logo} style={styles.logo} />
         <Text style={styles.subtitle}>Create an account and start looking for your shift</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
