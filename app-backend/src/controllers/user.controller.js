@@ -162,3 +162,46 @@ export const updateEmployerProfile = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+/**
+ * @desc    Register or update a push token for the logged-in user
+ * @route   POST /api/v1/users/push-token
+ * @access  Private (all roles)
+ */
+export const registerPushToken = async (req, res) => {
+  try {
+    const { token, platform, deviceId } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: 'Push token is required.' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const existing = user.pushTokens?.find((item) => item.token === token);
+    if (existing) {
+      existing.platform = platform ?? existing.platform;
+      existing.deviceId = deviceId ?? existing.deviceId;
+      existing.updatedAt = new Date();
+    } else {
+      user.pushTokens = [
+        ...(user.pushTokens ?? []),
+        {
+          token,
+          platform,
+          deviceId,
+          updatedAt: new Date(),
+        },
+      ];
+    }
+
+    await user.save();
+
+    return res.status(200).json({ message: 'Push token registered.' });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

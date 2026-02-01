@@ -5,17 +5,70 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="64ef35b3-52d4-4317-b7d9-cb52d9efacc4" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/.env" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/.eslintignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/.eslintrc.cjs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/.prettierignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/.prettierrc" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/App.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/app.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/assets/adaptive-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/assets/favicon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/assets/icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/assets/logo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/assets/splash-icon.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/eas.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/husky" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/index.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/npm" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/package-lock.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/package.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/secureshift-guardapp@1.0.0" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/api/attendance.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/api/auth.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/api/availability.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/api/home.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/api/messages.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/api/profile.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/api/pushTokens.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/api/shifts.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/components/AddAvailabilityModal.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/components/LocationVerificationModal.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/lib/attendancestore.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/lib/http.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/lib/localStorage.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/lib/pushNotifications.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/models/Address.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/models/License.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/models/UserProfile.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/navigation/AppNavigator.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/navigation/AppTabs.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/AvailabilityScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/DocumentsScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/EditProfileScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/HomeScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/MessagesScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/ProfileScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/SettingsScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/ShiftDetailsScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/ShiftsScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/SplashScreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/loginscreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/notifications.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/signupscreen.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/theme/colors.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/types/images.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/utils/date.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/src/utils/imagePicker.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/guard_app/tsconfig.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app-frontend/employer-panel/.env" beforeDir="false" afterPath="$PROJECT_DIR$/app-frontend/employer-panel/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/guard_app/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/guard_app/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/guard_app/src/components/AddAvailabilityModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/components/AddAvailabilityModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/guard_app/src/components/LocationVerificationModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/components/LocationVerificationModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/guard_app/src/navigation/AppTabs.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/navigation/AppTabs.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/guard_app/src/screen/ShiftDetailsScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/screen/ShiftDetailsScreen.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/guard_app/src/screen/ShiftsScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/guard_app/src/screen/ShiftsScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-backend/src/controllers/user.controller.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/controllers/user.controller.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-backend/src/models/User.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/models/User.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app-backend/src/routes/user.routes.js" beforeDir="false" afterPath="$PROJECT_DIR$/app-backend/src/routes/user.routes.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,7 +84,7 @@
         <entry key="$PROJECT_DIR$" value="Sanjolika6788/feature/add-availability-modal" />
       </map>
     </option>
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/guard_app" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
