@@ -10,8 +10,6 @@ import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
-import DocumentsScreen from '../screen/DocumentsScreen';
-
 export type RootStackParamList = {
   AppTabs: undefined;
   Splash: undefined;
