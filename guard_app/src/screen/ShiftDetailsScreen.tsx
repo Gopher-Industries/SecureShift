@@ -1,23 +1,21 @@
 // src/screen/ShiftDetailsScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
-import { RouteProp, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { checkIn, checkOut } from '../api/attendance';
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
 
 import type { ShiftDto } from '../api/shifts';
 
-// ✅ Keep this local if you don't have a shared RootStackParamList updated
-type RootStackParamList = {
-  ShiftDetails: { shift: ShiftDto; refresh?: () => void };
-};
-
 type ScreenRouteProp = RouteProp<RootStackParamList, 'ShiftDetails'>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type AttendanceState = {
   checkInTime?: string;
@@ -26,6 +24,7 @@ type AttendanceState = {
 
 export default function ShiftDetailsScreen() {
   const route = useRoute<ScreenRouteProp>();
+  const navigation = useNavigation<Nav>();
 
   const [shift, setShift] = useState<ShiftDto>(route.params.shift);
 
@@ -112,6 +111,22 @@ export default function ShiftDetailsScreen() {
   const showCheckIn = canDoAttendance && !hasCheckedIn;
   const showCheckOut = canDoAttendance && hasCheckedIn && !hasCheckedOut;
 
+  const handleMessageEmployer = () => {
+    const employerId = shift.createdBy?._id;
+    if (!employerId) {
+      Alert.alert('Unavailable', 'Employer details not found for this shift.');
+      return;
+    }
+
+    const shiftTitle = `${shift.title} - ${formatDate(shift.date)} (${shift.startTime} - ${shift.endTime})`;
+    navigation.navigate('Messages', {
+      context: 'shift',
+      shiftParticipantId: employerId,
+      shiftParticipantName: shift.createdBy?.company ?? shift.createdBy?.name ?? 'Employer',
+      shiftTitle,
+    });
+  };
+
   return (
     <View style={s.screen}>
       <ScrollView contentContainerStyle={s.content}>
@@ -163,6 +178,10 @@ export default function ShiftDetailsScreen() {
 
         {/* Action Buttons */}
         <View style={s.actions}>
+          <TouchableOpacity style={[s.btn, s.messageBtn]} onPress={handleMessageEmployer}>
+            <Text style={s.btnText}>Message Employer</Text>
+          </TouchableOpacity>
+
           {showCheckIn && (
             <TouchableOpacity
               style={[s.btn, { backgroundColor: COLORS.status.confirmed }]}
@@ -235,6 +254,7 @@ const s = StyleSheet.create({
     marginBottom: 12,
     elevation: 2,
   },
+  messageBtn: { backgroundColor: COLORS.primary },
   btnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 
   completedBox: {

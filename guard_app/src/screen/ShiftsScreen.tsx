@@ -1,309 +1,564 @@
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-// ShiftScreen.tsx
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
   ActivityIndicator,
-  Alert,
+  Dimensions,
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
   RefreshControl,
 } from 'react-native';
 
-import { applyToShift, listShifts } from '../api/shifts';
+import { getMe } from '../api/auth';
+import { myShifts, type ShiftDto } from '../api/shifts';
 import { COLORS } from '../theme/colors';
+const { width } = Dimensions.get('window');
 
-import type { ShiftDto } from '../api/shifts';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type RootStackParamList = {
-  ShiftDetails: { shift: ShiftDto; refresh?: () => void };
+type AppliedShift = {
+  id: string;
+  title: string;
+  company: string;
+  site: string;
+  rate: string;
+  date: string;
+  time: string;
+  status?: 'Pending' | 'Confirmed' | 'Rejected';
 };
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+type CompletedShift = {
+  id: string;
+  title: string;
+  company: string;
+  site: string;
+  rate: string;
+  date: string;
+  time: string;
+  rated: boolean;
+  rating: number;
+};
 
-function safeStatus(s?: string) {
-  return (s ?? 'open').toLowerCase();
+function dateKeyLocal(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
-function formatDatePretty(dateStr?: string) {
-  if (!dateStr) return 'Date N/A';
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+function addDays(d: Date, days: number) {
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + days);
+  return copy;
 }
 
-function formatTimeRange(start?: string, end?: string) {
-  if (!start && !end) return '';
-  if (start && end) return `${start} - ${end}`;
-  return start ?? end ?? '';
+function mapMineShifts(shifts: ShiftDto[], myUid: string): AppliedShift[] {
+  return shifts
+    .filter((s) => s.status !== 'completed')
+    .map((s) => {
+      const acceptedId =
+        typeof s.acceptedBy === 'object' ? s.acceptedBy?._id : String(s.acceptedBy ?? '');
+      const applicants = Array.isArray(s.applicants)
+        ? s.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
+        : [];
+
+      let status: AppliedShift['status'];
+      if (s.status === 'assigned' && acceptedId === myUid) status = 'Confirmed';
+      else if (s.status === 'assigned' && applicants.includes(myUid)) status = 'Rejected';
+      else if (s.status === 'applied') status = 'Pending';
+
+      return {
+        id: s._id,
+        title: s.title,
+        company: s.createdBy?.company ?? '—',
+        site: s.location ? `${s.location.suburb ?? ''} ${s.location.state ?? ''}`.trim() : '—',
+        rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
+        date: s.date,
+        time: `${s.startTime} - ${s.endTime}`,
+        status,
+      };
+    });
 }
 
-export default function ShiftsScreen() {
-  const navigation = useNavigation<Nav>();
+function mapCompleted(shifts: ShiftDto[]): CompletedShift[] {
+  return shifts
+    .filter((s) => s.status === 'completed')
+    .map((s) => ({
+      id: s._id,
+      title: s.title,
+      company: s.createdBy?.company ?? '—',
+      site: s.location ? `${s.location.suburb ?? ''} ${s.location.state ?? ''}`.trim() : '—',
+      rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
+      date: s.date,
+      time: `${s.startTime} - ${s.endTime}`,
+      rated: false,
+      rating: 0,
+    }));
+}
 
-  const [loading, setLoading] = useState(true);
+function ShiftDetailsModal({
+  shift,
+  visible,
+  onClose,
+}: {
+  shift: AppliedShift | CompletedShift | null;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  if (!shift) return null;
+
+  const status = 'status' in shift ? shift.status : 'Completed';
+  const statusColor =
+    status === 'Confirmed'
+      ? '#10B981'
+      : status === 'Pending'
+        ? '#3B82F6'
+        : '#6B7280';
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={s.modalOverlay} onPress={onClose}>
+        <Pressable style={s.modalContent} onPress={(e) => e.stopPropagation()}>
+          <View style={s.modalHeader}>
+            <Text style={s.modalTitle}>Shift Details</Text>
+            <TouchableOpacity onPress={onClose} style={s.modalCloseBtn}>
+              <Text style={s.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={s.modalBody}>
+            <View style={s.modalTitleRow}>
+              <Text style={s.modalShiftTitle}>{shift.title}</Text>
+              <View style={[s.statusBadge, { backgroundColor: statusColor }]}>
+                <Text style={s.statusBadgeText}>{status || 'Available'}</Text>
+              </View>
+            </View>
+
+            <View style={s.modalDetail}>
+              <Text style={s.modalLabel}>Date:</Text>
+              <Text style={s.modalValue}>
+                {new Date(shift.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </Text>
+            </View>
+
+            <View style={s.modalDetail}>
+              <Text style={s.modalLabel}>Time:</Text>
+              <Text style={s.modalValue}>{shift.time}</Text>
+            </View>
+
+            <View style={s.modalDetail}>
+              <Text style={s.modalLabel}>Location:</Text>
+              <Text style={s.modalValue}>{shift.site}</Text>
+            </View>
+
+            <View style={s.modalDetail}>
+              <Text style={s.modalLabel}>Pay Rate:</Text>
+              <Text style={s.modalValue}>{shift.rate}</Text>
+            </View>
+
+            <View style={s.modalRequirements}>
+              <Text style={s.modalRequirementsTitle}>Requirements:</Text>
+              <View style={s.modalTags}>
+                <View style={s.modalTag}>
+                  <Text style={s.modalTagText}>Security License</Text>
+                </View>
+                <View style={s.modalTag}>
+                  <Text style={s.modalTagText}>First Aid</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function CalendarView<T extends { id: string; date: string; title: string; status?: string }>({
+  shifts,
+  onShiftPress,
+}: {
+  shifts: T[];
+  onShiftPress: (shift: T) => void;
+}) {
+  const [monthCursor, setMonthCursor] = useState(() => new Date());
+
+  const monthStart = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
+  const monthEnd = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 0);
+  const startWeekday = monthStart.getDay();
+  const gridStart = addDays(monthStart, -startWeekday);
+
+  const totalCells = 42;
+  const allCells = Array.from({ length: totalCells }, (_, i) => addDays(gridStart, i));
+
+  const shiftsByDate = useMemo(() => {
+    const map = new Map<string, T[]>();
+    shifts.forEach((shift) => {
+      const key = dateKeyLocal(new Date(shift.date));
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(shift);
+    });
+    return map;
+  }, [shifts]);
+
+  const monthLabel = monthStart.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+
+  const getStatusColor = (status?: string) => {
+    if (status === 'Confirmed') return '#10B981';
+    if (status === 'Pending') return '#3B82F6';
+    return '#6B7280';
+  };
+
+  return (
+    <View style={s.calendarContainer}>
+      <View style={s.calHeader}>
+        <Text style={s.calMonthText}>{monthLabel}</Text>
+        <View style={s.calNavButtons}>
+          <TouchableOpacity
+            onPress={() =>
+              setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))
+            }
+            style={s.calNavBtn}
+          >
+            <Text style={s.calNavBtnText}>‹</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))
+            }
+            style={s.calNavBtn}
+          >
+            <Text style={s.calNavBtnText}>›</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={s.calWeekHeader}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+          <View key={i} style={s.calWeekCell}>
+            <Text style={s.calWeekText}>{day}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={s.calGrid}>
+        {allCells.map((d, idx) => {
+          const inMonth = d >= monthStart && d <= monthEnd;
+          const key = dateKeyLocal(d);
+          const dayShifts = shiftsByDate.get(key) || [];
+          const hasShifts = dayShifts.length > 0;
+
+          return (
+            <TouchableOpacity
+              key={idx}
+              style={[s.calDayCell, !inMonth && s.calDayCellDim]}
+              onPress={() => hasShifts && onShiftPress(dayShifts[0])}
+              disabled={!hasShifts}
+            >
+              <Text style={[s.calDayNumber, !inMonth && s.calDayNumberDim]}>
+                {d.getDate()}
+              </Text>
+              {hasShifts && (
+                <View style={s.calShiftIndicators}>
+                  {dayShifts.slice(0, 3).map((shift, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        s.calShiftDot,
+                        { backgroundColor: getStatusColor(shift.status) },
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <View style={s.calLegend}>
+        <View style={s.calLegendItem}>
+          <View style={[s.calLegendDot, { backgroundColor: '#3B82F6' }]} />
+          <Text style={s.calLegendText}>Applied</Text>
+        </View>
+        <View style={s.calLegendItem}>
+          <View style={[s.calLegendDot, { backgroundColor: '#10B981' }]} />
+          <Text style={s.calLegendText}>Accepted</Text>
+        </View>
+        <View style={s.calLegendItem}>
+          <View style={[s.calLegendDot, { backgroundColor: '#6B7280' }]} />
+          <Text style={s.calLegendText}>Completed</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function ShiftCard({
+  shift,
+  onPress,
+}: {
+  shift: AppliedShift | CompletedShift;
+  onPress?: () => void;
+}) {
+  const status = 'status' in shift ? shift.status : 'Completed';
+  const statusColor =
+    status === 'Confirmed'
+      ? '#10B981'
+      : status === 'Pending'
+        ? '#3B82F6'
+        : '#6B7280';
+
+  return (
+    <TouchableOpacity style={s.card} onPress={onPress}>
+      <View style={s.cardHeader}>
+        <View style={s.cardTitleSection}>
+          <Text style={s.cardTitle}>{shift.title}</Text>
+          <View style={[s.cardStatusBadge, { backgroundColor: statusColor }]}>
+            <Text style={s.cardStatusText}>{status || 'Available'}</Text>
+          </View>
+        </View>
+      </View>
+
+      <Text style={s.cardCompany}>{shift.company}</Text>
+
+      <View style={s.cardRow}>
+        <Text style={s.cardLabel}>Date:</Text>
+        <Text style={s.cardValue}>
+          {new Date(shift.date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })}
+        </Text>
+      </View>
+
+      <View style={s.cardRow}>
+        <Text style={s.cardLabel}>Time:</Text>
+        <Text style={s.cardValue}>{shift.time}</Text>
+      </View>
+
+      <View style={s.cardRow}>
+        <Text style={s.cardLabel}>Pay:</Text>
+        <Text style={s.cardPay}>{shift.rate}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function ViewToggle({
+  view,
+  onViewChange,
+}: {
+  view: 'list' | 'calendar';
+  onViewChange: (view: 'list' | 'calendar') => void;
+}) {
+  return (
+    <View style={s.viewToggle}>
+      <TouchableOpacity
+        style={[s.viewToggleBtn, view === 'list' && s.viewToggleBtnActive]}
+        onPress={() => onViewChange('list')}
+      >
+        <Text style={[s.viewToggleIcon, view === 'list' && s.viewToggleIconActive]}>☰</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[s.viewToggleBtn, view === 'calendar' && s.viewToggleBtnActive]}
+        onPress={() => onViewChange('calendar')}
+      >
+        <Text style={[s.viewToggleIcon, view === 'calendar' && s.viewToggleIconActive]}>📅</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function AppliedTab() {
+  const [q, setQ] = useState('');
+  const [rows, setRows] = useState<AppliedShift[]>([]);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [items, setItems] = useState<ShiftDto[]>([]);
+  const [selectedShift, setSelectedShift] = useState<AppliedShift | null>(null);
+  const [view, setView] = useState<'list' | 'calendar'>('list');
 
-  const fetchShifts = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await listShifts(1, 50);
-      setItems(res.items ?? []);
-    } catch (e: any) {
-      const msg =
-        e?.response?.data?.message ?? e?.message ?? 'Failed to load shifts. Check backend + token.';
-      Alert.alert('Error', msg);
+      setLoading(true);
+      const me = await getMe();
+      const myUid = me?._id ?? me?.id;
+      if (!myUid) {
+        setRows([]);
+        return;
+      }
+      const mine = await myShifts();
+      setRows(mapMineShifts(mine, myUid));
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchShifts();
-  }, [fetchShifts]);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchShifts();
-    }, [fetchShifts]),
-  );
+  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchShifts();
+    await fetchData();
+    setRefreshing(false);
   };
 
-  const onApply = async (shiftId: string) => {
-    try {
-      // optimistic: set pending
-      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'Pending' } : r)));
-
-      const res = await applyToShift(id); // { message, shift }
-      const newStatus = (res?.shift?.status ?? '').toString().toLowerCase();
-
-      // trust backend-mapped status ('pending' for guard)
-      setRows((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? {
-                ...r,
-                status:
-                  newStatus === 'pending'
-                    ? 'Pending'
-                    : newStatus === 'confirmed'
-                      ? 'Confirmed'
-                      : newStatus === 'rejected'
-                        ? 'Rejected'
-                        : r.status,
-              }
-            : r,
-        ),
-      );
-
-      Alert.alert('Applied', 'Your application has been sent.');
-      // optional: background refresh later, not immediately
-      // await fetchData();
-    } catch (e: any) {
-      setErr(e?.response?.data?.message ?? e?.message ?? 'Failed to apply');
-      // rollback on error
-      setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: undefined } : r)));
-    }
-  };
-
-  const renderItem = ({ item }: { item: ShiftDto }) => {
-    const status = safeStatus(item.status);
-
-      {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
-      {err && !loading && <Text style={{ color: '#B00020', marginVertical: 8 }}>{err}</Text>}
-      {!loading && !err && filtered.length === 0 && (
-        <Text style={{ color: COLORS.muted, marginTop: 12 }}>No shifts found.</Text>
-      )}
-
-      <FlatList
-        data={filtered}
-        keyExtractor={(i) => i.id}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => {
-              setSelectedShift(item);
-              setDetailsVisible(true);
-            }}
-          >
-            <Card
-              title={item.title}
-              company={item.company}
-              site={item.site}
-              rate={item.rate}
-              onApply={canApply(item.status) ? () => onApply(item.id) : undefined}
-            >
-              <Text style={s.status}>
-                <Text style={{ color: '#000' }}>Status: </Text>
-                <Text style={{ color: colorFor(item.status) }}>{item.status ?? 'Available'}</Text>
-              </Text>
-              <View style={s.row}>
-                <Text style={s.muted}>{formatDate(item.date)}</Text>
-                <Text style={s.dot}> • </Text>
-                <Text style={s.muted}>{item.time}</Text>
-              </View>
-            </Card>
-          </TouchableOpacity>
-        )}
-      />
+  const filtered = rows.filter((r) =>
+    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
+  );
 
   return (
-    <View style={s.container}>
-      <FlatList
-        data={items}
-        keyExtractor={(it) => it._id}
-        renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={<Text style={s.empty}>No shifts found.</Text>}
-      />
+    <View style={s.screen}>
+      <View style={s.searchRow}>
+        <View style={s.searchContainer}>
+          <Text style={s.searchIcon}>🔍</Text>
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search shifts..."
+            placeholderTextColor="#9CA3AF"
+            style={s.searchInput}
+          />
+        </View>
+        <ViewToggle view={view} onViewChange={setView} />
+      </View>
+
+      {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
+
+      {view === 'calendar' ? (
+        <CalendarView shifts={filtered} onShiftPress={setSelectedShift} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(i) => i.id}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} />
+          )}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={<Text style={s.emptyText}>No shifts found</Text>}
+        />
+      )}
 
       <ShiftDetailsModal
-        visible={detailsVisible}
         shift={selectedShift}
-        onClose={() => setDetailsVisible(false)}
+        visible={selectedShift !== null}
+        onClose={() => setSelectedShift(null)}
       />
     </View>
   );
 }
 
-function Stars({ n }: { n: number }) {
-  return (
-    <Text style={{ color: COLORS.link }}>
-      {'★'.repeat(n)}
-      {'☆'.repeat(5 - n)}
-    </Text>
-  );
-}
-
-/* --- Completed Tab --- */
 function CompletedTab() {
   const [q, setQ] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    status: null,
-    company: [] as string[],
-    site: [] as string[],
-  });
-
   const [rows, setRows] = useState<CompletedShift[]>([]);
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<CompletedShift | null>(null);
+  const [view, setView] = useState<'list' | 'calendar'>('list');
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      setErr(null);
-
       const resp = await myShifts('past');
-      const completedMapped = mapCompleted(resp);
-      setRows(completedMapped);
-    } catch (e: any) {
-      setErr(e?.response?.data?.message ?? e?.message ?? 'Failed to load shifts');
+      setRows(mapCompleted(resp));
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [fetchData]),
+  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
+  const filtered = rows.filter((r) =>
+    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [fetchData]),
-  );
+  return (
+    <View style={s.screen}>
+      <View style={s.searchRow}>
+        <View style={s.searchContainer}>
+          <Text style={s.searchIcon}>🔍</Text>
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search shifts..."
+            placeholderTextColor="#9CA3AF"
+            style={s.searchInput}
+          />
+        </View>
+        <ViewToggle view={view} onViewChange={setView} />
+      </View>
 
-  const filtered = filterShifts(rows, q, filters);
+      {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
 
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 10, color: COLORS.muted },
-
-      {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
-      {err && !loading && <Text style={{ color: '#B00020', marginVertical: 8 }}>{err}</Text>}
-      {!loading && !err && filtered.length === 0 && (
-        <Text style={{ color: COLORS.muted, marginTop: 12 }}>No completed shifts yet.</Text>
+      {view === 'calendar' ? (
+        <CalendarView
+          shifts={filtered.map((s) => ({ ...s, status: 'Completed' }))}
+          onShiftPress={setSelectedShift}
+        />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(i) => i.id}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} />
+          )}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={<Text style={s.emptyText}>No completed shifts found</Text>}
+        />
       )}
 
-      <FlatList
-        data={filtered}
-        keyExtractor={(i) => i.id}
-        contentContainerStyle={{ paddingBottom: 24 }}
-        renderItem={({ item }) => (
-          <View style={s.card}>
-            <View style={s.headerRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.title}>{item.title}</Text>
-                <Text style={s.muted}>{item.company}</Text>
-                <Text style={s.muted}>{item.site}</Text>
-              </View>
-              <Text style={s.rate}>{item.rate}</Text>
-            </View>
-            <View style={s.rowSpace}>
-              <Text style={s.status}>
-                <Text style={{ color: '#000' }}>Status: </Text>
-                <Text style={{ color: COLORS.link }}>
-                  Completed {item.rated ? '(Rated)' : '(Unrated)'}
-                </Text>
-              </Text>
-              <Stars n={item.rating} />
-            </View>
-            <View style={s.row}>
-              <Text style={s.muted}>{formatDate(item.date)}</Text>
-              <Text style={s.dot}> • </Text>
-              <Text style={s.muted}>{item.time}</Text>
-            </View>
-          </View>
-        )}
+      <ShiftDetailsModal
+        shift={selectedShift}
+        visible={selectedShift !== null}
+        onClose={() => setSelectedShift(null)}
       />
+    </View>
+  );
+}
 
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+const Top = createMaterialTopTabNavigator();
 
-  title: { fontSize: 18, fontWeight: '800', color: COLORS.text, flex: 1, paddingRight: 10 },
-
-export default function ShiftScreen() {
+export default function ShiftsScreen() {
   return (
     <Top.Navigator
-      screenOptions={({ route }) => ({
-        tabBarAccessibilityLabel: `${route.name} tab`,
+      screenOptions={{
         tabBarStyle: {
-          backgroundColor: '#E7E7EB',
+          backgroundColor: '#E5E7EB',
           borderRadius: 12,
-          marginHorizontal: 12,
-          marginTop: 8,
-          overflow: 'hidden', // keeps indicator rounded
+          marginHorizontal: 16,
+          marginTop: 12,
+          marginBottom: 8,
         },
         tabBarIndicatorStyle: {
-          backgroundColor: '#274289', // blue background
-          height: '100%', // fill the tab height
+          backgroundColor: COLORS.primary,
+          height: '100%',
           borderRadius: 12,
         },
         tabBarLabelStyle: {
           fontWeight: '700',
           textTransform: 'none',
+          fontSize: 14,
         },
-        tabBarActiveTintColor: '#fff', // white text when active
-        tabBarInactiveTintColor: '#000', // black text when inactive
-      })}
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: '#6B7280',
+      }}
     >
       <Top.Screen name="Applied" component={AppliedTab} />
       <Top.Screen name="Completed" component={CompletedTab} />
@@ -311,91 +566,334 @@ export default function ShiftScreen() {
   );
 }
 
-/* Styles */
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 16, paddingTop: 8 },
-
-  searchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  search: {
+  screen: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    height: 44,
+    backgroundColor: '#F5F7FA',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
     paddingHorizontal: 12,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  filterBtn: {
-    marginLeft: 8,
-    width: 40,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: '#fff',
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#111827',
+  },
+
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  viewToggleBtn: {
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterText: {
-    fontSize: 18,
-    color: COLORS.text,
+  viewToggleBtnActive: {
+    backgroundColor: COLORS.primary,
   },
-  applyBtnText: { color: '#fff', fontWeight: '800' },
+  viewToggleIcon: {
+    fontSize: 18,
+    color: '#6B7280',
+  },
+  viewToggleIconActive: {
+    color: '#FFFFFF',
+  },
 
   card: {
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
-    padding: 12,
-    marginVertical: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center' },
-  title: { fontSize: 16, fontWeight: '800', color: COLORS.text },
-  muted: { color: COLORS.muted },
-  rate: { fontSize: 15, fontWeight: '800', color: COLORS.rate },
-
-  row: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  rowSpace: {
+  cardHeader: {
+    marginBottom: 8,
+  },
+  cardTitleSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
   },
-  dot: { color: COLORS.muted },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    flex: 1,
+  },
+  cardStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  cardStatusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  cardCompany: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  cardLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    width: 60,
+  },
+  cardValue: {
+    fontSize: 13,
+    color: '#111827',
+    fontWeight: '500',
+  },
+  cardPay: {
+    fontSize: 13,
+    color: '#10B981',
+    fontWeight: '700',
+  },
 
-  status: { marginTop: 6, color: COLORS.muted },
+  calendarContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  calHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  calMonthText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  calNavButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  calNavBtn: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calNavBtnText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  calWeekHeader: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  calWeekCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  calWeekText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  calGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  calDayCell: {
+    width: (width - 32 - 16 * 2 - 24) / 7,
+    aspectRatio: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
+  },
+  calDayCellDim: {
+    opacity: 0.3,
+  },
+  calDayNumber: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  calDayNumberDim: {
+    color: '#9CA3AF',
+  },
+  calShiftIndicators: {
+    flexDirection: 'row',
+    gap: 3,
+    marginTop: 4,
+  },
+  calShiftDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  calLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  calLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  calLegendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  calLegendText: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
 
-  // Filter Menu Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: { width: '90%', backgroundColor: '#fff', padding: 20, borderRadius: 12 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  modalLabel: { marginTop: 10, fontWeight: '600' },
-  tag: { padding: 8, marginRight: 6, backgroundColor: '#eee', borderRadius: 20 },
-  tagSelected: { backgroundColor: COLORS.primary },
+  modalContent: {
+    backgroundColor: '#2D3748',
+    width: width - 48,
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
   modalCloseBtn: {
-    marginTop: 20,
-    backgroundColor: COLORS.primary,
-    padding: 10,
-    borderRadius: 8,
+    width: 28,
+    height: 28,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  modalCloseText: { color: '#fff', fontWeight: 'bold' },
+  modalCloseText: {
+    fontSize: 20,
+    color: '#9CA3AF',
+  },
+  modalBody: {
+    gap: 12,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalShiftTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  modalDetail: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalLabel: {
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
+  modalValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  modalRequirements: {
+    marginTop: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#4A5568',
+  },
+  modalRequirementsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  modalTags: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  modalTag: {
+    backgroundColor: '#4A5568',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  modalTagText: {
+    fontSize: 12,
+    color: '#E5E7EB',
+  },
 
-  // Apply
-  applyBtn: {
-    marginTop: 10,
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
+  emptyText: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    marginTop: 40,
+    fontSize: 14,
   },
-  applyText: { color: '#fff', fontWeight: '700' },
 });

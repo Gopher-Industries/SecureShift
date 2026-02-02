@@ -21,6 +21,7 @@ import {
   getMe, // Added to fetch current user's profile
 } from '../api/auth';
 import { LocalStorage } from '../lib/localStorage';
+import { registerPushTokenIfNeeded } from '../lib/pushNotifications';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -56,6 +57,7 @@ export default function LoginScreen({ navigation }: any) {
 
       if (res.token) {
         await LocalStorage.setToken(res.token); // Save token
+        await registerPushTokenIfNeeded();
         await goToApp(); // Direct login
       } else {
         setOtpMode(true); // Switch to OTP input
@@ -85,6 +87,7 @@ export default function LoginScreen({ navigation }: any) {
 
       // Save token
       await LocalStorage.setToken(token);
+      await registerPushTokenIfNeeded();
 
       // Fetch user profile to check license status
       const user = await getMe();
