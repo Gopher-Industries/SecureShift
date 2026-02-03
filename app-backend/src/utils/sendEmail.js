@@ -57,3 +57,18 @@ SecureShift Team`;
     throw new Error('Failed to send employer credentials email');
   }
 };
+
+/**
+ * Generic email sender (password reset, verification, notifications)
+ */
+export const sendGenericEmail = async (email, subject, body) => {
+  const mailOptions = {
+    from: `"SecureShift" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject,
+    text: body,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+

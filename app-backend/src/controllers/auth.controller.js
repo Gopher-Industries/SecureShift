@@ -2,12 +2,11 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import Employer from '../models/Employer.js';
-import { sendEmployerCredentials } from '../utils/sendEmail.js';
-import { sendOTP } from '../utils/sendEmail.js';
+import { sendEmployerCredentials, sendGenericEmail } from '../utils/sendEmail.js';
+
 import { ACTIONS } from "../middleware/logger.js";
 import EOI from '../models/eoi.js';
 import { GridFSBucket } from 'mongodb';
-
 import Guard from '../models/Guard.js'; // use the discriminator so license fields persist
 
 // ---------- Helpers ----------
@@ -275,3 +274,57 @@ const generateStrongTempPassword = () => {
   }
   return passwordChars.join('');
 };
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+
+  const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
+  await sendGenericEmail(user.email, "Password Reset", `Click to reset: ${resetUrl}`);
+
+  return res.status(200).json({ message: "Reset link sent to your email." });
+};
+
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ message: "Invalid token" });
+
+    user.password = newPassword; // Make sure pre-save middleware hashes it
+    await user.save();
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(400).json({ message: "Token invalid or expired" });
+  }
+};
+
+export const sendVerificationEmail = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user || user.isVerified) return res.sendStatus(400);
+
+  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "30m" });
+  const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${token}`;
+  await sendEmail(email, "Verify your email", `Click here: ${verifyUrl}`);
+  res.json({ message: "Verification link sent" });
+};
+
+export const verifyEmail = async (req, res) => {
+  const { token } = req.params;
+  try {
+    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
+    await User.findByIdAndUpdate(userId, { isVerified: true });
+    res.send("Email verified successfully");
+  } catch {
+    res.status(400).send("Invalid or expired token");
+  }
+};
+
+

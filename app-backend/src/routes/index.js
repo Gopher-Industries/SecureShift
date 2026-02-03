@@ -10,6 +10,7 @@ import availabilityRoutes from './availability.routes.js';
 import rbacRoutes from './rbac.routes.js';
 import shiftattenddanceRoutes from './shiftattendance.routes.js'
 import dashboardRoutes from './dashboard.routes.js'
+import notificationRoutes from './notification.routes.js'
 
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/attendance', shiftattenddanceRoutes)
 router.use('/dashboard', dashboardRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;

@@ -8,6 +8,7 @@ import setupSwagger from './config/swagger.js'; // ✅ now using ES module impor
 import { auditMiddleware } from "./middleware/logger.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { startScheduledJobs } from './jobs/scheduler.js';
 
 const app = express();
 
@@ -33,5 +34,7 @@ app.use('/api/v1', router);
 
 // Global error handler
 app.use(errorHandler);
+
+startScheduledJobs();
 
 export default app;
