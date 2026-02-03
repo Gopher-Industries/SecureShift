@@ -4,4 +4,4 @@ dist
 *.log
 docker-compose.override.yml
 /app-backend/node_modules
-firebase-service-account.json
+/app-backend/src/config/firebase-service-account.json
