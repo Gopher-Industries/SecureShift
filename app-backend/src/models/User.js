@@ -90,6 +90,15 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    pushTokens: [
+      {
+        token: { type: String, required: true },
+        platform: { type: String },
+        deviceId: { type: String },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
+
     // soft delete fields
     isDeleted: { type: Boolean, default: false, index: true }, // marks user as deactivated
     deletedAt: { type: Date, default: null }, // when it was deactivated

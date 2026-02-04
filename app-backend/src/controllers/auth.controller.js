@@ -155,19 +155,11 @@ export const login = async (req, res) => {
     user.otpExpiresAt = expiry;
     await user.save();
 
-    let emailSent = false;
-    try {
-      await sendOTP(user.email, otp, user.name);
-      emailSent = true;
-      console.log(`✅ OTP email sent successfully to ${user.email}`);
-    } catch (emailError) {
-      console.error('⚠️  Email sending failed, but OTP is saved to database');
-      console.error('   OTP Code:', otp);
-      console.error('   Users can still verify using the OTP via /api/v1/auth/verify-otp endpoint');
-      console.error('   Email error:', emailError.message);
-    }
+    console.log("DEV_MODE otp: ", otp)
+    // sendOTP(email,otp);
 
-    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT", emailSent });
+  
+    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
 
     if (emailSent) {
       res.status(200).json({ message: 'OTP sent to your email' });

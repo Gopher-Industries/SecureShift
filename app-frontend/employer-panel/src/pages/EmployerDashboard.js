@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
 import CreateShift from "./createShift";
 
@@ -55,7 +56,10 @@ export default function EmployerDashboard() {
   const [view, setView] = useState("list"); // default list view
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const navigate = useNavigate();   
+  const [shifts, setShifts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // States for Incident Management
   const [selectedIncident, setSelectedIncident] = useState(null);
@@ -143,12 +147,14 @@ export default function EmployerDashboard() {
 
               {/* Create Shift Card (only in grid view) */}
               {view === "grid" && (
-                <div className="ss-card ss-card--create" onClick={() => setShowCreateModal(true)}>
+                <div className="ss-card ss-card--create" onClick={() => navigate("/create-shift")}> 
                   <div className="ss-card__createicon"><IconPlus /></div>
                   <div className="ss-card__createtext">Create Shift</div>
                 </div>
               )}
-
+              {loading && <div>Loading shifts...</div>}
+              {error && <div style={{color:'red'}}>{error}</div>}
+              {!loading && !error && shifts.length === 0 && <div>No shifts found.</div>}
               {shifts.map((s, idx) =>
                 view === "grid" ? (
                   <div className="ss-card" key={idx}>
