@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
 import CreateShift from "./createShift";
 
@@ -55,15 +56,72 @@ export default function EmployerDashboard() {
   const [view, setView] = useState("list"); // default list view
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const navigate = useNavigate();   
+  const [shifts, setShifts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const shifts = useMemo(() => [
-    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Confirmed", tone: "confirmed" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
-    { role: "Shopping Centre Security", company: "Vicinity Centres", venue: "Chadstone Shopping Centre", rate: 75, status: { text: "Pending", tone: "pending" }, date: "03-08-2025", time: "1:00 pm - 9:00 pm" },
-    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Rejected", tone: "rejected" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
-    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Unrated)", tone: "completed" }, date: "01-08-2025", time: "5:00 pm - 1:00 am" },
-    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Rated)", tone: "completed" }, date: "31-07-2025", time: "5:00 pm - 1:00 am" },
-  ], []);
+  useEffect(() => {
+    async function fetchShifts() {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5000/api/v1/shifts", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error("Failed to fetch shifts");
+        const data = await res.json();
+        // Map backend data to dashboard format
+        const apiShifts = Array.isArray(data) ? data : (data.shifts || data.items || []);
+        setShifts(apiShifts.map(s => ({
+          role: s.title || "-",
+          company: s.siteName || s.company || "-",
+          venue: s.location?.street || s.venue || "-",
+          rate: s.payRate || s.price || 0,
+          status: mapStatus(s.status),
+          date: formatDate(s.date),
+          time: formatTime(s.startTime, s.endTime),
+        })));
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchShifts();
+  }, []);
+
+  function mapStatus(status) {
+    if (!status) return { text: "Open", tone: "confirmed" };
+    const s = status.toLowerCase();
+    if (s === "pending") return { text: "Pending", tone: "pending" };
+    if (s === "rejected") return { text: "Rejected", tone: "rejected" };
+    if (s === "completed") return { text: "Completed", tone: "completed" };
+    if (s === "confirmed") return { text: "Confirmed", tone: "confirmed" };
+    return { text: status, tone: "confirmed" };
+  }
+  function formatDate(date) {
+    if (!date) return "-";
+    const d = new Date(date);
+    if (isNaN(d)) return date;
+    return d.toLocaleDateString("en-GB");
+  }
+  function formatTime(start, end) {
+    if (!start || !end) return "-";
+    return `${to12hr(start)} - ${to12hr(end)}`;
+  }
+  function to12hr(t) {
+    if (!t) return "-";
+    let [h, m] = t.split(":");
+    h = parseInt(h, 10);
+    const ampm = h >= 12 ? "pm" : "am";
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  }
 
   const reviews = useMemo(() => [
     { name: "John Smith", role: "Crowd Control", stars: 5 },
@@ -117,12 +175,14 @@ export default function EmployerDashboard() {
 
               {/* Create Shift Card (only in grid view) */}
               {view === "grid" && (
-                <div className="ss-card ss-card--create" onClick={() => setShowCreateModal(true)}>
+                <div className="ss-card ss-card--create" onClick={() => navigate("/create-shift")}> 
                   <div className="ss-card__createicon"><IconPlus /></div>
                   <div className="ss-card__createtext">Create Shift</div>
                 </div>
               )}
-
+              {loading && <div>Loading shifts...</div>}
+              {error && <div style={{color:'red'}}>{error}</div>}
+              {!loading && !error && shifts.length === 0 && <div>No shifts found.</div>}
               {shifts.map((s, idx) =>
                 view === "grid" ? (
                   <div className="ss-card" key={idx}>
