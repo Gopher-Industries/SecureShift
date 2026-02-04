@@ -61,67 +61,32 @@ export default function EmployerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function fetchShifts() {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/v1/shifts", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error("Failed to fetch shifts");
-        const data = await res.json();
-        // Map backend data to dashboard format
-        const apiShifts = Array.isArray(data) ? data : (data.shifts || data.items || []);
-        setShifts(apiShifts.map(s => ({
-          role: s.title || "-",
-          company: s.siteName || s.company || "-",
-          venue: s.location?.street || s.venue || "-",
-          rate: s.payRate || s.price || 0,
-          status: mapStatus(s.status),
-          date: formatDate(s.date),
-          time: formatTime(s.startTime, s.endTime),
-        })));
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchShifts();
-  }, []);
+  // States for Incident Management
+  const [selectedIncident, setSelectedIncident] = useState(null);
+  const [incidents, setIncidents] = useState([
+    { 
+      id: "INC-9921", 
+      guard: "John Doe", 
+      shift: "Crowd Control - Marvel", 
+      date: "09-08-2025", 
+      time: "10:45 PM", 
+      status: "Pending", 
+      severity: "High",
+      description: "A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.",
 
-  function mapStatus(status) {
-    if (!status) return { text: "Open", tone: "confirmed" };
-    const s = status.toLowerCase();
-    if (s === "pending") return { text: "Pending", tone: "pending" };
-    if (s === "rejected") return { text: "Rejected", tone: "rejected" };
-    if (s === "completed") return { text: "Completed", tone: "completed" };
-    if (s === "confirmed") return { text: "Confirmed", tone: "confirmed" };
-    return { text: status, tone: "confirmed" };
-  }
-  function formatDate(date) {
-    if (!date) return "-";
-    const d = new Date(date);
-    if (isNaN(d)) return date;
-    return d.toLocaleDateString("en-GB");
-  }
-  function formatTime(start, end) {
-    if (!start || !end) return "-";
-    return `${to12hr(start)} - ${to12hr(end)}`;
-  }
-  function to12hr(t) {
-    if (!t) return "-";
-    let [h, m] = t.split(":");
-    h = parseInt(h, 10);
-    const ampm = h >= 12 ? "pm" : "am";
-    h = h % 12 || 12;
-    return `${h}:${m} ${ampm}`;
-  }
+      // Demo Image
+      photos: ["https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80"], 
+      comments: ""
+    }
+  ]);
+
+  const shifts = useMemo(() => [
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Confirmed", tone: "confirmed" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
+    { role: "Shopping Centre Security", company: "Vicinity Centres", venue: "Chadstone Shopping Centre", rate: 75, status: { text: "Pending", tone: "pending" }, date: "03-08-2025", time: "1:00 pm - 9:00 pm" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Rejected", tone: "rejected" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Unrated)", tone: "completed" }, date: "01-08-2025", time: "5:00 pm - 1:00 am" },
+    { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Rated)", tone: "completed" }, date: "31-07-2025", time: "5:00 pm - 1:00 am" },
+  ], []);
 
   const reviews = useMemo(() => [
     { name: "John Smith", role: "Crowd Control", stars: 5 },
@@ -132,6 +97,13 @@ export default function EmployerDashboard() {
   const scrollByAmount = (ref, amt) => {
     if (!ref.current) return;
     ref.current.scrollBy({ left: amt, behavior: "smooth" });
+  };
+
+  const updateIncident = (id, newStatus, newSeverity, newComments) => {
+    setIncidents(prev => prev.map(inc => 
+      inc.id === id ? { ...inc, status: newStatus, severity: newSeverity, comments: newComments } : inc
+    ));
+    setSelectedIncident(null);
   };
 
   return (
@@ -219,6 +191,33 @@ export default function EmployerDashboard() {
           <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(overviewScroller, 320)}>›</button>
         </div>
 
+        {/* Incident Reports */}
+        <h2 className="ss-h1 ss-h1--spaced">Incident Reports</h2>
+        <div className="ss-overview">
+          <div style={{ width: "44px" }}></div>
+          <div className="ss-panel">
+            <div className="ss-shifts ss-shifts--list">
+              {incidents.map((inc, i) => (
+                <div className="ss-row" key={i}>
+                  <div className="ss-col ss-role"><b>{inc.guard}</b></div>
+                  <div className="ss-col ss-company">{inc.shift}</div>
+                  <div className="ss-col ss-incident-id">{inc.id}</div>
+                  <div className="ss-col ss-date">
+                    <IconCalendar className="ss-ico" /> {inc.date}
+                  </div>
+                  <div className={`ss-col ss-status ss-status--${inc.status.toLowerCase()}`}>
+                    {inc.status}
+                  </div>
+                  <div className="ss-col ss-time" style={{ textAlign: "right" }}>
+                    <button className="ss-secondary" style={{ width: '100px' }} onClick={() => setSelectedIncident(inc)}>Review</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ width: "44px" }}></div>
+        </div>
+
         {/* Reviews */}
         <h2 className="ss-h1 ss-h1--spaced">Recent Review</h2>
         <div className="ss-reviews">
@@ -243,6 +242,66 @@ export default function EmployerDashboard() {
           <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(reviewScroller, 300)}>›</button>
         </div>
       </main>
+
+      {/* Incident Detail Modal */}
+      {selectedIncident && (
+        <div className="create-shift-modal-backdrop" onClick={() => setSelectedIncident(null)}>
+          <div className="create-shift-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <div className="create-shift-header">
+              <div>
+                <h1>Incident Details (<span className="ss-incident-id">{selectedIncident.id}</span>)</h1>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                  Recorded on: {selectedIncident.date} at {selectedIncident.time}
+                </p>
+              </div>
+              <span className={`ss-status ss-status--${selectedIncident.status.toLowerCase()}`}>
+                {selectedIncident.status}
+              </span>
+            </div>
+
+            <div className="form-grid" style={{ marginBottom: '20px' }}>
+              <div className="form-group">
+                <label>Reported By</label>
+                <div className="ss-input-static" style={{ padding: '10px', borderRadius: '4px' }}>{selectedIncident.guard}</div>
+              </div>
+              <div className="form-group">
+                <label>Assign Severity Level</label>
+                <select defaultValue={selectedIncident.severity} id="severitySelect" style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label>Guard's Description</label>
+              <div className="ss-incident-description">{selectedIncident.description}</div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label>Evidence Photos</label>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {selectedIncident.photos.map((url, idx) => (
+                  <img key={idx} src={url} alt="incident evidence" className="ss-evidence-img" />
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Employer Comments</label>
+              <textarea id="employerComments" placeholder="Add internal notes..." defaultValue={selectedIncident.comments} style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }} rows={4} />
+            </div>
+
+            <div className="actions" style={{ marginTop: '30px' }}>
+              <button className="primary" onClick={() => updateIncident(selectedIncident.id, "Resolved", document.getElementById('severitySelect').value, document.getElementById('employerComments').value)}>Mark as Resolved</button>
+              <button className="secondary" onClick={() => updateIncident(selectedIncident.id, "Pending", document.getElementById('severitySelect').value, document.getElementById('employerComments').value)}>Save as Pending</button>
+              <button className="secondary" style={{ color: '#666' }} onClick={() => setSelectedIncident(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showCreateModal && (
         <CreateShift
           isModal
