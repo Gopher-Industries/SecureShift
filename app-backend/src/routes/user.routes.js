@@ -11,11 +11,14 @@ import {
 import {
   getMyProfile,
   updateMyProfile,
+  getEmployerProfile,
+  updateEmployerProfile,
   adminGetUserProfile,
   adminUpdateUserProfile,
   getAllGuards,
   listUsers,
-  deleteUser
+  deleteUser,
+  registerPushToken
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
@@ -77,6 +80,93 @@ router
   .route('/me')
   .get(auth, loadUser, getMyProfile)
   .put(auth, loadUser, updateMyProfile);
+
+/**
+ * @swagger
+ * /api/v1/users/push-token:
+ *   post:
+ *     summary: Register a push notification token
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *               platform:
+ *                 type: string
+ *               deviceId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token registered
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/push-token', auth, loadUser, registerPushToken);
+
+/**
+ * @swagger
+ * /api/v1/users/profile:
+ *   get:
+ *     summary: Get logged-in employer's profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved employer profile.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (only employers)
+ *   put:
+ *     summary: Update logged-in employer's profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Krish Uppal"
+ *               email:
+ *                 type: string
+ *                 example: "krish@example.com"
+ *               phone:
+ *                 type: string
+ *                 example: "+61400123456"
+ *               address:
+ *                 type: string
+ *                 example: "123 Main Street"
+ *     responses:
+ *       200:
+ *         description: Successfully updated employer profile.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       422:
+ *         description: Validation error
+ */
+router
+  .route('/profile')
+  .get(auth, loadUser, getEmployerProfile)
+  .put(auth, loadUser, updateEmployerProfile);
 
 /**
  * @swagger

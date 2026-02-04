@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SecureShift-GuardApp",
-    "slug": "SecureShift-GuardApp",
+    "slug": "secureshift-guardapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,10 +20,17 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.secureshiftguardapp.secureshiftguardapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "59453bc8-475d-40dd-9f7f-f275fd6d1eea"
+      }
+    },
+    "owner": "secureshift-guardapp"
   }
 }

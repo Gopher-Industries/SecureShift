@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import Branch from './Branch.js';
 
 // Define the base user schema
 const userSchema = new mongoose.Schema(
@@ -49,19 +48,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ['client','guard','employer','admin','branch_admin','super_admin'],
-    },
-
-    /**
-     * Optional branch association:
-     * - Branch Admin: must be associated with a branch
-     * - Guards/Clients/Employers: may be associated with a branch depending on business rules
-     */
-    branch: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Branch',
-      default: null,
-      index: true,
+      enum: ['guard', 'employer', 'admin'],
     },
 
     phone: {
@@ -103,6 +90,15 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    pushTokens: [
+      {
+        token: { type: String, required: true },
+        platform: { type: String },
+        deviceId: { type: String },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
+
     // soft delete fields
     isDeleted: { type: Boolean, default: false, index: true }, // marks user as deactivated
     deletedAt: { type: Date, default: null }, // when it was deactivated
@@ -113,9 +109,11 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
     discriminatorKey: 'role', // Extend this schema for Guard, Employer, Admin
   }
+
+  
 );
 
-// Hash password before save
+// Hash password
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
 
@@ -130,15 +128,7 @@ userSchema.pre('save', async function (next) {
 
 // Compare passwords
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
-};
-
-// Convenience role checks
-userSchema.methods.isSuperAdmin = function () {
-  return this.role === 'super_admin';
-};
-userSchema.methods.isBranchAdmin = function () {
-  return this.role === 'branch_admin';
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
 const User = mongoose.model('User', userSchema);

@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
+import CreateShift from "./createShift";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -145,7 +146,7 @@ export default function EmployerDashboard() {
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-              onClick={() => navigate("/create-shift")}
+                onClick={() => setShowCreateModal(true)}
             >
               <IconPlus className="ss-plus" /> Create Shift
             </button>
@@ -242,7 +243,12 @@ export default function EmployerDashboard() {
           <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(reviewScroller, 300)}>›</button>
         </div>
       </main>
+      {showCreateModal && (
+        <CreateShift
+          isModal
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
     </div>
   );
 }
-// Employer dashboard enhancements: live status, analytics, hover UI

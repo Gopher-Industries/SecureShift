@@ -141,7 +141,7 @@ const loadGooglePlaces = (onReady, onError) => {
   document.body.appendChild(script);
 };
 
-const CreateShift = () => {
+const CreateShift = ({ isModal = false, onClose }) => {
   const navigate = useNavigate();
   const [sites, setSites] = useState(seededSites);
   const [showNewSite, setShowNewSite] = useState(false);
