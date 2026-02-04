@@ -24,7 +24,7 @@ const isInPastOrStarted = (shift) => {
  */
 export const createShift = async (req, res) => {
   try {
-    const { title, date, startTime, endTime, location, urgency, field, payRate } = req.body;
+    const { title, date, startTime, endTime, location, urgency, field, payRate, description, requirements } = req.body;
 
     if (!title || !date || !startTime || !endTime) {
       return res.status(400).json({ message: 'title, date, startTime, endTime are required' });
@@ -70,6 +70,8 @@ export const createShift = async (req, res) => {
       urgency,
       field,
       payRate,
+      description,
+      requirements,
     });
 
     await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
@@ -80,6 +82,134 @@ export const createShift = async (req, res) => {
     });
     
     return res.status(201).json(shift);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * PATCH /api/v1/shifts/:id  (employer/admin)
+ * Allows owners or admins to update editable shift fields.
+ */
+export const updateShift = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid id' });
+    }
+
+    const shift = await Shift.findById(id);
+    if (!shift) return res.status(404).json({ message: 'Shift not found' });
+
+    const uid = req.user?._id || req.user?.id;
+    const isOwner = uid && String(shift.createdBy) === String(uid);
+    const isAdmin = req.user?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Not allowed to edit this shift' });
+    }
+
+    if (shift.status === 'completed') {
+      return res.status(400).json({ message: 'Completed shifts cannot be edited' });
+    }
+    if (isInPastOrStarted(shift)) {
+      return res.status(400).json({ message: 'Cannot edit a shift that has started or is in the past' });
+    }
+
+    const updates = {};
+    const { title, date, startTime, endTime, payRate, urgency, field, location, description, requirements } = req.body;
+
+    if (title !== undefined) {
+      if (typeof title !== 'string' || title.trim().length < 3) {
+        return res.status(400).json({ message: 'title must be at least 3 characters' });
+      }
+      updates.title = title.trim();
+    }
+
+    if (date !== undefined) {
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) {
+        return res.status(400).json({ message: 'date must be valid (YYYY-MM-DD)' });
+      }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (d < today) {
+        return res.status(400).json({ message: 'Shift date must be today or in the future' });
+      }
+      updates.date = d;
+    }
+
+    if (startTime !== undefined) {
+      if (!isValidHHMM(startTime)) {
+        return res.status(400).json({ message: 'startTime must be HH:MM (24h)' });
+      }
+      updates.startTime = startTime;
+    }
+
+    if (endTime !== undefined) {
+      if (!isValidHHMM(endTime)) {
+        return res.status(400).json({ message: 'endTime must be HH:MM (24h)' });
+      }
+      updates.endTime = endTime;
+    }
+
+    if (payRate !== undefined) {
+      const rateNum = Number(payRate);
+      if (Number.isNaN(rateNum) || rateNum < 0) {
+        return res.status(400).json({ message: 'payRate must be a non-negative number' });
+      }
+      updates.payRate = rateNum;
+    }
+
+    if (urgency !== undefined) {
+      const allowed = ['normal', 'priority', 'last-minute'];
+      if (!allowed.includes(urgency)) {
+        return res.status(400).json({ message: 'urgency must be normal, priority, or last-minute' });
+      }
+      updates.urgency = urgency;
+    }
+
+    if (field !== undefined) {
+      if (typeof field !== 'string' || field.trim().length === 0) {
+        return res.status(400).json({ message: 'field must be a non-empty string' });
+      }
+      updates.field = field.trim();
+    }
+
+    if (description !== undefined) {
+      if (typeof description !== 'string') {
+        return res.status(400).json({ message: 'description must be a string' });
+      }
+      updates.description = description.trim();
+    }
+
+    if (requirements !== undefined) {
+      if (typeof requirements !== 'string') {
+        return res.status(400).json({ message: 'requirements must be a string' });
+      }
+      updates.requirements = requirements.trim();
+    }
+
+    if (location !== undefined) {
+      if (typeof location !== 'object') {
+        return res.status(400).json({ message: 'location must be an object' });
+      }
+      const { street, suburb, state, postcode } = location;
+      const loc = { ...shift.location?.toObject?.() };
+      if (street !== undefined) loc.street = typeof street === 'string' ? street.trim() : street;
+      if (suburb !== undefined) loc.suburb = typeof suburb === 'string' ? suburb.trim() : suburb;
+      if (state !== undefined) loc.state = typeof state === 'string' ? state.trim() : state;
+      if (postcode !== undefined) loc.postcode = postcode;
+      updates.location = loc;
+    }
+
+    Object.assign(shift, updates);
+    await shift.save();
+    await req.audit.log(req.user?._id, ACTIONS.SHIFT_UPDATED, {
+      shiftId: shift._id,
+      updates: Object.keys(updates),
+    });
+
+    return res.json({ message: 'Shift updated', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
@@ -393,81 +523,6 @@ export const getShiftHistory = async (req, res) => {
       .populate('assignedGuard', 'name email');
 
     return res.json({ total: shifts.length, items: shifts });
-  } catch (e) {
-    return res.status(500).json({ message: e.message });
-  }
-};
-
-/**
- * GET /api/v1/shifts/available  (guard only)
- * Optional query params:
- *   - date=YYYY-MM-DD (returns shifts on that calendar day)
- *   - location=string  (matches street/suburb/state/postcode, case-insensitive)
- * Always:
- *   - status: 'open'
- *   - exclude shifts created by the guard
- *   - future or today when no date is supplied
- *   - sort by date ASC, then startTime ASC
- */
-export const listOpenShiftsForGuard = async (req, res) => {
-  try {
-    const uid  = req.user?._id || req.user?.id;
-    const role = req.user?.role;
-    if (!uid || role !== 'guard') {
-      return res.status(403).json({ message: 'Forbidden: guard role required' });
-    }
-
-    // Pagination
-    const page  = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
-    const skip  = (page - 1) * limit;
-
-    const { date, location } = req.query;
-
-    // Base query
-    const query = {
-      status: 'open',
-      createdBy: { $ne: uid },
-    };
-
-    // Date filter
-    if (date) {
-      const d = new Date(date);
-      if (Number.isNaN(d.getTime())) {
-        return res.status(400).json({ message: 'date must be YYYY-MM-DD' });
-      }
-      const start = new Date(d); start.setHours(0, 0, 0, 0);
-      const end   = new Date(d); end.setHours(23, 59, 59, 999);
-      query.date = { $gte: start, $lte: end };
-    } else {
-      // If no specific day requested, only show today or future
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      query.date = { $gte: today };
-    }
-
-    // Location filter (matches any location sub-field)
-    if (location && typeof location === 'string' && location.trim()) {
-      const rx = new RegExp(location.trim(), 'i');
-      query.$or = [
-        { 'location.street':   { $regex: rx } },
-        { 'location.suburb':   { $regex: rx } },
-        { 'location.state':    { $regex: rx } },
-        { 'location.postcode': { $regex: rx } },
-        // If you also store a flat text field, include it:
-        { locationText:        { $regex: rx } },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      Shift.find(query)
-        .sort({ date: 1, startTime: 1 }) // ascending
-        .skip(skip).limit(limit)
-        .populate('createdBy', 'name')
-        .lean(),
-      Shift.countDocuments(query),
-    ]);
-
-    return res.json({ page, limit, total, items });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }

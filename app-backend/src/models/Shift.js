@@ -77,6 +77,10 @@ const shiftSchema = new Schema(
     // Optional field
     field: { type: String, trim: true, maxlength: 50 },
 
+    // Optional description and requirements
+    description: { type: String, trim: true, maxlength: 2000 },
+    requirements: { type: String, trim: true, maxlength: 2000 },
+
     // Urgency
     urgency: {
       type: String,

@@ -161,7 +161,14 @@ export const login = async (req, res) => {
   
     await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
 
-    res.status(200).json({ message: 'OTP sent to your email' });
+    if (emailSent) {
+      res.status(200).json({ message: 'OTP sent to your email' });
+    } else {
+      res.status(200).json({ 
+        message: 'OTP generated successfully. Email delivery failed - please verify OTP manually',
+        warning: 'Email service is not configured. Check server logs for OTP code.'
+      });
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
