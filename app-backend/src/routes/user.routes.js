@@ -17,7 +17,8 @@ import {
   adminUpdateUserProfile,
   getAllGuards,
   listUsers,
-  deleteUser
+  deleteUser,
+  registerPushToken
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
@@ -79,6 +80,39 @@ router
   .route('/me')
   .get(auth, loadUser, getMyProfile)
   .put(auth, loadUser, updateMyProfile);
+
+/**
+ * @swagger
+ * /api/v1/users/push-token:
+ *   post:
+ *     summary: Register a push notification token
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *               platform:
+ *                 type: string
+ *               deviceId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token registered
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/push-token', auth, loadUser, registerPushToken);
 
 /**
  * @swagger
