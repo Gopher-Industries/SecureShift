@@ -60,6 +60,7 @@ export default function EmployerDashboard() {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false); // <-- added
 
   // States for Incident Management
   const [selectedIncident, setSelectedIncident] = useState(null);
@@ -80,13 +81,15 @@ export default function EmployerDashboard() {
     }
   ]);
 
-  const shifts = useMemo(() => [
+useEffect(() => {
+  setShifts([
     { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Confirmed", tone: "confirmed" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
     { role: "Shopping Centre Security", company: "Vicinity Centres", venue: "Chadstone Shopping Centre", rate: 75, status: { text: "Pending", tone: "pending" }, date: "03-08-2025", time: "1:00 pm - 9:00 pm" },
     { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Rejected", tone: "rejected" }, date: "09-08-2025", time: "5:00 pm - 1:00 am" },
     { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Unrated)", tone: "completed" }, date: "01-08-2025", time: "5:00 pm - 1:00 am" },
     { role: "Crowd Control", company: "AIG Solutions", venue: "Marvel Stadium", rate: 55, status: { text: "Completed (Rated)", tone: "completed" }, date: "31-07-2025", time: "5:00 pm - 1:00 am" },
-  ], []);
+  ]);
+}, []);
 
   const reviews = useMemo(() => [
     { name: "John Smith", role: "Crowd Control", stars: 5 },
