@@ -31,6 +31,9 @@
         "projectId": "59453bc8-475d-40dd-9f7f-f275fd6d1eea"
       }
     },
-    "owner": "secureshift-guardapp"
+    "owner": "secureshift-guardapp",
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
   }
 }
