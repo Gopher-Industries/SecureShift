@@ -13,11 +13,7 @@ export default function ShiftDetailsModal({ visible, shift, onClose }: ShiftDeta
   const s = shift as any;
 
   const statusColor =
-    s.status === 'Confirmed'
-      ? '#22c55e'
-      : s.status === 'Pending'
-      ? '#3b82f6'
-      : '#9ca3af';
+    s.status === 'Confirmed' ? '#22c55e' : s.status === 'Pending' ? '#3b82f6' : '#9ca3af';
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
