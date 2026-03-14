@@ -382,8 +382,8 @@ const isExpiringSoon = (expiryDate) => {
   const now = new Date();
   const expiresSoonThresholdDays = 30
   const expiresSoonDate = new Date(now.getTime() + expiresSoonThresholdDays * 24 * 60 * 60 * 1000);
-  const expiryDate = new Date(expiryDate);
-  return expiryDate >= now && expiryDate <= expiresSoonDate;
+  const expiresOn = new Date(expiryDate);
+  return expiresOn >= now && expiresOn <= expiresSoonDate;
 }
 
 /**
