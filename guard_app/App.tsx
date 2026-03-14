@@ -3,7 +3,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import React, { useEffect } from 'react';
 
 import AppNavigator from './src/navigation/AppNavigator';
-import { registerPushTokenIfNeeded, subscribeToPushTokenChanges } from './src/lib/pushNotifications';
+import {
+  registerPushTokenIfNeeded,
+  subscribeToPushTokenChanges,
+} from './src/lib/pushNotifications';
 
 export default function App() {
   useEffect(() => {
