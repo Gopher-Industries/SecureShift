@@ -4,13 +4,13 @@ export const DocumentSchema = new mongoose.Schema(
     {
         type: {
             type: String,
-            enum: ['license', 'id_card', 'passport', 'other'],
+            enum: ['license', 'id_card', 'passport', 'firstAid', 'certificate', 'rsa', 'other'],
             default: 'license'
         },
         status: {
             type: String, 
-            enum: ['pending', 'verified', 'rejected'],
-            default: 'pending'
+            enum: ['pending', 'verified', 'rejected', 'none'],
+            default: 'none'
         },
         imageUrl: { type: String, default: null },
         expiryDate: { type: Date, default: null },
