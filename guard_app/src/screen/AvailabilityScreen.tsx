@@ -12,6 +12,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
+
 import { getMe } from '../api/auth';
 import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
 import AddAvailabilityModal from '../components/AddAvailabilityModal';
@@ -50,7 +51,7 @@ export default function AvailabilityScreen() {
 
   // Helper functions
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
-  
+
   const getDayName = (date: Date) => {
     return WEEK_DAYS[date.getDay() === 0 ? 6 : date.getDay() - 1];
   };
@@ -139,7 +140,6 @@ export default function AvailabilityScreen() {
           setDays(Array.isArray(data.days) ? data.days : []);
           setTimeSlots(extractTimeSlots(data));
         }
-
       } catch (e) {
         console.error(e);
         setError('Failed to load availability');
@@ -206,14 +206,14 @@ export default function AvailabilityScreen() {
     }
 
     const convertToMinutes = (time: string) => {
-  const [hour, minute] = time.split(':').map(Number);
-  return hour * 60 + minute;
-};
+      const [hour, minute] = time.split(':').map(Number);
+      return hour * 60 + minute;
+    };
 
-if (convertToMinutes(fromTime) >= convertToMinutes(toTime)) {
-  Alert.alert('Error', 'End time must be after start time');
-  return;
-}
+    if (convertToMinutes(fromTime) >= convertToMinutes(toTime)) {
+      Alert.alert('Error', 'End time must be after start time');
+      return;
+    }
 
     const dayName = getDayName(selectedDate);
     const slotLabel = `${fromTime}-${toTime}`;
@@ -384,7 +384,7 @@ if (convertToMinutes(fromTime) >= convertToMinutes(toTime)) {
       </ScrollView>
 
       <View style={styles.slotsSummary}>
-        <Text style={styles.slotsSummaryTitle}>This Week's Availability</Text>
+        <Text style={styles.slotsSummaryTitle}>This Week&apos;s Availability</Text>
         {weekDays.map((day, idx) => {
           const daySlots = getSlotsForDate(day);
           if (daySlots.length === 0) return null;
@@ -711,12 +711,22 @@ const styles = StyleSheet.create({
   weekDayDate: { fontSize: 16, fontWeight: '700', color: '#111827' },
   timeGrid: { flex: 1 },
   timeRow: { flexDirection: 'row', height: 60, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  timeLabel: { width: 60, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB' },
+  timeLabel: {
+    width: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F9FAFB',
+  },
   timeLabelText: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
   timeCell: { flex: 1, borderLeftWidth: 1, borderLeftColor: '#F3F4F6', backgroundColor: '#FFFFFF' },
   timeCellFilled: { backgroundColor: '#E0F2FE' },
   slotIndicator: { flex: 1, backgroundColor: '#003f88', opacity: 0.3 },
-  slotsSummary: { backgroundColor: '#FFFFFF', padding: 16, borderTopWidth: 1, borderTopColor: '#E5E7EB' },
+  slotsSummary: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
   slotsSummaryTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 12 },
   daySummary: { marginBottom: 16 },
   daySummaryDay: { fontSize: 14, fontWeight: '600', color: '#6B7280', marginBottom: 8 },
@@ -756,8 +766,19 @@ const styles = StyleSheet.create({
   monthSlotDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#003f88' },
 
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, width: '85%', maxWidth: 400 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    maxWidth: 400,
+  },
   modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 20 },
   modalField: { marginBottom: 16 },
   modalLabel: { fontSize: 14, fontWeight: '600', color: '#6B7280', marginBottom: 8 },
