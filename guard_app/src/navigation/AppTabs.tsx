@@ -2,12 +2,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import HomeScreen from '../screen/HomeScreen';
-import ShiftsScreen from '../screen/ShiftsScreen';
 import AvailabilityScreen from '../screen/AvailabilityScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
-import TimesheetsScreen from '../screen/TimeSheetsScreen';
+import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
+import ShiftsScreen from '../screen/ShiftsScreen';
+import TimesheetsScreen from '../screen/TimeSheetsScreen';
 
 export type AppTabParamList = {
   Home: undefined;

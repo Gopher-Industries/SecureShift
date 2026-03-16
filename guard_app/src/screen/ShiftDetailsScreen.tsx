@@ -8,11 +8,11 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { checkIn, checkOut } from '../api/attendance';
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
-import type { RootStackParamList } from '../navigation/AppNavigator';
 import { COLORS } from '../theme/colors';
 import { formatDate } from '../utils/date';
 
 import type { ShiftDto } from '../api/shifts';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'ShiftDetails'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;

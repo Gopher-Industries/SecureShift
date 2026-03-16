@@ -113,11 +113,7 @@ function ShiftDetailsModal({
 
   const status = 'status' in shift ? shift.status : 'Completed';
   const statusColor =
-    status === 'Confirmed'
-      ? '#10B981'
-      : status === 'Pending'
-        ? '#3B82F6'
-        : '#6B7280';
+    status === 'Confirmed' ? '#10B981' : status === 'Pending' ? '#3B82F6' : '#6B7280';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -264,18 +260,13 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
               onPress={() => hasShifts && onShiftPress(dayShifts[0])}
               disabled={!hasShifts}
             >
-              <Text style={[s.calDayNumber, !inMonth && s.calDayNumberDim]}>
-                {d.getDate()}
-              </Text>
+              <Text style={[s.calDayNumber, !inMonth && s.calDayNumberDim]}>{d.getDate()}</Text>
               {hasShifts && (
                 <View style={s.calShiftIndicators}>
                   {dayShifts.slice(0, 3).map((shift, i) => (
                     <View
                       key={i}
-                      style={[
-                        s.calShiftDot,
-                        { backgroundColor: getStatusColor(shift.status) },
-                      ]}
+                      style={[s.calShiftDot, { backgroundColor: getStatusColor(shift.status) }]}
                     />
                   ))}
                 </View>
@@ -312,11 +303,7 @@ function ShiftCard({
 }) {
   const status = 'status' in shift ? shift.status : 'Completed';
   const statusColor =
-    status === 'Confirmed'
-      ? '#10B981'
-      : status === 'Pending'
-        ? '#3B82F6'
-        : '#6B7280';
+    status === 'Confirmed' ? '#10B981' : status === 'Pending' ? '#3B82F6' : '#6B7280';
 
   return (
     <TouchableOpacity style={s.card} onPress={onPress}>
