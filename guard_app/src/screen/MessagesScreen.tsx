@@ -1,5 +1,6 @@
 // Put vector-icons first, then React (to satisfy your import/order rule)
 import { Ionicons } from '@expo/vector-icons';
+import { useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   SafeAreaView,
@@ -14,8 +15,6 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
 
 import { getMe } from '../api/auth';
 import {
@@ -26,7 +25,9 @@ import {
   type MessageDto,
   type MessageUser,
 } from '../api/messages';
+
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import type { RouteProp } from '@react-navigation/native';
 
 const NAVY = '#274b93';
 const SLATE = '#111827';
@@ -66,9 +67,11 @@ export default function MessagesScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ id: string; name?: string; role?: string } | null>(
-    null,
-  );
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    name?: string;
+    role?: string;
+  } | null>(null);
   const [shiftParticipant, setShiftParticipant] = useState<{
     id: string;
     name: string;
@@ -96,8 +99,7 @@ export default function MessagesScreen() {
   const mapDtoToMessage = (dto: MessageDto, context: 'shift' | 'general'): Message => {
     const senderId = getUserId(dto.sender);
     const isCurrentUser = senderId && senderId === currentUser?.id;
-    const inferredRole =
-      dto.sender?.role ?? (isCurrentUser ? currentUser?.role : undefined);
+    const inferredRole = dto.sender?.role ?? (isCurrentUser ? currentUser?.role : undefined);
     const role = inferredRole === 'employer' ? 'employer' : 'guard';
     return {
       id: dto._id ?? `${dto.timestamp}-${senderId ?? 'unknown'}`,
@@ -193,7 +195,12 @@ export default function MessagesScreen() {
     };
 
     void loadParticipants();
-  }, [route.params?.generalParticipantId, route.params?.generalParticipantName, route.params?.shiftParticipantId, route.params?.shiftParticipantName]);
+  }, [
+    route.params?.generalParticipantId,
+    route.params?.generalParticipantName,
+    route.params?.shiftParticipantId,
+    route.params?.shiftParticipantName,
+  ]);
 
   useEffect(() => {
     const loadConversation = async () => {
@@ -221,7 +228,9 @@ export default function MessagesScreen() {
             setGeneralParticipant(normalizedParticipant);
           }
         }
-        const mapped = (conversation?.messages ?? []).map((msg) => mapDtoToMessage(msg, activeContext));
+        const mapped = (conversation?.messages ?? []).map((msg) =>
+          mapDtoToMessage(msg, activeContext),
+        );
         setMessagesByContext((prev) => ({ ...prev, [activeContext]: mapped }));
       } catch (e) {
         console.error(e);
@@ -256,7 +265,10 @@ export default function MessagesScreen() {
       shiftTitle: activeContext === 'shift' ? shiftTitle : undefined,
       status: 'sending',
     };
-    setMessagesByContext((prev) => ({ ...prev, [activeContext]: [...prev[activeContext], newMsg] }));
+    setMessagesByContext((prev) => ({
+      ...prev,
+      [activeContext]: [...prev[activeContext], newMsg],
+    }));
     setInput('');
 
     try {
@@ -365,10 +377,7 @@ export default function MessagesScreen() {
           </View>
           <View style={styles.contextToggle}>
             <TouchableOpacity
-              style={[
-                styles.contextChip,
-                activeContext === 'shift' && styles.contextChipActive,
-              ]}
+              style={[styles.contextChip, activeContext === 'shift' && styles.contextChipActive]}
               onPress={() => setActiveContext('shift')}
             >
               <Text
@@ -381,10 +390,7 @@ export default function MessagesScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.contextChip,
-                activeContext === 'general' && styles.contextChipActive,
-              ]}
+              style={[styles.contextChip, activeContext === 'general' && styles.contextChipActive]}
               onPress={() => setActiveContext('general')}
             >
               <Text
@@ -436,10 +442,7 @@ export default function MessagesScreen() {
               data={conversations}
               keyExtractor={(item) => item.id}
               renderItem={renderConversation}
-              contentContainerStyle={[
-                styles.chat,
-                conversations.length === 0 && styles.chatEmpty,
-              ]}
+              contentContainerStyle={[styles.chat, conversations.length === 0 && styles.chatEmpty]}
               ListEmptyComponent={
                 loading ? (
                   <View style={styles.placeholder}>
@@ -463,10 +466,7 @@ export default function MessagesScreen() {
             data={contextMessages}
             keyExtractor={(item) => item.id}
             renderItem={renderMessage}
-            contentContainerStyle={[
-              styles.chat,
-              contextMessages.length === 0 && styles.chatEmpty,
-            ]}
+            contentContainerStyle={[styles.chat, contextMessages.length === 0 && styles.chatEmpty]}
             ListEmptyComponent={
               loading ? (
                 <View style={styles.placeholder}>
@@ -491,10 +491,7 @@ export default function MessagesScreen() {
             <View style={styles.typingBubble}>
               <Text style={styles.typingText}>Employer is typing…</Text>
             </View>
-            <TouchableOpacity
-              style={styles.typingToggle}
-              onPress={() => setIsTyping(false)}
-            >
+            <TouchableOpacity style={styles.typingToggle} onPress={() => setIsTyping(false)}>
               <Text style={styles.typingToggleText}>Dismiss</Text>
             </TouchableOpacity>
           </View>
