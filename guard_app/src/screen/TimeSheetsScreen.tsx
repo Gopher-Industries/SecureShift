@@ -1,4 +1,5 @@
 // src/screen/TimesheetsScreen.tsx
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -10,7 +11,6 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 
 import { getMyAttendance, type Attendance } from '../api/attendance';
 import { COLORS } from '../theme/colors';
