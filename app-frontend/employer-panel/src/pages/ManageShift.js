@@ -5,8 +5,8 @@ import http from '../lib/http';
 // Map backend status to filter display
 const statusDisplayMap = {
     completed: "Completed",
-    inprogress: "In Progress",
-    pending: "Pending",
+    assigned: "In Progress",
+    applied: "Pending",
     open: "Open",
 };
 
@@ -58,7 +58,7 @@ const ManageShift = () => {
     const [feedback, setFeedback] = useState('');
     const [formErrors, setFormErrors] = useState({});
     const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
-    const itemsPerPage = 8;
+    const itemsPerPage = 9;
 
     useEffect(() => {
     const fetchShifts = async () => {
@@ -86,25 +86,51 @@ const ManageShift = () => {
 }, []);
 
 
-    // Map frontend filter values to backend status
-    const filterToBackendStatus = {
-        Completed: "Completed",
-        InProgress: "In Progress",
-        Pending: "Pending",
-        Open: "Open",
-    };
-
     const filteredShifts = selectedFilter === Filter.All
         ? shifts
-        : shifts.filter(shift => shift.status === filterToBackendStatus[selectedFilter]);
+        : shifts.filter(shift => shift.status === selectedFilter);
 
     const sortedShifts = [...filteredShifts].sort((a, b) => {
-        const dateA = new Date(a?.dateTime || 0);
-        const dateB = new Date(b?.dateTime || 0);
-        return sortBy === Sort.DateAsc ? dateA - dateB : dateB - dateA;
+        // Build a comparable key using raw date + startTime strings
+        const keyA = (a.date || '') + ' ' + (a.startTime || '');
+        const keyB = (b.date || '') + ' ' + (b.startTime || '');
+
+        if (keyA !== keyB) {
+            if (sortBy === Sort.DateAsc) {
+                return keyA < keyB ? -1 : 1;
+            } else {
+                return keyA > keyB ? -1 : 1;
+            }
+        }
+
+        // Secondary key: endTime when date & startTime are the same
+        const endA = a.endTime || '';
+        const endB = b.endTime || '';
+
+        if (endA === endB) return 0;
+
+        if (sortBy === Sort.DateAsc) {
+            return endA < endB ? -1 : 1;
+        } else {
+            return endA > endB ? -1 : 1;
+        }
     });
 
     const totalPages = Math.ceil(sortedShifts.length / itemsPerPage);
+
+    // Ensure currentPage is always within valid range when data / filters / sort change
+    useEffect(() => {
+        if (totalPages === 0) {
+            if (currentPage !== 1) setCurrentPage(1);
+            return;
+        }
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        } else if (currentPage < 1) {
+            setCurrentPage(1);
+        }
+    }, [totalPages, currentPage]);
+
     const indexStart = (currentPage - 1) * itemsPerPage;
     const currentItems = sortedShifts.slice(indexStart, indexStart + itemsPerPage);
 
@@ -216,7 +242,7 @@ const ManageShift = () => {
                 startTime: detailForm.startTime,
                 endTime: detailForm.endTime,
                 payRate: detailForm.payRate === '' ? undefined : Number(detailForm.payRate),
-                field: detailForm.field,
+                ...(detailForm.field?.trim() ? { field: detailForm.field.trim() } : {}),
                 urgency: detailForm.urgency,
                 ...(hasLocation ? { location: cleanedLocation } : {}),
             };
@@ -274,7 +300,10 @@ const ManageShift = () => {
             <FilterSortSection
                 Filter={Filter}
                 selectedFilter={selectedFilter}
-                setSelectedFilter={setSelectedFilter}
+                onFilterChange={(filter) => {
+                    setSelectedFilter(filter);
+                    setCurrentPage(1);
+                }}
                 sortBy={sortBy}
                 setShowSortModal={setShowSortModal}
             />
@@ -475,7 +504,7 @@ const SummaryCard = ({ label, number, icon, bg }) => (
     </div>
 );
 
-const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, setShowSortModal }) => (
+const FilterSortSection = ({ Filter, selectedFilter, onFilterChange, sortBy, setShowSortModal }) => (
     <div style={filterSectionStyle}>
         <div style={filterGroupStyle}>
             <img src={"/ic-filter.svg"} alt="Filter" style={smallIconStyle} />
@@ -485,7 +514,7 @@ const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, 
                     <button
                         key={f}
                         style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle}
-                        onClick={() => setSelectedFilter(f)}
+                        onClick={() => onFilterChange(f)}
                     >{f}</button>
                 ))}
             </div>
