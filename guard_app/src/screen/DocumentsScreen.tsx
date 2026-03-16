@@ -279,9 +279,7 @@ export default function DocumentsScreen() {
               <View key={doc.id} style={styles.documentCard}>
                 {/* Icon */}
                 <View style={styles.documentIconContainer}>
-                  <Text style={styles.documentIcon}>
-                    {doc.type.includes('pdf') ? '📄' : '🖼️'}
-                  </Text>
+                  <Text style={styles.documentIcon}>{doc.type.includes('pdf') ? '📄' : '🖼️'}</Text>
                 </View>
 
                 {/* Info */}
