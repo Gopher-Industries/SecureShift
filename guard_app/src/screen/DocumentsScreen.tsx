@@ -1,5 +1,8 @@
 // guard_app/src/screen/DocumentsScreen.tsx
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import * as DocumentPicker from 'expo-document-picker';
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -10,9 +13,6 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
 
 // Document types available for guards
 const DOCUMENT_TYPES = [
