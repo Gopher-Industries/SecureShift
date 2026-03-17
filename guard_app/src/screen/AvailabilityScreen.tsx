@@ -205,7 +205,12 @@ export default function AvailabilityScreen() {
       return;
     }
 
-    if (fromTime >= toTime) {
+    const convertToMinutes = (time: string) => {
+      const [hour, minute] = time.split(':').map(Number);
+      return hour * 60 + minute;
+    };
+
+    if (convertToMinutes(fromTime) >= convertToMinutes(toTime)) {
       Alert.alert('Error', 'End time must be after start time');
       return;
     }
