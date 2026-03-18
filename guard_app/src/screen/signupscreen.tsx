@@ -240,7 +240,9 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           />
         </TouchableOpacity>
 
-        {licenseImage ? <Image source={{ uri: licenseImage.uri }} style={styles.imagePreview} /> : null}
+        {licenseImage ? (
+          <Image source={{ uri: licenseImage.uri }} style={styles.imagePreview} />
+        ) : null}
 
         <TouchableOpacity
           style={[styles.cta, (ctaDisabled || submitting) && styles.ctaDisabled]}

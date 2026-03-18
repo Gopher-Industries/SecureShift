@@ -18,6 +18,7 @@ import {
 import { getMe } from '../api/auth';
 import { myShifts, type ShiftDto } from '../api/shifts';
 import { useAppTheme } from '../theme';
+
 import type { AppColors } from '../theme/colors';
 
 const { width } = Dimensions.get('window');

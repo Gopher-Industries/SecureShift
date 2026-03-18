@@ -24,10 +24,11 @@ import {
   type MessageDto,
   type MessageUser,
 } from '../api/messages';
-import type { RootStackParamList } from '../navigation/AppNavigator';
-import type { RouteProp } from '@react-navigation/native';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+
+import type { RootStackParamList } from '../navigation/AppNavigator';
+import type { RouteProp } from '@react-navigation/native';
 
 type Message = {
   id: string;
@@ -453,11 +454,7 @@ export default function MessagesScreen() {
                   </View>
                 ) : (
                   <View style={styles.placeholder}>
-                    <Ionicons
-                      name="chatbubble-ellipses-outline"
-                      size={36}
-                      color={colors.muted}
-                    />
+                    <Ionicons name="chatbubble-ellipses-outline" size={36} color={colors.muted} />
                     <Text style={styles.placeholderTitle}>No conversations yet</Text>
                     <Text style={styles.placeholderText}>
                       Start a new chat from a shift or by selecting a contact.
@@ -481,11 +478,7 @@ export default function MessagesScreen() {
                 </View>
               ) : (
                 <View style={styles.placeholder}>
-                  <Ionicons
-                    name="chatbubble-ellipses-outline"
-                    size={36}
-                    color={colors.muted}
-                  />
+                  <Ionicons name="chatbubble-ellipses-outline" size={36} color={colors.muted} />
                   <Text style={styles.placeholderTitle}>No messages yet</Text>
                   <Text style={styles.placeholderText}>
                     Start the conversation to coordinate shifts or share updates.

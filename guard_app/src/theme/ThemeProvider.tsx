@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { loadThemeMode, saveThemeMode, ThemeMode } from '../lib/themeStorage';
 import { AppColors, darkColors, lightColors } from './colors';
+import { loadThemeMode, saveThemeMode, ThemeMode } from '../lib/themeStorage';
 
 type ThemeContextValue = {
   themeMode: ThemeMode;

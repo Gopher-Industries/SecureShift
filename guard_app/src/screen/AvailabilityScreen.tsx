@@ -597,7 +597,12 @@ const getStyles = (colors: AppColors) =>
   StyleSheet.create({
     fullContainer: { flex: 1, backgroundColor: colors.bg },
     container: { flex: 1, padding: 16, backgroundColor: colors.bg },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
+    centered: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.bg,
+    },
     loadingText: { marginTop: 8, color: colors.text },
     errorText: { color: colors.status.rejected, marginBottom: 12 },
 

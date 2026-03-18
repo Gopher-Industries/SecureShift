@@ -84,10 +84,7 @@ export default function IncidentReportScreen() {
             onPress={() => setSeverity(lvl)}
           >
             <Text
-              style={[
-                s.severityText,
-                { color: severity === lvl ? colors.white : colors.text },
-              ]}
+              style={[s.severityText, { color: severity === lvl ? colors.white : colors.text }]}
             >
               {lvl}
             </Text>
@@ -107,7 +104,11 @@ export default function IncidentReportScreen() {
       </ScrollView>
 
       <TouchableOpacity style={s.submitBtn} onPress={submitReport} disabled={submitting}>
-        {submitting ? <ActivityIndicator color={colors.white} /> : <Text style={s.submitText}>Submit Report</Text>}
+        {submitting ? (
+          <ActivityIndicator color={colors.white} />
+        ) : (
+          <Text style={s.submitText}>Submit Report</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );

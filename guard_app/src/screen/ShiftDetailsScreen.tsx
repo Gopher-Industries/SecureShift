@@ -6,13 +6,14 @@ import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { checkIn, checkOut } from '../api/attendance';
-import type { ShiftDto } from '../api/shifts';
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
-import type { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
 import { formatDate } from '../utils/date';
+
+import type { ShiftDto } from '../api/shifts';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+import type { AppColors } from '../theme/colors';
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'ShiftDetails'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -22,10 +23,16 @@ type AttendanceState = {
   checkOutTime?: string;
 };
 
-const normalizeAttendance = (attendance?: {
-  checkInTime?: string | null;
-  checkOutTime?: string | null;
-} | null): AttendanceState => ({
+function StatusBadge({ status, color }: { status: string; color: string }) {
+  return <Text style={{ color, fontWeight: '700' }}>{status.toUpperCase()}</Text>;
+}
+
+const normalizeAttendance = (
+  attendance?: {
+    checkInTime?: string | null;
+    checkOutTime?: string | null;
+  } | null,
+): AttendanceState => ({
   checkInTime: attendance?.checkInTime ?? undefined,
   checkOutTime: attendance?.checkOutTime ?? undefined,
 });
@@ -100,12 +107,9 @@ export default function ShiftDetailsScreen() {
     }
   };
 
-  const StatusBadge = ({ status }: { status: string }) => {
-    let color = colors.link;
-    if (status === 'assigned') color = colors.status.confirmed;
-    if (status === 'completed') color = colors.primary;
-    return <Text style={{ color, fontWeight: '700' }}>{status.toUpperCase()}</Text>;
-  };
+  let statusColor = colors.link;
+  if (shift.status === 'assigned') statusColor = colors.status.confirmed;
+  if (shift.status === 'completed') statusColor = colors.primary;
 
   const canDoAttendance = shift.status === 'assigned';
   const hasCheckedIn = !!attendance?.checkInTime;
@@ -166,9 +170,9 @@ export default function ShiftDetailsScreen() {
             <Text style={s.rowText}>${shift.payRate ?? 0} / hr</Text>
           </View>
 
-          <View style={[s.row, { marginTop: 20 }]}>
+          <View style={[s.row, s.statusRow]}>
             <Text style={s.label}>Status: </Text>
-            <StatusBadge status={shift.status ?? 'open'} />
+            <StatusBadge status={shift.status ?? 'open'} color={statusColor} />
           </View>
 
           {attendance?.checkInTime && (
@@ -210,8 +214,8 @@ export default function ShiftDetailsScreen() {
 
           {!canDoAttendance && (
             <Text style={s.hint}>
-              You can only check in/out when the shift is{' '}
-              <Text style={{ fontWeight: '700' }}>ASSIGNED</Text>.
+              You can only check in/out when the shift is <Text style={s.hintStrong}>ASSIGNED</Text>
+              .
             </Text>
           )}
         </View>
@@ -267,6 +271,9 @@ const getStyles = (colors: AppColors) =>
       alignItems: 'center',
       marginBottom: 12,
     },
+    statusRow: {
+      marginTop: 20,
+    },
     rowText: {
       marginLeft: 10,
       fontSize: 16,
@@ -316,5 +323,8 @@ const getStyles = (colors: AppColors) =>
       marginTop: 8,
       color: colors.muted,
       textAlign: 'center',
+    },
+    hintStrong: {
+      fontWeight: '700',
     },
   });

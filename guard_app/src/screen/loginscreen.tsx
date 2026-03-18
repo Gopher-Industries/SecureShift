@@ -15,11 +15,7 @@ import {
 } from 'react-native';
 
 import logo from '../../assets/logo.png';
-import {
-  login as apiLogin,
-  verifyOtp as apiVerifyOtp,
-  getMe,
-} from '../api/auth';
+import { login as apiLogin, verifyOtp as apiVerifyOtp, getMe } from '../api/auth';
 import { LocalStorage } from '../lib/localStorage';
 import { registerPushTokenIfNeeded } from '../lib/pushNotifications';
 import { useAppTheme } from '../theme';

@@ -99,12 +99,7 @@ export default function TimesheetsScreen() {
           </Text>
 
           <View style={[s.badge, item.locationVerified ? s.badgeOk : s.badgeWarn]}>
-            <Text
-              style={[
-                s.badgeText,
-                item.locationVerified ? s.badgeTextOk : s.badgeTextWarn,
-              ]}
-            >
+            <Text style={[s.badgeText, item.locationVerified ? s.badgeTextOk : s.badgeTextWarn]}>
               {item.locationVerified ? 'Verified' : 'Not verified'}
             </Text>
           </View>

@@ -19,9 +19,9 @@ import { updateUserProfile, UpdateProfilePayload } from '../api/profile';
 import { API_BASE_URL } from '../lib/http';
 import { LocalStorage } from '../lib/localStorage';
 import { UserProfile } from '../models/UserProfile';
-import { showImagePickerOptions, ImagePickerResult } from '../utils/imagePicker';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+import { showImagePickerOptions, ImagePickerResult } from '../utils/imagePicker';
 
 interface EditProfileScreenProps {
   navigation: any;
