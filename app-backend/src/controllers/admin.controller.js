@@ -359,6 +359,8 @@ const getDocumentCounts = (documents) => {
     if (isExpired(doc.expiryDate)) expired++;
     if (isExpiringSoon(doc.expiryDate)) expiring++;
   });
+
+  return { pending, verified, rejected, expiring, expired };
 }
 
 /**
