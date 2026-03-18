@@ -258,8 +258,6 @@ const ManageShift = () => {
             setOptimisticSnapshot({ shifts, selectedShift });
             const optimistic = { ...selectedShift, ...payload, status: detailForm.status };
             setShifts((prev) => prev.map((s) => s.id === selectedShift.id ? { ...s, ...optimistic } : s));
-            setFeedback('Saving...');
-
             const { data } = await http.patch(`/shifts/${selectedShift.id}`, payload);
             const updated = normalizeShift(data.shift || { ...selectedShift, ...payload });
             const updatedWithUiStatus = { ...updated, status: detailForm.status };
@@ -372,8 +370,17 @@ const ManageShift = () => {
                 />
             )}
             {selectedShift && detailForm && (
-                <div style={detailModalOverlay} onClick={closeShiftModal}>
-                    <div style={detailModalContent} onClick={(e) => e.stopPropagation()}>
+                <div
+                    style={detailModalOverlay}
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget) closeShiftModal();
+                    }}
+                >
+                    <div
+                        style={detailModalContent}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div style={detailModalHeader}>
                             <div>
                                 <p style={detailModalOverline}>Secure Shift</p>
@@ -383,7 +390,11 @@ const ManageShift = () => {
                             <button style={modalCloseButton} onClick={closeShiftModal}>×</button>
                         </div>
 
-                        {feedback && <div style={feedbackStyle}>{feedback}</div>}
+                        {feedback && (
+                            <div style={feedback === 'Saved successfully' ? feedbackSuccessStyle : feedbackErrorStyle}>
+                                {feedback}
+                            </div>
+                        )}
 
                         <div style={detailGrid}>
                             <div style={detailField}>
@@ -502,13 +513,21 @@ const ManageShift = () => {
 
                         <div style={detailActions}>
                             {!isEditing ? (
-                                <button style={primaryButton} onClick={() => setIsEditing(true)}>Edit Shift</button>
+                                <button
+                                    style={primaryButton}
+                                    onClick={() => {
+                                        setFeedback('');
+                                        setIsEditing(true);
+                                    }}
+                                >
+                                    Edit Shift
+                                </button>
                             ) : (
                                 <>
                                     <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>
                                         {saving ? 'Saving...' : 'Save changes'}
                                     </button>
-                                    <button style={secondaryButton} onClick={() => setIsEditing(false)}>Cancel edit</button>
+                                    <button style={secondaryButton} onClick={closeShiftModal}>Cancel edit</button>
                                 </>
                             )}
                         </div>
@@ -1073,10 +1092,21 @@ const feedbackStyle = {
     marginBottom: '8px',
     padding: '10px 12px',
     borderRadius: '10px',
-    backgroundColor: '#f8fafc',
-    color: '#0f172a',
-    border: '1px solid #e2e8f0',
     fontSize: '13px',
+};
+
+const feedbackSuccessStyle = {
+    ...feedbackStyle,
+    backgroundColor: '#edf7ed',
+    color: '#1b5e20',
+    border: '1px solid #c8e6c9',
+};
+
+const feedbackErrorStyle = {
+    ...feedbackStyle,
+    backgroundColor: '#ffebee',
+    color: '#c62828',
+    border: '1px solid #ffcdd2',
 };
 
 const inlineError = {
