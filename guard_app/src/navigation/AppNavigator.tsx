@@ -20,15 +20,15 @@ export type RootStackParamList = {
   Settings: undefined;
   EditProfile: undefined;
   Messages:
-    | {
-        context?: 'shift' | 'general';
-        shiftParticipantId?: string;
-        shiftParticipantName?: string;
-        shiftTitle?: string;
-        generalParticipantId?: string;
-        generalParticipantName?: string;
-      }
-    | undefined;
+  | {
+    context?: 'shift' | 'general';
+    shiftParticipantId?: string;
+    shiftParticipantName?: string;
+    shiftTitle?: string;
+    generalParticipantId?: string;
+    generalParticipantName?: string;
+  }
+  | undefined;
 
   Notifications: undefined;
   Certificates: undefined;
@@ -39,9 +39,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator initialRouteName="AppTabs" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="AppTabs" component={AppTabs} />
+    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="Documents" component={DocumentsScreen} />

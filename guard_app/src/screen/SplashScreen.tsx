@@ -5,16 +5,30 @@ import splashIcon from '../../assets/splash-icon.png';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { LocalStorage } from '../lib/localStorage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export default function SplashScreen({ navigation }: Props) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('AppTabs');
-    }, 1500);
+    const checkTokenAndRedirect = async () => {
+      try {
+        const token = await LocalStorage.getToken();
 
-    return () => clearTimeout(timer);
+        setTimeout(() => {
+          if (!token) {
+            navigation.replace('Login');
+          } else {
+            navigation.replace('AppTabs');
+          }
+        }, 1500);
+      } catch (error) {
+        console.error('Error checking token:', error);
+        navigation.replace('Login');
+      }
+    };
+
+    checkTokenAndRedirect();
   }, [navigation]);
 
   return (
