@@ -68,9 +68,7 @@ function App() {
             <Route path="/create-shift" element={<CreateShift />} />
             <Route path="/manage-shift" element={<ManageShift />} />
             <Route path="/guard-profiles" element={<GuardProfiles />} />
-            
             <Route path="/guard-profiles/:guardId" element={<GuardProfilePage />} />
-
             <Route path="/company-profile" element={<CompanyProfile />} />
             <Route path="/submission" element={<SubmissionConfirmation />} />
             <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
