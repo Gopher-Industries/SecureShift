@@ -6,13 +6,13 @@ import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { checkIn, checkOut } from '../api/attendance';
+import type { ShiftDto } from '../api/shifts';
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
-import { COLORS } from '../theme/colors';
-import { formatDate } from '../utils/date';
-
-import type { ShiftDto } from '../api/shifts';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
+import { formatDate } from '../utils/date';
 
 type ScreenRouteProp = RouteProp<RootStackParamList, 'ShiftDetails'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -22,24 +22,30 @@ type AttendanceState = {
   checkOutTime?: string;
 };
 
+const normalizeAttendance = (attendance?: {
+  checkInTime?: string | null;
+  checkOutTime?: string | null;
+} | null): AttendanceState => ({
+  checkInTime: attendance?.checkInTime ?? undefined,
+  checkOutTime: attendance?.checkOutTime ?? undefined,
+});
+
 export default function ShiftDetailsScreen() {
   const route = useRoute<ScreenRouteProp>();
   const navigation = useNavigation<Nav>();
+  const { colors } = useAppTheme();
+  const s = getStyles(colors);
 
-  const [shift, setShift] = useState<ShiftDto>(route.params.shift);
-
+  const [shift] = useState<ShiftDto>(route.params.shift);
   const [attendance, setAttendance] = useState<AttendanceState | null>(null);
-
   const [modalVisible, setModalVisible] = useState(false);
   const [actionType, setActionType] = useState<'check-in' | 'check-out'>('check-in');
 
-  // Load attendance from AsyncStorage when screen opens
   useEffect(() => {
     (async () => {
       const a = await getAttendanceForShift(shift._id);
-      setAttendance(a);
+      setAttendance(a ? normalizeAttendance(a) : null);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shift._id]);
 
   const openModalFor = (type: 'check-in' | 'check-out') => {
@@ -58,11 +64,11 @@ export default function ShiftDetailsScreen() {
       if (actionType === 'check-in') {
         const res = await checkIn(shift._id, loc);
 
-        // ✅ persist attendance
-        const next = {
-          checkInTime: res.attendance.checkInTime,
+        const next: AttendanceState = normalizeAttendance({
+          checkInTime: res.attendance?.checkInTime,
           checkOutTime: undefined,
-        };
+        });
+
         await setAttendanceForShift(shift._id, next);
         setAttendance(next);
 
@@ -70,24 +76,22 @@ export default function ShiftDetailsScreen() {
       } else {
         const res = await checkOut(shift._id, loc);
 
-        // ✅ persist attendance
-        const next = {
-          checkInTime: res.attendance.checkInTime,
-          checkOutTime: res.attendance.checkOutTime,
-        };
+        const next: AttendanceState = normalizeAttendance({
+          checkInTime: res.attendance?.checkInTime,
+          checkOutTime: res.attendance?.checkOutTime,
+        });
+
         await setAttendanceForShift(shift._id, next);
         setAttendance(next);
 
         Alert.alert('Success', 'Checked out successfully ✅');
       }
 
-      // Refresh parent list if callback exists
       if (route.params.refresh) route.params.refresh();
     } catch (e: any) {
       setModalVisible(false);
       const msg = e?.response?.data?.message ?? e?.message ?? 'Action failed';
 
-      // Optional: friendlier location error if backend returns message
       if (typeof msg === 'string' && msg.toLowerCase().includes('location')) {
         Alert.alert('Location Error', 'You are not at the shift location ❌');
       } else {
@@ -97,13 +101,12 @@ export default function ShiftDetailsScreen() {
   };
 
   const StatusBadge = ({ status }: { status: string }) => {
-    let color = COLORS.link;
-    if (status === 'assigned') color = COLORS.status.confirmed;
-    if (status === 'completed') color = COLORS.primary;
+    let color = colors.link;
+    if (status === 'assigned') color = colors.status.confirmed;
+    if (status === 'completed') color = colors.primary;
     return <Text style={{ color, fontWeight: '700' }}>{status.toUpperCase()}</Text>;
   };
 
-  // ✅ Correct button rules (no in-progress)
   const canDoAttendance = shift.status === 'assigned';
   const hasCheckedIn = !!attendance?.checkInTime;
   const hasCheckedOut = !!attendance?.checkOutTime;
@@ -119,6 +122,7 @@ export default function ShiftDetailsScreen() {
     }
 
     const shiftTitle = `${shift.title} - ${formatDate(shift.date)} (${shift.startTime} - ${shift.endTime})`;
+
     navigation.navigate('Messages', {
       context: 'shift',
       shiftParticipantId: employerId,
@@ -137,7 +141,7 @@ export default function ShiftDetailsScreen() {
           <View style={s.divider} />
 
           <View style={s.row}>
-            <Ionicons name="location-outline" size={20} color="#666" />
+            <Ionicons name="location-outline" size={20} color={colors.muted} />
             <Text style={s.rowText}>
               {shift.location
                 ? `${shift.location.street ?? ''}, ${shift.location.suburb ?? ''}`
@@ -146,19 +150,19 @@ export default function ShiftDetailsScreen() {
           </View>
 
           <View style={s.row}>
-            <Ionicons name="calendar-outline" size={20} color="#666" />
+            <Ionicons name="calendar-outline" size={20} color={colors.muted} />
             <Text style={s.rowText}>{formatDate(shift.date)}</Text>
           </View>
 
           <View style={s.row}>
-            <Ionicons name="time-outline" size={20} color="#666" />
+            <Ionicons name="time-outline" size={20} color={colors.muted} />
             <Text style={s.rowText}>
               {shift.startTime} - {shift.endTime}
             </Text>
           </View>
 
           <View style={s.row}>
-            <Ionicons name="cash-outline" size={20} color="#666" />
+            <Ionicons name="cash-outline" size={20} color={colors.muted} />
             <Text style={s.rowText}>${shift.payRate ?? 0} / hr</Text>
           </View>
 
@@ -167,7 +171,6 @@ export default function ShiftDetailsScreen() {
             <StatusBadge status={shift.status ?? 'open'} />
           </View>
 
-          {/* Optional: show attendance info */}
           {attendance?.checkInTime && (
             <Text style={s.metaText}>✅ Checked in: {attendance.checkInTime}</Text>
           )}
@@ -176,7 +179,6 @@ export default function ShiftDetailsScreen() {
           )}
         </View>
 
-        {/* Action Buttons */}
         <View style={s.actions}>
           <TouchableOpacity style={[s.btn, s.messageBtn]} onPress={handleMessageEmployer}>
             <Text style={s.btnText}>Message Employer</Text>
@@ -184,7 +186,7 @@ export default function ShiftDetailsScreen() {
 
           {showCheckIn && (
             <TouchableOpacity
-              style={[s.btn, { backgroundColor: COLORS.status.confirmed }]}
+              style={[s.btn, { backgroundColor: colors.status.confirmed }]}
               onPress={() => openModalFor('check-in')}
             >
               <Text style={s.btnText}>Check In</Text>
@@ -193,21 +195,19 @@ export default function ShiftDetailsScreen() {
 
           {showCheckOut && (
             <TouchableOpacity
-              style={[s.btn, { backgroundColor: COLORS.status.rejected }]}
+              style={[s.btn, { backgroundColor: colors.status.rejected }]}
               onPress={() => openModalFor('check-out')}
             >
               <Text style={s.btnText}>Check Out</Text>
             </TouchableOpacity>
           )}
 
-          {/* Completed UI */}
           {shift.status === 'completed' && (
             <View style={s.completedBox}>
               <Text style={s.completedText}>Shift Completed ✅</Text>
             </View>
           )}
 
-          {/* Helpful message if not assigned */}
           {!canDoAttendance && (
             <Text style={s.hint}>
               You can only check in/out when the shift is{' '}
@@ -226,46 +226,95 @@ export default function ShiftDetailsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: COLORS.bg },
-  content: { padding: 16 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-  },
-  title: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
-  company: { fontSize: 16, color: COLORS.muted, marginBottom: 12 },
-  divider: { height: 1, backgroundColor: '#eee', marginVertical: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  rowText: { marginLeft: 10, fontSize: 16, color: '#333' },
-  label: { fontSize: 16, fontWeight: '600', color: '#333' },
-  metaText: { marginTop: 6, color: COLORS.muted },
-
-  actions: { marginTop: 24 },
-  btn: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-    elevation: 2,
-  },
-  messageBtn: { backgroundColor: COLORS.primary },
-  btnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-
-  completedBox: {
-    backgroundColor: '#EAF7EF',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#D4F0DC',
-  },
-  completedText: { color: '#1A936F', fontWeight: 'bold', fontSize: 16 },
-
-  hint: { marginTop: 8, color: COLORS.muted, textAlign: 'center' },
-});
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    content: {
+      padding: 16,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    company: {
+      fontSize: 16,
+      color: colors.muted,
+      marginBottom: 12,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 12,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    rowText: {
+      marginLeft: 10,
+      fontSize: 16,
+      color: colors.text,
+    },
+    label: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    metaText: {
+      marginTop: 6,
+      color: colors.muted,
+    },
+    actions: {
+      marginTop: 24,
+    },
+    btn: {
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      marginBottom: 12,
+      elevation: 2,
+    },
+    messageBtn: {
+      backgroundColor: colors.primary,
+    },
+    btnText: {
+      color: colors.white,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    completedBox: {
+      backgroundColor: colors.greenSoft,
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.rowHighlightBorder,
+    },
+    completedText: {
+      color: colors.status.confirmed,
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    hint: {
+      marginTop: 8,
+      color: colors.muted,
+      textAlign: 'center',
+    },
+  });

@@ -20,6 +20,8 @@ import { API_BASE_URL } from '../lib/http';
 import { LocalStorage } from '../lib/localStorage';
 import { UserProfile } from '../models/UserProfile';
 import { showImagePickerOptions, ImagePickerResult } from '../utils/imagePicker';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
 
 interface EditProfileScreenProps {
   navigation: any;
@@ -31,6 +33,9 @@ interface EditProfileScreenProps {
 }
 
 export default function EditProfileScreen({ navigation, route }: EditProfileScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [licenseImage, setLicenseImage] = useState<string | null>(null);
@@ -44,10 +49,8 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
     postcode: '',
   });
 
-  // Load initial data from route params or set defaults
   useEffect(() => {
     if (route?.params?.userProfile) {
-      // Set form data
       const profile = route.params.userProfile;
       setFormData({
         name: profile.name || '',
@@ -59,7 +62,6 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
         postcode: profile.address?.postcode || '',
       });
 
-      // Set license image if available
       if (profile.license?.imageUrl) {
         setLicenseImage(API_BASE_URL + profile.license.imageUrl);
       }
@@ -141,7 +143,6 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
         },
       };
 
-      // Remove undefined values
       Object.keys(updatePayload).forEach((key) => {
         if (updatePayload[key as keyof UpdateProfilePayload] === undefined) {
           delete updatePayload[key as keyof UpdateProfilePayload];
@@ -186,10 +187,9 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
-            <Ionicons name="close" size={24} color="#1E3A8A" />
+            <Ionicons name="close" size={24} color={colors.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Profile</Text>
           <TouchableOpacity
@@ -202,7 +202,6 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
         </View>
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Profile Picture */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Profile Picture</Text>
             <View style={styles.avatarContainer}>
@@ -211,18 +210,17 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                   <Image source={{ uri: profileImage }} style={styles.avatar} />
                 ) : (
                   <View style={styles.avatar}>
-                    <Ionicons name="person" size={60} color="#fff" />
+                    <Ionicons name="person" size={60} color={colors.white} />
                   </View>
                 )}
                 <View style={styles.cameraIcon}>
-                  <Ionicons name="camera" size={20} color="#fff" />
+                  <Ionicons name="camera" size={20} color={colors.white} />
                 </View>
               </TouchableOpacity>
               <Text style={styles.avatarHint}>Tap to change profile picture</Text>
             </View>
           </View>
 
-          {/* Personal Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Personal Information</Text>
 
@@ -233,7 +231,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                 value={formData.name}
                 onChangeText={(value) => handleInputChange('name', value)}
                 placeholder="Enter your full name"
-                placeholderTextColor="#B9BDC7"
+                placeholderTextColor={colors.muted}
                 autoCapitalize="words"
                 autoCorrect={false}
               />
@@ -246,7 +244,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                 value={formData.email}
                 onChangeText={(value) => handleInputChange('email', value)}
                 placeholder="Enter your email"
-                placeholderTextColor="#B9BDC7"
+                placeholderTextColor={colors.muted}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -260,14 +258,13 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                 value={formData.phone}
                 onChangeText={(value) => handleInputChange('phone', value)}
                 placeholder="Enter your phone number"
-                placeholderTextColor="#B9BDC7"
+                placeholderTextColor={colors.muted}
                 keyboardType="phone-pad"
                 autoCorrect={false}
               />
             </View>
           </View>
 
-          {/* Address Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Address Information</Text>
 
@@ -278,7 +275,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                 value={formData.street}
                 onChangeText={(value) => handleInputChange('street', value)}
                 placeholder="Enter street address"
-                placeholderTextColor="#B9BDC7"
+                placeholderTextColor={colors.muted}
                 autoCapitalize="words"
                 autoCorrect={false}
               />
@@ -292,7 +289,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                   value={formData.suburb}
                   onChangeText={(value) => handleInputChange('suburb', value)}
                   placeholder="Suburb"
-                  placeholderTextColor="#B9BDC7"
+                  placeholderTextColor={colors.muted}
                   autoCapitalize="words"
                   autoCorrect={false}
                 />
@@ -305,7 +302,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                   value={formData.state}
                   onChangeText={(value) => handleInputChange('state', value)}
                   placeholder="State"
-                  placeholderTextColor="#B9BDC7"
+                  placeholderTextColor={colors.muted}
                   autoCapitalize="characters"
                   autoCorrect={false}
                 />
@@ -319,7 +316,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                 value={formData.postcode}
                 onChangeText={(value) => handleInputChange('postcode', value)}
                 placeholder="Enter 4-digit postcode"
-                placeholderTextColor="#B9BDC7"
+                placeholderTextColor={colors.muted}
                 keyboardType="numeric"
                 maxLength={4}
                 autoCorrect={false}
@@ -327,7 +324,6 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
             </View>
           </View>
 
-          {/* License Information - Only show if license image exists */}
           {licenseImage && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>License Information</Text>
@@ -340,129 +336,132 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9f9f9',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  saveButton: {
-    backgroundColor: '#1E3A8A',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 20,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#1F2937',
-    backgroundColor: '#fff',
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  avatar: {
-    backgroundColor: '#1E3A8A',
-    height: 100,
-    width: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  cameraIcon: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#1E3A8A',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  avatarHint: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  halfWidth: {
-    width: '48%',
-  },
-  imagePreview: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-    marginTop: 12,
-    alignSelf: 'center',
-    borderColor: '#ccc',
-    borderWidth: 1,
-  },
-});
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerButton: {
+      padding: 8,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    saveButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    saveButtonText: {
+      color: colors.white,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    scrollView: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    section: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 20,
+      marginTop: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 20,
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.bg,
+    },
+    avatarContainer: {
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    avatar: {
+      backgroundColor: colors.primary,
+      height: 100,
+      width: 100,
+      borderRadius: 50,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    cameraIcon: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      backgroundColor: colors.primary,
+      borderRadius: 15,
+      width: 30,
+      height: 30,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: colors.card,
+    },
+    avatarHint: {
+      fontSize: 12,
+      color: colors.muted,
+      marginTop: 8,
+      textAlign: 'center',
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    halfWidth: {
+      width: '48%',
+    },
+    imagePreview: {
+      width: 120,
+      height: 120,
+      borderRadius: 12,
+      marginTop: 12,
+      alignSelf: 'center',
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+  });
