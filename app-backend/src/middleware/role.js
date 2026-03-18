@@ -25,3 +25,5 @@ export const allowRoles = (...allowedRoles) => {
 export const guardOnly = allowRoles('guard');
 export const employerOnly = allowRoles('employer');
 export const adminOnly = allowRoles('admin');
+export const allRoles = allowRoles('guard', 'employer', 'admin')
+export const employerOrAdmin = allowRoles('employer', 'admin')

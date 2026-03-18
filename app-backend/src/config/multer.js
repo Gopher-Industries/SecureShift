@@ -22,13 +22,24 @@ const storage = multer.diskStorage({
 });
 
 // accept images only + 5MB limit
-const fileFilter = (_req, file, cb) => {
+const imageFileFilter = (_req, file, cb) => {
     const ok = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.mimetype);
     cb(ok ? null : new Error('Only image files are allowed'), ok);
 };
 
-export const upload = multer({
+export const imageUpload = multer({
     storage,
-    fileFilter,
+    fileFilter: imageFileFilter,
     limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+const incidentAttachmentFilter = (_req, file, cb) => {
+    const ok = ['image/jpeg', 'image/png', 'application/pdf'].includes(file.mimetype);
+    cb(ok ? null : new Error('Only JPG, PNG, and PDF files are allowed'), ok);
+};
+
+export const incidentAttachmentUpload = multer({
+    storage,
+    fileFilter: incidentAttachmentFilter,
+    limits: {fileSize: 5 * 1024 * 1024},
 });

@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { MongoClient, GridFSBucket } from 'mongodb';
 import path from 'path';
-import { upload as imageUpload } from '../config/multer.js'; //
+import { imageUpload } from '../config/multer.js';
 import { register, registerGuardWithLicense, login, verifyOTP, submitEOI } from '../controllers/auth.controller.js';
 
 const router = express.Router();
