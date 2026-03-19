@@ -4,11 +4,25 @@ import { getPayrollSummary } from "../controllers/payroll.controller.js";
 
 const router = express.Router();
 
+const authorizeRole = (...allowedRoles) => (req, res, next) => {
+  if (!req.user || !allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({
+      message: "Forbidden: insufficient permissions",
+    });
+  }
+  next();
+};
+
 /**
  * @swagger
  * /api/v1/payroll:
  *   get:
  *     summary: Retrieve payroll summary for guards and employees
+ *     description: |
+ *       Role access:
+ *       - Admin: can fetch payroll summaries for all guards, optionally filtered
+ *       - Employer: can fetch payroll summaries only for completed shifts they created
+ *       - Guard: can fetch only their own payroll summary
  *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
@@ -19,14 +33,14 @@ const router = express.Router();
  *         schema:
  *           type: string
  *           format: date
- *         description: Start date for the payroll period
+ *         description: Start date in ISO format YYYY-MM-DD
  *       - in: query
  *         name: endDate
  *         required: true
  *         schema:
  *           type: string
  *           format: date
- *         description: End date for the payroll period
+ *         description: End date in ISO format YYYY-MM-DD
  *       - in: query
  *         name: periodType
  *         required: true
@@ -59,9 +73,11 @@ const router = express.Router();
  *         description: Invalid request parameters
  *       401:
  *         description: Unauthorised
+ *       403:
+ *         description: Forbidden
  *       500:
  *         description: Server error
  */
-router.get("/", auth, getPayrollSummary);
+router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayrollSummary);
 
 export default router;
