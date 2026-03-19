@@ -1,5 +1,5 @@
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
-
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+
 import { COLORS } from '../theme/colors';
 
 type Severity = 'Low' | 'Medium' | 'High';
