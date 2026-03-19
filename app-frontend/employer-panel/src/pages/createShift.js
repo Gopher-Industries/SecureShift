@@ -11,6 +11,13 @@ const toDateTime = (date, time) => {
   return new Date(`${date}T${time}`);
 };
 
+const getNextDayDate = (date) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + 1);
+
+  return d.toISOString().split("T")[0];
+};
+
 const shiftSchema = yup.object({
   title: yup.string().required("Shift title is required"),
   siteId: yup
@@ -23,11 +30,24 @@ const shiftSchema = yup.object({
     .string()
     .required("End time is required")
     .test("after-start", "End time must be after start time", function (value) {
-      const { startTime, date } = this.parent;
+      const { startTime, date, shiftType } = this.parent;
+
       if (!value || !startTime || !date) return true;
+
       const start = toDateTime(date, startTime);
-      const end = toDateTime(date, value);
-      return end && start && end > start;
+      let end = toDateTime(date, value);
+
+      if (end <= start) {
+        if (shiftType === "day") {
+          return this.createError({
+            message: "Day shifts cannot run overnight"
+          });
+        }
+
+        end.setDate(end.getDate() + 1);
+      }
+
+      return end > start;
     }),
   breakMinutes: yup
     .number()
@@ -614,7 +634,10 @@ const CreateShift = ({ isModal = false, onClose }) => {
             <div className="cs-side-row">
               <span>Schedule</span>
               <strong>
-                {watch("date") || "—"} · {watch("startTime") || "--:--"} – {watch("endTime") || "--:--"}
+                {watch("date") || "—"} · {watch("startTime") || "--:--"} –{" "}
+                {watch("endTime") && watch("startTime") && watch("endTime") <= watch("startTime")
+                  ? `${getNextDayDate(watch("date"))} ${watch("endTime")}`
+                  : watch("endTime") || "--:--"}
               </strong>
             </div>
             <div className="cs-side-row">
@@ -653,7 +676,10 @@ const CreateShift = ({ isModal = false, onClose }) => {
               <div>
                 <p className="cs-label">Timing</p>
                 <h4>
-                  {previewData.date} · {previewData.startTime} – {previewData.endTime}
+                  {previewData.date} · {previewData.startTime} -{" "}
+                  {previewData.endTime <= previewData.startTime 
+                    ? `${getNextDayDate(previewData.date)} ${previewData.endTime}` 
+                    : previewData.endTime}
                 </h4>
                 <p className="cs-subtle">Break: {previewData.breakMinutes} min</p>
                 <p className="cs-subtle">Pay rate: ${previewData.payRate}/hr</p>
