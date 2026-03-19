@@ -4,7 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import http from "../lib/http";
-import "./createShift.css";
+import "./CreateShift.css";
 
 const toDateTime = (date, time) => {
   if (!date || !time) return null;
