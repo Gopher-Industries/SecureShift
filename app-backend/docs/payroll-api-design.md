@@ -23,6 +23,19 @@ This implementation focuses on:
 - flagging incomplete attendance for review
 - returning per-guard and per-period summaries
 
+## Access Control
+
+This endpoint is JWT-protected and role-aware.
+
+- Admin: can retrieve payroll summaries for all completed shifts, optionally filtered by guard
+- Employer: can retrieve payroll summaries only for completed shifts they created
+- Guard: can retrieve only their own payroll summary
+
+Note:
+The authentication middleware validates the bearer token and attaches the authenticated user's `_id` and `role` to `req.user`. Role-based payroll scoping is then enforced inside the payroll route and service logic.
+
+There is no separate `employee` role in the current SecureShift backend model. The relevant roles are `guard`, `employer`, and `admin`.
+
 ## Request Parameters
 
 The endpoint accepts the following query parameters:

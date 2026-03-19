@@ -1,13 +1,28 @@
 import Shift from "../models/Shift.js";
 import ShiftAttendance from "../models/ShiftAttendance.js";
 
+const ISO_DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const isValidISODateOnly = (value) => {
+  if (!ISO_DATE_ONLY_REGEX.test(value)) {
+    return false;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  return date.toISOString().slice(0, 10) === value;
+};
+
 const getWeekStart = (dateValue) => {
   const date = new Date(dateValue);
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  const day = date.getUTCDay();
+  const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1);
 
-  date.setDate(diff);
-  date.setHours(0, 0, 0, 0);
+  date.setUTCDate(diff);
+  date.setUTCHours(0, 0, 0, 0);
 
   return date;
 };
@@ -25,17 +40,55 @@ const formatPeriodLabel = (dateValue, periodType) => {
   }
 
   if (periodType === "monthly") {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
   }
 
   return "unknown";
 };
 
+const calculateScheduledHours = (shift) => {
+  if (!shift.startTime || !shift.endTime || !shift.date) {
+    return 0;
+  }
+
+  const [startHour, startMinute] = String(shift.startTime).split(":").map(Number);
+  const [endHour, endMinute] = String(shift.endTime).split(":").map(Number);
+
+  if (
+    Number.isNaN(startHour) ||
+    Number.isNaN(startMinute) ||
+    Number.isNaN(endHour) ||
+    Number.isNaN(endMinute)
+  ) {
+    return 0;
+  }
+
+  const scheduledStart = new Date(shift.date);
+  const scheduledEnd = new Date(shift.date);
+
+  scheduledStart.setHours(startHour, startMinute, 0, 0);
+  scheduledEnd.setHours(endHour, endMinute, 0, 0);
+
+  if (scheduledEnd <= scheduledStart) {
+    scheduledEnd.setDate(scheduledEnd.getDate() + 1);
+  }
+
+  return (scheduledEnd - scheduledStart) / (1000 * 60 * 60);
+};
+
 export const buildPayrollSummary = async (query, user) => {
   const { startDate, endDate, periodType, guardId, site, department } = query;
 
+  if (!user?._id || !user?.role) {
+    throw new Error("Unauthorised user context");
+  }
+
   if (!startDate || !endDate || !periodType) {
     throw new Error("startDate, endDate, and periodType are required");
+  }
+
+  if (!isValidISODateOnly(startDate) || !isValidISODateOnly(endDate)) {
+    throw new Error("startDate and endDate must be valid ISO dates in YYYY-MM-DD format");
   }
 
   const allowedPeriods = ["daily", "weekly", "monthly"];
@@ -43,12 +96,8 @@ export const buildPayrollSummary = async (query, user) => {
     throw new Error("periodType must be daily, weekly, or monthly");
   }
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw new Error("Invalid startDate or endDate");
-  }
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T23:59:59.999Z`);
 
   if (start > end) {
     throw new Error("startDate cannot be after endDate");
@@ -62,12 +111,35 @@ export const buildPayrollSummary = async (query, user) => {
     },
   };
 
-  if (guardId) {
-    shiftQuery.acceptedBy = guardId;
+  // Role-based access rules
+  if (user.role === "admin") {
+    if (guardId) {
+      shiftQuery.acceptedBy = guardId;
+    }
+  } else if (user.role === "employer") {
+    // current scoping uses shift ownership
+    shiftQuery.createdBy = user._id;
+
+    if (guardId) {
+      shiftQuery.acceptedBy = guardId;
+    }
+  } else if (user.role === "guard") {
+    shiftQuery.acceptedBy = user._id;
+
+    if (guardId && String(guardId) !== String(user._id)) {
+      throw new Error("Guards can only access their own payroll summary");
+    }
+  } else {
+    throw new Error("Forbidden: unsupported role");
   }
 
   if (site) {
     shiftQuery.location = site;
+  }
+
+  // depends on current Shift model support
+  if (department) {
+    shiftQuery.field = department;
   }
 
   const shifts = await Shift.find(shiftQuery);
@@ -93,18 +165,7 @@ export const buildPayrollSummary = async (query, user) => {
     let pendingApproval = 0;
     let underworkedShift = 0;
 
-    const scheduledStart = shift.startTime ? new Date(shift.startTime) : null;
-    const scheduledEnd = shift.endTime ? new Date(shift.endTime) : null;
-
-    let scheduledHours = 0;
-    if (
-      scheduledStart &&
-      scheduledEnd &&
-      !isNaN(scheduledStart.getTime()) &&
-      !isNaN(scheduledEnd.getTime())
-    ) {
-      scheduledHours = (scheduledEnd - scheduledStart) / (1000 * 60 * 60);
-    }
+    const scheduledHours = calculateScheduledHours(shift);
 
     if (checkInTime && checkOutTime) {
       totalHours = (checkOutTime - checkInTime) / (1000 * 60 * 60);
@@ -121,7 +182,9 @@ export const buildPayrollSummary = async (query, user) => {
       shiftId: shift._id,
       guardId: shift.acceptedBy || null,
       guardName: shift.guardName || null,
+      employerId: shift.createdBy || null,
       location: shift.location || null,
+      department: shift.field || null,
       date: shift.date || null,
       scheduledHours,
       totalHours,
@@ -187,6 +250,12 @@ export const buildPayrollSummary = async (query, user) => {
 
   return {
     message: "Payroll data retrieved successfully",
+    accessScope: {
+      requestedBy: user._id,
+      role: user.role,
+      guardRestrictedToSelf: user.role === "guard",
+      employerRestrictedToOwnShifts: user.role === "employer",
+    },
     filters: {
       startDate,
       endDate,
@@ -206,6 +275,5 @@ export const buildPayrollSummary = async (query, user) => {
     guards: guardSummaries,
     periods,
     payrollDetails,
-    requestedBy: user?._id || null,
   };
 };
