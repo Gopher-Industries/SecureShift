@@ -784,7 +784,7 @@ const sortButtonStyle = {
 // Grid and card styles
 const gridStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '20px',
     marginBottom: '32px',
 };
