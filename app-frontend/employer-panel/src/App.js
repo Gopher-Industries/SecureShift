@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import ProtectedRoutes from "./components/ProtectedRoutes";
 import ExpressionOfInterest from './pages/ExpressionOfInterest';
 import Login from './pages/Login';
 import TwoFA from './pages/2FA';
@@ -53,6 +54,7 @@ function AppContent() {
   );
 }
 
+
 function App() {
   return (
     <Router>
@@ -63,16 +65,18 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/2fa" element={<TwoFA />} /> {/* ✅ new 2FA route */}
-            <Route path="/employer-dashboard" element={<EmployerDashboard />} />
-            <Route path="/create-shift" element={<CreateShift />} />
-            <Route path="/manage-shift" element={<ManageShift />} />
-            <Route path="/guard-profiles" element={<GuardProfiles />} />
-            
-            <Route path="/guard-profiles/:guardId" element={<GuardProfilePage />} />
+            <Route path="/2fa" element={<TwoFA />} />
 
-            <Route path="/company-profile" element={<CompanyProfile />} />
-            <Route path="/submission" element={<SubmissionConfirmation />} />
+            <Route element={<ProtectedRoutes />}>
+              <Route path="/employer-dashboard" element={<EmployerDashboard />} />
+              <Route path="/create-shift" element={<CreateShift />} />
+              <Route path="/manage-shift" element={<ManageShift />} />
+              <Route path="/guard-profiles" element={<GuardProfiles />} />
+              <Route path="/guard-profiles/:guardId" element={<GuardProfilePage />} />
+              <Route path="/company-profile" element={<CompanyProfile />} />
+              <Route path="/submission" element={<SubmissionConfirmation />} />
+            </Route>
+
             <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
           </Routes>
         </main>
@@ -81,5 +85,4 @@ function App() {
     </Router>
   );
 }
-
 export default App;
