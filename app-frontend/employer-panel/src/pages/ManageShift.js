@@ -5,8 +5,8 @@ import http from '../lib/http';
 // Map backend status to filter display
 const statusDisplayMap = {
     completed: "Completed",
-    inprogress: "In Progress",
-    pending: "Pending",
+    assigned: "In Progress",
+    applied: "Pending",
     open: "Open",
 };
 
@@ -17,6 +17,8 @@ const Filter = Object.freeze({
     Pending: 'Pending',
     Open: 'Open',
 });
+
+const editableStatuses = [Filter.Open, Filter.Pending, Filter.InProgress, Filter.Completed];
 
 const Sort = Object.freeze({
     DateAsc: 'Date (Asc)',
@@ -58,7 +60,7 @@ const ManageShift = () => {
     const [feedback, setFeedback] = useState('');
     const [formErrors, setFormErrors] = useState({});
     const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
-    const itemsPerPage = 8;
+    const itemsPerPage = 9;
 
     useEffect(() => {
     const fetchShifts = async () => {
@@ -86,25 +88,51 @@ const ManageShift = () => {
 }, []);
 
 
-    // Map frontend filter values to backend status
-    const filterToBackendStatus = {
-        Completed: "Completed",
-        InProgress: "In Progress",
-        Pending: "Pending",
-        Open: "Open",
-    };
-
     const filteredShifts = selectedFilter === Filter.All
         ? shifts
-        : shifts.filter(shift => shift.status === filterToBackendStatus[selectedFilter]);
+        : shifts.filter(shift => shift.status === selectedFilter);
 
     const sortedShifts = [...filteredShifts].sort((a, b) => {
-        const dateA = new Date(a?.dateTime || 0);
-        const dateB = new Date(b?.dateTime || 0);
-        return sortBy === Sort.DateAsc ? dateA - dateB : dateB - dateA;
+        // Build a comparable key using raw date + startTime strings
+        const keyA = (a.date || '') + ' ' + (a.startTime || '');
+        const keyB = (b.date || '') + ' ' + (b.startTime || '');
+
+        if (keyA !== keyB) {
+            if (sortBy === Sort.DateAsc) {
+                return keyA < keyB ? -1 : 1;
+            } else {
+                return keyA > keyB ? -1 : 1;
+            }
+        }
+
+        // Secondary key: endTime when date & startTime are the same
+        const endA = a.endTime || '';
+        const endB = b.endTime || '';
+
+        if (endA === endB) return 0;
+
+        if (sortBy === Sort.DateAsc) {
+            return endA < endB ? -1 : 1;
+        } else {
+            return endA > endB ? -1 : 1;
+        }
     });
 
     const totalPages = Math.ceil(sortedShifts.length / itemsPerPage);
+
+    // Ensure currentPage is always within valid range when data / filters / sort change
+    useEffect(() => {
+        if (totalPages === 0) {
+            if (currentPage !== 1) setCurrentPage(1);
+            return;
+        }
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        } else if (currentPage < 1) {
+            setCurrentPage(1);
+        }
+    }, [totalPages, currentPage]);
+
     const indexStart = (currentPage - 1) * itemsPerPage;
     const currentItems = sortedShifts.slice(indexStart, indexStart + itemsPerPage);
 
@@ -168,6 +196,7 @@ const ManageShift = () => {
             postcode: shift.location?.postcode || '',
             field: shift.field || '',
             urgency: shift.urgency || 'normal',
+            status: shift.status || Filter.Open,
         });
         setIsEditing(false);
         setFeedback('');
@@ -193,12 +222,17 @@ const ManageShift = () => {
         if (!detailForm.startTime?.trim()) errs.startTime = 'Start time required';
         if (!detailForm.endTime?.trim()) errs.endTime = 'End time required';
         if (detailForm.payRate !== '' && Number(detailForm.payRate) < 0) errs.payRate = 'Pay rate must be positive';
+        if (!editableStatuses.includes(detailForm.status)) errs.status = 'Please select a valid status';
         setFormErrors(errs);
         return Object.keys(errs).length === 0;
     };
 
     const handleSaveShift = async () => {
         if (!selectedShift || !detailForm) return;
+        if (selectedShift.status === Filter.Completed) {
+            setFeedback('Completed shifts cannot be edited.');
+            return;
+        }
         if (!validateDetailForm()) return;
         setSaving(true);
         setFeedback('');
@@ -216,32 +250,32 @@ const ManageShift = () => {
                 startTime: detailForm.startTime,
                 endTime: detailForm.endTime,
                 payRate: detailForm.payRate === '' ? undefined : Number(detailForm.payRate),
-                field: detailForm.field,
+                ...(detailForm.field?.trim() ? { field: detailForm.field.trim() } : {}),
                 urgency: detailForm.urgency,
                 ...(hasLocation ? { location: cleanedLocation } : {}),
             };
             // optimistic update snapshot
             setOptimisticSnapshot({ shifts, selectedShift });
-            const optimistic = { ...selectedShift, ...payload };
+            const optimistic = { ...selectedShift, ...payload, status: detailForm.status };
             setShifts((prev) => prev.map((s) => s.id === selectedShift.id ? { ...s, ...optimistic } : s));
-            setFeedback('Saving...');
-
             const { data } = await http.patch(`/shifts/${selectedShift.id}`, payload);
             const updated = normalizeShift(data.shift || { ...selectedShift, ...payload });
-            setShifts((prev) => prev.map((s) => s.id === updated.id ? { ...s, ...updated } : s));
-            setSelectedShift(updated);
+            const updatedWithUiStatus = { ...updated, status: detailForm.status };
+            setShifts((prev) => prev.map((s) => s.id === updatedWithUiStatus.id ? { ...s, ...updatedWithUiStatus } : s));
+            setSelectedShift(updatedWithUiStatus);
             setDetailForm({
-                title: updated.title || '',
-                date: updated.date ? updated.date.substring(0, 10) : '',
-                startTime: updated.startTime || '',
-                endTime: updated.endTime || '',
-                payRate: updated.payRate === "--" ? '' : updated.payRate ?? '',
-                street: updated.location?.street || '',
-                suburb: updated.location?.suburb || '',
-                state: updated.location?.state || '',
-                postcode: updated.location?.postcode || '',
-                field: updated.field || '',
-                urgency: updated.urgency || 'normal',
+                title: updatedWithUiStatus.title || '',
+                date: updatedWithUiStatus.date ? updatedWithUiStatus.date.substring(0, 10) : '',
+                startTime: updatedWithUiStatus.startTime || '',
+                endTime: updatedWithUiStatus.endTime || '',
+                payRate: updatedWithUiStatus.payRate === "--" ? '' : updatedWithUiStatus.payRate ?? '',
+                street: updatedWithUiStatus.location?.street || '',
+                suburb: updatedWithUiStatus.location?.suburb || '',
+                state: updatedWithUiStatus.location?.state || '',
+                postcode: updatedWithUiStatus.location?.postcode || '',
+                field: updatedWithUiStatus.field || '',
+                urgency: updatedWithUiStatus.urgency || 'normal',
+                status: updatedWithUiStatus.status || Filter.Open,
             });
             setIsEditing(false);
             setFeedback('Saved successfully');
@@ -274,7 +308,10 @@ const ManageShift = () => {
             <FilterSortSection
                 Filter={Filter}
                 selectedFilter={selectedFilter}
-                setSelectedFilter={setSelectedFilter}
+                onFilterChange={(filter) => {
+                    setSelectedFilter(filter);
+                    setCurrentPage(1);
+                }}
                 sortBy={sortBy}
                 setShowSortModal={setShowSortModal}
             />
@@ -333,8 +370,17 @@ const ManageShift = () => {
                 />
             )}
             {selectedShift && detailForm && (
-                <div style={detailModalOverlay} onClick={closeShiftModal}>
-                    <div style={detailModalContent} onClick={(e) => e.stopPropagation()}>
+                <div
+                    style={detailModalOverlay}
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget) closeShiftModal();
+                    }}
+                >
+                    <div
+                        style={detailModalContent}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div style={detailModalHeader}>
                             <div>
                                 <p style={detailModalOverline}>Secure Shift</p>
@@ -344,7 +390,11 @@ const ManageShift = () => {
                             <button style={modalCloseButton} onClick={closeShiftModal}>×</button>
                         </div>
 
-                        {feedback && <div style={feedbackStyle}>{feedback}</div>}
+                        {feedback && (
+                            <div style={feedback === 'Saved successfully' ? feedbackSuccessStyle : feedbackErrorStyle}>
+                                {feedback}
+                            </div>
+                        )}
 
                         <div style={detailGrid}>
                             <div style={detailField}>
@@ -444,17 +494,40 @@ const ManageShift = () => {
                                     <option value="last-minute">Last-minute</option>
                                 </select>
                             </div>
+                            <div style={detailField}>
+                                <label style={detailLabel}>Status</label>
+                                <select
+                                    name="status"
+                                    value={detailForm.status}
+                                    onChange={handleDetailChange}
+                                    style={inputStyle}
+                                    disabled={!isEditing}
+                                >
+                                    {editableStatuses.map((statusOption) => (
+                                        <option key={statusOption} value={statusOption}>{statusOption}</option>
+                                    ))}
+                                </select>
+                                {formErrors.status && <span style={inlineError}>{formErrors.status}</span>}
+                            </div>
                         </div>
 
                         <div style={detailActions}>
                             {!isEditing ? (
-                                <button style={primaryButton} onClick={() => setIsEditing(true)}>Edit Shift</button>
+                                <button
+                                    style={primaryButton}
+                                    onClick={() => {
+                                        setFeedback('');
+                                        setIsEditing(true);
+                                    }}
+                                >
+                                    Edit Shift
+                                </button>
                             ) : (
                                 <>
                                     <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>
                                         {saving ? 'Saving...' : 'Save changes'}
                                     </button>
-                                    <button style={secondaryButton} onClick={() => setIsEditing(false)}>Cancel edit</button>
+                                    <button style={secondaryButton} onClick={closeShiftModal}>Cancel edit</button>
                                 </>
                             )}
                         </div>
@@ -475,7 +548,7 @@ const SummaryCard = ({ label, number, icon, bg }) => (
     </div>
 );
 
-const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, setShowSortModal }) => (
+const FilterSortSection = ({ Filter, selectedFilter, onFilterChange, sortBy, setShowSortModal }) => (
     <div style={filterSectionStyle}>
         <div style={filterGroupStyle}>
             <img src={"/ic-filter.svg"} alt="Filter" style={smallIconStyle} />
@@ -485,7 +558,7 @@ const FilterSortSection = ({ Filter, selectedFilter, setSelectedFilter, sortBy, 
                     <button
                         key={f}
                         style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle}
-                        onClick={() => setSelectedFilter(f)}
+                        onClick={() => onFilterChange(f)}
                     >{f}</button>
                 ))}
             </div>
@@ -711,7 +784,7 @@ const sortButtonStyle = {
 // Grid and card styles
 const gridStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '20px',
     marginBottom: '32px',
 };
@@ -1019,10 +1092,21 @@ const feedbackStyle = {
     marginBottom: '8px',
     padding: '10px 12px',
     borderRadius: '10px',
-    backgroundColor: '#f8fafc',
-    color: '#0f172a',
-    border: '1px solid #e2e8f0',
     fontSize: '13px',
+};
+
+const feedbackSuccessStyle = {
+    ...feedbackStyle,
+    backgroundColor: '#edf7ed',
+    color: '#1b5e20',
+    border: '1px solid #c8e6c9',
+};
+
+const feedbackErrorStyle = {
+    ...feedbackStyle,
+    backgroundColor: '#ffebee',
+    color: '#c62828',
+    border: '1px solid #ffcdd2',
 };
 
 const inlineError = {
