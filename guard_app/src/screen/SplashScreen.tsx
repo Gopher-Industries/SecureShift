@@ -11,24 +11,37 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export default function SplashScreen({ navigation }: Props) {
   useEffect(() => {
+    let isMounted = true;
+
     const checkTokenAndRedirect = async () => {
       try {
+        // get stored token
         const token = await LocalStorage.getToken();
 
-        setTimeout(() => {
-          if (!token) {
-            navigation.replace('Login');
-          } else {
-            navigation.replace('AppTabs');
-          }
-        }, 1500);
+        //delay for splash screen effect 
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        if (!isMounted) return;
+
+        // if no token, go to Login, otherwise go to AppTabs
+        if (!token) {
+          navigation.replace('Login');
+        } else {
+          navigation.replace('AppTabs');
+        }
       } catch (error) {
         console.error('Error checking token:', error);
-        navigation.replace('Login');
+        // In case of any error, navigate to Login
+        if (isMounted) {
+          navigation.replace('Login');
+        }
       }
     };
 
-    checkTokenAndRedirect();
+    void checkTokenAndRedirect();
+    return () => {
+      isMounted = false;
+    };
   }, [navigation]);
 
   return (

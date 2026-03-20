@@ -24,8 +24,16 @@ http.interceptors.request.use(async (config) => {
   return config;
 });
 
+// store the interceptor ID so we can eject it later if needed (e.g., on logout)
+let responseInterceptorId: number | null = null;
+
 // Attach handler to catch 401 Unauthorized errors and auto logout
 export function attach401Handler(onUnauthorized: () => void) {
+  // remove existing interceptor if it exists to avoid duplicates
+  if (responseInterceptorId !== null) {
+    http.interceptors.response.eject(responseInterceptorId);
+  }
+
   http.interceptors.response.use(
     (res) => res, // Pass successful responses through
     async (err) => {
