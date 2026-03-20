@@ -1,7 +1,7 @@
 import Incident from "../models/Incident.js";
 import Shift from "../models/Shift.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
-import { ACTIONS } from "../models/AuditLogs.js";
+import { ACTIONS } from "../middleware/logger.js";
 
 // CREATE INCIDENT
 export const createIncident = async (req, res, next) => {
