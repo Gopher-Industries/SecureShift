@@ -1,8 +1,6 @@
 import PDFDocument from 'pdfkit';
-
 import IncidentReport from "../models/IncidentReport.js";
 import Shift from "../models/Shift.js";
-
 
 const mapAttachments = (req) => {
   // Backend Validations - File upload restrictions and security checks.
@@ -16,20 +14,27 @@ const mapAttachments = (req) => {
       uploadedBy: req.user.id
     }));
   }
-  return attachments
-}
+  return attachments;
+};
 
 export const submitIncident = async (req, res) => {
   try {
-    const {title, description, shiftId, location} = req.body;
+    const { title, description, shiftId, location } = req.body;
     const guardId = req.user.id;
 
-    const attachments = mapAttachments(req)
+    // Missing required field validation
+    if (!title || !description || !shiftId) {
+      return res.status(400).json({
+        message: 'Title, description, and shiftId are required'
+      });
+    }
+
+    const attachments = mapAttachments(req);
 
     // Backend Validations - Only guards assigned to a shift can submit incident for that shift.
     const shift = await Shift.findById(shiftId);
     if (!shift || shift.guardId.toString() !== guardId) {
-      return res.status(403).json({message: 'Not authorized to submit incident for this shift.'});
+      return res.status(403).json({ message: 'Not authorized to submit incident for this shift.' });
     }
 
     const newReport = new IncidentReport({
@@ -44,101 +49,159 @@ export const submitIncident = async (req, res) => {
     const savedReport = await newReport.save();
     res.status(201).json(savedReport);
   } catch (err) {
-    res.status(400).json({message: err.message});
+    res.status(400).json({ message: err.message });
   }
-}
+};
 
 export const updateIncident = async (req, res) => {
   try {
-    const {id} = req.params;
-    const {status, severity, employerComment, description} = req.body;
+    const { id } = req.params; // Fixed: Added :id parameter
+    const { status, severity, employerComment, description } = req.body;
     const userRole = req.user.role;
+    const userId = req.user.id;
+
+    // Enum validation
+    const validSeverity = ['low', 'medium', 'high', 'critical'];
+    const validStatus = ['pending', 'resolved'];
+
+    if (severity && !validSeverity.includes(severity)) {
+      return res.status(400).json({ message: 'Invalid severity value' });
+    }
+    if (status && !validStatus.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
 
     const report = await IncidentReport.findById(id);
-    if (!report) return res.status(404).json({message: 'Incident not found'});
+    if (!report) return res.status(404).json({ message: 'Incident not found' });
+
+    // Ownership validation for guards
+    if (userRole === 'guard' && report.guardId.toString() !== userId) {
+      return res.status(403).json({ message: 'Not authorized to update this incident' });
+    }
 
     // Guard can only update description and attachments
     if (userRole === 'guard') {
       if (description) report.description = description;
-      report.attachments = mapAttachments(req);
+
+      // Fixed: Merge attachments instead of overwriting
+      const newAttachments = mapAttachments(req);
+      if (newAttachments.length > 0) {
+        report.attachments = [...report.attachments, ...newAttachments];
+      }
     }
     // Employer can add comments, assign severity, and update status (pending, resolved).
     else if (userRole === 'employer' || userRole === 'admin') {
       if (severity) report.severity = severity;
       if (employerComment) report.employerComment = employerComment;
+
+      // Fixed: Removed duplicate status assignment
       if (status) {
         report.status = status;
         if (status === 'resolved' && report.status !== 'resolved') {
           report.resolvedAt = new Date();
           report.resolvedBy = req.user.id;
         }
+        // Fixed: Clear resolved info when changing from resolved to pending
+        if (status === 'pending' && report.resolvedAt) {
+          report.resolvedAt = null;
+          report.resolvedBy = null;
+        }
       }
+
       // They can also update description and attachments
       if (description) report.description = description;
-      report.attachments = mapAttachments(req);
+
+      // Fixed: Merge attachments instead of overwriting
+      const newAttachments = mapAttachments(req);
+      if (newAttachments.length > 0) {
+        report.attachments = [...report.attachments, ...newAttachments];
+      }
     }
 
     const updatedReport = await report.save();
     res.status(200).json(updatedReport);
   } catch (err) {
-    res.status(400).json({message: err.message});
+    res.status(400).json({ message: err.message });
   }
-}
+};
 
 export const getIncidentById = async (req, res) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
+    const userRole = req.user.role;
+    const userId = req.user.id;
+
     const report = await IncidentReport.findById(id)
       .populate('guardId', 'name email phone')
       .populate('shiftId', 'startTime endTime location')
       .populate('resolvedBy', 'name');
 
-    if (!report) return res.status(404).json({message: 'Incident not found'});
+    if (!report) return res.status(404).json({ message: 'Incident not found' });
+
+    // Ownership validation
+    if (userRole === 'guard' && report.guardId._id.toString() !== userId) {
+      return res.status(403).json({ message: 'Not authorized to view this incident' });
+    }
 
     res.status(200).json(report);
   } catch (err) {
-    res.status(500).json({message: err.message});
+    res.status(500).json({ message: err.message });
   }
 };
 
 export const getIncidents = async (req, res) => {
   try {
-    const {guardId, shiftId, severity, status} = req.query;
+    const { guardId, shiftId, severity, status } = req.query;
+    const userRole = req.user.role;
+    const userId = req.user.id;
 
     const query = {};
-    if (guardId) query.guardId = guardId;
+
+    // Guards can only see their own incidents
+    if (userRole === 'guard') {
+      query.guardId = userId;
+    } else {
+      if (guardId) query.guardId = guardId;
+    }
+
     if (shiftId) query.shiftId = shiftId;
     if (severity) query.severity = severity;
     if (status) query.status = status;
 
     const reports = await IncidentReport.find(query)
-      .sort({createdAt: -1})
+      .sort({ createdAt: -1 })
       .populate('guardId', 'name')
       .populate('shiftId', 'startTime endTime');
 
     res.status(200).json(reports);
   } catch (err) {
-    res.status(500).json({message: err.message});
+    res.status(500).json({ message: err.message });
   }
 };
 
 export const markIncident = async (req, res) => {
   try {
-    const {id} = req.params;
-    const {status} = req.body;
+    const { id } = req.params;
+    const { status } = req.body;
     const userRole = req.user.role;
+
+    // Enum validation
+    const validStatus = ['pending', 'resolved'];
+    if (!status || !validStatus.includes(status)) {
+      return res.status(400).json({ message: 'Valid status is required' });
+    }
 
     // Only employers/admins can mark resolved
     if (userRole !== 'employer' && userRole !== 'admin') {
-      return res.status(403).json({message: 'Not authorized to update status.'});
+      return res.status(403).json({ message: 'Not authorized to update status.' });
     }
 
     const report = await IncidentReport.findById(id);
-    if (!report) return res.status(404).json({message: 'Incident not found'});
+    if (!report) return res.status(404).json({ message: 'Incident not found' });
 
     report.status = status;
 
-    // Track who resolved it and when.
+    // Fixed: Correct resolvedAt logic
     if (status === 'resolved') {
       report.resolvedAt = new Date();
       report.resolvedBy = req.user.id;
@@ -150,13 +213,15 @@ export const markIncident = async (req, res) => {
     const updatedReport = await report.save();
     res.status(200).json(updatedReport);
   } catch (err) {
-    res.status(500).json({message: err.message});
+    res.status(500).json({ message: err.message });
   }
 };
 
 export const exportIncident = async (req, res) => {
   try {
-    const {id} = req.params;
+    const { id } = req.params;
+    const userRole = req.user.role;
+    const userId = req.user.id;
 
     const report = await IncidentReport.findById(id)
       .populate('guardId', 'name email phone')
@@ -164,7 +229,12 @@ export const exportIncident = async (req, res) => {
       .populate('resolvedBy', 'name email');
 
     if (!report) {
-      return res.status(404).json({message: 'Incident not found'});
+      return res.status(404).json({ message: 'Incident not found' });
+    }
+
+    // Ownership validation
+    if (userRole === 'guard' && report.guardId._id.toString() !== userId) {
+      return res.status(403).json({ message: 'Not authorized to export this incident' });
     }
 
     // Set up the HTTP headers for a PDF download
@@ -174,12 +244,11 @@ export const exportIncident = async (req, res) => {
       `attachment; filename="Incident_Report_${id}.pdf"`
     );
 
-    const doc = new PDFDocument({margin: 50, size: 'A4'});
-
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(res);
 
     // Header
-    doc.fontSize(20).font('Helvetica-Bold').text('Incident Report', {align: 'center'});
+    doc.fontSize(20).font('Helvetica-Bold').text('Incident Report', { align: 'center' });
     doc.moveDown(2);
 
     // Meta Information Section
@@ -208,14 +277,14 @@ export const exportIncident = async (req, res) => {
     // Description Section
     doc.fontSize(14).font('Helvetica-Bold').text('Incident Description');
     doc.fontSize(10).font('Helvetica').moveDown(0.5);
-    doc.text(report.description, {align: 'justify'});
+    doc.text(report.description, { align: 'justify' });
     doc.moveDown(1.5);
 
     // Employer Comments (if any)
     if (report.employerComment) {
       doc.fontSize(14).font('Helvetica-Bold').text('Employer/Admin Comments');
       doc.fontSize(10).font('Helvetica').moveDown(0.5);
-      doc.text(report.employerComment, {align: 'justify'});
+      doc.text(report.employerComment, { align: 'justify' });
       doc.moveDown(1.5);
     }
 
@@ -231,7 +300,7 @@ export const exportIncident = async (req, res) => {
     doc.end();
   } catch (err) {
     if (!res.headersSent) {
-      res.status(500).json({message: err.message});
+      res.status(500).json({ message: err.message });
     } else {
       console.error('Error during PDF generation stream:', err);
     }
