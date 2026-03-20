@@ -2,10 +2,10 @@ import React, { useEffect } from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
 
 import splashIcon from '../../assets/splash-icon.png';
+import { LocalStorage } from '../lib/localStorage';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { LocalStorage } from '../lib/localStorage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
@@ -18,7 +18,7 @@ export default function SplashScreen({ navigation }: Props) {
         // get stored token
         const token = await LocalStorage.getToken();
 
-        //delay for splash screen effect 
+        // delay for splash screen effect
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
         if (!isMounted) return;

@@ -2,12 +2,12 @@
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import React, { useEffect } from 'react';
 
+import { attach401Handler } from './src/lib/http';
 import {
   registerPushTokenIfNeeded,
   subscribeToPushTokenChanges,
 } from './src/lib/pushNotifications';
 import AppNavigator, { RootStackParamList } from './src/navigation/AppNavigator';
-import { attach401Handler } from './src/lib/http';
 
 //allows navigation outside of components (e.g., from API handlers)
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
