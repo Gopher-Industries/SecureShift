@@ -39,9 +39,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator initialRouteName="AppTabs" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="AppTabs" component={AppTabs} />
+    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="Documents" component={DocumentsScreen} />

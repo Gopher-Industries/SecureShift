@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
 
 import splashIcon from '../../assets/splash-icon.png';
+import { LocalStorage } from '../lib/localStorage';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -10,11 +11,37 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export default function SplashScreen({ navigation }: Props) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('AppTabs');
-    }, 1500);
+    let isMounted = true;
 
-    return () => clearTimeout(timer);
+    const checkTokenAndRedirect = async () => {
+      try {
+        // get stored token
+        const token = await LocalStorage.getToken();
+
+        // delay for splash screen effect
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        if (!isMounted) return;
+
+        // if no token, go to Login, otherwise go to AppTabs
+        if (!token) {
+          navigation.replace('Login');
+        } else {
+          navigation.replace('AppTabs');
+        }
+      } catch (error) {
+        console.error('Error checking token:', error);
+        // In case of any error, navigate to Login
+        if (isMounted) {
+          navigation.replace('Login');
+        }
+      }
+    };
+
+    void checkTokenAndRedirect();
+    return () => {
+      isMounted = false;
+    };
   }, [navigation]);
 
   return (

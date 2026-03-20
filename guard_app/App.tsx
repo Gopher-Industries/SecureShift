@@ -1,12 +1,16 @@
 // App.tsx
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import React, { useEffect } from 'react';
 
+import { attach401Handler } from './src/lib/http';
 import {
   registerPushTokenIfNeeded,
   subscribeToPushTokenChanges,
 } from './src/lib/pushNotifications';
-import AppNavigator from './src/navigation/AppNavigator';
+import AppNavigator, { RootStackParamList } from './src/navigation/AppNavigator';
+
+//allows navigation outside of components (e.g., from API handlers)
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 export default function App() {
   useEffect(() => {
@@ -19,6 +23,17 @@ export default function App() {
     };
 
     void register();
+
+    // if any API call returns 401, it will clear tokens and navigate users to Login
+    attach401Handler(() => {
+      if (navigationRef.isReady()) {
+        navigationRef.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }
+    });
+
     return () => {
       subscription?.remove();
     };
