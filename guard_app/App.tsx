@@ -1,16 +1,22 @@
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+// App.tsx
 import React, { useEffect } from 'react';
 
+import { attach401Handler } from './src/lib/http';
 import {
   registerPushTokenIfNeeded,
   subscribeToPushTokenChanges,
 } from './src/lib/pushNotifications';
-import AppNavigator from './src/navigation/AppNavigator';
 import { ThemeProvider, useAppTheme } from './src/theme';
+import AppNavigator, { RootStackParamList } from './src/navigation/AppNavigator';
+
+//allows navigation outside of components (e.g., from API handlers)
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 function AppContent() {
   const { isDark, colors } = useAppTheme();
 
+  //allows navigation outside of components (e.g., from API handlers)
   useEffect(() => {
     let subscription: { remove: () => void } | null = null;
 
@@ -22,6 +28,16 @@ function AppContent() {
     };
 
     void register();
+
+    // if any API call returns 401, it will clear tokens and navigate users to Login
+    attach401Handler(() => {
+      if (navigationRef.isReady()) {
+        navigationRef.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }
+    });
 
     return () => {
       subscription?.remove();

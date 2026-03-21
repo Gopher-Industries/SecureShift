@@ -314,19 +314,164 @@ export const deleteMessageById = async (req, res) => {
 };
 
 /**
- * @desc List guards with pending license
+ * Helper: Extract all documents from a guard
+ * Combines legacy license field and documents array
+ * @param {Object} guard - Guard document
+ * @returns {Array} All documents
+ */
+const getAllDocuments = (guard) => {
+  const allDocuments = [];
+  if (guard.license && guard.license.status !== 'none') {
+    allDocuments.push({
+      type: 'license',
+      status: guard.license?.status,
+      imageUrl: guard.license?.imageUrl,
+      expiryDate: guard.license?.expiryDate || null,
+      reviewedAt: guard.license?.reviewedAt || null,
+      verifiedBy: guard.license?.verifiedBy || null,
+      rejectionReason: guard.license?.rejectionReason || null,
+    });
+  }
+
+  if (guard.documents && Array.isArray(guard.documents)) {
+    allDocuments.push(...guard.documents);
+  }
+
+  return allDocuments;
+};
+
+/**
+ * Helper: Calculate document counts
+ * @param {Array} documents
+ * @returns {Object} Counts
+ */
+const getDocumentCounts = (documents) => {
+  let pending = 0, 
+    verified = 0, 
+    rejected = 0, 
+    expiring = 0, 
+    expired = 0;
+
+  documents.forEach((doc) => {
+    if (doc.status === 'pending') pending++;
+    if (doc.status === 'verified') verified++;
+    if (doc.status === 'rejected') rejected++;
+    if (isExpired(doc.expiryDate)) expired++;
+    if (isExpiringSoon(doc.expiryDate)) expiring++;
+  });
+
+  return { pending, verified, rejected, expiring, expired };
+}
+
+/**
+ * Helper: Check if a document is expired
+ * @param {Date} expiryDate
+ * @returns {boolean}
+ */
+const isExpired = (expiryDate) => {
+  if (!expiryDate) return false;
+  return new Date(expiryDate) < new Date();
+}
+
+/**
+ * Helper: Check if a document is expiring soon (within 30 days)
+ * @param {Date} expiryDate
+ * @returns {boolean}
+ */
+const isExpiringSoon = (expiryDate) => {
+  if (!expiryDate) return false;
+  const now = new Date();
+  const expiresSoonThresholdDays = 30
+  const expiresSoonDate = new Date(now.getTime() + expiresSoonThresholdDays * 24 * 60 * 60 * 1000);
+  const expiresOn = new Date(expiryDate);
+  return expiresOn >= now && expiresOn <= expiresSoonDate;
+}
+
+/**
+ * Helper: Format document for response
+ * @param {Object} doc - Document object
+ * @returns {Object} Formatted document
+ */
+const formatDocumentForResponse = (doc) => {
+  const baseDoc = {
+    type: doc.type || 'license',
+    status: doc.status || 'none', 
+  };
+
+  if (doc.expiryDate) {
+    baseDoc.expiryDate = doc.expiryDate;
+    baseDoc.expired = isExpired(doc.expiryDate);
+    baseDoc.expiringSoon = isExpiringSoon(doc.expiryDate);
+  } else {
+    baseDoc.expiryDate = null;
+    baseDoc.expired = false;
+    baseDoc.expiringSoon = false;
+  }
+
+  return baseDoc;
+}
+
+/**
+ * @desc List guards with 
  * @route GET /api/v1/admin/guards/pending
  * @access Admin
+ * @query 
+ *  type: filter by document type (license, firstAid, rsa, id, certificate, other)
+ *  status: filter by document status (pending, verified, rejected, expired, expiring) 
  */
-export const listPendingLicenses = async (req, res) => {
+export const listPendingDocuments = async (req, res) => {
   try {
-    const guards = await Guard.find({ 'license.status': 'pending' })
-      .select('name email license.status license.imageUrl license.verifiedAt license.verifiedBy createdAt');
-    return res.status(200).json({ count: guards.length, guards });
+    const { type, status } = req.query;
+    
+    const guards = await Guard.find({
+      $or: [
+        { 'license.status': { $ne: 'none' } },
+        { documents: { $exists: true, $ne: [] } },
+      ]
+    }).select('name email license documents createdAt');
+
+    let filteredGuards = guards
+      .map((guard) => { 
+        const allDocuments = getAllDocuments(guard);
+        const counts = getDocumentCounts(allDocuments);
+
+        let filteredDocuments = allDocuments;
+
+        if (type) {
+          filteredDocuments = filteredDocuments.filter((doc) => doc.type === type);
+        }
+
+        if (status) {
+          if (status === 'expired') {
+            filteredDocuments = filteredDocuments.filter((doc) => isExpired(doc.expiryDate));
+          } else if (status === 'expiring') {
+            filteredDocuments = filteredDocuments.filter((doc) => isExpiringSoon(doc.expiryDate));
+          } else {
+            filteredDocuments = filteredDocuments.filter((doc) => doc.status === status);
+          }
+      }
+
+      if ((type || status) && filteredDocuments.length === 0) {
+        return null; // filter out guards that don't match the document filters
+      }
+
+      return {
+        id: guard._id,
+        name: guard.name,
+        email: guard.email,
+        createdAt: guard.createdAt,
+        documents: filteredDocuments.map(formatDocumentForResponse),
+        documentCounts: counts,
+      };
+  })
+  .filter((guard) => guard !== null); // remove nulls from guards that didn't match filters
+
+    return res.status(200).json({ count: filteredGuards.length, guards: filteredGuards });
+
   } catch (err) {
-    return res.status(500).json({ message: 'Failed to fetch pending licenses', error: err.message });
+    return res.status(500).json({ message: 'Failed to fetch pending documents', error: err.message });
   }
-};
+}
 
 /**
  * @desc Verify a guard's license

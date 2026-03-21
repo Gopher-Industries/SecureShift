@@ -20,7 +20,9 @@ import {
 
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+import { LocalStorage } from '../lib/localStorage';
 
+// Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';
 const CANVAS_PADDING = 20;
 
@@ -96,11 +98,19 @@ export default function SettingsScreen() {
     (ExpoConstants as unknown as { manifest?: { version?: string } })?.manifest?.version ||
     '1.0.0';
 
-  const handleLogout = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' as never }],
-    });
+  const handleLogout = async () => {
+    try {
+      await LocalStorage.removeToken(); // clear auth tokens
+      await LocalStorage.removePushToken(); // clear push tokens
+      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY); // clear profile data
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' as never }],
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      Alert.alert('Logout Failed', 'An error occurred while logging out. Please try again.');
+    }
   };
 
   const openMail = () =>
