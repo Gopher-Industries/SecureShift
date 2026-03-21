@@ -22,15 +22,15 @@ export type RootStackParamList = {
   Settings: undefined;
   EditProfile: undefined;
   Messages:
-  | {
-    context?: 'shift' | 'general';
-    shiftParticipantId?: string;
-    shiftParticipantName?: string;
-    shiftTitle?: string;
-    generalParticipantId?: string;
-    generalParticipantName?: string;
-  }
-  | undefined;
+    | {
+        context?: 'shift' | 'general';
+        shiftParticipantId?: string;
+        shiftParticipantName?: string;
+        shiftTitle?: string;
+        generalParticipantId?: string;
+        generalParticipantName?: string;
+      }
+    | undefined;
   Notifications: undefined;
   Certificates: undefined;
   ShiftDetails: { shift: any; refresh?: () => void };

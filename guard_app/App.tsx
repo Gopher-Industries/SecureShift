@@ -1,4 +1,9 @@
-import { DarkTheme, DefaultTheme, NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+  createNavigationContainerRef,
+} from '@react-navigation/native';
 // App.tsx
 import React, { useEffect } from 'react';
 
@@ -7,8 +12,8 @@ import {
   registerPushTokenIfNeeded,
   subscribeToPushTokenChanges,
 } from './src/lib/pushNotifications';
-import { ThemeProvider, useAppTheme } from './src/theme';
 import AppNavigator, { RootStackParamList } from './src/navigation/AppNavigator';
+import { ThemeProvider, useAppTheme } from './src/theme';
 
 //allows navigation outside of components (e.g., from API handlers)
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();

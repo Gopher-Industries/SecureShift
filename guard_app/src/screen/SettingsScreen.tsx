@@ -18,9 +18,9 @@ import {
   View,
 } from 'react-native';
 
+import { LocalStorage } from '../lib/localStorage';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
-import { LocalStorage } from '../lib/localStorage';
 
 // Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';

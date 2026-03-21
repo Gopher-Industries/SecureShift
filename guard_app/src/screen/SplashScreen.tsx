@@ -2,9 +2,9 @@ import React, { useEffect } from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
 
 import splashIcon from '../../assets/splash-icon.png';
+import { LocalStorage } from '../lib/localStorage';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
-import { LocalStorage } from '../lib/localStorage';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
