@@ -1,5 +1,10 @@
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+  createNavigationContainerRef,
+} from '@react-navigation/native';
 // App.tsx
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import React, { useEffect } from 'react';
 
 import { attach401Handler } from './src/lib/http';
@@ -8,13 +13,18 @@ import {
   subscribeToPushTokenChanges,
 } from './src/lib/pushNotifications';
 import AppNavigator, { RootStackParamList } from './src/navigation/AppNavigator';
+import { ThemeProvider, useAppTheme } from './src/theme';
 
 //allows navigation outside of components (e.g., from API handlers)
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-export default function App() {
+function AppContent() {
+  const { isDark, colors } = useAppTheme();
+
+  //allows navigation outside of components (e.g., from API handlers)
   useEffect(() => {
     let subscription: { remove: () => void } | null = null;
+
     const register = async () => {
       await registerPushTokenIfNeeded();
       subscription = subscribeToPushTokenChanges(async (newToken) => {
@@ -39,9 +49,29 @@ export default function App() {
     };
   }, []);
 
+  const navigationTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      background: colors.bg,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.primary,
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <AppNavigator />
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

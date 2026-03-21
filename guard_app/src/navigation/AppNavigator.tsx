@@ -11,6 +11,8 @@ import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
+import { useAppTheme } from '../theme';
+
 export type RootStackParamList = {
   AppTabs: undefined;
   Splash: undefined;
@@ -29,7 +31,6 @@ export type RootStackParamList = {
         generalParticipantName?: string;
       }
     | undefined;
-
   Notifications: undefined;
   Certificates: undefined;
   ShiftDetails: { shift: any; refresh?: () => void };
@@ -38,10 +39,21 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+  const { colors } = useAppTheme();
+
   return (
-    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Splash" component={SplashScreen} />
+    <Stack.Navigator
+      initialRouteName="Splash"
+      screenOptions={{
+        headerShown: false,
+        headerStyle: { backgroundColor: colors.card },
+        headerTintColor: colors.text,
+        headerTitleStyle: { color: colors.text },
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
       <Stack.Screen name="AppTabs" component={AppTabs} />
+      <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="Documents" component={DocumentsScreen} />

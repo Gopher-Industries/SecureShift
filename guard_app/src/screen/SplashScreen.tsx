@@ -3,6 +3,8 @@ import { View, Image, Text, StyleSheet } from 'react-native';
 
 import splashIcon from '../../assets/splash-icon.png';
 import { LocalStorage } from '../lib/localStorage';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -10,6 +12,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export default function SplashScreen({ navigation }: Props) {
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -52,13 +57,22 @@ export default function SplashScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  logo: { height: 80, marginBottom: 10, width: 80 },
-  title: { color: '#1E1E1E', fontSize: 24, fontWeight: '600' },
-});
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      backgroundColor: colors.bg,
+      flex: 1,
+      justifyContent: 'center',
+    },
+    logo: {
+      height: 80,
+      marginBottom: 10,
+      width: 80,
+    },
+    title: {
+      color: colors.text,
+      fontSize: 24,
+      fontWeight: '600',
+    },
+  });
