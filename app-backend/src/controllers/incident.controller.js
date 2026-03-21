@@ -8,7 +8,7 @@ const mapAttachments = (req) => {
   if (req.files && req.files.length > 0) {
     attachments = req.files.map(file => ({
       fileName: file.originalname,
-      fileUrl: file.path,
+      fileData: file.buffer, // Store binary data directly in MongoDB
       fileType: file.mimetype,
       fileSize: file.size,
       uploadedBy: req.user.id
@@ -86,7 +86,10 @@ export const updateIncident = async (req, res) => {
       // Fixed: Merge attachments instead of overwriting
       const newAttachments = mapAttachments(req);
       if (newAttachments.length > 0) {
-        report.attachments = [...report.attachments, ...newAttachments];
+        report.attachments.push(...newAttachments);
+
+        // Explicitly tell Mongoose this array was modified.
+        report.markModified('attachments');
       }
     }
     // Employer can add comments, assign severity, and update status (pending, resolved).
@@ -96,16 +99,19 @@ export const updateIncident = async (req, res) => {
 
       // Fixed: Removed duplicate status assignment
       if (status) {
-        report.status = status;
+        // If previous status is already resolved, user can't resolve it again
         if (status === 'resolved' && report.status !== 'resolved') {
           report.resolvedAt = new Date();
           report.resolvedBy = req.user.id;
         }
+
         // Fixed: Clear resolved info when changing from resolved to pending
-        if (status === 'pending' && report.resolvedAt) {
+        else if (status === 'pending') {
           report.resolvedAt = null;
           report.resolvedBy = null;
         }
+
+        report.status = status;
       }
 
       // They can also update description and attachments
@@ -114,7 +120,10 @@ export const updateIncident = async (req, res) => {
       // Fixed: Merge attachments instead of overwriting
       const newAttachments = mapAttachments(req);
       if (newAttachments.length > 0) {
-        report.attachments = [...report.attachments, ...newAttachments];
+        report.attachments.push(...newAttachments);
+
+        // Explicitly tell Mongoose this array was modified.
+        report.markModified('attachments');
       }
     }
 

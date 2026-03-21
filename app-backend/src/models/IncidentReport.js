@@ -35,7 +35,7 @@ const incidentReportSchema = new mongoose.Schema(
     attachments: [
       {
         fileName: {type: String, required: true},
-        fileUrl: {type: String, required: true},
+        fileData: {type: Buffer, required: true}, // Store file as binary in MongoDB
         fileType: {type: String},
         fileSize: {type: Number},
         uploadedAt: {type: Date, default: Date.now},

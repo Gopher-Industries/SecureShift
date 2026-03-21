@@ -12,7 +12,7 @@ const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // where & how to store files
-const storage = multer.diskStorage({
+const diskStorage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, uploadsDir),
     filename: (_req, file, cb) => {
         const safeOriginal = file.originalname.replace(/[^\w.-]/g, '_');
@@ -28,7 +28,7 @@ const imageFileFilter = (_req, file, cb) => {
 };
 
 export const imageUpload = multer({
-    storage,
+    storage: diskStorage,
     fileFilter: imageFileFilter,
     limits: { fileSize: 5 * 1024 * 1024 },
 });
@@ -39,7 +39,7 @@ const incidentAttachmentFilter = (_req, file, cb) => {
 };
 
 export const incidentAttachmentUpload = multer({
-    storage,
+    storage: multer.memoryStorage(), // Use memory storage to keep files in buffer for MongoDB
     fileFilter: incidentAttachmentFilter,
     limits: {fileSize: 5 * 1024 * 1024},
 });
