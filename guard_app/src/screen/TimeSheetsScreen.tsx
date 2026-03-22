@@ -82,8 +82,7 @@ export default function TimesheetsScreen() {
     const hours =
       item.checkInTime && item.checkOutTime
         ? (
-            (new Date(item.checkOutTime).getTime() -
-              new Date(item.checkInTime).getTime()) /
+            (new Date(item.checkOutTime).getTime() - new Date(item.checkInTime).getTime()) /
             (1000 * 60 * 60)
           ).toFixed(1) + ' hrs'
         : '—';
