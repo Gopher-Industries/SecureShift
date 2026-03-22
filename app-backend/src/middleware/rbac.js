@@ -38,11 +38,11 @@ const DEFAULT_ROLE_PERMISSIONS = {
   [ROLES.EMPLOYER]: [
     'shift:read', 'shift:write',
   'payment:read', 'payment:write',
-  'incident:view', 'incident:update','incident:delete'
+  'incident:view', 'incident:update'
   ],
   [ROLES.GUARD]: [
     'shift:read', 'shift:accept', 'shift:checkin', 'shift:apply',
-  'incident:create', 'incident:view', 'incident:update','incident:delete'
+  'incident:create', 'incident:view', 'incident:update'
   ],
   [ROLES.CLIENT]: [
     'shift:read',
