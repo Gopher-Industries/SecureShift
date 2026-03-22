@@ -11,6 +11,7 @@ import {
 
 import auth from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/rbac.js";
+import { authorizePermissions } from "../middleware/rbac.js";
 import { upload } from "../config/multer.js";
 
 const router = express.Router();
@@ -18,33 +19,20 @@ const router = express.Router();
 router.use(auth);
 
 // Create
-router.post("/", authorizeRoles("incident:create"), createIncident);
-
-// Update
-router.patch("/:id", authorizeRoles("incident:update"), updateIncident);
-
-// Get one
-router.get("/:id", authorizeRoles("incident:view"), getIncident);
-
-// List
-router.get("/", authorizeRoles("incident:view"), getIncidents);
-
-// Delete (admin)
-router.delete("/:id", authorizeRoles("incident:delete"), deleteIncident);
-
-// Upload attachment
+router.post("/", authorizePermissions("incident:create"), createIncident);
+router.patch("/:id", authorizePermissions("incident:update"), updateIncident);
+router.get("/:id", authorizePermissions("incident:view"), getIncident);
+router.get("/", authorizePermissions("incident:view"), getIncidents);
+router.delete("/:id", authorizePermissions("incident:delete"), deleteIncident);
 router.post(
   "/:id/attachments",
-  authorizeRoles("incident:update"),
+  authorizePermissions("incident:update"),
   upload.single("file"),
   uploadAttachment
 );
-
-// Get attachment
 router.get(
   "/:id/attachments/:attachmentId",
-  authorizeRoles("incident:view"),
+  authorizePermissions("incident:view"),
   getAttachment
 );
-
 export default router;

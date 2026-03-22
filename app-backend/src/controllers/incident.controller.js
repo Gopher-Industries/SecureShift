@@ -2,6 +2,11 @@ import Incident from "../models/Incident.js";
 import Shift from "../models/Shift.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
 import { ACTIONS } from "../middleware/logger.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // CREATE INCIDENT
 export const createIncident = async (req, res, next) => {
@@ -198,13 +203,32 @@ export const getAttachment = async (req, res, next) => {
   try {
     const incident = await Incident.findById(req.params.id);
 
+    if (!incident || incident.isDeleted) {
+      return next(new ErrorResponse("Incident not found", 404));
+    }
+
+    if (
+      req.user.role === "guard" &&
+      String(incident.guardId) !== String(req.user._id)
+    ) {
+      return next(new ErrorResponse("Not authorized", 403));
+    }
+
+    if (req.user.role === "employer") {
+      const shift = await Shift.findById(incident.shiftId);
+      if (!shift || String(shift.createdBy) !== String(req.user._id)) {
+        return next(new ErrorResponse("Not authorized", 403));
+      }
+    }
+
     const attachment = incident.attachments.id(req.params.attachmentId);
 
     if (!attachment) {
       return next(new ErrorResponse("Attachment not found", 404));
     }
 
-    res.download(`.${attachment.fileUrl}`);
+    const filePath = path.join(__dirname, "..", "uploads", attachment.fileName);
+    res.download(filePath);
   } catch (err) {
     next(err);
   }
