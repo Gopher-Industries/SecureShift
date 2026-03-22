@@ -28,6 +28,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Swagger docs
 setupSwagger(app);
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ message: 'SecureShift API is running', docs: '/api-docs' });
+});
+
 // API routes
 app.use('/api/v1', router);
 
