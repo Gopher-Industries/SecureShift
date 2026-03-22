@@ -18,7 +18,7 @@ const branchSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-branchSchema.index({ code: 1 }, { unique: true });
+// index removed — `unique: true` on the field already creates this index
 
 const Branch = mongoose.model('Branch', branchSchema);
 export default Branch;

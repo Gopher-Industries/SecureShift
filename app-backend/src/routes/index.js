@@ -4,10 +4,11 @@ import healthRoutes from './health.routes.js';
 import authRoutes from './auth.routes.js';
 import shiftRoutes from './shift.routes.js';
 import messageRoutes from './message.routes.js';
-import userRoutes from './user.routes.js'; 
+import userRoutes from './user.routes.js';
 import adminRoutes from './admin.routes.js';
-import availabilityRoutes from './availability.routes.js'; 
+import availabilityRoutes from './availability.routes.js';
 import rbacRoutes from './rbac.routes.js';
+import payrollRoutes from './payroll.routes.js';
 
 const router = express.Router();
 
@@ -16,8 +17,9 @@ router.use('/auth', authRoutes);
 router.use('/shifts', shiftRoutes);
 router.use('/messages', messageRoutes);
 router.use('/admin', adminRoutes);
-router.use('/availability', availabilityRoutes); 
-router.use('/users', userRoutes);  
+router.use('/availability', availabilityRoutes);
+router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
+router.use('/payroll', payrollRoutes);
 
 export default router;
