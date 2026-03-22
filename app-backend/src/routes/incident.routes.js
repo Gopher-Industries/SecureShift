@@ -9,9 +9,9 @@ import {
   getAttachment,
 } from "../controllers/incident.controller.js";
 
-import { auth } from "../middleware/auth.js";
+import auth from "../middleware/auth.js";
 import { authorizeRoles } from "../middleware/rbac.js";
-import upload from "../config/multer.js";
+import { upload } from "../config/multer.js";
 
 const router = express.Router();
 
