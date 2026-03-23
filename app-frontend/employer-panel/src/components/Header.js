@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import CompanyLogo from './company_logo.svg';
 import ProfilePicPlaceHolder from './ProfilePicPlaceHolder.svg';
+import NotificationsPopup from '../pages/NotificationsPopup';
 
 export default function Header() {
     const navigate = useNavigate();
@@ -54,6 +55,9 @@ export default function Header() {
                 {localStorage.getItem("userRole") === "admin" && (
                     <Link to="/email-settings" style={navButtonStyle}>Email</Link>
                 )}
+
+                {/* Notifications */}
+                <NotificationsPopup />
 
                 {/* Avatar */}
                 <div onClick={() => navigate("/company-profile")} style={{ cursor: "pointer" }}>
