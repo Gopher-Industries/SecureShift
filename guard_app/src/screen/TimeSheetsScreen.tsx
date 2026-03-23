@@ -1,4 +1,5 @@
 // src/screen/TimesheetsScreen.tsx
+import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -7,13 +8,12 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
-  TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 
 import { getMyAttendance, type Attendance } from '../api/attendance';
-import { COLORS } from '../theme/colors';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
 
 function safeDate(d?: string | null) {
   if (!d) return null;
@@ -28,22 +28,22 @@ function fmtDateTime(d?: string | null) {
 }
 
 function fmtShiftLabel(att: Attendance) {
-  // If backend populates shiftId, it may contain title/date/startTime
   const s = att.shiftId as any;
 
   if (s && typeof s === 'object') {
     const title = s.title ?? 'Shift';
     const date = s.date ? new Date(s.date).toDateString() : '';
     const time = s.startTime && s.endTime ? `${s.startTime} - ${s.endTime}` : '';
-    const parts = [title, date, time].filter(Boolean);
-    return parts.join(' • ');
+    return [title, date, time].filter(Boolean).join(' • ');
   }
 
-  // otherwise shiftId is string
   return `Shift ID: ${String(att.shiftId)}`;
 }
 
 export default function TimesheetsScreen() {
+  const { colors } = useAppTheme();
+  const s = getStyles(colors);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [items, setItems] = useState<Attendance[]>([]);
@@ -64,7 +64,6 @@ export default function TimesheetsScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
 
@@ -83,12 +82,12 @@ export default function TimesheetsScreen() {
 
         <View style={s.row}>
           <Text style={s.label}>Check In:</Text>
-          <Text style={s.value}>{fmtDateTime(item.checkInTime ?? null)}</Text>
+          <Text style={s.value}>{fmtDateTime(item.checkInTime)}</Text>
         </View>
 
         <View style={s.row}>
           <Text style={s.label}>Check Out:</Text>
-          <Text style={s.value}>{fmtDateTime(item.checkOutTime ?? null)}</Text>
+          <Text style={s.value}>{fmtDateTime(item.checkOutTime)}</Text>
         </View>
 
         <View style={s.rowBetween}>
@@ -112,7 +111,7 @@ export default function TimesheetsScreen() {
   if (loading) {
     return (
       <View style={s.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={s.loadingText}>Loading timesheets...</Text>
       </View>
     );
@@ -132,43 +131,109 @@ export default function TimesheetsScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
 
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 10, color: COLORS.muted },
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
 
-  empty: { textAlign: 'center', marginTop: 30, color: COLORS.muted },
+    loadingText: {
+      marginTop: 10,
+      color: colors.muted,
+    },
 
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-  },
-  title: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 10 },
+    empty: {
+      textAlign: 'center',
+      marginTop: 30,
+      color: colors.muted,
+    },
 
-  row: { flexDirection: 'row', marginBottom: 6 },
-  label: { width: 85, fontWeight: '700', color: COLORS.text },
-  value: { flex: 1, color: COLORS.muted },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
 
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    title: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.text,
+      marginBottom: 10,
+    },
 
-  meta: { marginTop: 8, color: COLORS.text, fontWeight: '700' },
-  ok: { color: COLORS.status.confirmed, fontWeight: '800' },
-  muted: { color: COLORS.muted, fontWeight: '800' },
+    row: {
+      flexDirection: 'row',
+      marginBottom: 6,
+    },
 
-  badge: {
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  badgeOk: { backgroundColor: '#D1FAE5' },
-  badgeWarn: { backgroundColor: '#FEF3C7' },
+    label: {
+      width: 85,
+      fontWeight: '700',
+      color: colors.text,
+    },
 
-  badgeText: { fontWeight: '800', fontSize: 12 },
-  badgeTextOk: { color: '#065F46' },
-  badgeTextWarn: { color: '#92400E' },
-});
+    value: {
+      flex: 1,
+      color: colors.muted,
+    },
+
+    rowBetween: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+
+    meta: {
+      marginTop: 8,
+      color: colors.text,
+      fontWeight: '700',
+    },
+
+    ok: {
+      color: colors.status.confirmed,
+      fontWeight: '800',
+    },
+
+    muted: {
+      color: colors.muted,
+      fontWeight: '800',
+    },
+
+    badge: {
+      marginTop: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+    },
+
+    badgeOk: {
+      backgroundColor: colors.greenSoft,
+    },
+
+    badgeWarn: {
+      backgroundColor: colors.primarySoft,
+    },
+
+    badgeText: {
+      fontWeight: '800',
+      fontSize: 12,
+    },
+
+    badgeTextOk: {
+      color: colors.status.confirmed,
+    },
+
+    badgeTextWarn: {
+      color: colors.link,
+    },
+  });
