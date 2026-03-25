@@ -682,7 +682,7 @@ const getStyles = (colors: AppColors) =>
       alignItems: 'center',
       paddingVertical: 8,
       paddingHorizontal: 12,
-      backgroundColor: colors.primarySoft,
+      backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 6,
