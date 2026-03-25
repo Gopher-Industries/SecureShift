@@ -156,6 +156,15 @@ export default function AvailabilityScreen() {
     setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
+   const getOrderedShortDays = () => {
+    const orderedShortDays = [];
+    for(let i = 0; i < WEEK_DAYS.length; i++)
+    {
+      if (days.includes(WEEK_DAYS[i])) orderedShortDays.push(SHORT_DAYS[i]);
+    }
+    return <Text>{orderedShortDays.join(" ")}</Text>
+  }
+
   const clearSlots = () => {
     setTimeSlots([]);
   };
@@ -300,7 +309,7 @@ export default function AvailabilityScreen() {
       ) : (
         timeSlots.map((slot) => (
           <View key={slot} style={styles.slotRow}>
-            <Text style={styles.slotItem}>• {slot}</Text>
+            <Text style={styles.slotItem}>• {getOrderedShortDays()} - {slot}</Text>
             <TouchableOpacity onPress={() => handleRemoveSlot(slot)} style={styles.removeButton}>
               <Text style={styles.removeButtonText}>Remove</Text>
             </TouchableOpacity>
@@ -615,6 +624,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 4,
     margin: 16,
+    marginBottom: 7,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 8,
   },
   toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6 },
   toggleBtnActive: { backgroundColor: '#003f88' },
@@ -646,13 +661,17 @@ const styles = StyleSheet.create({
   // Simple Mode (existing)
   sectionTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 8 },
   helperTextMuted: { color: '#888', marginBottom: 8 },
-  daysRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
+  daysRow: { 
+    flexDirection: 'row', 
+    flexWrap: "wrap",
+    marginBottom: 16,
+   },
   dayChip: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8.45,
     paddingVertical: 6,
     borderRadius: 8,
-    marginRight: 6,
-    marginBottom: 6,
+    marginHorizontal: 3,
+    marginVertical: 6,
     borderWidth: 1,
     borderColor: '#ccc',
   },
@@ -663,9 +682,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 6,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 16,
+    elevation: 2,
   },
-  slotItem: { color: '#111' },
+  slotItem: { color: '#111', fontWeight: "bold" },
   removeButton: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -696,7 +724,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   secondaryButtonText: { color: '#333', fontWeight: '600' },
-  saveButtonWrapper: { marginTop: 24 },
+  saveButtonWrapper: { marginTop: 24, height: 44},
 
   // Calendar Views
   calendarContainer: { flex: 1 },
