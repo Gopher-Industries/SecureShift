@@ -659,7 +659,7 @@ const getStyles = (colors: AppColors) =>
     helperTextMuted: { color: colors.muted, marginBottom: 8 },
     daysRow: { flexDirection: 'row', flexWrap: "wrap", marginBottom: 16, },
     dayChip: {
-      paddingHorizontal: 8.45,
+      paddingHorizontal: 8.35,
       paddingVertical: 6,
       borderRadius: 8,
       marginHorizontal: 3,
@@ -691,9 +691,9 @@ const getStyles = (colors: AppColors) =>
       shadowRadius: 16,
       elevation: 2,
     },
-    slotItem: { color: colors.text, fontWeight: "bold" },
+    slotItem: { color: colors.text},
     removeButton: {
-      paddingHorizontal: 10,
+      paddingHorizontal: 7,
       paddingVertical: 4,
       borderRadius: 8,
       borderWidth: 1,
