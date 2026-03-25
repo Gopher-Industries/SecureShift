@@ -1,4 +1,3 @@
-// src/navigation/AppTabs.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -8,6 +7,7 @@ import HomeScreen from '../screen/HomeScreen';
 import ProfileScreen from '../screen/ProfileScreen';
 import ShiftsScreen from '../screen/ShiftsScreen';
 import TimesheetsScreen from '../screen/TimeSheetsScreen';
+import { useAppTheme } from '../theme';
 
 export type AppTabParamList = {
   Home: undefined;
@@ -19,11 +19,25 @@ export type AppTabParamList = {
 };
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
+
 export default function AppTabs() {
+  const { colors } = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
+        headerStyle: {
+          backgroundColor: colors.card,
+        },
+        headerTitleStyle: {
+          color: colors.text,
+        },
+        headerTintColor: colors.text,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
+        },
         tabBarIcon: ({ color, size }) => {
           const name =
             route.name === 'Home'
@@ -40,8 +54,8 @@ export default function AppTabs() {
 
           return <Ionicons name={name} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#1E3A8A',
-        tabBarInactiveTintColor: '#888',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.muted,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
