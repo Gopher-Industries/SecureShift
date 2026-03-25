@@ -158,8 +158,8 @@ export default function AvailabilityScreen() {
     for (let i = 0; i < WEEK_DAYS.length; i++) {
       if (days.includes(WEEK_DAYS[i])) orderedShortDays.push(SHORT_DAYS[i]);
     }
-    return <Text>{orderedShortDays.join(" ")}</Text>
-  }
+    return <Text>{orderedShortDays.join(' ')}</Text>;
+  };
 
   const clearSlots = () => {
     setTimeSlots([]);
@@ -302,7 +302,9 @@ export default function AvailabilityScreen() {
       ) : (
         timeSlots.map((slot) => (
           <View key={slot} style={styles.slotRow}>
-            <Text style={styles.slotItem}>• {getOrderedShortDays()} - {slot}</Text>
+            <Text style={styles.slotItem}>
+              • {getOrderedShortDays()} - {slot}
+            </Text>
             <TouchableOpacity onPress={() => handleRemoveSlot(slot)} style={styles.removeButton}>
               <Text style={styles.removeButtonText}>Remove</Text>
             </TouchableOpacity>
@@ -657,7 +659,7 @@ const getStyles = (colors: AppColors) =>
     // Simple Mode (existing)
     sectionTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 8, color: colors.text },
     helperTextMuted: { color: colors.muted, marginBottom: 8 },
-    daysRow: { flexDirection: 'row', flexWrap: "wrap", marginBottom: 16, },
+    daysRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
     dayChip: {
       paddingHorizontal: 8.35,
       paddingVertical: 6,
@@ -691,7 +693,7 @@ const getStyles = (colors: AppColors) =>
       shadowRadius: 16,
       elevation: 2,
     },
-    slotItem: { color: colors.text},
+    slotItem: { color: colors.text },
     removeButton: {
       paddingHorizontal: 7,
       paddingVertical: 4,
