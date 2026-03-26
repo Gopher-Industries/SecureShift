@@ -16,10 +16,12 @@ import {
 import { getMe } from '../api/auth';
 import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
 import AddAvailabilityModal from '../components/AddAvailabilityModal';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
 
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const TIME_SLOTS = Array.from({ length: 17 }, (_, i) => i + 6); // 6am to 10pm
+const TIME_SLOTS = Array.from({ length: 17 }, (_, i) => i + 6);
 
 type ViewMode = 'simple' | 'weekly' | 'monthly';
 
@@ -30,26 +32,25 @@ function extractTimeSlots(data: unknown): string[] {
 }
 
 export default function AvailabilityScreen() {
-  // Simple mode state (existing)
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+
   const [userId, setUserId] = useState<string | null>(null);
   const [days, setDays] = useState<string[]>([]);
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
 
-  // Calendar mode state
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [fromTime, setFromTime] = useState('09:00');
   const [toTime, setToTime] = useState('17:00');
 
-  // UI state
   const [viewMode, setViewMode] = useState<ViewMode>('simple');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Helper functions
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
   const getDayName = (date: Date) => {
@@ -121,20 +122,17 @@ export default function AvailabilityScreen() {
     }
   };
 
-  // Load simple availability
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Real mode - load from API
         const me = await getMe();
         const id = me?._id ?? me?.id;
         if (!id) throw new Error('Unable to determine user ID');
         setUserId(id);
 
-        // Load simple availability
         const data = await getAvailability(id);
         if (data) {
           setDays(Array.isArray(data.days) ? data.days : []);
@@ -151,7 +149,6 @@ export default function AvailabilityScreen() {
     void load();
   }, []);
 
-  // Simple mode functions (existing)
   const toggleDay = (day: string) => {
     setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
@@ -173,7 +170,6 @@ export default function AvailabilityScreen() {
     await persistAvailability(days, timeSlots, { showSuccess: true });
   };
 
-  // Calendar mode functions (new)
   const weekDays = useMemo(() => {
     const start = getWeekStart(currentDate);
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -251,7 +247,6 @@ export default function AvailabilityScreen() {
     ]);
   };
 
-  // Navigation
   const goToPrevious = () => {
     if (viewMode === 'weekly') {
       setCurrentDate(addDays(currentDate, -7));
@@ -270,7 +265,6 @@ export default function AvailabilityScreen() {
 
   const goToToday = () => setCurrentDate(new Date());
 
-  // Render functions
   const renderSimpleMode = () => (
     <View style={styles.container}>
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -466,7 +460,7 @@ export default function AvailabilityScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.primary} />
         <Text style={styles.loadingText}>Loading availability…</Text>
       </View>
     );
@@ -481,7 +475,6 @@ export default function AvailabilityScreen() {
 
   return (
     <View style={styles.fullContainer}>
-      {/* View Mode Toggle */}
       <View style={styles.viewToggle}>
         <TouchableOpacity
           style={[styles.toggleBtn, viewMode === 'simple' && styles.toggleBtnActive]}
@@ -509,7 +502,6 @@ export default function AvailabilityScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Navigation (for calendar views) */}
       {viewMode !== 'simple' && (
         <View style={styles.navigation}>
           <TouchableOpacity onPress={goToPrevious} style={styles.navBtn}>
@@ -528,12 +520,10 @@ export default function AvailabilityScreen() {
         </View>
       )}
 
-      {/* Content based on view mode */}
       {viewMode === 'simple' && renderSimpleMode()}
       {viewMode === 'weekly' && renderWeeklyMode()}
       {viewMode === 'monthly' && renderMonthlyMode()}
 
-      {/* Calendar Add Modal */}
       <Modal visible={showCalendarModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -560,6 +550,7 @@ export default function AvailabilityScreen() {
                 value={fromTime}
                 onChangeText={setFromTime}
                 placeholder="09:00"
+                placeholderTextColor={colors.muted}
               />
             </View>
 
@@ -570,6 +561,7 @@ export default function AvailabilityScreen() {
                 value={toTime}
                 onChangeText={setToTime}
                 placeholder="17:00"
+                placeholderTextColor={colors.muted}
               />
             </View>
 
@@ -601,213 +593,253 @@ export default function AvailabilityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  fullContainer: { flex: 1, backgroundColor: '#f5f5f5' },
-  container: { flex: 1, padding: 16 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 8 },
-  errorText: { color: 'red', marginBottom: 12 },
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    fullContainer: { flex: 1, backgroundColor: colors.bg },
+    container: { flex: 1, padding: 16, backgroundColor: colors.bg },
+    centered: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.bg,
+    },
+    loadingText: { marginTop: 8, color: colors.text },
+    errorText: { color: colors.status.rejected, marginBottom: 12 },
 
-  // View Toggle
-  viewToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 4,
-    margin: 16,
-  },
-  toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6 },
-  toggleBtnActive: { backgroundColor: '#003f88' },
-  toggleText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
-  toggleTextActive: { color: '#FFFFFF' },
+    viewToggle: {
+      flexDirection: 'row',
+      backgroundColor: colors.primarySoft,
+      borderRadius: 8,
+      padding: 4,
+      margin: 16,
+    },
+    toggleBtn: {
+      flex: 1,
+      paddingVertical: 8,
+      alignItems: 'center',
+      borderRadius: 6,
+    },
+    toggleBtnActive: { backgroundColor: colors.primary },
+    toggleText: { fontSize: 14, fontWeight: '600', color: colors.muted },
+    toggleTextActive: { color: colors.white },
 
-  // Navigation
-  navigation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  navBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  navBtnText: { fontSize: 24, fontWeight: '600', color: '#003f88' },
-  todayBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  todayBtnText: { fontSize: 14, fontWeight: '600', color: '#003f88' },
-  navDate: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '600', color: '#111827' },
+    navigation: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    navBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    navBtnText: { fontSize: 24, fontWeight: '600', color: colors.primary },
+    todayBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      backgroundColor: colors.primarySoft,
+      borderRadius: 6,
+      marginLeft: 8,
+    },
+    todayBtnText: { fontSize: 14, fontWeight: '600', color: colors.primary },
+    navDate: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '600', color: colors.text },
 
-  // Simple Mode (existing)
-  sectionTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 8 },
-  helperTextMuted: { color: '#888', marginBottom: 8 },
-  daysRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
-  dayChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginRight: 6,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  dayChipSelected: { backgroundColor: '#e3ecff', borderColor: '#003f88' },
-  dayChipText: { color: '#000' },
-  dayChipTextSelected: { color: '#003f88', fontWeight: '600' },
-  slotRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  slotItem: { color: '#111' },
-  removeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e11d48',
-    backgroundColor: '#fef2f2',
-  },
-  removeButtonText: { color: '#b91c1c', fontSize: 12, fontWeight: '600' },
-  actionsRow: { flexDirection: 'row', marginTop: 12 },
-  spacer: { width: 8 },
-  primaryButton: {
-    flex: 1,
-    backgroundColor: '#003f88',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  primaryButtonDisabled: { opacity: 0.6 },
-  primaryButtonText: { color: '#fff', fontWeight: '700' },
-  secondaryButton: {
-    flex: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#f5f5f5',
-  },
-  secondaryButtonText: { color: '#333', fontWeight: '600' },
-  saveButtonWrapper: { marginTop: 24 },
+    sectionTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 8, color: colors.text },
+    helperTextMuted: { color: colors.muted, marginBottom: 8 },
+    daysRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
+    dayChip: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      marginRight: 6,
+      marginBottom: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    dayChipSelected: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.primary,
+    },
+    dayChipText: { color: colors.text },
+    dayChipTextSelected: { color: colors.primary, fontWeight: '600' },
 
-  // Calendar Views
-  calendarContainer: { flex: 1 },
-  weekHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  weekDay: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  weekDayName: { fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 4 },
-  weekDayDate: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  timeGrid: { flex: 1 },
-  timeRow: { flexDirection: 'row', height: 60, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  timeLabel: {
-    width: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-  },
-  timeLabelText: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
-  timeCell: { flex: 1, borderLeftWidth: 1, borderLeftColor: '#F3F4F6', backgroundColor: '#FFFFFF' },
-  timeCellFilled: { backgroundColor: '#E0F2FE' },
-  slotIndicator: { flex: 1, backgroundColor: '#003f88', opacity: 0.3 },
-  slotsSummary: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  slotsSummaryTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 12 },
-  daySummary: { marginBottom: 16 },
-  daySummaryDay: { fontSize: 14, fontWeight: '600', color: '#6B7280', marginBottom: 8 },
-  slotItemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 6,
-    marginBottom: 4,
-  },
-  slotTime: { fontSize: 14, color: '#111827', fontWeight: '500' },
+    slotRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginVertical: 4,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    slotItem: { color: colors.text },
 
-  // Monthly View
-  monthGrid: { backgroundColor: '#FFFFFF', padding: 8 },
-  monthWeekHeader: { flexDirection: 'row', marginBottom: 8 },
-  monthWeekDay: { flex: 1, alignItems: 'center' },
-  monthWeekDayText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  monthDaysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  monthDay: {
-    width: '14.28%',
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 4,
-  },
-  monthDayDim: { opacity: 0.3 },
-  monthDayToday: { backgroundColor: '#E0F2FE' },
-  monthDayNumber: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  monthDayNumberDim: { color: '#9CA3AF' },
-  monthDayNumberToday: { color: '#003f88' },
-  monthSlotIndicators: { flexDirection: 'row', gap: 2, marginTop: 4 },
-  monthSlotDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#003f88' },
+    removeButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.status.rejected,
+      backgroundColor: colors.card,
+    },
+    removeButtonText: { color: colors.status.rejected, fontSize: 12, fontWeight: '600' },
 
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    width: '85%',
-    maxWidth: 400,
-  },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 20 },
-  modalField: { marginBottom: 16 },
-  modalLabel: { fontSize: 14, fontWeight: '600', color: '#6B7280', marginBottom: 8 },
-  modalValue: { fontSize: 16, color: '#111827', fontWeight: '500' },
-  modalInput: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#111827',
-  },
-  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  modalBtnCancel: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  modalBtnCancelText: { fontSize: 16, fontWeight: '600', color: '#6B7280' },
-  modalBtnAdd: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-    backgroundColor: '#003f88',
-  },
-  modalBtnAddText: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
-});
+    actionsRow: { flexDirection: 'row', marginTop: 12 },
+    spacer: { width: 8 },
+
+    primaryButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    primaryButtonDisabled: { opacity: 0.6 },
+    primaryButtonText: { color: colors.white, fontWeight: '700' },
+
+    secondaryButton: {
+      flex: 1,
+      borderRadius: 10,
+      paddingVertical: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    secondaryButtonText: { color: colors.text, fontWeight: '600' },
+    saveButtonWrapper: { marginTop: 24 },
+
+    calendarContainer: { flex: 1, backgroundColor: colors.bg },
+
+    weekHeader: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    weekDay: { flex: 1, alignItems: 'center', paddingVertical: 12 },
+    weekDayName: { fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 4 },
+    weekDayDate: { fontSize: 16, fontWeight: '700', color: colors.text },
+
+    timeGrid: { flex: 1 },
+    timeRow: {
+      flexDirection: 'row',
+      height: 60,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    timeLabel: {
+      width: 60,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.primarySoft,
+    },
+    timeLabelText: { fontSize: 12, color: colors.muted, fontWeight: '500' },
+
+    timeCell: {
+      flex: 1,
+      borderLeftWidth: 1,
+      borderLeftColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    timeCellFilled: { backgroundColor: colors.primarySoft },
+    slotIndicator: { flex: 1, backgroundColor: colors.primary, opacity: 0.3 },
+
+    slotsSummary: {
+      backgroundColor: colors.card,
+      padding: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    slotsSummaryTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 12 },
+    daySummary: { marginBottom: 16 },
+    daySummaryDay: { fontSize: 14, fontWeight: '600', color: colors.muted, marginBottom: 8 },
+
+    slotItemRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      backgroundColor: colors.primarySoft,
+      borderRadius: 6,
+      marginBottom: 4,
+    },
+    slotTime: { fontSize: 14, color: colors.text, fontWeight: '500' },
+
+    monthGrid: { backgroundColor: colors.card, padding: 8 },
+    monthWeekHeader: { flexDirection: 'row', marginBottom: 8 },
+    monthWeekDay: { flex: 1, alignItems: 'center' },
+    monthWeekDayText: { fontSize: 12, fontWeight: '600', color: colors.muted },
+
+    monthDaysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+    monthDay: {
+      width: '14.28%',
+      aspectRatio: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 4,
+      backgroundColor: colors.card,
+    },
+    monthDayDim: { opacity: 0.3 },
+    monthDayToday: { backgroundColor: colors.primarySoft },
+    monthDayNumber: { fontSize: 14, fontWeight: '600', color: colors.text },
+    monthDayNumberDim: { color: colors.muted },
+    monthDayNumberToday: { color: colors.primary },
+    monthSlotIndicators: { flexDirection: 'row', gap: 2, marginTop: 4 },
+    monthSlotDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary },
+
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 24,
+      width: '85%',
+      maxWidth: 400,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalTitle: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 20 },
+    modalField: { marginBottom: 16 },
+    modalLabel: { fontSize: 14, fontWeight: '600', color: colors.muted, marginBottom: 8 },
+    modalValue: { fontSize: 16, color: colors.text, fontWeight: '500' },
+    modalInput: {
+      backgroundColor: colors.primarySoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      color: colors.text,
+    },
+    modalButtons: { flexDirection: 'row', gap: 12, marginTop: 24 },
+    modalBtnCancel: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    modalBtnCancelText: { fontSize: 16, fontWeight: '600', color: colors.muted },
+    modalBtnAdd: {
+      flex: 1,
+      paddingVertical: 12,
+      alignItems: 'center',
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+    },
+    modalBtnAddText: { fontSize: 16, fontWeight: '600', color: colors.white },
+  });
