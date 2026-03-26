@@ -59,14 +59,23 @@ export const updateIncident = async (req, res, next) => {
       return next(new ErrorResponse("Not authorized", 403));
     }
 
-    Object.assign(incident, req.body);
+
+    const allowedFields = ["severity", "description", "status"];
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        incident[field] = req.body[field];
+      }
+    });
 
     await incident.save();
 
     await req.audit.log(req.user._id, ACTIONS.INCIDENT_UPDATED, {
       incidentId: incident._id,
+      updatedFields: Object.keys(req.body).filter((field) =>
+        allowedFields.includes(field)
+      ),
     });
-
     res.json({ success: true, data: incident });
   } catch (err) {
     next(err);
