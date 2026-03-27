@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import http from "../lib/http";
 
 // ❌ removed local dummy guardData
 
@@ -43,21 +44,7 @@ function GuardProfiles() {
         setLoading(true);                                              // NEW
         setError("");                                                  // NEW
 
-        const token = localStorage.getItem("token");                   // NEW (if you use JWT)
-        const res = await fetch(`${API_BASE}/api/v1/users/guards`, {
-  method: "GET",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`, // ✅ send token
-  }
-});                                            // NEW
-
-        if (!res.ok) {                                                 // NEW
-          const text = await res.text().catch(() => "");               // NEW
-          throw new Error(text || `Request failed (${res.status})`);   // NEW
-        }                                                              // NEW
-
-        const data = await res.json();                                 // NEW
+       const { data } = await http.get("/users/guards");               // NEW
 
         // Accept both shapes: array OR {guards:[...]} ----------------- // NEW
         const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : []; // NEW
@@ -82,9 +69,15 @@ function GuardProfiles() {
         }));                                                           // NEW
 
         if (mounted) setGuards(normalized);                            // NEW
-      } catch (e) {                                                    // NEW
-        if (mounted) setError(e.message || "Failed to fetch guards");  // NEW
-      } finally {                                                      // NEW
+      } catch (e) {
+  if (!mounted) return;
+
+  if (e.response?.status === 403) {
+    setError("You don’t have permission to view guards yet.");
+  } else {
+    setError(e.response?.data?.message || e.message || "Failed to fetch guards");
+  }
+}        finally {                                                      // NEW
         if (mounted) setLoading(false);                                // NEW
       }                                                                // NEW
     })();                                                              // NEW
@@ -162,7 +155,8 @@ function GuardProfiles() {
         {/* NEW: loading / error / empty states */}
         {loading && <p style={{ textAlign: "center" }}>Loading guards…</p>}                  {/* NEW */}
         {!loading && error && (                                                                /* NEW */
-          <p style={{ textAlign: "center", color: "#b00020" }}>Failed to load: {error}</p>    /* NEW */
+          <p style={{ textAlign: "center", color: "#b00020" }}>{error}</p>    /* NEW */
+
         )}                                                                                    
         {!loading && !error && guards.length === 0 && (                                        /* NEW */
           <p style={{ textAlign: "center" }}>No guards found.</p>                             /* NEW */
