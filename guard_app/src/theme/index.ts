@@ -1,1 +1,0 @@
-export { ThemeProvider, useThemeContext as useAppTheme } from './ThemeProvider';
