@@ -3,8 +3,6 @@ import Shift from '../models/Shift.js';
 
 import { ACTIONS } from "../middleware/logger.js";
 
-import { timeToMinutes, normalizeEnd } from '../utils/timeUtils.js';
-
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
 const isValidHHMM = (s) => typeof s === 'string' && HHMM.test(s);
@@ -323,24 +321,6 @@ export const applyForShift = async (req, res) => {
       return res.status(400).json({ message: 'Already applied' });
     }
 
-    const userShifts = await Shift.find({
-      date: shift.date,
-      _id: { $ne: id },
-      applicants: userId,
-    });
-
-    const hasOverlap = userShifts.some(existing => {
-      const newStart = timeToMinutes(shift.startTime);
-      const newEnd = normalizeEnd(shift.startTime, shift.endTime);
-      const exStart = timeToMinutes(existing.startTime);
-      const exEnd = normalizeEnd(existing.startTime, existing.endTime);
-      return newStart < exEnd && newEnd > exStart;
-    });
-
-    if (hasOverlap) {
-      return res.status(400).json({ message: 'Cannot apply; shift overlaps with existing applied shift/s' });
-    }
-    
     shift.applicants.push(userId);
     if (shift.status === 'open') shift.status = 'applied';
 

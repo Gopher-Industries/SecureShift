@@ -1,3 +1,4 @@
+// Put vector-icons first, then React (to satisfy your import/order rule)
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -24,11 +25,12 @@ import {
   type MessageDto,
   type MessageUser,
 } from '../api/messages';
-import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { RouteProp } from '@react-navigation/native';
+
+const NAVY = '#274b93';
+const SLATE = '#111827';
 
 type Message = {
   id: string;
@@ -51,9 +53,6 @@ type ConversationItem = {
 };
 
 export default function MessagesScreen() {
-  const { colors } = useAppTheme();
-  const styles = getStyles(colors);
-
   const route = useRoute<RouteProp<RootStackParamList, 'Messages'>>();
   const initialContext =
     route.params?.context ?? (route.params?.shiftParticipantId ? 'shift' : 'general');
@@ -373,7 +372,7 @@ export default function MessagesScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="chatbubbles-outline" size={22} color={colors.white} />
+            <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
             <Text style={styles.headerTitle}>Messages</Text>
           </View>
           <View style={styles.contextToggle}>
@@ -425,7 +424,6 @@ export default function MessagesScreen() {
               <TextInput
                 style={styles.newConversationInput}
                 placeholder="Recipient user ID"
-                placeholderTextColor={colors.muted}
                 value={newRecipientId}
                 onChangeText={setNewRecipientId}
                 autoCapitalize="none"
@@ -433,7 +431,6 @@ export default function MessagesScreen() {
               <TextInput
                 style={styles.newConversationInput}
                 placeholder="Recipient name (optional)"
-                placeholderTextColor={colors.muted}
                 value={newRecipientName}
                 onChangeText={setNewRecipientName}
               />
@@ -449,12 +446,12 @@ export default function MessagesScreen() {
               ListEmptyComponent={
                 loading ? (
                   <View style={styles.placeholder}>
-                    <ActivityIndicator color={colors.primary} />
+                    <ActivityIndicator />
                     <Text style={styles.placeholderTitle}>Loading conversations…</Text>
                   </View>
                 ) : (
                   <View style={styles.placeholder}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={36} color={colors.muted} />
+                    <Ionicons name="chatbubble-ellipses-outline" size={36} color="#9ca3af" />
                     <Text style={styles.placeholderTitle}>No conversations yet</Text>
                     <Text style={styles.placeholderText}>
                       Start a new chat from a shift or by selecting a contact.
@@ -473,12 +470,12 @@ export default function MessagesScreen() {
             ListEmptyComponent={
               loading ? (
                 <View style={styles.placeholder}>
-                  <ActivityIndicator color={colors.primary} />
+                  <ActivityIndicator />
                   <Text style={styles.placeholderTitle}>Loading messages…</Text>
                 </View>
               ) : (
                 <View style={styles.placeholder}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={36} color={colors.muted} />
+                  <Ionicons name="chatbubble-ellipses-outline" size={36} color="#9ca3af" />
                   <Text style={styles.placeholderTitle}>No messages yet</Text>
                   <Text style={styles.placeholderText}>
                     Start the conversation to coordinate shifts or share updates.
@@ -506,7 +503,6 @@ export default function MessagesScreen() {
             placeholder={
               activeParticipant?.id ? 'Type your message...' : 'Select a conversation to start'
             }
-            placeholderTextColor={colors.muted}
             value={input}
             onChangeText={setInput}
             editable={Boolean(activeParticipant?.id)}
@@ -516,7 +512,7 @@ export default function MessagesScreen() {
             onPress={sendMessage}
             disabled={!activeParticipant?.id}
           >
-            <Ionicons name="send" size={20} color={colors.white} />
+            <Ionicons name="send" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -524,193 +520,187 @@ export default function MessagesScreen() {
   );
 }
 
-const getStyles = (colors: AppColors) =>
-  StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.bg },
-    kav: { flex: 1 },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f9f9f9' },
+  kav: { flex: 1 }, // <- replaces inline { flex: 1 }
 
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.header,
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-      justifyContent: 'space-between',
-    },
-    headerLeft: { flexDirection: 'row', alignItems: 'center' },
-    headerTitle: {
-      color: colors.white,
-      fontSize: 18,
-      fontWeight: '700',
-      marginLeft: 8,
-    },
-    contextToggle: {
-      flexDirection: 'row',
-      backgroundColor: 'rgba(255,255,255,0.18)',
-      borderRadius: 16,
-      padding: 2,
-    },
-    contextChip: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 14,
-    },
-    contextChipActive: { backgroundColor: colors.white },
-    contextChipText: { fontSize: 12, color: '#e5e7eb', fontWeight: '600' },
-    contextChipTextActive: { color: colors.header },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: NAVY,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+  },
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  contextToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 16,
+    padding: 2,
+  },
+  contextChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+  },
+  contextChipActive: { backgroundColor: '#ffffff' },
+  contextChipText: { fontSize: 12, color: '#e5e7eb', fontWeight: '600' },
+  contextChipTextActive: { color: NAVY },
 
-    contextBanner: {
-      backgroundColor: colors.primarySoft,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    contextBannerText: { fontSize: 14, fontWeight: '700', color: colors.text },
-    contextBannerSub: { fontSize: 12, color: colors.muted, marginTop: 2 },
-    errorText: { color: colors.status.rejected, paddingHorizontal: 16, paddingTop: 8 },
+  contextBanner: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  contextBannerText: { fontSize: 14, fontWeight: '700', color: SLATE },
+  contextBannerSub: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  errorText: { color: '#b91c1c', paddingHorizontal: 16, paddingTop: 8 },
 
-    chat: { padding: 12 },
-    chatEmpty: { flexGrow: 1, justifyContent: 'center' },
-    placeholder: { alignItems: 'center', paddingHorizontal: 24 },
-    placeholderTitle: { marginTop: 8, fontSize: 16, fontWeight: '700', color: colors.text },
-    placeholderText: { marginTop: 4, textAlign: 'center', color: colors.muted },
+  chat: { padding: 12 },
+  chatEmpty: { flexGrow: 1, justifyContent: 'center' },
+  placeholder: { alignItems: 'center', paddingHorizontal: 24 },
+  placeholderTitle: { marginTop: 8, fontSize: 16, fontWeight: '700', color: SLATE },
+  placeholderText: { marginTop: 4, textAlign: 'center', color: '#6b7280' },
 
-    conversationListWrap: { flex: 1 },
-    sectionTitle: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: colors.text,
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      paddingBottom: 4,
-    },
-    conversationRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 12,
-      marginBottom: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    conversationInfo: { flex: 1 },
-    conversationHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 4,
-    },
-    conversationName: { fontSize: 14, fontWeight: '700', color: colors.text },
-    conversationTime: { fontSize: 11, color: colors.muted },
-    conversationPreview: { fontSize: 12, color: colors.muted },
-    unreadBadge: {
-      minWidth: 20,
-      paddingHorizontal: 6,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    unreadText: { color: colors.white, fontSize: 11, fontWeight: '700' },
-    newConversationCard: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 12,
-      marginHorizontal: 12,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    newConversationTitle: { fontSize: 13, fontWeight: '700', color: colors.text, marginBottom: 8 },
-    newConversationInput: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-      marginBottom: 8,
-      fontSize: 13,
-      color: colors.text,
-      backgroundColor: colors.bg,
-    },
-    newConversationBtn: {
-      alignSelf: 'flex-start',
-      backgroundColor: colors.primary,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 8,
-    },
-    newConversationBtnText: { color: colors.white, fontWeight: '700', fontSize: 13 },
+  conversationListWrap: { flex: 1 },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: SLATE,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  conversationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  conversationInfo: { flex: 1 },
+  conversationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  conversationName: { fontSize: 14, fontWeight: '700', color: SLATE },
+  conversationTime: { fontSize: 11, color: '#6b7280' },
+  conversationPreview: { fontSize: 12, color: '#6b7280' },
+  unreadBadge: {
+    minWidth: 20,
+    paddingHorizontal: 6,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: NAVY,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadText: { color: '#ffffff', fontSize: 11, fontWeight: '700' },
+  newConversationCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 12,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  newConversationTitle: { fontSize: 13, fontWeight: '700', color: SLATE, marginBottom: 8 },
+  newConversationInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 8,
+    fontSize: 13,
+    color: SLATE,
+    backgroundColor: '#F9FAFB',
+  },
+  newConversationBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: NAVY,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  newConversationBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
 
-    messageRow: { marginBottom: 10 },
-    bubble: {
-      maxWidth: '75%',
-      padding: 12,
-      borderRadius: 16,
-    },
-    bubbleGuard: {
-      alignSelf: 'flex-end',
-      backgroundColor: colors.primary,
-      borderTopRightRadius: 4,
-    },
-    bubbleEmployer: {
-      alignSelf: 'flex-start',
-      backgroundColor: colors.card,
-      borderTopLeftRadius: 4,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    msgSender: { fontSize: 11, color: colors.muted, marginBottom: 4, fontWeight: '600' },
-    msgTextLight: { color: colors.white, fontSize: 15 },
-    msgTextDark: { color: colors.text, fontSize: 15 },
-    metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-    msgTimeLight: { fontSize: 10, color: '#d1d5db' },
-    msgTimeDark: { fontSize: 10, color: colors.muted },
-    msgStatus: { marginLeft: 4, fontSize: 10, color: '#c7d2fe' },
+  messageRow: { marginBottom: 10 },
+  bubble: {
+    maxWidth: '75%',
+    padding: 12,
+    borderRadius: 16,
+  },
+  bubbleGuard: {
+    alignSelf: 'flex-end',
+    backgroundColor: NAVY,
+    borderTopRightRadius: 4,
+  },
+  bubbleEmployer: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#e5e7eb',
+    borderTopLeftRadius: 4,
+  },
+  msgSender: { fontSize: 11, color: '#6b7280', marginBottom: 4, fontWeight: '600' },
+  msgTextLight: { color: '#fff', fontSize: 15 },
+  msgTextDark: { color: SLATE, fontSize: 15 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  msgTimeLight: { fontSize: 10, color: '#d1d5db' },
+  msgTimeDark: { fontSize: 10, color: '#6b7280' },
+  msgStatus: { marginLeft: 4, fontSize: 10, color: '#c7d2fe' },
 
-    typingRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingBottom: 8,
-    },
-    typingBubble: {
-      backgroundColor: colors.card,
-      borderRadius: 14,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    typingText: { color: colors.text, fontSize: 12, fontWeight: '600' },
-    typingToggle: { marginLeft: 8 },
-    typingToggleText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
+  typingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  typingBubble: {
+    backgroundColor: '#e5e7eb',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  typingText: { color: SLATE, fontSize: 12, fontWeight: '600' },
+  typingToggle: { marginLeft: 8 },
+  typingToggleText: { color: NAVY, fontSize: 12, fontWeight: '600' },
 
-    inputBar: {
-      flexDirection: 'row',
-      padding: 8,
-      borderTopWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    input: {
-      flex: 1,
-      borderRadius: 20,
-      paddingHorizontal: 14,
-      backgroundColor: colors.primarySoft,
-      color: colors.text,
-    },
-    inputDisabled: { opacity: 0.6 },
-    sendBtn: {
-      marginLeft: 8,
-      backgroundColor: colors.primary,
-      borderRadius: 20,
-      padding: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    sendBtnDisabled: { opacity: 0.5 },
-  });
+  inputBar: {
+    flexDirection: 'row',
+    padding: 8,
+    borderTopWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fff',
+  },
+  input: {
+    flex: 1,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    backgroundColor: '#f3f4f6',
+  },
+  inputDisabled: { opacity: 0.6 },
+  sendBtn: {
+    marginLeft: 8,
+    backgroundColor: NAVY,
+    borderRadius: 20,
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtnDisabled: { opacity: 0.5 },
+});
