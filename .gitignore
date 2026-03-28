@@ -7,3 +7,4 @@ docker-compose.override.yml
 *.json
 *.xml
 *.json
+**/.DS_Store
