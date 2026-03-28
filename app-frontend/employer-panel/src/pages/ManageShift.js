@@ -25,6 +25,8 @@ const Sort = Object.freeze({
     DateDesc: 'Date (Desc)',
 });
 
+const TABS = Object.freeze({ DETAILS: 'details', APPLICANTS: 'applicants' });
+
 // Normalize shift data from backend
 const normalizeShift = (s) => ({
     id: s._id,
@@ -42,6 +44,7 @@ const normalizeShift = (s) => ({
     urgency: s.urgency || 'normal',
     field: s.field || '',
     applicantCount: s.applicantCount ?? (Array.isArray(s.applicants) ? s.applicants.length : 0),
+    applicants: Array.isArray(s.applicants) ? s.applicants : [],
     assignedGuard: s.assignedGuard || null,
 });
 
@@ -61,9 +64,11 @@ const ManageShift = () => {
     const [feedback, setFeedback] = useState('');
     const [formErrors, setFormErrors] = useState({});
     const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
+    const [activeTab, setActiveTab] = useState(TABS.DETAILS);
+    const [applicantAction, setApplicantAction] = useState({});
     const itemsPerPage = 9;
 
-    // Chat state
+    //  Chat state 
     const [chatShift, setChatShift] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -87,8 +92,7 @@ const ManageShift = () => {
                 }
                 setShifts(apiShifts.map(normalizeShift));
             } catch (err) {
-                const message = err?.response?.data?.message || 'Error fetching shifts.';
-                setError(message);
+                setError(err?.response?.data?.message || 'Error fetching shifts.');
             } finally {
                 setLoading(false);
             }
@@ -101,7 +105,6 @@ const ManageShift = () => {
     }, [messages]);
 
     // Chat handlers 
-
     const openChatModal = async (shift) => {
         setChatShift(shift);
         setMessages([]);
@@ -225,6 +228,7 @@ const ManageShift = () => {
         return `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')} - ${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
     };
 
+    //  Detail modal handlers 
     const openShiftModal = (shift) => {
         setSelectedShift(shift);
         setDetailForm({
@@ -243,6 +247,9 @@ const ManageShift = () => {
         });
         setIsEditing(false);
         setFeedback('');
+        // Default to Applicants tab for Open shifts, Details for everything else
+        setActiveTab(shift.status === Filter.Open ? TABS.APPLICANTS : TABS.DETAILS);
+        setApplicantAction({});
     };
 
     const closeShiftModal = () => {
@@ -251,6 +258,7 @@ const ManageShift = () => {
         setIsEditing(false);
         setSaving(false);
         setFeedback('');
+        setApplicantAction({});
     };
 
     const handleDetailChange = (e) => {
@@ -333,6 +341,45 @@ const ManageShift = () => {
         }
     };
 
+    // Approval workflow 
+
+    const handleApproveGuard = async (guardId) => {
+        if (!selectedShift) return;
+        setApplicantAction((prev) => ({ ...prev, [guardId]: 'approving' }));
+        try {
+            const { data } = await http.put(`/shifts/${selectedShift.id}/approve`, { guardId });
+            const updatedShift = normalizeShift(data.shift || { ...selectedShift, status: 'assigned', assignedGuard: guardId });
+            setShifts((prev) => prev.map((s) => s.id === updatedShift.id ? updatedShift : s));
+            setSelectedShift(updatedShift);
+            setApplicantAction((prev) => ({ ...prev, [guardId]: 'approved' }));
+            setFeedback('Guard approved. Shift is now In Progress.');
+        } catch (err) {
+            setFeedback(err?.response?.data?.message || 'Failed to approve guard');
+            setApplicantAction((prev) => ({ ...prev, [guardId]: undefined }));
+        }
+    };
+
+    const handleRejectGuard = async (guardId) => {
+        if (!selectedShift) return;
+        setApplicantAction((prev) => ({ ...prev, [guardId]: 'rejecting' }));
+        try {
+            await http.put(`/shifts/${selectedShift.id}/reject`, { guardId });
+            const updatedApplicants = selectedShift.applicants.filter((a) => (a._id || a.id) !== guardId);
+            const updatedShift = { ...selectedShift, applicants: updatedApplicants, applicantCount: updatedApplicants.length };
+            setShifts((prev) => prev.map((s) => s.id === updatedShift.id ? updatedShift : s));
+            setSelectedShift(updatedShift);
+            setApplicantAction((prev) => { const n = { ...prev }; delete n[guardId]; return n; });
+        } catch (err) {
+            setFeedback(err?.response?.data?.message || 'Failed to reject guard');
+            setApplicantAction((prev) => ({ ...prev, [guardId]: undefined }));
+        }
+    };
+
+
+
+    // Only show Applicants tab for Open shifts
+    const showApplicantsTab = selectedShift?.status === Filter.Open;
+
     return (
         <div style={containerStyle}>
             <div style={headerStyle}>
@@ -387,8 +434,16 @@ const ManageShift = () => {
                                         <span style={detailTextStyle}>{formatTimeRange(shift.startTime, shift.endTime)}</span>
                                     </div>
                                 </div>
+                                {/* Applicant badge — only on Open shifts */}
+                                {shift.status === Filter.Open && shift.applicantCount > 0 && (
+                                    <div style={applicantBadgeStyle}>
+                                        <span style={applicantDotStyle} />
+                                        {shift.applicantCount} applicant{shift.applicantCount !== 1 ? 's' : ''} pending review
+                                    </div>
+                                )}
                                 <div style={cardActionsRowStyle}>
                                     <button style={viewDetailsButtonStyle} onClick={() => openShiftModal(shift)}>View Details</button>
+                                    {/* Chat icon — only on In Progress shifts */}
                                     {shift.status === 'In Progress' && (
                                         <button style={chatIconButtonStyle} onClick={() => openChatModal(shift)} title="Open shift chat">
                                             <ChatIcon />
@@ -423,9 +478,7 @@ const ManageShift = () => {
             {selectedShift && detailForm && (
                 <div
                     style={detailModalOverlay}
-                    onMouseDown={(e) => {
-                        if (e.target === e.currentTarget) closeShiftModal();
-                    }}
+                    onMouseDown={(e) => { if (e.target === e.currentTarget) closeShiftModal(); }}
                 >
                     <div
                         style={detailModalContent}
@@ -435,83 +488,124 @@ const ManageShift = () => {
                         <div style={detailModalHeader}>
                             <div>
                                 <p style={detailModalOverline}>Secure Shift</p>
-                                <h2 style={detailModalTitle}>{isEditing ? 'Edit Shift' : 'Shift Details'}</h2>
-                                <p style={detailModalSubtitle}>Review and update shift fields. All fields are required.</p>
+                                <h2 style={detailModalTitle}>
+                                    {activeTab === TABS.APPLICANTS ? 'Applicants' : (isEditing ? 'Edit Shift' : 'Shift Details')}
+                                </h2>
+                                <p style={detailModalSubtitle}>
+                                    {activeTab === TABS.APPLICANTS
+                                        ? `${selectedShift.applicants?.length ?? 0} applicant(s) for this shift.`
+                                        : 'Review and update shift fields.'}
+                                </p>
                             </div>
                             <button style={modalCloseButton} onClick={closeShiftModal}>×</button>
                         </div>
 
+                        {/* Tab bar — Applicants tab only for Open shifts */}
+                        <div style={tabBarStyle}>
+                            <button
+                                style={activeTab === TABS.DETAILS ? activeTabStyle : tabStyle}
+                                onClick={() => setActiveTab(TABS.DETAILS)}
+                            >
+                                Details
+                            </button>
+                            {showApplicantsTab && (
+                                <button
+                                    style={activeTab === TABS.APPLICANTS ? activeTabStyle : tabStyle}
+                                    onClick={() => setActiveTab(TABS.APPLICANTS)}
+                                >
+                                    Applicants
+                                    {(selectedShift.applicants?.length ?? 0) > 0 && (
+                                        <span style={tabBadgeStyle}>{selectedShift.applicants.length}</span>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+
                         {feedback && (
-                            <div style={feedback === 'Saved successfully' ? feedbackSuccessStyle : feedbackErrorStyle}>
+                            <div style={feedback === 'Saved successfully' || feedback.includes('approved') ? feedbackSuccessStyle : feedbackErrorStyle}>
                                 {feedback}
                             </div>
                         )}
 
-                        <div style={detailGrid}>
-                            <div style={detailField}>
-                                <label style={detailLabel}>Job Title</label>
-                                <input name="title" value={detailForm.title} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="Job title" />
-                                {formErrors.title && <span style={inlineError}>{formErrors.title}</span>}
-                            </div>
-                            <div style={detailField}>
-                                <label style={detailLabel}>Date</label>
-                                <input type="date" name="date" value={detailForm.date} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
-                                {formErrors.date && <span style={inlineError}>{formErrors.date}</span>}
-                            </div>
-                            <div style={detailField}>
-                                <label style={detailLabel}>Start Time</label>
-                                <input type="time" name="startTime" value={detailForm.startTime} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
-                                {formErrors.startTime && <span style={inlineError}>{formErrors.startTime}</span>}
-                            </div>
-                            <div style={detailField}>
-                                <label style={detailLabel}>End Time</label>
-                                <input type="time" name="endTime" value={detailForm.endTime} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
-                                {formErrors.endTime && <span style={inlineError}>{formErrors.endTime}</span>}
-                            </div>
-                            <div style={detailField}>
-                                <label style={detailLabel}>Location</label>
-                                <input name="street" value={detailForm.street} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="Street" />
-                            </div>
-                            <div style={detailField}>
-                                <label style={detailLabel}>Pay Rate</label>
-                                <input type="number" name="payRate" value={detailForm.payRate} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="0.00" />
-                                {formErrors.payRate && <span style={inlineError}>{formErrors.payRate}</span>}
-                            </div>
-                            <div style={detailField}>
-                                <label style={detailLabel}>Field</label>
-                                <input name="field" value={detailForm.field} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="e.g. Security" />
-                            </div>
-                            <div style={detailField}>
-                                <label style={detailLabel}>Urgency</label>
-                                <select name="urgency" value={detailForm.urgency} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing}>
-                                    <option value="normal">Normal</option>
-                                    <option value="priority">Priority</option>
-                                    <option value="last-minute">Last-minute</option>
-                                </select>
-                            </div>
-                            <div style={detailField}>
-                                <label style={detailLabel}>Status</label>
-                                <select name="status" value={detailForm.status} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing}>
-                                    {editableStatuses.map((statusOption) => (
-                                        <option key={statusOption} value={statusOption}>{statusOption}</option>
-                                    ))}
-                                </select>
-                                {formErrors.status && <span style={inlineError}>{formErrors.status}</span>}
-                            </div>
-                        </div>
+                        {/* ── Details tab ── */}
+                        {activeTab === TABS.DETAILS && (
+                            <>
+                                <div style={detailGrid}>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>Job Title</label>
+                                        <input name="title" value={detailForm.title} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="Job title" />
+                                        {formErrors.title && <span style={inlineError}>{formErrors.title}</span>}
+                                    </div>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>Date</label>
+                                        <input type="date" name="date" value={detailForm.date} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
+                                        {formErrors.date && <span style={inlineError}>{formErrors.date}</span>}
+                                    </div>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>Start Time</label>
+                                        <input type="time" name="startTime" value={detailForm.startTime} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
+                                        {formErrors.startTime && <span style={inlineError}>{formErrors.startTime}</span>}
+                                    </div>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>End Time</label>
+                                        <input type="time" name="endTime" value={detailForm.endTime} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
+                                        {formErrors.endTime && <span style={inlineError}>{formErrors.endTime}</span>}
+                                    </div>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>Location</label>
+                                        <input name="street" value={detailForm.street} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="Street" />
+                                    </div>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>Pay Rate</label>
+                                        <input type="number" name="payRate" value={detailForm.payRate} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="0.00" />
+                                        {formErrors.payRate && <span style={inlineError}>{formErrors.payRate}</span>}
+                                    </div>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>Field</label>
+                                        <input name="field" value={detailForm.field} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="e.g. Security" />
+                                    </div>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>Urgency</label>
+                                        <select name="urgency" value={detailForm.urgency} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing}>
+                                            <option value="normal">Normal</option>
+                                            <option value="priority">Priority</option>
+                                            <option value="last-minute">Last-minute</option>
+                                        </select>
+                                    </div>
+                                    <div style={detailField}>
+                                        <label style={detailLabel}>Status</label>
+                                        <select name="status" value={detailForm.status} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing}>
+                                            {editableStatuses.map((statusOption) => (
+                                                <option key={statusOption} value={statusOption}>{statusOption}</option>
+                                            ))}
+                                        </select>
+                                        {formErrors.status && <span style={inlineError}>{formErrors.status}</span>}
+                                    </div>
+                                </div>
+                                <div style={detailActions}>
+                                    {!isEditing ? (
+                                        <button style={primaryButton} onClick={() => { setFeedback(''); setIsEditing(true); }}>Edit Shift</button>
+                                    ) : (
+                                        <>
+                                            <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>
+                                                {saving ? 'Saving...' : 'Save changes'}
+                                            </button>
+                                            <button style={secondaryButton} onClick={closeShiftModal}>Cancel edit</button>
+                                        </>
+                                    )}
+                                </div>
+                            </>
+                        )}
 
-                        <div style={detailActions}>
-                            {!isEditing ? (
-                                <button style={primaryButton} onClick={() => { setFeedback(''); setIsEditing(true); }}>Edit Shift</button>
-                            ) : (
-                                <>
-                                    <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>
-                                        {saving ? 'Saving...' : 'Save changes'}
-                                    </button>
-                                    <button style={secondaryButton} onClick={closeShiftModal}>Cancel edit</button>
-                                </>
-                            )}
-                        </div>
+                        {/* ── Applicants tab — only for Open shifts ── */}
+                        {activeTab === TABS.APPLICANTS && showApplicantsTab && (
+                            <ApplicantsPanel
+                                shift={selectedShift}
+                                applicantAction={applicantAction}
+                                onApprove={handleApproveGuard}
+                                onReject={handleRejectGuard}
+                            />
+                        )}
                     </div>
                 </div>
             )}
@@ -607,10 +701,7 @@ const ManageShift = () => {
                                 <button
                                     onClick={sendMessage}
                                     disabled={sendingMsg || !newMessage.trim()}
-                                    style={{
-                                        ...chatSendButtonStyle,
-                                        opacity: sendingMsg || !newMessage.trim() ? 0.5 : 1,
-                                    }}
+                                    style={{ ...chatSendButtonStyle, opacity: sendingMsg || !newMessage.trim() ? 0.5 : 1 }}
                                 >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <line x1="22" y1="2" x2="11" y2="13" />
@@ -629,14 +720,70 @@ const ManageShift = () => {
 };
 
 // Chat Icon SVG 
-
 const ChatIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
 );
 
-// Sub-components
+// Applicants Panel
+const ApplicantsPanel = ({ shift, applicantAction, onApprove, onReject }) => {
+    const applicants = shift.applicants || [];
+
+    if (applicants.length === 0) {
+        return (
+            <div style={emptyApplicantsStyle}>
+                <div style={emptyIconStyle}>👥</div>
+                <p style={{ margin: '8px 0 4px', fontWeight: 600, color: '#374151' }}>No applicants yet</p>
+                <p style={{ margin: 0, fontSize: '13px', color: '#9ca3af' }}>Guards who apply for this shift will appear here.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div style={applicantsPanelStyle}>
+            <div style={applicantsListStyle}>
+                {applicants.map((applicant) => {
+                    const gid = applicant._id || applicant.id;
+                    const action = applicantAction[gid];
+                    const isApproved = action === 'approved';
+                    const isRejected = action === 'rejected';
+
+                    return (
+                        <div key={gid} style={{ ...applicantCardStyle, ...(isApproved ? approvedCardStyle : {}) }}>
+                            <div style={avatarStyle}>
+                                {(applicant.name || applicant.email || 'G').charAt(0).toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <p style={applicantNameStyle}>{applicant.name || 'Unknown Guard'}</p>
+                                <p style={applicantEmailStyle}>{applicant.email || '--'}</p>
+                                {applicant.licenseType && <span style={licenseBadgeStyle}>{applicant.licenseType}</span>}
+                            </div>
+                            <div style={applicantActionsStyle}>
+                                {isApproved ? (
+                                    <span style={approvedPillStyle}>✓ Approved</span>
+                                ) : isRejected ? (
+                                    <span style={rejectedPillStyle}>✗ Rejected</span>
+                                ) : (
+                                    <>
+                                        <button style={approveButtonStyle} onClick={() => onApprove(gid)} disabled={action === 'approving'}>
+                                            {action === 'approving' ? '...' : 'Approve'}
+                                        </button>
+                                        <button style={rejectButtonStyle} onClick={() => onReject(gid)} disabled={action === 'rejecting'}>
+                                            {action === 'rejecting' ? '...' : 'Reject'}
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+// Sub-components 
 const SummaryCard = ({ label, number, icon, bg }) => (
     <div style={{ ...summaryCardStyle, backgroundColor: bg }}>
         <div>
@@ -715,7 +862,7 @@ const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
 
 export default ManageShift;
 
-// Styles
+// Styles 
 
 const getStatusTagStyle = (status) => ({
     padding: '4px 12px',
@@ -727,14 +874,12 @@ const getStatusTagStyle = (status) => ({
         status === "Completed" ? "#2E7D32" :
         status === "In Progress" ? "#7B1FA2" :
         status === "Pending" ? "#F57C00" :
-        status === "Open" ? "#1565C0" :
-        "#757575",
+        status === "Open" ? "#1565C0" : "#757575",
     backgroundColor:
         status === "Completed" ? "#EAFAE7" :
         status === "In Progress" ? "#F6EFFF" :
         status === "Pending" ? "#FBFAE2" :
-        status === "Open" ? "#E3F2FD" :
-        "#F5F5F5",
+        status === "Open" ? "#E3F2FD" : "#F5F5F5",
 });
 
 const containerStyle = { padding: '40px', minHeight: '100vh', maxWidth: '1200px', margin: '0 auto' };
@@ -766,6 +911,8 @@ const detailTextStyle = { fontSize: '14px', color: '#1E1E1E', fontWeight: '400' 
 const cardActionsRowStyle = { display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' };
 const viewDetailsButtonStyle = { flex: 1, backgroundColor: '#274b93', color: 'white', border: 'none', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' };
 const chatIconButtonStyle = { width: '44px', height: '44px', backgroundColor: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0 };
+const applicantBadgeStyle = { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#274b93', fontWeight: 500, background: '#EFF4FF', borderRadius: '8px', padding: '4px 10px' };
+const applicantDotStyle = { width: '6px', height: '6px', borderRadius: '50%', background: '#274b93', display: 'inline-block' };
 const paginationStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' };
 const paginationButtonStyle = { width: '32px', height: '32px', backgroundColor: 'white', border: 'none', borderRadius: '16px', fontSize: '14px', fontWeight: '500', color: '#1E1E1E', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 const activePaginationButtonStyle = { ...paginationButtonStyle, backgroundColor: '#274b93', color: 'white', fontWeight: '600' };
@@ -798,7 +945,30 @@ const feedbackSuccessStyle = { ...feedbackStyle, backgroundColor: '#edf7ed', col
 const feedbackErrorStyle = { ...feedbackStyle, backgroundColor: '#ffebee', color: '#c62828', border: '1px solid #ffcdd2' };
 const inlineError = { color: '#d14343', fontSize: '12px', marginTop: '2px' };
 
-// Chat modal styles 
+// Tab styles
+const tabBarStyle = { display: 'flex', gap: '4px', borderBottom: '2px solid #f3f4f6', marginBottom: '8px' };
+const tabStyle = { padding: '10px 20px', background: 'none', border: 'none', fontSize: '14px', fontWeight: 500, color: '#9ca3af', cursor: 'pointer', borderBottomWidth: '2px', borderBottomStyle: 'solid', borderBottomColor: 'transparent', marginBottom: '-2px', display: 'flex', alignItems: 'center', gap: '6px' };
+const activeTabStyle = { ...tabStyle, color: '#274b93', borderBottomColor: '#274b93', fontWeight: 700 };
+const tabBadgeStyle = { backgroundColor: '#274b93', color: 'white', borderRadius: '10px', padding: '1px 7px', fontSize: '11px', fontWeight: 700 };
+
+// Applicant panel styles
+const applicantsPanelStyle = { marginTop: '8px' };
+const applicantsListStyle = { display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' };
+const applicantCardStyle = { display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', borderRadius: '12px', border: '1px solid #e5e7eb', background: '#fff' };
+const approvedCardStyle = { borderColor: '#bbf7d0', background: '#f0fdf4' };
+const avatarStyle = { width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #274b93, #4a72d4)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '16px', flexShrink: 0 };
+const applicantNameStyle = { margin: '0 0 2px', fontSize: '14px', fontWeight: 600, color: '#111827' };
+const applicantEmailStyle = { margin: 0, fontSize: '12px', color: '#6b7280' };
+const licenseBadgeStyle = { display: 'inline-block', marginTop: '4px', padding: '2px 8px', borderRadius: '8px', background: '#EFF4FF', color: '#274b93', fontSize: '11px', fontWeight: 600 };
+const applicantActionsStyle = { display: 'flex', gap: '8px', flexShrink: 0 };
+const approveButtonStyle = { padding: '7px 16px', borderRadius: '20px', border: 'none', background: '#274b93', color: 'white', fontSize: '13px', fontWeight: 600, cursor: 'pointer' };
+const rejectButtonStyle = { padding: '7px 14px', borderRadius: '20px', border: '1px solid #d14343', background: 'white', color: '#d14343', fontSize: '13px', fontWeight: 600, cursor: 'pointer' };
+const approvedPillStyle = { padding: '6px 14px', borderRadius: '20px', background: '#dcfce7', color: '#16a34a', fontSize: '13px', fontWeight: 600 };
+const rejectedPillStyle = { padding: '6px 14px', borderRadius: '20px', background: '#fee2e2', color: '#dc2626', fontSize: '13px', fontWeight: 600 };
+const emptyApplicantsStyle = { textAlign: 'center', padding: '40px 20px', color: '#9ca3af' };
+const emptyIconStyle = { fontSize: '40px', marginBottom: '8px' };
+
+// Chat modal styles
 const chatModalOverlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: '20px' };
 const chatModalContainer = { background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '420px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 64px rgba(0,0,0,0.25)', overflow: 'hidden' };
 const chatModalHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px 14px', background: '#1a2f6e' };
