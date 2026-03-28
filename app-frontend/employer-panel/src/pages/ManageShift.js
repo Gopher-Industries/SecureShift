@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import http from '../lib/http';
 
@@ -33,7 +33,7 @@ const normalizeShift = (s) => ({
     startTime: s.startTime,
     endTime: s.endTime,
     dateTime: s.date && s.startTime ? `${s.date} ${s.startTime}` : s.date || "",
-    locationLabel: s.location 
+    locationLabel: s.location
         ? [s.location.street, s.location.suburb, s.location.state].filter(Boolean).join(', ')
         : "--",
     location: s.location || {},
@@ -42,6 +42,7 @@ const normalizeShift = (s) => ({
     urgency: s.urgency || 'normal',
     field: s.field || '',
     applicantCount: s.applicantCount ?? (Array.isArray(s.applicants) ? s.applicants.length : 0),
+    assignedGuard: s.assignedGuard || null,
 });
 
 const ManageShift = () => {
@@ -62,75 +63,117 @@ const ManageShift = () => {
     const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
     const itemsPerPage = 9;
 
+    // Chat state
+    const [chatShift, setChatShift] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
+    const [sendingMsg, setSendingMsg] = useState(false);
+    const [loadingMessages, setLoadingMessages] = useState(false);
+    const chatEndRef = useRef(null);
+
     useEffect(() => {
-    const fetchShifts = async () => {
-        try {
-            const { data } = await http.get('/shifts');
-            let apiShifts;
-            if (Array.isArray(data)) {
-                apiShifts = data;
-            } else if (Array.isArray(data.shifts)) {
-                apiShifts = data.shifts;
-            } else if (data.items && Array.isArray(data.items)) {
-                apiShifts = data.items;
-            } else {
-                apiShifts = [];
+        const fetchShifts = async () => {
+            try {
+                const { data } = await http.get('/shifts');
+                let apiShifts;
+                if (Array.isArray(data)) {
+                    apiShifts = data;
+                } else if (Array.isArray(data.shifts)) {
+                    apiShifts = data.shifts;
+                } else if (data.items && Array.isArray(data.items)) {
+                    apiShifts = data.items;
+                } else {
+                    apiShifts = [];
+                }
+                setShifts(apiShifts.map(normalizeShift));
+            } catch (err) {
+                const message = err?.response?.data?.message || 'Error fetching shifts.';
+                setError(message);
+            } finally {
+                setLoading(false);
             }
-            setShifts(apiShifts.map(normalizeShift));
+        };
+        fetchShifts();
+    }, []);
+
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    // Chat handlers 
+
+    const openChatModal = async (shift) => {
+        setChatShift(shift);
+        setMessages([]);
+        setNewMessage('');
+        setLoadingMessages(true);
+        try {
+            const guardId = shift.assignedGuard?._id || shift.assignedGuard;
+            const { data } = await http.get(`/messages/conversation/${guardId}`);
+            setMessages(data.data?.conversation?.messages || []);
         } catch (err) {
-            const message = err?.response?.data?.message || 'Error fetching shifts.';
-            setError(message);
+            console.error('Failed to load messages', err);
         } finally {
-            setLoading(false);
+            setLoadingMessages(false);
         }
     };
-    fetchShifts();
-}, []);
 
+    const closeChatModal = () => {
+        setChatShift(null);
+        setMessages([]);
+        setNewMessage('');
+    };
+
+    const sendMessage = async () => {
+        if (!newMessage.trim() || !chatShift || sendingMsg) return;
+        setSendingMsg(true);
+        try {
+            const guardId = chatShift.assignedGuard?._id || chatShift.assignedGuard;
+            const { data } = await http.post(`/messages`, {
+                receiverId: guardId,
+                content: newMessage,
+            });
+            setMessages((prev) => [...prev, {
+                _id: data.data?.messageId,
+                content: data.data?.content || newMessage,
+                sender: { email: localStorage.getItem('userEmail') },
+                isOwn: true,
+                timestamp: data.data?.timestamp || new Date().toISOString(),
+            }]);
+            setNewMessage('');
+        } catch (err) {
+            console.error('Failed to send message', err);
+        } finally {
+            setSendingMsg(false);
+        }
+    };
+
+    const handleChatKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    };
+
+    // Filter / sort / pagination
 
     const filteredShifts = selectedFilter === Filter.All
         ? shifts
         : shifts.filter(shift => shift.status === selectedFilter);
 
     const sortedShifts = [...filteredShifts].sort((a, b) => {
-        // Build a comparable key using raw date + startTime strings
         const keyA = (a.date || '') + ' ' + (a.startTime || '');
         const keyB = (b.date || '') + ' ' + (b.startTime || '');
-
-        if (keyA !== keyB) {
-            if (sortBy === Sort.DateAsc) {
-                return keyA < keyB ? -1 : 1;
-            } else {
-                return keyA > keyB ? -1 : 1;
-            }
-        }
-
-        // Secondary key: endTime when date & startTime are the same
+        if (keyA !== keyB) return sortBy === Sort.DateAsc ? (keyA < keyB ? -1 : 1) : (keyA > keyB ? -1 : 1);
         const endA = a.endTime || '';
         const endB = b.endTime || '';
-
         if (endA === endB) return 0;
-
-        if (sortBy === Sort.DateAsc) {
-            return endA < endB ? -1 : 1;
-        } else {
-            return endA > endB ? -1 : 1;
-        }
+        return sortBy === Sort.DateAsc ? (endA < endB ? -1 : 1) : (endA > endB ? -1 : 1);
     });
 
     const totalPages = Math.ceil(sortedShifts.length / itemsPerPage);
 
-    // Ensure currentPage is always within valid range when data / filters / sort change
     useEffect(() => {
-        if (totalPages === 0) {
-            if (currentPage !== 1) setCurrentPage(1);
-            return;
-        }
-        if (currentPage > totalPages) {
-            setCurrentPage(totalPages);
-        } else if (currentPage < 1) {
-            setCurrentPage(1);
-        }
+        if (totalPages === 0) { if (currentPage !== 1) setCurrentPage(1); return; }
+        if (currentPage > totalPages) setCurrentPage(totalPages);
+        else if (currentPage < 1) setCurrentPage(1);
     }, [totalPages, currentPage]);
 
     const indexStart = (currentPage - 1) * itemsPerPage;
@@ -254,7 +297,6 @@ const ManageShift = () => {
                 urgency: detailForm.urgency,
                 ...(hasLocation ? { location: cleanedLocation } : {}),
             };
-            // optimistic update snapshot
             setOptimisticSnapshot({ shifts, selectedShift });
             const optimistic = { ...selectedShift, ...payload, status: detailForm.status };
             setShifts((prev) => prev.map((s) => s.id === selectedShift.id ? { ...s, ...optimistic } : s));
@@ -320,7 +362,7 @@ const ManageShift = () => {
             {!loading && !error && currentItems.length === 0 && <p>No shifts found.</p>}
             <div style={gridStyle}>
                 {currentItems.map((shift) => {
-                    const [datePart, timePart] = shift.dateTime?.split(' ') || [null, null];
+                    const [datePart] = shift.dateTime?.split(' ') || [null];
                     return (
                         <div key={shift.id} style={cardStyle}>
                             <div>
@@ -345,7 +387,14 @@ const ManageShift = () => {
                                         <span style={detailTextStyle}>{formatTimeRange(shift.startTime, shift.endTime)}</span>
                                     </div>
                                 </div>
-                                <button style={viewDetailsButtonStyle} onClick={() => openShiftModal(shift)}>View Details</button>
+                                <div style={cardActionsRowStyle}>
+                                    <button style={viewDetailsButtonStyle} onClick={() => openShiftModal(shift)}>View Details</button>
+                                    {shift.status === 'In Progress' && (
+                                        <button style={chatIconButtonStyle} onClick={() => openChatModal(shift)} title="Open shift chat">
+                                            <ChatIcon />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     );
@@ -369,6 +418,8 @@ const ManageShift = () => {
                     setShowSortModal={setShowSortModal}
                 />
             )}
+
+            {/* ─── Shift Detail Modal ─── */}
             {selectedShift && detailForm && (
                 <div
                     style={detailModalOverlay}
@@ -399,96 +450,40 @@ const ManageShift = () => {
                         <div style={detailGrid}>
                             <div style={detailField}>
                                 <label style={detailLabel}>Job Title</label>
-                                <input
-                                    name="title"
-                                    value={detailForm.title}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                    placeholder="Job title"
-                                />
+                                <input name="title" value={detailForm.title} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="Job title" />
                                 {formErrors.title && <span style={inlineError}>{formErrors.title}</span>}
                             </div>
                             <div style={detailField}>
                                 <label style={detailLabel}>Date</label>
-                                <input
-                                    type="date"
-                                    name="date"
-                                    value={detailForm.date}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                />
+                                <input type="date" name="date" value={detailForm.date} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
                                 {formErrors.date && <span style={inlineError}>{formErrors.date}</span>}
                             </div>
                             <div style={detailField}>
                                 <label style={detailLabel}>Start Time</label>
-                                <input
-                                    type="time"
-                                    name="startTime"
-                                    value={detailForm.startTime}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                />
+                                <input type="time" name="startTime" value={detailForm.startTime} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
                                 {formErrors.startTime && <span style={inlineError}>{formErrors.startTime}</span>}
                             </div>
                             <div style={detailField}>
                                 <label style={detailLabel}>End Time</label>
-                                <input
-                                    type="time"
-                                    name="endTime"
-                                    value={detailForm.endTime}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                />
+                                <input type="time" name="endTime" value={detailForm.endTime} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
                                 {formErrors.endTime && <span style={inlineError}>{formErrors.endTime}</span>}
                             </div>
                             <div style={detailField}>
                                 <label style={detailLabel}>Location</label>
-                                <input
-                                    name="street"
-                                    value={detailForm.street}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                    placeholder="Street"
-                                />
+                                <input name="street" value={detailForm.street} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="Street" />
                             </div>
                             <div style={detailField}>
                                 <label style={detailLabel}>Pay Rate</label>
-                                <input
-                                    type="number"
-                                    name="payRate"
-                                    value={detailForm.payRate}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                    placeholder="0.00"
-                                />
+                                <input type="number" name="payRate" value={detailForm.payRate} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="0.00" />
                                 {formErrors.payRate && <span style={inlineError}>{formErrors.payRate}</span>}
                             </div>
                             <div style={detailField}>
                                 <label style={detailLabel}>Field</label>
-                                <input
-                                    name="field"
-                                    value={detailForm.field}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                    placeholder="e.g. Security"
-                                />
+                                <input name="field" value={detailForm.field} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="e.g. Security" />
                             </div>
                             <div style={detailField}>
                                 <label style={detailLabel}>Urgency</label>
-                                <select
-                                    name="urgency"
-                                    value={detailForm.urgency}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                >
+                                <select name="urgency" value={detailForm.urgency} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing}>
                                     <option value="normal">Normal</option>
                                     <option value="priority">Priority</option>
                                     <option value="last-minute">Last-minute</option>
@@ -496,13 +491,7 @@ const ManageShift = () => {
                             </div>
                             <div style={detailField}>
                                 <label style={detailLabel}>Status</label>
-                                <select
-                                    name="status"
-                                    value={detailForm.status}
-                                    onChange={handleDetailChange}
-                                    style={inputStyle}
-                                    disabled={!isEditing}
-                                >
+                                <select name="status" value={detailForm.status} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing}>
                                     {editableStatuses.map((statusOption) => (
                                         <option key={statusOption} value={statusOption}>{statusOption}</option>
                                     ))}
@@ -513,15 +502,7 @@ const ManageShift = () => {
 
                         <div style={detailActions}>
                             {!isEditing ? (
-                                <button
-                                    style={primaryButton}
-                                    onClick={() => {
-                                        setFeedback('');
-                                        setIsEditing(true);
-                                    }}
-                                >
-                                    Edit Shift
-                                </button>
+                                <button style={primaryButton} onClick={() => { setFeedback(''); setIsEditing(true); }}>Edit Shift</button>
                             ) : (
                                 <>
                                     <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>
@@ -534,10 +515,128 @@ const ManageShift = () => {
                     </div>
                 </div>
             )}
+
+            {/* ─── Chat Modal ─── */}
+            {chatShift && (
+                <div style={chatModalOverlay} onClick={closeChatModal}>
+                    <div style={chatModalContainer} onClick={(e) => e.stopPropagation()}>
+
+                        {/* Header */}
+                        <div style={chatModalHeaderStyle}>
+                            <div style={chatModalHeaderLeft}>
+                                <div style={chatLogoStyle}>
+                                    <img src="/logo.svg" alt="SS" style={{ width: '20px', height: '20px' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                                </div>
+                                <div>
+                                    <p style={chatModalOverlineStyle}>SECURE SHIFT</p>
+                                    <p style={chatModalTitleStyle}>Shift Chat</p>
+                                </div>
+                            </div>
+                            <button style={chatCloseButtonStyle} onClick={closeChatModal}>×</button>
+                        </div>
+
+                        {/* Shift info pills */}
+                        <div style={chatShiftInfoRowStyle}>
+                            <span style={chatPillStyle}>
+                                <span style={chatPillDotStyle} />
+                                {chatShift.title}
+                            </span>
+                            <span style={chatPillStyle}>
+                                📍 {chatShift.locationLabel !== '--' ? chatShift.locationLabel : 'Location TBD'}
+                            </span>
+                            <span style={chatPillStyle}>
+                                🕐 {formatTimeRange(chatShift.startTime, chatShift.endTime)}
+                            </span>
+                        </div>
+
+                        {/* Guard name */}
+                        {chatShift.assignedGuard && (
+                            <div style={chatGuardNameStyle}>
+                                • {chatShift.assignedGuard?.name || 'Assigned Guard'}
+                            </div>
+                        )}
+
+                        {/* Messages */}
+                        <div style={chatMessagesAreaStyle}>
+                            {loadingMessages ? (
+                                <div style={chatEmptyStyle}>
+                                    <p style={{ color: '#9ca3af', fontSize: '13px' }}>Loading messages...</p>
+                                </div>
+                            ) : messages.length === 0 ? (
+                                <div style={chatEmptyStyle}>
+                                    <div style={{ marginBottom: '8px' }}>
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                        </svg>
+                                    </div>
+                                    <p style={{ margin: '0 0 4px', color: '#374151', fontSize: '14px', fontWeight: 500 }}>No messages yet</p>
+                                    <p style={{ margin: 0, color: '#9ca3af', fontSize: '12px' }}>Send a message to start the conversation</p>
+                                </div>
+                            ) : (
+                                messages.map((msg, i) => {
+                                    const currentUserEmail = localStorage.getItem('userEmail');
+                                    const isOwn = msg.isOwn || msg.sender?.email === currentUserEmail;
+                                    return (
+                                        <div key={msg._id || i} style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: '12px' }}>
+                                            {!isOwn && <span style={chatSenderNameStyle}>{msg.senderName || msg.sender?.email || 'Guard'}</span>}
+                                            <div style={isOwn ? chatBubbleOwnStyle : chatBubbleOtherStyle}>
+                                                {msg.content}
+                                            </div>
+                                            {msg.timestamp && (
+                                                <span style={chatTimestampStyle}>
+                                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            )}
+                            <div ref={chatEndRef} />
+                        </div>
+
+                        {/* Input */}
+                        <div style={chatInputAreaStyle}>
+                            <div style={chatInputRowStyle}>
+                                <input
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onKeyDown={handleChatKeyDown}
+                                    placeholder="Type a message..."
+                                    style={chatInputStyle}
+                                />
+                                <button
+                                    onClick={sendMessage}
+                                    disabled={sendingMsg || !newMessage.trim()}
+                                    style={{
+                                        ...chatSendButtonStyle,
+                                        opacity: sendingMsg || !newMessage.trim() ? 0.5 : 1,
+                                    }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="22" y1="2" x2="11" y2="13" />
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <p style={chatFooterNoteStyle}>Messages are visible to all parties on this shift</p>
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
+// Chat Icon SVG 
+
+const ChatIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+);
+
+// Sub-components
 const SummaryCard = ({ label, number, icon, bg }) => (
     <div style={{ ...summaryCardStyle, backgroundColor: bg }}>
         <div>
@@ -616,23 +715,21 @@ const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
 
 export default ManageShift;
 
+// Styles
 
-
-
-// Status tag styles
 const getStatusTagStyle = (status) => ({
     padding: '4px 12px',
     borderRadius: '16px',
     fontSize: '12px',
     fontWeight: '600',
     display: 'inline-block',
-    color: 
+    color:
         status === "Completed" ? "#2E7D32" :
         status === "In Progress" ? "#7B1FA2" :
         status === "Pending" ? "#F57C00" :
         status === "Open" ? "#1565C0" :
         "#757575",
-    backgroundColor: 
+    backgroundColor:
         status === "Completed" ? "#EAFAE7" :
         status === "In Progress" ? "#F6EFFF" :
         status === "Pending" ? "#FBFAE2" :
@@ -640,477 +737,88 @@ const getStatusTagStyle = (status) => ({
         "#F5F5F5",
 });
 
-// Container styles
-const containerStyle = {
-    padding: '40px',
-    minHeight: '100vh',
-    maxWidth: '1200px',
-    margin: '0 auto',
-};
+const containerStyle = { padding: '40px', minHeight: '100vh', maxWidth: '1200px', margin: '0 auto' };
+const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' };
+const titleStyle = { fontSize: '28px', fontWeight: '700', color: '#1a1a1a', margin: '0' };
+const addButtonStyle = { backgroundColor: '#274b93', color: 'white', border: 'none', borderRadius: '12px', padding: '10px 16px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(39, 75, 147, 0.2)' };
+const summaryGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' };
+const summaryCardStyle = { borderRadius: '12px', padding: '20px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+const summaryLabelStyle = { margin: '0 0 8px 0', fontSize: '16px', color: '#1E1E1E', fontWeight: '400' };
+const summaryNumberStyle = { margin: '0', fontSize: '24px', fontWeight: '700', color: '#1E1E1E' };
+const bigIconStyle = { width: '24px', height: '24px' };
+const smallIconStyle = { width: '20px', height: '20px' };
+const filterSectionStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' };
+const filterGroupStyle = { display: 'flex', alignItems: 'center', gap: '12px' };
+const sortGroupStyle = { display: 'flex', alignItems: 'center', gap: '12px' };
+const filterLabelStyle = { fontSize: '14px', fontWeight: '400', color: '#1E1E1E' };
+const filterButtonsStyle = { display: 'flex', gap: '8px' };
+const filterButtonStyle = { backgroundColor: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '8px 16px', fontSize: '14px', color: '#666', cursor: 'pointer', fontWeight: '500' };
+const activeFilterButtonStyle = { ...filterButtonStyle, backgroundColor: '#274b93', color: 'white', border: '1px solid #274b93' };
+const sortButtonStyle = { backgroundColor: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '8px 16px', fontSize: '14px', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' };
+const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', marginBottom: '32px' };
+const cardStyle = { backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' };
+const cardHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '12px' };
+const cardTitleStyle = { margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#1E1E1E' };
+const priceStyle = { fontSize: '16px', fontWeight: '600', color: '#2E7D32' };
+const cardDetailsStyle = { display: 'flex', flexDirection: 'column', gap: '8px' };
+const detailRowStyle = { display: 'flex', alignItems: 'center', gap: '8px' };
+const detailTextStyle = { fontSize: '14px', color: '#1E1E1E', fontWeight: '400' };
+const cardActionsRowStyle = { display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' };
+const viewDetailsButtonStyle = { flex: 1, backgroundColor: '#274b93', color: 'white', border: 'none', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' };
+const chatIconButtonStyle = { width: '44px', height: '44px', backgroundColor: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0 };
+const paginationStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' };
+const paginationButtonStyle = { width: '32px', height: '32px', backgroundColor: 'white', border: 'none', borderRadius: '16px', fontSize: '14px', fontWeight: '500', color: '#1E1E1E', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const activePaginationButtonStyle = { ...paginationButtonStyle, backgroundColor: '#274b93', color: 'white', fontWeight: '600' };
+const disabledPaginationButtonStyle = { ...paginationButtonStyle, cursor: 'not-allowed' };
+const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
+const modalContentStyle = { backgroundColor: 'white', borderRadius: '12px', padding: '0', maxWidth: '400px', width: '90%', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)' };
+const modalHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #e0e0e0' };
+const modalTitleStyle = { margin: 0, fontSize: '18px', fontWeight: '600', color: '#1E1E1E' };
+const closeButtonStyle = { backgroundColor: 'transparent', border: 'none', fontSize: '24px', color: '#666', cursor: 'pointer', padding: '0', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const modalBodyStyle = { padding: '16px 0' };
+const sortOptionStyle = { width: '100%', backgroundColor: 'transparent', border: 'none', padding: '12px 24px', fontSize: '16px', color: '#1E1E1E', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' };
+const activeSortOptionStyle = { ...sortOptionStyle, backgroundColor: '#EFF4FF', color: '#274b93', fontWeight: '600' };
+const checkmarkStyle = { color: '#274b93', fontWeight: 'bold' };
+const detailModalOverlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '20px' };
+const detailModalContent = { background: '#fff', borderRadius: '14px', width: 'min(960px, 100%)', padding: '28px 32px 32px', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', fontFamily: 'Poppins, sans-serif' };
+const detailModalHeader = { display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '12px' };
+const detailModalOverline = { margin: 0, color: '#566074', fontSize: '12px', letterSpacing: '0.4px', fontWeight: 600 };
+const detailModalTitle = { margin: '4px 0', fontSize: '22px', fontWeight: 700, color: '#1d1f2e' };
+const detailModalSubtitle = { margin: 0, color: '#6b7280', fontSize: '14px' };
+const modalCloseButton = { background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '10px', width: '36px', height: '36px', fontSize: '22px', cursor: 'pointer', color: '#374151' };
+const detailGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginTop: '16px' };
+const detailField = { display: 'flex', flexDirection: 'column', gap: '6px' };
+const detailLabel = { fontSize: '13px', color: '#374151', fontWeight: 600 };
+const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: '10px', border: '1px solid #d1d5db', background: '#f3f4f6', fontSize: '14px', color: '#111827', outline: 'none' };
+const detailActions = { marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end' };
+const primaryButton = { backgroundColor: '#274b93', color: 'white', border: 'none', borderRadius: '20px', padding: '12px 24px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' };
+const secondaryButton = { backgroundColor: 'white', color: '#d14343', border: '1px solid #d14343', borderRadius: '20px', padding: '12px 20px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' };
+const feedbackStyle = { marginTop: '8px', marginBottom: '8px', padding: '10px 12px', borderRadius: '10px', fontSize: '13px' };
+const feedbackSuccessStyle = { ...feedbackStyle, backgroundColor: '#edf7ed', color: '#1b5e20', border: '1px solid #c8e6c9' };
+const feedbackErrorStyle = { ...feedbackStyle, backgroundColor: '#ffebee', color: '#c62828', border: '1px solid #ffcdd2' };
+const inlineError = { color: '#d14343', fontSize: '12px', marginTop: '2px' };
 
-const headerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px',
-};
-
-const titleStyle = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#1a1a1a',
-    margin: '0',
-};
-
-const addButtonStyle = {
-    backgroundColor: '#274b93',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '10px 16px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    boxShadow: '0 2px 4px rgba(39, 75, 147, 0.2)',
-};
-
-// Summary cards styles
-const summaryGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '16px',
-    marginBottom: '24px',
-};
-
-const summaryCardStyle = {
-    borderRadius: '12px',
-    padding: '20px 30px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-};
-
-const summaryLabelStyle = {
-    margin: '0 0 8px 0',
-    fontSize: '16px',
-    color: '#1E1E1E',
-    fontWeight: '400',
-};
-
-const summaryNumberStyle = {
-    margin: '0',
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#1E1E1E',
-};
-
-const bigIconStyle = {
-    width: '24px',
-    height: '24px',
-};
-
-const smallIconStyle = {
-    width: '20px',
-    height: '20px',
-};
-
-// Filter section styles
-const filterSectionStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px',
-    flexWrap: 'wrap',
-    gap: '16px',
-};
-
-const filterGroupStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-};
-
-const sortGroupStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-};
-
-const filterLabelStyle = {
-    fontSize: '14px',
-    fontWeight: '400',
-    color: '#1E1E1E',
-};
-
-const filterButtonsStyle = {
-    display: 'flex',
-    gap: '8px',
-};
-
-const filterButtonStyle = {
-    backgroundColor: 'white',
-    border: '1px solid #e0e0e0',
-    borderRadius: '12px',
-    padding: '8px 16px',
-    fontSize: '14px',
-    color: '#666',
-    cursor: 'pointer',
-    fontWeight: '500',
-};
-
-const activeFilterButtonStyle = {
-    ...filterButtonStyle,
-    backgroundColor: '#274b93',
-    color: 'white',
-    border: '1px solid #274b93',
-};
-
-const sortButtonStyle = {
-    backgroundColor: 'white',
-    border: '1px solid #e0e0e0',
-    borderRadius: '12px',
-    padding: '8px 16px',
-    fontSize: '14px',
-    color: '#666',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-};
-
-// Grid and card styles
-const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '20px',
-    marginBottom: '32px',
-};
-
-const cardStyle = {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    gap: '20px',
-};
-
-const cardHeaderStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginTop: '12px',
-};
-
-const cardTitleStyle = {
-    margin: '0 0 4px 0',
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1E1E1E',
-};
-
-const priceStyle = {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#2E7D32',
-};
-
-const cardDetailsStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-};
-
-const detailRowStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-};
-
-const detailTextStyle = {
-    fontSize: '14px',
-    color: '#1E1E1E',
-    fontWeight: '400',
-};
-
-const viewDetailsButtonStyle = {
-    backgroundColor: '#274b93',
-    color: 'white',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '12px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    marginTop: '8px',
-};
-
-// Pagination styles
-const paginationStyle = {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '8px',
-};
-
-const paginationButtonStyle = {
-    width: '32px',
-    height: '32px',
-    backgroundColor: 'white',
-    border: 'none',
-    borderRadius: '16px',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#1E1E1E',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-};
-
-const activePaginationButtonStyle = {
-    ...paginationButtonStyle,
-    backgroundColor: '#274b93',
-    color: 'white',
-    fontWeight: '600',
-};
-
-const disabledPaginationButtonStyle = {
-    ...paginationButtonStyle,
-    cursor: 'not-allowed',
-};
-
-// Modal styles
-const modalOverlayStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-};
-
-const modalContentStyle = {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '0',
-    maxWidth: '400px',
-    width: '90%',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-};
-
-const modalHeaderStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '20px 24px',
-    borderBottom: '1px solid #e0e0e0',
-};
-
-const modalTitleStyle = {
-    margin: 0,
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#1E1E1E',
-};
-
-const closeButtonStyle = {
-    backgroundColor: 'transparent',
-    border: 'none',
-    fontSize: '24px',
-    color: '#666',
-    cursor: 'pointer',
-    padding: '0',
-    width: '24px',
-    height: '24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-};
-
-const modalBodyStyle = {
-    padding: '16px 0',
-};
-
-const sortOptionStyle = {
-    width: '100%',
-    backgroundColor: 'transparent',
-    border: 'none',
-    padding: '12px 24px',
-    fontSize: '16px',
-    color: '#1E1E1E',
-    cursor: 'pointer',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    textAlign: 'left',
-};
-
-const activeSortOptionStyle = {
-    ...sortOptionStyle,
-    backgroundColor: '#EFF4FF',
-    color: '#274b93',
-    fontWeight: '600',
-};
-
-const checkmarkStyle = {
-    color: '#274b93',
-    fontWeight: 'bold',
-};
-
-// Detail modal styles (aligned to create shift design)
-const detailModalOverlay = {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.45)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1100,
-    padding: '20px',
-};
-
-const detailModalContent = {
-    background: '#fff',
-    borderRadius: '14px',
-    width: 'min(960px, 100%)',
-    padding: '28px 32px 32px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-    fontFamily: 'Poppins, sans-serif',
-};
-
-const detailModalHeader = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '16px',
-    alignItems: 'flex-start',
-    marginBottom: '12px',
-};
-
-const detailModalOverline = {
-    margin: 0,
-    color: '#566074',
-    fontSize: '12px',
-    letterSpacing: '0.4px',
-    fontWeight: 600,
-};
-
-const detailModalTitle = {
-    margin: '4px 0',
-    fontSize: '22px',
-    fontWeight: 700,
-    color: '#1d1f2e',
-};
-
-const detailModalSubtitle = {
-    margin: 0,
-    color: '#6b7280',
-    fontSize: '14px',
-};
-
-const modalCloseButton = {
-    background: '#f3f4f6',
-    border: '1px solid #e5e7eb',
-    borderRadius: '10px',
-    width: '36px',
-    height: '36px',
-    fontSize: '22px',
-    cursor: 'pointer',
-    color: '#374151',
-};
-
-const detailGrid = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '16px',
-    marginTop: '16px',
-};
-
-const detailField = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-};
-
-const detailLabel = {
-    fontSize: '13px',
-    color: '#374151',
-    fontWeight: 600,
-};
-
-const inputStyle = {
-    width: '100%',
-    padding: '12px 14px',
-    borderRadius: '10px',
-    border: '1px solid #d1d5db',
-    background: '#f3f4f6',
-    fontSize: '14px',
-    color: '#111827',
-    outline: 'none',
-};
-
-const detailActions = {
-    marginTop: '20px',
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'flex-end',
-};
-
-const primaryButton = {
-    backgroundColor: '#274b93',
-    color: 'white',
-    border: 'none',
-    borderRadius: '20px',
-    padding: '12px 24px',
-    fontSize: '14px',
-    fontWeight: 600,
-    cursor: 'pointer',
-};
-
-const secondaryButton = {
-    backgroundColor: 'white',
-    color: '#d14343',
-    border: '1px solid #d14343',
-    borderRadius: '20px',
-    padding: '12px 20px',
-    fontSize: '14px',
-    fontWeight: 600,
-    cursor: 'pointer',
-};
-
-const feedbackStyle = {
-    marginTop: '8px',
-    marginBottom: '8px',
-    padding: '10px 12px',
-    borderRadius: '10px',
-    fontSize: '13px',
-};
-
-const feedbackSuccessStyle = {
-    ...feedbackStyle,
-    backgroundColor: '#edf7ed',
-    color: '#1b5e20',
-    border: '1px solid #c8e6c9',
-};
-
-const feedbackErrorStyle = {
-    ...feedbackStyle,
-    backgroundColor: '#ffebee',
-    color: '#c62828',
-    border: '1px solid #ffcdd2',
-};
-
-const inlineError = {
-    color: '#d14343',
-    fontSize: '12px',
-    marginTop: '2px',
-};
+// Chat modal styles 
+const chatModalOverlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: '20px' };
+const chatModalContainer = { background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '420px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 64px rgba(0,0,0,0.25)', overflow: 'hidden' };
+const chatModalHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px 14px', background: '#1a2f6e' };
+const chatModalHeaderLeft = { display: 'flex', alignItems: 'center', gap: '10px' };
+const chatLogoStyle = { width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const chatModalOverlineStyle = { margin: 0, fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: '0.8px' };
+const chatModalTitleStyle = { margin: 0, fontSize: '16px', fontWeight: 700, color: 'white' };
+const chatCloseButtonStyle = { background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', width: '30px', height: '30px', borderRadius: '8px', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const chatShiftInfoRowStyle = { display: 'flex', gap: '6px', padding: '10px 20px 14px', flexWrap: 'wrap', background: '#1a2f6e' };
+const chatPillStyle = { display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.15)', borderRadius: '20px', padding: '4px 10px', fontSize: '11px', color: 'rgba(255,255,255,0.9)', fontWeight: 500 };
+const chatPillDotStyle = { width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', flexShrink: 0 };
+const chatGuardNameStyle = { padding: '10px 20px', fontSize: '12px', color: '#6b7280', borderBottom: '1px solid #f3f4f6', background: '#fff' };
+const chatMessagesAreaStyle = { flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', minHeight: '240px', maxHeight: '340px', background: '#fff' };
+const chatEmptyStyle = { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 20px' };
+const chatSenderNameStyle = { fontSize: '11px', color: '#9ca3af', marginBottom: '4px', paddingLeft: '2px' };
+const chatBubbleOtherStyle = { background: '#f3f4f6', borderRadius: '12px 12px 12px 2px', padding: '10px 14px', fontSize: '13px', color: '#111827', maxWidth: '80%', wordBreak: 'break-word' };
+const chatBubbleOwnStyle = { background: '#1a2f6e', borderRadius: '12px 12px 2px 12px', padding: '10px 14px', fontSize: '13px', color: 'white', maxWidth: '80%', wordBreak: 'break-word' };
+const chatTimestampStyle = { fontSize: '10px', color: '#9ca3af', marginTop: '3px', paddingLeft: '2px' };
+const chatInputAreaStyle = { padding: '12px 16px 14px', borderTop: '1px solid #f3f4f6', background: '#fff' };
+const chatInputRowStyle = { display: 'flex', gap: '8px', alignItems: 'center', background: '#f3f4f6', borderRadius: '12px', padding: '6px 6px 6px 14px' };
+const chatInputStyle = { flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: '13px', color: '#111827' };
+const chatSendButtonStyle = { width: '34px', height: '34px', borderRadius: '8px', border: 'none', background: '#1a2f6e', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
+const chatFooterNoteStyle = { margin: '8px 0 0', fontSize: '11px', color: '#9ca3af', textAlign: 'center' };
