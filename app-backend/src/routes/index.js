@@ -10,9 +10,9 @@ import availabilityRoutes from './availability.routes.js';
 import rbacRoutes from './rbac.routes.js';
 import branchRoutes from './branch.routes.js'
 import payrollRoutes from './payroll.routes.js';
-
+import documentRoutes from './document.routes.js';
 const router = express.Router();
-
+router.use('/documents', documentRoutes);
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/shifts', shiftRoutes);
