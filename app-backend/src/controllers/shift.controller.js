@@ -408,7 +408,7 @@ export const completeShift = async (req, res) => {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: 'Invalid id' });
 
-    const shift = await Shift.findById(id);
+    const shift = await Shift.findById(id).populate('attendance');
     if (!shift) return res.status(404).json({ message: 'Shift not found' });
 
     const isOwner = String(shift.createdBy) === String(req.user._id);
@@ -417,6 +417,9 @@ export const completeShift = async (req, res) => {
 
     if (!shift.assignedGuard) return res.status(400).json({ message: 'No guard assigned' });
     if (shift.status === 'completed') return res.status(400).json({ message: 'Already completed' });
+
+    if (!shift.hasCheckedIn) return res.status(400).json({ message: 'Guard has not checked in' });
+    if (!shift.hasCheckedOut) return res.status(400).json({ message: 'Guard has not checked out' });
 
     shift.status = 'completed';
     await shift.save();

@@ -157,6 +157,24 @@ shiftSchema
     this.acceptedBy = v;
   });
 
+// Virtual for attendance record
+shiftSchema
+  .virtual('attendance', {
+    ref:          'ShiftAttendance',
+    localField:   '_id',
+    foreignField: 'shiftId',
+    justOne:      true,
+});
+
+// Virtuals for check-in/out status
+shiftSchema.virtual('hasCheckedIn').get(function () {
+  return this.attendance?.checkInTime != null;
+});
+
+shiftSchema.virtual('hasCheckedOut').get(function () {
+  return this.attendance?.checkOutTime != null;
+});
+
 // Ensure virtuals in responses
 shiftSchema.set('toJSON', { virtuals: true });
 shiftSchema.set('toObject', { virtuals: true });
