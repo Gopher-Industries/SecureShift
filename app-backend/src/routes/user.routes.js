@@ -18,6 +18,9 @@ import {
   getAllGuards,
   listUsers,
   deleteUser,
+  addFavouriteGuard,
+  removeFavouriteGuard,
+  getFavouriteGuards,
   registerPushToken
 } from '../controllers/user.controller.js';
 
@@ -167,7 +170,84 @@ router
   .route('/profile')
   .get(auth, loadUser, getEmployerProfile)
   .put(auth, loadUser, updateEmployerProfile);
+/**
+ * @swagger
+ * /api/v1/users/favourites:
+ *   get:
+ *     summary: Get favourite guards
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of favourite guards
+ *       403:
+ *         description: Only employers allowed
+ */
+router.get(
+  '/favourites',
+  auth,
+  loadUser,
+  getFavouriteGuards
+);
 
+/**
+ * @swagger
+ * /api/v1/users/favourites/{guardId}:
+ *   post:
+ *     summary: Add a guard to favourites
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guardId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Guard ID
+ *     responses:
+ *       200:
+ *         description: Guard added to favourites
+ *       403:
+ *         description: Only employers allowed
+ *       404:
+ *         description: Guard not found
+ */
+router.post(
+  '/favourites/:guardId',
+  auth,
+  loadUser,
+  addFavouriteGuard
+);
+
+/**
+ * @swagger
+ * /api/v1/users/favourites/{guardId}:
+ *   delete:
+ *     summary: Remove a guard from favourites
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guardId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Guard ID
+ *     responses:
+ *       200:
+ *         description: Guard removed from favourites
+ *       403:
+ *         description: Only employers allowed
+ */
+router.delete(
+  '/favourites/:guardId',
+  auth,
+  loadUser,
+  removeFavouriteGuard
+);
 /**
  * @swagger
  * /api/v1/users/guards:
