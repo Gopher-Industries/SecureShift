@@ -128,7 +128,7 @@ export default function TimesheetsScreen() {
         data={items}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={s.listContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={<Text style={s.empty}>No timesheet records yet.</Text>}
       />
@@ -241,4 +241,9 @@ const getStyles = (colors: AppColors) =>
     badgeTextWarn: {
       color: colors.link,
     },
+
+    listContainer: {
+      padding: 16,
+    },
   });
+  
