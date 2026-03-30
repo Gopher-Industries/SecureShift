@@ -49,6 +49,7 @@ export default function ProfileScreen({ navigation, route }: any) {
       setError(null);
 
       const profile = await getUserProfile();
+      console.log('Fetched profile data:', profile);
       setData(profile);
     } catch (e: any) {
       setError(e?.message || 'Failed to load profile');

@@ -5,6 +5,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useLayoutEffect, useState } from 'react';
 import {
+  Button,
   Dimensions,
   RefreshControl,
   SafeAreaView,
@@ -20,6 +21,7 @@ import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+import { showLocalNotification } from '../utils/notificationHelpers';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -293,9 +295,8 @@ export default function HomeScreen() {
                 >
                   <RowItem
                     title={s.title}
-                    time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${
-                      s.endTime ?? '--:--'
-                    }`}
+                    time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${s.endTime ?? '--:--'
+                      }`}
                     amount={moneyForShift(s)}
                     colors={colors}
                   />
@@ -304,6 +305,18 @@ export default function HomeScreen() {
             ) : (
               <Text style={styles.emptyText}>No upcoming shifts</Text>
             )}
+          </View>
+
+          <View style={{ justifyContent: 'center', padding: 20 }}>
+            <Button
+              title="Test Notification"
+              onPress={async () => {
+                await showLocalNotification(
+                  'Shift Assigned',
+                  'You have been assigned to Hospital Complex shift.'
+                );
+              }}
+            />
           </View>
 
           <View style={styles.spacer} />
