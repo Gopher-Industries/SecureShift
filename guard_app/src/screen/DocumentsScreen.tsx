@@ -1,5 +1,8 @@
 // guard_app/src/screen/DocumentsScreen.tsx
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import * as DocumentPicker from 'expo-document-picker';
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -10,9 +13,9 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
+
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
 
 // Document types available for guards
 const DOCUMENT_TYPES = [
@@ -39,20 +42,23 @@ interface UploadedDocument {
 const STORAGE_KEY = 'uploaded_documents';
 
 export default function DocumentsScreen() {
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [selectedDocType, setSelectedDocType] = useState<string>('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Load documents from local storage
   const loadDocuments = useCallback(async () => {
     try {
       const storedDocs = await AsyncStorage.getItem(STORAGE_KEY);
       if (storedDocs) {
         const docs: UploadedDocument[] = JSON.parse(storedDocs);
-        // Sort by upload date (newest first)
         docs.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
         setDocuments(docs);
+      } else {
+        setDocuments([]);
       }
     } catch (error) {
       console.error('Error loading documents:', error);
@@ -60,14 +66,12 @@ export default function DocumentsScreen() {
     }
   }, []);
 
-  // Load documents when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadDocuments();
     }, [loadDocuments]),
   );
 
-  // Pick and save document
   const pickAndUploadDocument = async () => {
     if (!selectedDocType) {
       Alert.alert('Document Type Required', 'Please select a document type first');
@@ -75,7 +79,6 @@ export default function DocumentsScreen() {
     }
 
     try {
-      // Open document picker
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
         copyToCacheDirectory: true,
@@ -84,8 +87,7 @@ export default function DocumentsScreen() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
 
-        // Validate file size (10MB max)
-        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        const maxSize = 10 * 1024 * 1024;
         if (file.size && file.size > maxSize) {
           Alert.alert('File Too Large', 'Please select a file smaller than 10MB');
           return;
@@ -93,10 +95,8 @@ export default function DocumentsScreen() {
 
         setUploading(true);
 
-        // Get document type label
         const documentTypeInfo = DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType);
 
-        // Create new document object
         const newDocument: UploadedDocument = {
           id: Date.now().toString(),
           name: file.name,
@@ -108,24 +108,20 @@ export default function DocumentsScreen() {
           uploadedAt: new Date().toISOString(),
         };
 
-        // Load existing documents
         const storedDocs = await AsyncStorage.getItem(STORAGE_KEY);
         const allDocs: UploadedDocument[] = storedDocs ? JSON.parse(storedDocs) : [];
 
-        // Add new document
         allDocs.push(newDocument);
 
-        // Save to AsyncStorage
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allDocs));
 
-        // Update state (sort by newest first)
         const sortedDocs = allDocs.sort(
           (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
         );
         setDocuments(sortedDocs);
 
-        // Reset selection
         setSelectedDocType('');
+        setShowDropdown(false);
 
         Alert.alert('Success', 'Document uploaded successfully!');
       }
@@ -137,7 +133,6 @@ export default function DocumentsScreen() {
     }
   };
 
-  // Delete document
   const handleDeleteDocument = (doc: UploadedDocument) => {
     Alert.alert('Delete Document', 'Are you sure you want to delete this document?', [
       { text: 'Cancel', style: 'cancel' },
@@ -146,13 +141,10 @@ export default function DocumentsScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            // Remove from array
             const updatedDocs = documents.filter((d) => d.id !== doc.id);
 
-            // Save to AsyncStorage
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDocs));
 
-            // Update state
             setDocuments(updatedDocs);
 
             Alert.alert('Success', 'Document deleted');
@@ -165,7 +157,6 @@ export default function DocumentsScreen() {
     ]);
   };
 
-  // Format file size
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -174,7 +165,6 @@ export default function DocumentsScreen() {
     return `${Math.round((bytes / Math.pow(k, i)) * 10) / 10} ${sizes[i]}`;
   };
 
-  // Format date
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -189,7 +179,6 @@ export default function DocumentsScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Info Card */}
         <View style={styles.infoCard}>
           <Text style={styles.infoText}>
             Keep your documents organized. Upload your licenses and certifications. All documents
@@ -197,7 +186,6 @@ export default function DocumentsScreen() {
           </Text>
         </View>
 
-        {/* Document Type Selector */}
         <Text style={styles.label}>Document Type</Text>
         <TouchableOpacity
           style={styles.dropdown}
@@ -212,7 +200,6 @@ export default function DocumentsScreen() {
           <Text style={styles.dropdownIcon}>{showDropdown ? '▲' : '▼'}</Text>
         </TouchableOpacity>
 
-        {/* Dropdown Menu */}
         {showDropdown && (
           <View style={styles.dropdownMenu}>
             {DOCUMENT_TYPES.map((docType) => (
@@ -240,7 +227,6 @@ export default function DocumentsScreen() {
           </View>
         )}
 
-        {/* Upload Area */}
         <TouchableOpacity
           style={[styles.uploadArea, !selectedDocType && styles.uploadAreaDisabled]}
           onPress={pickAndUploadDocument}
@@ -250,7 +236,7 @@ export default function DocumentsScreen() {
             <Text style={styles.uploadIcon}>↑</Text>
           </View>
           {uploading ? (
-            <ActivityIndicator size="small" color="#6B7280" style={{ marginBottom: 8 }} />
+            <ActivityIndicator size="small" color={colors.muted} style={{ marginBottom: 8 }} />
           ) : null}
           <Text style={styles.uploadText}>
             {uploading
@@ -262,7 +248,6 @@ export default function DocumentsScreen() {
           <Text style={styles.uploadSubtext}>PDF, JPG, or PNG up to 10MB</Text>
         </TouchableOpacity>
 
-        {/* Documents List */}
         <Text style={styles.sectionTitle}>Uploaded Documents ({documents.length})</Text>
 
         {documents.length === 0 ? (
@@ -277,14 +262,10 @@ export default function DocumentsScreen() {
           <View style={styles.documentsList}>
             {documents.map((doc) => (
               <View key={doc.id} style={styles.documentCard}>
-                {/* Icon */}
                 <View style={styles.documentIconContainer}>
-                  <Text style={styles.documentIcon}>
-                    {doc.type.includes('pdf') ? '📄' : '🖼️'}
-                  </Text>
+                  <Text style={styles.documentIcon}>{doc.type.includes('pdf') ? '📄' : '🖼️'}</Text>
                 </View>
 
-                {/* Info */}
                 <View style={styles.documentInfo}>
                   <Text style={styles.documentName} numberOfLines={1}>
                     {doc.name}
@@ -297,12 +278,10 @@ export default function DocumentsScreen() {
                   </View>
                 </View>
 
-                {/* Local Storage Badge */}
                 <View style={styles.localBadge}>
                   <Text style={styles.localBadgeText}>Local</Text>
                 </View>
 
-                {/* Delete Button */}
                 <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={() => handleDeleteDocument(doc)}
@@ -318,236 +297,240 @@ export default function DocumentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    content: {
+      flex: 1,
+      padding: 16,
+    },
 
-  // Info Card
-  infoCard: {
-    backgroundColor: '#E8EEF7',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#374151',
-    lineHeight: 20,
-  },
+    infoCard: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    infoText: {
+      fontSize: 14,
+      color: colors.text,
+      lineHeight: 20,
+    },
 
-  // Document Type Selector
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  dropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 24,
-  },
-  dropdownTextPlaceholder: {
-    fontSize: 15,
-    color: '#9CA3AF',
-  },
-  dropdownTextSelected: {
-    fontSize: 15,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  dropdownIcon: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  dropdownMenu: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    marginTop: -20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    maxHeight: 250,
-  },
-  dropdownItem: {
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  dropdownItemSelected: {
-    backgroundColor: '#F0F9FF',
-  },
-  dropdownItemText: {
-    fontSize: 15,
-    color: '#111827',
-  },
-  dropdownItemTextSelected: {
-    color: '#003f88',
-    fontWeight: '600',
-  },
+    label: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    dropdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 14,
+      marginBottom: 24,
+    },
+    dropdownTextPlaceholder: {
+      fontSize: 15,
+      color: colors.muted,
+    },
+    dropdownTextSelected: {
+      fontSize: 15,
+      color: colors.text,
+      fontWeight: '500',
+    },
+    dropdownIcon: {
+      fontSize: 12,
+      color: colors.muted,
+    },
+    dropdownMenu: {
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginTop: -20,
+      marginBottom: 24,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5,
+      maxHeight: 250,
+    },
+    dropdownItem: {
+      padding: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    dropdownItemSelected: {
+      backgroundColor: colors.primarySoft,
+    },
+    dropdownItemText: {
+      fontSize: 15,
+      color: colors.text,
+    },
+    dropdownItemTextSelected: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
 
-  // Upload Area
-  uploadArea: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 32,
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  uploadAreaDisabled: {
-    opacity: 0.5,
-  },
-  uploadIconContainer: {
-    width: 64,
-    height: 64,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  uploadIcon: {
-    fontSize: 28,
-    color: '#6B7280',
-  },
-  uploadText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  uploadSubtext: {
-    fontSize: 13,
-    color: '#9CA3AF',
-  },
+    uploadArea: {
+      backgroundColor: colors.card,
+      borderWidth: 2,
+      borderColor: colors.border,
+      borderStyle: 'dashed',
+      borderRadius: 12,
+      padding: 32,
+      alignItems: 'center',
+      marginBottom: 32,
+    },
+    uploadAreaDisabled: {
+      opacity: 0.5,
+    },
+    uploadIconContainer: {
+      width: 64,
+      height: 64,
+      backgroundColor: colors.primarySoft,
+      borderRadius: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    uploadIcon: {
+      fontSize: 28,
+      color: colors.muted,
+    },
+    uploadText: {
+      fontSize: 15,
+      fontWeight: '500',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    uploadSubtext: {
+      fontSize: 13,
+      color: colors.muted,
+    },
 
-  // Documents List
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 16,
-  },
-  documentsList: {
-    gap: 12,
-    paddingBottom: 20,
-  },
-  documentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  documentIconContainer: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  documentIcon: {
-    fontSize: 24,
-  },
-  documentInfo: {
-    flex: 1,
-  },
-  documentName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  documentType: {
-    fontSize: 13,
-    color: '#003f88',
-    marginBottom: 4,
-  },
-  documentMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  documentMetaText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  documentMetaDot: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginHorizontal: 6,
-  },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 16,
+    },
+    documentsList: {
+      gap: 12,
+      paddingBottom: 20,
+    },
+    documentCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    documentIconContainer: {
+      width: 48,
+      height: 48,
+      backgroundColor: colors.primarySoft,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    documentIcon: {
+      fontSize: 24,
+    },
+    documentInfo: {
+      flex: 1,
+    },
+    documentName: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    documentType: {
+      fontSize: 13,
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    documentMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    documentMetaText: {
+      fontSize: 12,
+      color: colors.muted,
+    },
+    documentMetaDot: {
+      fontSize: 12,
+      color: colors.muted,
+      marginHorizontal: 6,
+    },
 
-  // Local Badge
-  localBadge: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginRight: 8,
-  },
-  localBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#D97706',
-  },
+    localBadge: {
+      backgroundColor: colors.yellowSoft,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 12,
+      marginRight: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    localBadgeText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.status.pending,
+    },
 
-  // Delete Button
-  deleteButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteButtonText: {
-    fontSize: 20,
-    color: '#9CA3AF',
-  },
+    deleteButton: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    deleteButtonText: {
+      fontSize: 20,
+      color: colors.muted,
+    },
 
-  // Empty State
-  emptyState: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    textAlign: 'center',
-  },
-});
+    emptyState: {
+      padding: 40,
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    emptyStateIcon: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    emptyStateText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    emptyStateSubtext: {
+      fontSize: 14,
+      color: colors.muted,
+      textAlign: 'center',
+    },
+  });
