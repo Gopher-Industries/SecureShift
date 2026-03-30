@@ -295,8 +295,9 @@ export default function HomeScreen() {
                 >
                   <RowItem
                     title={s.title}
-                    time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${s.endTime ?? '--:--'
-                      }`}
+                    time={`${new Date(s.date).toLocaleDateString()}, ${s.startTime ?? '--:--'} – ${
+                      s.endTime ?? '--:--'
+                    }`}
                     amount={moneyForShift(s)}
                     colors={colors}
                   />
@@ -313,7 +314,7 @@ export default function HomeScreen() {
               onPress={async () => {
                 await showLocalNotification(
                   'Shift Assigned',
-                  'You have been assigned to Hospital Complex shift.'
+                  'You have been assigned to Hospital Complex shift.',
                 );
               }}
             />
