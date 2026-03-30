@@ -3,10 +3,11 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import React from 'react';
 import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 
-// Narrow icon type to avoid `any`
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
+
 type IconName = 'check-circle' | 'calendar-alt' | 'exclamation-circle';
 
-// Sample data for notifications
 const notifications: {
   id: string;
   icon: IconName;
@@ -38,6 +39,9 @@ const notifications: {
 ];
 
 export default function NotificationsScreen() {
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+
   const renderItem = ({ item }: { item: (typeof notifications)[number] }) => {
     const isReminder = item.icon === 'exclamation-circle';
     const cardStyle = isReminder ? styles.greyCard : styles.blueCard;
@@ -79,85 +83,86 @@ export default function NotificationsScreen() {
   );
 }
 
-// Styles (class names and properties alphabetized)
-const styles = StyleSheet.create({
-  badge: {
-    backgroundColor: '#DB4D56',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: { height: 1, width: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    ...(Platform.OS === 'android' ? { elevation: 2 } : null),
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '400',
-  },
-  blueCard: {
-    backgroundColor: '#E6EEFF',
-    borderColor: '#B0C7FF',
-  },
-  card: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { height: 2, width: 0 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    ...(Platform.OS === 'android' ? { elevation: 2 } : null),
-  },
-  cardContent: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: 12,
-  },
-  container: {
-    backgroundColor: '#F4F4F4',
-    flex: 1,
-    padding: 16,
-  },
-  dot: {
-    backgroundColor: '#2D3E50',
-    borderRadius: 5,
-    height: 10,
-    marginTop: 4,
-    width: 10,
-  },
-  greyCard: {
-    backgroundColor: '#F3F3F3',
-    borderColor: '#DDD',
-  },
-  headerContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  headerText: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  listContent: {
-    gap: 12,
-    paddingBottom: 12,
-  },
-  messageText: {
-    color: '#111',
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  timeText: {
-    color: '#777',
-    fontSize: 12,
-    fontWeight: '400',
-  },
-});
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    badge: {
+      backgroundColor: '#DB4D56',
+      borderRadius: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      shadowColor: '#000',
+      shadowOffset: { height: 1, width: 0 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      ...(Platform.OS === 'android' ? { elevation: 2 } : null),
+    },
+    badgeText: {
+      color: colors.white,
+      fontSize: 12,
+      fontWeight: '400',
+    },
+    blueCard: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.border,
+    },
+    card: {
+      borderRadius: 12,
+      borderWidth: 1,
+      padding: 16,
+      shadowColor: '#000',
+      shadowOffset: { height: 2, width: 0 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      ...(Platform.OS === 'android' ? { elevation: 2 } : null),
+    },
+    cardContent: {
+      alignItems: 'flex-start',
+      flexDirection: 'row',
+      gap: 12,
+    },
+    container: {
+      backgroundColor: colors.bg,
+      flex: 1,
+      padding: 16,
+    },
+    dot: {
+      backgroundColor: colors.primary,
+      borderRadius: 5,
+      height: 10,
+      marginTop: 4,
+      width: 10,
+    },
+    greyCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+    },
+    headerContainer: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      marginBottom: 12,
+    },
+    headerText: {
+      flex: 1,
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    listContent: {
+      gap: 12,
+      paddingBottom: 12,
+    },
+    messageText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '500',
+      marginBottom: 4,
+    },
+    textContainer: {
+      flex: 1,
+    },
+    timeText: {
+      color: colors.muted,
+      fontSize: 12,
+      fontWeight: '400',
+    },
+  });

@@ -205,3 +205,82 @@ export const registerPushToken = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
+/**
+ * @desc    Add a guard to favourites
+ * @route   POST /api/v1/users/favourites/:guardId
+ * @access  Private (Employer only)
+ */
+export const addFavouriteGuard = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Only employers can favourite guards.' });
+    }
+
+    const { guardId } = req.params;
+
+    const guard = await User.findById(guardId);
+    if (!guard || guard.role !== 'guard') {
+      return res.status(404).json({ message: 'Guard not found' });
+    }
+
+    const employer = await User.findById(req.user.id);
+
+    if (!employer.favourites.includes(guardId)) {
+      employer.favourites.push(guardId);
+      await employer.save();
+    }
+
+    res.status(200).json({ message: 'Guard added to favourites', favourites: employer.favourites });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+/**
+ * @desc    Remove a guard from favourites
+ * @route   DELETE /api/v1/users/favourites/:guardId
+ * @access  Private (Employer only)
+ */
+export const removeFavouriteGuard = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Only employers can modify favourites.' });
+    }
+
+    const { guardId } = req.params;
+
+    const employer = await User.findById(req.user.id);
+
+    employer.favourites = employer.favourites.filter(
+      (id) => id.toString() !== guardId
+    );
+
+    await employer.save();
+
+    res.status(200).json({ message: 'Guard removed from favourites', favourites: employer.favourites });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+/**
+ * @desc    Get favourite guards list
+ * @route   GET /api/v1/users/favourites
+ * @access  Private (Employer only)
+ */
+export const getFavouriteGuards = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Only employers can view favourites.' });
+    }
+
+    const employer = await User.findById(req.user.id)
+      .populate('favourites', '-password');
+
+    res.status(200).json(employer.favourites);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

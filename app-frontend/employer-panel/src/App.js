@@ -1,88 +1,142 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import ProtectedRoutes from "./components/ProtectedRoutes";
+
 import ExpressionOfInterest from './pages/ExpressionOfInterest';
 import Login from './pages/Login';
 import TwoFA from './pages/2FA';
+
 import EmployerDashboard from './pages/EmployerDashboard';
 import CreateShift from './pages/createShift';
 import ManageShift from './pages/ManageShift';
 import GuardProfiles from './pages/GuardProfile';
-
-//guard profile page
 import GuardProfilePage from './pages/GuardProfilePage';
 
-import SubmissionConfirmation from './pages/SubmissionConfirmation';
 import CompanyProfile from './pages/CompanyProfile';
+import SubmissionConfirmation from './pages/SubmissionConfirmation';
+
 import EmailSettings from './pages/EmailSettings';
 import TaskDetail from './pages/TaskDetail';
+
 import Header from './components/Header';
 import Footer from './components/Footer';
 import PageTitleHandler from './components/PageTitleHandler';
 
-function AppContent() {
-  const location = useLocation();
-  const isTaskDetailPage = location.pathname === '/task-detail';
+import ProtectedRoute from "./routes/ProtectedRoute";
 
-  if (isTaskDetailPage) {
-    return (
-      <Routes>
-        <Route path="/task-detail" element={<TaskDetail />} />
-      </Routes>
-    );
-  }
-
+/**
+ * PUBLIC ROUTE: Task Detail (no layout)
+ */
+function TaskRoute() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header />
-      <main style={{ flex: 1, paddingBottom: '20px' }}>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/2fa" element={<TwoFA />} />
-          <Route path="/employer-dashboard" element={<EmployerDashboard />} />
-          <Route path="/create-shift" element={<CreateShift />} />
-          <Route path="/manage-shift" element={<ManageShift />} />
-          <Route path="/guard-profiles" element={<GuardProfiles />} />
-          <Route path="/company-profile" element={<CompanyProfile />} />
-          <Route path="/email-settings" element={<EmailSettings />} />
-          <Route path="/submission" element={<SubmissionConfirmation />} />
-          <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
+    <Routes>
+      <Route path="/task-detail" element={<TaskDetail />} />
+    </Routes>
   );
 }
 
+/**
+ * PROTECTED LAYOUT WRAPPER
+ */
+function ProtectedLayout({ children }) {
+  return (
+    <ProtectedRoute>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <Header />
+        <main style={{ flex: 1, paddingBottom: '20px' }}>
+          {children}
+        </main>
+        <Footer />
+      </div>
+    </ProtectedRoute>
+  );
+}
 
+/**
+ * MAIN APP ROUTES
+ */
 function App() {
   return (
     <Router>
       <PageTitleHandler />
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Header />
-        <main style={{ flex: 1, paddingBottom: '20px' }}>
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/2fa" element={<TwoFA />} />
 
-            <Route element={<ProtectedRoutes />}>
-              <Route path="/employer-dashboard" element={<EmployerDashboard />} />
-              <Route path="/create-shift" element={<CreateShift />} />
-              <Route path="/manage-shift" element={<ManageShift />} />
-              <Route path="/guard-profiles" element={<GuardProfiles />} />
-              <Route path="/guard-profiles/:guardId" element={<GuardProfilePage />} />
-              <Route path="/company-profile" element={<CompanyProfile />} />
-              <Route path="/submission" element={<SubmissionConfirmation />} />
-            </Route>
+      <Routes>
 
-            <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+        {/* PUBLIC ROUTES (NO AUTH REQUIRED) */}
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/2fa" element={<TwoFA />} />
+        <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
+        <Route path="/submission" element={<SubmissionConfirmation />} />
+
+        {/* TASK DETAIL (special case like your original logic) */}
+        <Route path="/task-detail" element={<TaskRoute />} />
+
+        {/* PROTECTED ROUTES */}
+        <Route
+          path="/employer-dashboard"
+          element={
+            <ProtectedLayout>
+              <EmployerDashboard />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/create-shift"
+          element={
+            <ProtectedLayout>
+              <CreateShift />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/manage-shift"
+          element={
+            <ProtectedLayout>
+              <ManageShift />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/guard-profiles"
+          element={
+            <ProtectedLayout>
+              <GuardProfiles />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/guard-profiles/:guardId"
+          element={
+            <ProtectedLayout>
+              <GuardProfilePage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/company-profile"
+          element={
+            <ProtectedLayout>
+              <CompanyProfile />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/email-settings"
+          element={
+            <ProtectedLayout>
+              <EmailSettings />
+            </ProtectedLayout>
+          }
+        />
+
+      </Routes>
     </Router>
   );
 }
+
 export default App;

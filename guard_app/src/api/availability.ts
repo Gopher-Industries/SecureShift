@@ -107,10 +107,7 @@ export async function addAvailabilitySlot(params: {
 }
 
 // GET /api/v1/availability/slots/my-slots
-export async function getMyAvailabilitySlots(params?: {
-  startDate?: string;
-  endDate?: string;
-}) {
+export async function getMyAvailabilitySlots(params?: { startDate?: string; endDate?: string }) {
   const { data } = await http.get<AvailabilitySlotListResponse>('/availability/slots/my-slots', {
     params,
   });

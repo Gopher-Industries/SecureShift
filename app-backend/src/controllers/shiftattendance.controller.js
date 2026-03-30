@@ -67,3 +67,26 @@ export const checkOut = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// GET /api/v1/attendance/:userId
+export const getAttendanceByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const attendanceRecords = await ShiftAttendance.find({ guardId: userId })
+      .sort({ checkInTime: -1 });
+
+    if (!attendanceRecords.length) {
+      return res.status(404).json({
+        message: "No attendance records found for this user",
+      });
+    }
+
+    res.status(200).json({
+      message: "Attendance history retrieved successfully",
+      count: attendanceRecords.length,
+      attendance: attendanceRecords,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
