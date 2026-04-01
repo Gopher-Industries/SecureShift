@@ -16,49 +16,84 @@ const router = express.Router();
  * @swagger
  * tags:
  *   name: Notifications
- *   description: Notification management
+ *   description: Notification management system
  */
+
+/* =========================================================
+   STATIC ROUTES 
+========================================================= */
+
+/**
+ * @swagger
+ * /api/v1/notifications/unread-count:
+ *   get:
+ *     summary: Get unread notification count
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Unread count retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 unreadCount:
+ *                   type: integer
+ */
+router.get('/unread-count', auth, loadUser, getUnreadCount);
+
+/**
+ * @swagger
+ * /api/v1/notifications/read-all:
+ *   patch:
+ *     summary: Mark all notifications as read
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications marked as read
+ */
+router.patch('/read-all', auth, loadUser, markAllAsRead);
+
+/* =========================================================
+    MAIN ROUTES
+========================================================= */
 
 /**
  * @swagger
  * /api/v1/notifications:
  *   get:
- *     summary: Get user notifications
+ *     summary: Get user notifications (paginated)
  *     tags: [Notifications]
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *          application/json:
- *            schema: 
- *              type: object
- *              properties:
- *                id:
- *                  type: string
- *                  example: 1
- *                type:
- *                  type: string
- *                  example: SHIFT_APPLIED
- *                title:
- *                  type: string
- *                  example: New Shift Application
- *                message:
- *                  type: string
- *                  example: A guard applied
- *                isRead:
- *                  type: bool
- *                  example: false
- *                createdAt:
- *                  type: string
- *                  example: 2026-03-19T10:00:00Z
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 20
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           example: SHIFT_APPLIED
+ *       - in: query
+ *         name: isRead
+ *         schema:
+ *           type: boolean
+ *           example: false
  *     responses:
  *       200:
- *         description: Successfully get notification.
- *       401:
- *         description: Unauthorized
- *       422:
- *         description: Validation error
+ *         description: Notifications fetched successfully
  */
 router.get('/', auth, loadUser, getNotifications);
 
@@ -66,47 +101,35 @@ router.get('/', auth, loadUser, getNotifications);
  * @swagger
  * /api/v1/notifications:
  *   post:
- *     summary: Create notification
+ *     summary: Create a notification
  *     tags: [Notifications]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *          application/json:
- *            schema: 
- *              type: object
- *              properties:
- *                userId:
- *                  type: string
- *                  example: string
- *                type:
- *                  type: string
- *                  example: SHIFT_APPLIED
- *                title:
- *                  type: string
- *                  example: New Shift Application
- *                message:
- *                  type: string
- *                  example: A guard has applied for your shift
- *                data:
- *                  type: object
- *                  properties:
- *                    shiftId:
- *                      type: string
- *                      example: 123
- *                    guardId:
- *                      type: string
- *                      example: 456
- *     responses:
- *       200:
- *         description: Successfully create notification.
- *       401:
- *         description: Unauthorized
- *       422:
- *         description: Validation error
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userId, type, message]
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *                 example: SHIFT_APPLIED
+ *               title:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *               data:
+ *                 type: object
  */
 router.post('/', auth, loadUser, createNotification);
+
+/* =========================================================
+   PARAM ROUTES 
+========================================================= */
 
 /**
  * @swagger
@@ -129,27 +152,5 @@ router.get('/:id', auth, loadUser, getNotificationById);
  *       - bearerAuth: []
  */
 router.patch('/:id/read', auth, loadUser, markAsRead);
-
-/**
- * @swagger
- * /api/v1/notifications/read-all:
- *   patch:
- *     summary: Mark all notifications as read
- *     tags: [Notifications]
- *     security:
- *       - bearerAuth: []
- */
-router.patch('/read-all', auth, loadUser, markAllAsRead);
-
-/**
- * @swagger
- * /api/v1/notifications/unread-count:
- *   get:
- *     summary: Get unread notification count
- *     tags: [Notifications]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/unread-count', auth, loadUser, getUnreadCount);
 
 export default router;
