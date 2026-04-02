@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
+import ShiftAttendance from '../models/ShiftAttendance.js';
 
 import { ACTIONS } from "../middleware/logger.js";
 
