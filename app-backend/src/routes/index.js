@@ -11,8 +11,10 @@ import rbacRoutes from './rbac.routes.js';
 import branchRoutes from './branch.routes.js'
 import shiftAttendanceRoutes from './shiftattendance.routes.js';
 
+import payrollRoutes from './payroll.routes.js';
+import documentRoutes from './document.routes.js';
 const router = express.Router();
-
+router.use('/documents', documentRoutes);
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/shifts', shiftRoutes);
@@ -23,5 +25,6 @@ router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/branch', branchRoutes);
 router.use('/attendance', shiftAttendanceRoutes);
+router.use('/payroll', payrollRoutes);
 
 export default router;
