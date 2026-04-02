@@ -47,20 +47,35 @@ export const createIncident = async (req, res, next) => {
 export const updateIncident = async (req, res, next) => {
   try {
     const incident = await Incident.findById(req.params.id);
+
     if (!incident || incident.isDeleted) {
       return next(new ErrorResponse("Incident not found", 404));
     }
 
-    // Guards can only update their own
-    if (
-      req.user.role === "guard" &&
-      String(incident.guardId) !== String(req.user._id)
-    ) {
+    let allowedFields = [];
+
+    if (req.user.role === "guard") {
+      // guards can only update their own incidents
+      if (String(incident.guardId) !== String(req.user._id)) {
+        return next(new ErrorResponse("Not authorized", 403));
+      }
+
+      // guards should only update limited fields
+      allowedFields = ["description"];
+    } else if (req.user.role === "employer") {
+      // employers can only update incidents belonging to their own shifts
+      const shift = await Shift.findById(incident.shiftId);
+
+      if (!shift || String(shift.createdBy) !== String(req.user._id)) {
+        return next(new ErrorResponse("Not authorized", 403));
+      }
+
+      allowedFields = ["description", "status"];
+    } else if (req.user.role === "admin") {
+      allowedFields = ["severity", "description", "status"];
+    } else {
       return next(new ErrorResponse("Not authorized", 403));
     }
-
-
-    const allowedFields = ["severity", "description", "status"];
 
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
@@ -76,6 +91,7 @@ export const updateIncident = async (req, res, next) => {
         allowedFields.includes(field)
       ),
     });
+
     res.json({ success: true, data: incident });
   } catch (err) {
     next(err);
@@ -190,6 +206,27 @@ export const uploadAttachment = async (req, res, next) => {
       return next(new ErrorResponse("Incident not found", 404));
     }
 
+    // guard can upload only to their own incident
+    if (req.user.role === "guard") {
+      if (String(incident.guardId) !== String(req.user._id)) {
+        return next(new ErrorResponse("Not authorized", 403));
+      }
+    }
+
+    // employer can upload only to incidents on their own shifts
+    if (req.user.role === "employer") {
+      const shift = await Shift.findById(incident.shiftId);
+
+      if (!shift || String(shift.createdBy) !== String(req.user._id)) {
+        return next(new ErrorResponse("Not authorized", 403));
+      }
+    }
+
+    // any non-admin role outside the above is not allowed
+    if (!["guard", "employer", "admin"].includes(req.user.role)) {
+      return next(new ErrorResponse("Not authorized", 403));
+    }
+
     if (!req.file) {
       return next(new ErrorResponse("No file uploaded", 400));
     }
@@ -206,6 +243,7 @@ export const uploadAttachment = async (req, res, next) => {
     next(err);
   }
 };
+
 
 // GET ATTACHMENT
 export const getAttachment = async (req, res, next) => {

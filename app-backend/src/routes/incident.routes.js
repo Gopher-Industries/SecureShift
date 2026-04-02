@@ -81,7 +81,7 @@ router.use(auth);
  *       - startDate
  *       - endDate
  *
- *       Returned data is still subject to role-based filtering in the controller.
+ *       Returned data is still subject to role- and ownership-based filtering in the controller.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
@@ -147,6 +147,11 @@ router.get("/", authorizePermissions("incident:view"), getIncidents);
  *     description: |
  *       Return full incident details including reporter, shift, severity,
  *       status, timestamps, and attachments.
+ *
+ *       **Access rules:**
+ *       - **Guard**: can view only their own incident
+ *       - **Employer**: can view only incidents linked to shifts they created
+ *       - **Admin**: can view any incident allowed by permissions
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
@@ -163,15 +168,21 @@ router.get("/", authorizePermissions("incident:view"), getIncidents);
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden or outside authorized ownership/scope
  *       404:
  *         description: Incident not found
  *
  *   patch:
  *     summary: Update an incident
  *     description: |
- *       Update incident details such as severity, description, or status.
- *       Access is controlled by permissions and role-aware controller checks.
+ *       Update an existing incident with role- and ownership-based restrictions.
+ *
+ *       **Update rules:**
+ *       - **Guard**: can update only their own incident, and only the `description` field
+ *       - **Employer**: can update only incidents linked to shifts they created, and only the `description` and `status` fields
+ *       - **Admin**: can update `severity`, `description`, and `status`
+ *
+ *       Any unauthorized field changes are ignored by the controller.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
@@ -192,21 +203,24 @@ router.get("/", authorizePermissions("incident:view"), getIncidents);
  *               severity:
  *                 type: string
  *                 enum: [low, medium, high]
- *                 example: "medium"
+ *                 example: medium
+ *                 description: Admin only
  *               description:
  *                 type: string
- *                 example: "Updated after site supervisor review."
+ *                 example: Updated after site supervisor review.
+ *                 description: Allowed for guard, employer, and admin (subject to ownership/scope)
  *               status:
  *                 type: string
  *                 enum: [open, in-progress, resolved]
- *                 example: "in-progress"
+ *                 example: in-progress
+ *                 description: Employer and admin only
  *     responses:
  *       200:
  *         description: Incident updated successfully
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden or outside authorized ownership/scope
  *       404:
  *         description: Incident not found
  *
@@ -245,8 +259,14 @@ router.delete("/:id", authorizePermissions("incident:delete"), deleteIncident);
  *   post:
  *     summary: Upload an incident attachment
  *     description: |
- *      Upload a supported file (such as an image or PDF) and attach it to an existing incident.
- *       Access to this endpoint requires incident update permission.
+ *       Upload a supported file (such as an image or PDF) and attach it to an existing incident.
+ *
+ *       **Access rules:**
+ *       - **Guard**: can upload only to their own incident
+ *       - **Employer**: can upload only to incidents linked to shifts they created
+ *       - **Admin**: can upload to any incident
+ *
+ *       In addition to route permission checks, the controller validates incident ownership/scope      before saving the attachment.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
@@ -269,6 +289,7 @@ router.delete("/:id", authorizePermissions("incident:delete"), deleteIncident);
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: Supported image or PDF file
  *     responses:
  *       200:
  *         description: Attachment uploaded successfully
@@ -277,7 +298,7 @@ router.delete("/:id", authorizePermissions("incident:delete"), deleteIncident);
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden or outside authorized ownership/scope
  *       404:
  *         description: Incident not found
  */
@@ -319,7 +340,7 @@ router.post(
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden or outside authorized ownership/scope
  *       404:
  *         description: Incident or attachment not found
  */
