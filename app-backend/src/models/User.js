@@ -89,6 +89,13 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    
+    favourites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // referencing guards
+      },
+    ],
 
     pushTokens: [
       {

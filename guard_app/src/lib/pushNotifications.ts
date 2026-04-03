@@ -1,9 +1,9 @@
-import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { registerPushToken } from '../api/pushTokens';
 import { LocalStorage } from './localStorage';
+import { registerPushToken } from '../api/pushTokens';
 
 const getProjectId = () =>
   Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
