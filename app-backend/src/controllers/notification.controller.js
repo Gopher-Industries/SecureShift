@@ -1,5 +1,4 @@
 import Notification from '../models/Notification.js';
-import { ROLES } from '../constants/roles.js';
 
 /**
  * GET /notifications
@@ -52,12 +51,11 @@ export const createNotification = async (req, res) => {
       });
     }
 
-    // Role-based restriction
     const allowedRoles = [
-      ROLES.SUPER_ADMIN,
-      ROLES.ADMIN,
-      ROLES.BRANCH_ADMIN,
-      ROLES.EMPLOYER,
+      'super_admin',
+      'admin',
+      'branch_admin',
+      'employer',
     ];
 
     if (!allowedRoles.includes(req.user.role)) {
