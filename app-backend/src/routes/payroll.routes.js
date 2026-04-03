@@ -40,7 +40,6 @@ router.use(auth);
 // Attach audit logging helper to every request
 router.use(auditMiddleware);
 
-// ─── GET /api/v1/payroll ──────────────────────────────────────────────────────
 /**
  * @swagger
  * /api/v1/payroll:
@@ -84,7 +83,6 @@ router.get(
   getPayroll
 );
 
-// ─── POST /api/v1/payroll/approve ────────────────────────────────────────────
 /**
  * @swagger
  * /api/v1/payroll/approve:
@@ -119,7 +117,6 @@ router.post(
   approvePayroll
 );
 
-// ─── POST /api/v1/payroll/process ────────────────────────────────────────────
 /**
  * @swagger
  * /api/v1/payroll/process:
@@ -151,7 +148,6 @@ router.post(
   processPayroll
 );
 
-// ─── GET /api/v1/payroll/export ──────────────────────────────────────────────
 /**
  * @swagger
  * /api/v1/payroll/export:
@@ -197,7 +193,6 @@ router.get(
   exportPayroll
 );
 
-// ─── POST /api/v1/payroll/attendance ─────────────────────────────────────────
 /**
  * @swagger
  * /api/v1/payroll/attendance:
@@ -234,7 +229,6 @@ router.post(
   recordAttendance
 );
 
-// ─── GET /api/v1/payroll/attendance/:shiftId ─────────────────────────────────
 /**
  * @swagger
  * /api/v1/payroll/attendance/{shiftId}:

@@ -149,18 +149,32 @@ export const login = async (req, res) => {
     }
 
     const otp = generateOTP();
-    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
+    const expiry = new Date(Date.now() + 5 * 60 * 1000);
 
     user.otp = otp;
     user.otpExpiresAt = expiry;
     await user.save();
 
-    // console.log("DEV_MODE otp: ", otp);
-    sendOTP(email, otp);
-    
+    let emailSent = false;
+
+    try {
+      await sendOTP(user.email, otp, user.name);
+      emailSent = true;
+    } catch (err) {
+      console.error("OTP email failed:", err.message);
+    }
+
     await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
 
-    res.status(200).json({ message: 'OTP sent to your email' });
+    if (emailSent) {
+      return res.status(200).json({ message: 'OTP sent to your email' });
+    }
+
+    return res.status(200).json({
+      message: 'OTP generated successfully',
+      warning: 'Email failed. Check server console for OTP.',
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

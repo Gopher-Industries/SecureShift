@@ -59,7 +59,7 @@ function hhmmToHours(hhmm) {
  */
 export function calcScheduledHours(shift) {
   const startH = hhmmToHours(shift.startTime);
-  const endH   = hhmmToHours(shift.endTime);
+  const endH = hhmmToHours(shift.endTime);
   let duration = endH - startH;
   if (duration <= 0) duration += 24; // overnight span
   return r2(duration);
@@ -77,15 +77,32 @@ export function buildDateRange(startDate, endDate) {
   return { start, end };
 }
 
+/**
+ * Get the ISO week key (Monday-start) for a given date.
+ * @param {string|Date} dateValue – Date or ISO date string
+ * @returns {string} ISO date string for the Monday of the week
+ */
+function getWeekKey(dateValue) {
+  const date = new Date(dateValue);
+  const utcDay = date.getUTCDay(); // 0 = Sun, 1 = Mon, ...
+  const diffToMonday = utcDay === 0 ? -6 : 1 - utcDay;
+
+  const monday = new Date(date);
+  monday.setUTCDate(date.getUTCDate() + diffToMonday);
+  monday.setUTCHours(0, 0, 0, 0);
+
+  return monday.toISOString().slice(0, 10);
+}
+
 // ─── Overtime engine ──────────────────────────────────────────────────────────
 
 /**
  * Apply daily and weekly overtime rules to an array of per-shift entries.
  *
- * Entries MUST be sorted by shiftDate ascending before calling this function
- * so that weekly accumulation is chronologically correct.
+ * Entries MUST be sorted by shiftDate ascending before calling this function.
+ * Weekly accumulation resets per calendar week (Monday-start).
  *
- * @param {Array} rawEntries – Each entry needs: actualHours, payRate
+ * @param {Array} rawEntries – Each entry needs: actualHours, payRate, shiftDate
  * @returns {Array} New array with regularHours, overtimeHours, regularPay,
  *                  overtimePay, totalPay filled in.
  */
@@ -96,33 +113,40 @@ function applyOvertimeRules(rawEntries) {
     WEEKLY_OT_THRESHOLD,
   } = PAYROLL_CONFIG;
 
-  let weeklyRegularAccum = 0; // running total of regular hours this week
+  let currentWeekKey = null;
+  let weeklyRegularAccum = 0;
 
   return rawEntries.map((entry) => {
-    const { actualHours, payRate } = entry;
+    const { actualHours, payRate, shiftDate } = entry;
+    const weekKey = getWeekKey(shiftDate);
 
-    // ── 1. Daily overtime ────────────────────────────────────────────────────
+    if (weekKey !== currentWeekKey) {
+      currentWeekKey = weekKey;
+      weeklyRegularAccum = 0;
+    }
+
+    // Daily overtime calculation
     const dailyRegular = Math.min(actualHours, DAILY_OT_THRESHOLD);
-    const dailyOT      = Math.max(0, actualHours - DAILY_OT_THRESHOLD);
+    const dailyOT = Math.max(0, actualHours - DAILY_OT_THRESHOLD);
 
-    // ── 2. Weekly overtime on the "daily regular" portion ───────────────────
+    // Weekly overtime calculation
     const remainingWeeklyCap = Math.max(0, WEEKLY_OT_THRESHOLD - weeklyRegularAccum);
-    const weeklyRegular      = Math.min(dailyRegular, remainingWeeklyCap);
-    const weeklyOT           = dailyRegular - weeklyRegular; // part that breaches weekly cap
+    const weeklyRegular = Math.min(dailyRegular, remainingWeeklyCap);
+    const weeklyOT = dailyRegular - weeklyRegular;
 
-    // ── 3. Final: combine daily + weekly OT ─────────────────────────────────
-    const finalOT      = r2(dailyOT + weeklyOT);
+    // Final combination: daily + weekly OT, with the more-generous rule winning
+    const finalOT = r2(dailyOT + weeklyOT);
     const finalRegular = r2(actualHours - finalOT);
 
-    weeklyRegularAccum += weeklyRegular; // accumulate only regular hours
+    weeklyRegularAccum += weeklyRegular;
 
-    const regularPay  = r2(finalRegular * payRate);
+    const regularPay = r2(finalRegular * payRate);
     const overtimePay = r2(finalOT * payRate * OVERTIME_MULTIPLIER);
-    const totalPay    = r2(regularPay + overtimePay);
+    const totalPay = r2(regularPay + overtimePay);
 
     return {
       ...entry,
-      regularHours:  finalRegular,
+      regularHours: finalRegular,
       overtimeHours: finalOT,
       regularPay,
       overtimePay,
@@ -150,113 +174,112 @@ export async function calculateGuardPayroll(guardId, startDate, endDate, periodT
 
   if (!guard) throw new Error(`Guard not found: ${guardId}`);
 
-  // Fetch all COMPLETED shifts assigned to this guard within the date window
+  // Find all completed shifts for this guard in the period
   const shifts = await Shift.find({
     acceptedBy: guardId,
     status: 'completed',
     date: { $gte: startDate, $lte: endDate },
   })
-    .sort({ date: 1 }) // chronological order for weekly OT accumulation
+    .sort({ date: 1 })
     .lean();
 
   if (!shifts.length) {
     return buildEmptyPayroll(guard, periodType, startDate, endDate);
   }
 
-  // Fetch any attendance records for these shifts
+  // Find all attendance records for these shifts + guard (should be ≤ shifts.length)
   const shiftIds = shifts.map((s) => s._id);
   const attendances = await ShiftAttendance.find({
     shift: { $in: shiftIds },
     guard: guardId,
   }).lean();
 
-  // Index by shift._id string for O(1) lookup
+  // Index attendance records by shift for easy lookup
   const attByShift = {};
   for (const att of attendances) {
     attByShift[att.shift.toString()] = att;
   }
 
-  // ── Build raw per-shift entries ──────────────────────────────────────────
+  // Build raw entries with scheduled hours, actual hours (from attendance or fallback),
+  // and pay rate (from shift or default). Overtime fields are filled in later.
   const rawEntries = shifts.map((shift) => {
-    const scheduledHours     = calcScheduledHours(shift);
-    const payRate            = (shift.payRate != null && shift.payRate >= 0)
-      ? shift.payRate
-      : PAYROLL_CONFIG.DEFAULT_HOURLY_RATE;
-    const att                = attByShift[shift._id.toString()] ?? null;
+    const scheduledHours = calcScheduledHours(shift);
+    const payRate =
+      shift.payRate != null && shift.payRate >= 0
+        ? shift.payRate
+        : PAYROLL_CONFIG.DEFAULT_HOURLY_RATE;
+    const att = attByShift[shift._id.toString()] ?? null;
 
     let actualHours;
-    let hasAttendanceRecord = Boolean(att);
+    const hasAttendanceRecord = Boolean(att);
     let attendanceStatus;
 
     if (!att) {
-      // No attendance record → use scheduled hours as best estimate
-      actualHours      = scheduledHours;
+      actualHours = scheduledHours;
       attendanceStatus = 'no_record';
     } else if (att.status === 'present' && att.hoursWorked > 0) {
-      actualHours      = att.hoursWorked;
+      actualHours = att.hoursWorked;
       attendanceStatus = 'present';
     } else if (att.status === 'absent') {
-      actualHours      = 0;
+      actualHours = 0;
       attendanceStatus = 'absent';
     } else if (att.status === 'incomplete') {
-      // Partial clock-in: use what was captured, or fall back to scheduled
-      actualHours      = att.hoursWorked > 0 ? att.hoursWorked : scheduledHours;
+      actualHours = att.hoursWorked > 0 ? att.hoursWorked : scheduledHours;
       attendanceStatus = 'incomplete';
     } else {
-      // 'scheduled' status or anything unexpected → use scheduled
-      actualHours      = scheduledHours;
+      actualHours = scheduledHours;
       attendanceStatus = att.status || 'scheduled';
     }
 
     return {
-      shift:               shift._id,
-      attendance:          att?._id ?? null,
-      shiftDate:           shift.date,
-      scheduledHours:      r2(scheduledHours),
-      actualHours:         r2(actualHours),
+      shift: shift._id,
+      attendance: att?._id ?? null,
+      shiftDate: shift.date,
+      scheduledHours: r2(scheduledHours),
+      actualHours: r2(actualHours),
       payRate,
-      // Overtime fields are placeholders; applyOvertimeRules fills them in
-      regularHours:        0,
-      overtimeHours:       0,
-      regularPay:          0,
-      overtimePay:         0,
-      totalPay:            0,
+      regularHours: 0,
+      overtimeHours: 0,
+      regularPay: 0,
+      overtimePay: 0,
+      totalPay: 0,
       hasAttendanceRecord,
       attendanceStatus,
     };
   });
 
-  // ── Apply overtime rules ─────────────────────────────────────────────────
+  // Apply overtime rules to the raw entries to get final regular/overtime split and pay calculations
   const entries = applyOvertimeRules(rawEntries);
 
-  // ── Aggregate totals ──────────────────────────────────────────────────────
   const totals = entries.reduce(
     (acc, e) => {
       acc.totalScheduledHours += e.scheduledHours;
-      acc.totalWorkedHours    += e.actualHours;
-      acc.totalRegularHours   += e.regularHours;
-      acc.totalOvertimeHours  += e.overtimeHours;
-      acc.grossPay            += e.totalPay;
+      acc.totalWorkedHours += e.actualHours;
+      acc.totalRegularHours += e.regularHours;
+      acc.totalOvertimeHours += e.overtimeHours;
+      acc.grossPay += e.totalPay;
       return acc;
     },
     {
       totalScheduledHours: 0,
-      totalWorkedHours:    0,
-      totalRegularHours:   0,
-      totalOvertimeHours:  0,
-      grossPay:            0,
+      totalWorkedHours: 0,
+      totalRegularHours: 0,
+      totalOvertimeHours: 0,
+      grossPay: 0,
     }
   );
 
-  Object.keys(totals).forEach((k) => { totals[k] = r2(totals[k]); });
+  Object.keys(totals).forEach((k) => {
+    totals[k] = r2(totals[k]);
+  });
 
   return {
-    guardId:         guard._id,
-    guardName:       guard.name,
-    guardEmail:      guard.email,
-    guardRole:       guard.role,
+    guardId: guard._id,
+    guardName: guard.name,
+    guardEmail: guard.email,
+    guardRole: guard.role,
     guardDepartment: guard.branch?.toString() ?? null,
-    period:          { type: periodType, startDate, endDate },
+    period: { type: periodType, startDate, endDate },
     entries,
     ...totals,
   };
@@ -265,18 +288,18 @@ export async function calculateGuardPayroll(guardId, startDate, endDate, periodT
 /** Produces an empty payroll shell (guard has no completed shifts in the period) */
 function buildEmptyPayroll(guard, periodType, startDate, endDate) {
   return {
-    guardId:             guard._id,
-    guardName:           guard.name,
-    guardEmail:          guard.email,
-    guardRole:           guard.role,
-    guardDepartment:     guard.branch?.toString() ?? null,
-    period:              { type: periodType, startDate, endDate },
-    entries:             [],
+    guardId: guard._id,
+    guardName: guard.name,
+    guardEmail: guard.email,
+    guardRole: guard.role,
+    guardDepartment: guard.branch?.toString() ?? null,
+    period: { type: periodType, startDate, endDate },
+    entries: [],
     totalScheduledHours: 0,
-    totalWorkedHours:    0,
-    totalRegularHours:   0,
-    totalOvertimeHours:  0,
-    grossPay:            0,
+    totalWorkedHours: 0,
+    totalRegularHours: 0,
+    totalOvertimeHours: 0,
+    grossPay: 0,
   };
 }
 
@@ -293,7 +316,7 @@ export async function generateAndPersistPayroll(filters) {
   const { startDate, endDate, periodType, guardId, department } = filters;
   const { start, end } = buildDateRange(startDate, endDate);
 
-  // Build guard filter
+  // Find all guards matching the filters (and not deleted)
   const guardFilter = { role: 'guard', isDeleted: { $ne: true } };
 
   if (guardId) {
@@ -302,8 +325,8 @@ export async function generateAndPersistPayroll(filters) {
     }
     guardFilter._id = new mongoose.Types.ObjectId(guardId);
   }
+
   if (department) {
-    // department can be a branch ObjectId string or a branch name
     guardFilter.branch = mongoose.isValidObjectId(department)
       ? new mongoose.Types.ObjectId(department)
       : department;
@@ -317,54 +340,50 @@ export async function generateAndPersistPayroll(filters) {
 
   for (const { _id } of guards) {
     try {
-      // Check if an immutable (non-PENDING) payroll already exists
       const existingLocked = await Payroll.findOne({
         guard: _id,
-        'period.type':      periodType,
+        'period.type': periodType,
         'period.startDate': start,
-        'period.endDate':   end,
-        status:             { $in: ['APPROVED', 'PROCESSED'] },
+        'period.endDate': end,
+        status: { $in: ['APPROVED', 'PROCESSED'] },
       }).lean();
 
       if (existingLocked) {
-        // Return as-is without touching it
         results.push(existingLocked);
         continue;
       }
 
-      // Calculate fresh payroll
+      // Calculate payroll data for this guard + period
       const data = await calculateGuardPayroll(_id, start, end, periodType);
 
-      // Skip guards with no shifts (unless a specific guard was requested)
       if (!data.entries.length && !guardId) continue;
 
-      // Upsert PENDING record
+      // Upsert a PENDING payroll record with the calculated data, or update the existing PENDING one.
       const saved = await Payroll.findOneAndUpdate(
         {
-          guard:              _id,
-          'period.type':      periodType,
+          guard: _id,
+          'period.type': periodType,
           'period.startDate': start,
-          'period.endDate':   end,
+          'period.endDate': end,
         },
         {
           $set: {
-            entries:             data.entries,
+            entries: data.entries,
             totalScheduledHours: data.totalScheduledHours,
-            totalWorkedHours:    data.totalWorkedHours,
-            totalRegularHours:   data.totalRegularHours,
-            totalOvertimeHours:  data.totalOvertimeHours,
-            grossPay:            data.grossPay,
-            guardName:           data.guardName,
-            guardEmail:          data.guardEmail,
-            guardRole:           data.guardRole,
-            guardDepartment:     data.guardDepartment,
-            'period.type':       periodType,
-            'period.startDate':  start,
-            'period.endDate':    end,
-            status:              'PENDING',
-            // Reset workflow fields on recalculation
-            approvedBy:  null,
-            approvedAt:  null,
+            totalWorkedHours: data.totalWorkedHours,
+            totalRegularHours: data.totalRegularHours,
+            totalOvertimeHours: data.totalOvertimeHours,
+            grossPay: data.grossPay,
+            guardName: data.guardName,
+            guardEmail: data.guardEmail,
+            guardRole: data.guardRole,
+            guardDepartment: data.guardDepartment,
+            'period.type': periodType,
+            'period.startDate': start,
+            'period.endDate': end,
+            status: 'PENDING',
+            approvedBy: null,
+            approvedAt: null,
             processedBy: null,
             processedAt: null,
           },
@@ -376,7 +395,6 @@ export async function generateAndPersistPayroll(filters) {
       results.push(saved);
     } catch (err) {
       console.error(`Payroll calculation failed for guard ${_id}:`, err.message);
-      // Continue processing other guards rather than aborting the whole batch
     }
   }
 

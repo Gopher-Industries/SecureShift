@@ -20,25 +20,20 @@ import { ACTIONS } from '../middleware/logger.js';
 import {
   generateAndPersistPayroll,
   buildDateRange,
-  calcScheduledHours,
-  PAYROLL_CONFIG,
 } from '../services/payroll.service.js';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const VALID_PERIOD_TYPES = ['daily', 'weekly', 'monthly'];
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
+// Helpers
 const round2 = (n) => Math.round((n || 0) * 100) / 100;
 
 function validateDateRange(startDate, endDate) {
   const start = new Date(startDate);
-  const end   = new Date(endDate);
+  const end = new Date(endDate);
   if (isNaN(start.getTime())) return 'startDate is not a valid date';
-  if (isNaN(end.getTime()))   return 'endDate is not a valid date';
-  if (start > end)             return 'startDate must be before endDate';
-  return null; // valid
+  if (isNaN(end.getTime())) return 'endDate is not a valid date';
+  if (start > end) return 'startDate must be before endDate';
+  return null;
 }
 
 function escapeCsv(val) {
@@ -53,8 +48,7 @@ function capitalize(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 }
 
-// ─── GET /api/v1/payroll ──────────────────────────────────────────────────────
-
+// ─── GET /api/v1/payroll ─ Generate / retrieve payroll summaries
 /**
  * Retrieve (and generate / refresh) payroll summaries.
  *
@@ -69,7 +63,7 @@ export const getPayroll = async (req, res) => {
   try {
     const { startDate, endDate, periodType, guardId, department } = req.query;
 
-    // ── Validation ─────────────────────────────────────────────────────────
+    // Validation with detailed error messages
     if (!startDate || !endDate) {
       return res.status(400).json({ message: 'startDate and endDate are required' });
     }
@@ -87,30 +81,29 @@ export const getPayroll = async (req, res) => {
       return res.status(400).json({ message: 'guardId is not a valid ObjectId' });
     }
 
-    // ── Role-based scoping ─────────────────────────────────────────────────
+    // Role-based access control: guards can only view their own payroll
     const { role, _id: userId } = req.user;
     let effectiveGuardId = guardId || null;
 
     if (role === 'guard') {
-      // Guards can only see their own payroll
       effectiveGuardId = String(userId);
     }
 
-    // ── Generate + persist ─────────────────────────────────────────────────
+    // Generate and persist payroll records for the specified period and filters
     const records = await generateAndPersistPayroll({
       startDate,
       endDate,
       periodType,
-      guardId:    effectiveGuardId,
+      guardId: effectiveGuardId,
       department: department || null,
     });
 
-    // ── Period summary ─────────────────────────────────────────────────────
+    // Compute summary statistics for the response
     const summary = {
-      totalGuards:        records.length,
-      totalWorkedHours:   round2(records.reduce((s, r) => s + (r.totalWorkedHours    || 0), 0)),
-      totalOvertimeHours: round2(records.reduce((s, r) => s + (r.totalOvertimeHours  || 0), 0)),
-      totalGrossPay:      round2(records.reduce((s, r) => s + (r.grossPay            || 0), 0)),
+      totalGuards: records.length,
+      totalWorkedHours: round2(records.reduce((s, r) => s + (r.totalWorkedHours || 0), 0)),
+      totalOvertimeHours: round2(records.reduce((s, r) => s + (r.totalOvertimeHours || 0), 0)),
+      totalGrossPay: round2(records.reduce((s, r) => s + (r.grossPay || 0), 0)),
     };
 
     await req.audit.log(userId, ACTIONS.PAYROLL_GENERATED, {
@@ -121,7 +114,7 @@ export const getPayroll = async (req, res) => {
     });
 
     return res.json({
-      period:  { type: periodType, startDate, endDate },
+      period: { type: periodType, startDate, endDate },
       summary,
       records,
     });
@@ -131,8 +124,7 @@ export const getPayroll = async (req, res) => {
   }
 };
 
-// ─── POST /api/v1/payroll/approve ─────────────────────────────────────────────
-
+// POST /api/v1/payroll/approve
 /**
  * Approve one or more PENDING payroll records.
  * Body: { payrollIds: ["id1", "id2", ...] }
@@ -150,11 +142,10 @@ export const approvePayroll = async (req, res) => {
       return res.status(400).json({ message: `Invalid ObjectId(s): ${invalid.join(', ')}` });
     }
 
-    // Verify all records exist and are PENDING
     const records = await Payroll.find({ _id: { $in: payrollIds } }).lean();
 
     if (records.length !== payrollIds.length) {
-      const foundIds   = records.map((r) => r._id.toString());
+      const foundIds = records.map((r) => r._id.toString());
       const missingIds = payrollIds.filter((id) => !foundIds.includes(id));
       return res.status(404).json({
         message: `Payroll record(s) not found: ${missingIds.join(', ')}`,
@@ -173,7 +164,7 @@ export const approvePayroll = async (req, res) => {
       { _id: { $in: payrollIds }, status: 'PENDING' },
       {
         $set: {
-          status:     'APPROVED',
+          status: 'APPROVED',
           approvedBy: approverId,
           approvedAt: new Date(),
         },
@@ -186,7 +177,7 @@ export const approvePayroll = async (req, res) => {
     });
 
     return res.json({
-      message:       `${result.modifiedCount} payroll record(s) approved successfully`,
+      message: `${result.modifiedCount} payroll record(s) approved successfully`,
       modifiedCount: result.modifiedCount,
     });
   } catch (err) {
@@ -195,8 +186,7 @@ export const approvePayroll = async (req, res) => {
   }
 };
 
-// ─── POST /api/v1/payroll/process ─────────────────────────────────────────────
-
+// POST /api/v1/payroll/process
 /**
  * Mark one or more APPROVED payroll records as PROCESSED.
  * Body: { payrollIds: ["id1", "id2", ...] }
@@ -217,7 +207,7 @@ export const processPayroll = async (req, res) => {
     const records = await Payroll.find({ _id: { $in: payrollIds } }).lean();
 
     if (records.length !== payrollIds.length) {
-      const foundIds   = records.map((r) => r._id.toString());
+      const foundIds = records.map((r) => r._id.toString());
       const missingIds = payrollIds.filter((id) => !foundIds.includes(id));
       return res.status(404).json({
         message: `Payroll record(s) not found: ${missingIds.join(', ')}`,
@@ -236,7 +226,7 @@ export const processPayroll = async (req, res) => {
       { _id: { $in: payrollIds }, status: 'APPROVED' },
       {
         $set: {
-          status:      'PROCESSED',
+          status: 'PROCESSED',
           processedBy: processorId,
           processedAt: new Date(),
         },
@@ -249,7 +239,7 @@ export const processPayroll = async (req, res) => {
     });
 
     return res.json({
-      message:       `${result.modifiedCount} payroll record(s) processed successfully`,
+      message: `${result.modifiedCount} payroll record(s) processed successfully`,
       modifiedCount: result.modifiedCount,
     });
   } catch (err) {
@@ -258,19 +248,17 @@ export const processPayroll = async (req, res) => {
   }
 };
 
-// ─── GET /api/v1/payroll/export ───────────────────────────────────────────────
-
+// GET /api/v1/payroll/export
 /**
- * Export payroll data in CSV or PDF format.
- *
+ * Export payroll data as CSV or PDF.
  * Query params:
- *   startDate  – ISO date string (required)
- *   endDate    – ISO date string (required)
- *   periodType – 'daily' | 'weekly' | 'monthly' (required)
- *   format     – 'csv' | 'pdf' (default: 'csv')
- *   guardId    – filter by guard (optional)
- *   department – filter by branch (optional)
- *   status     – filter by status 'PENDING'|'APPROVED'|'PROCESSED' (optional)
+ *   startDate    – ISO date string (required)
+ *   endDate      – ISO date string (required)
+ *   periodType   – 'daily' | 'weekly' | 'monthly' (required)
+ *   format       – 'csv' | 'pdf' (optional; default: 'csv')
+ *   guardId      – ObjectId string (optional; guards may only view their own)
+ *   department   – branch ObjectId or name (optional)
+ *   status       – 'PENDING' | 'APPROVED' | 'PROCESSED' (optional)
  */
 export const exportPayroll = async (req, res) => {
   try {
@@ -278,7 +266,7 @@ export const exportPayroll = async (req, res) => {
       startDate,
       endDate,
       periodType,
-      format     = 'csv',
+      format = 'csv',
       guardId,
       department,
       status,
@@ -301,33 +289,41 @@ export const exportPayroll = async (req, res) => {
     }
 
     if (status && !['PENDING', 'APPROVED', 'PROCESSED'].includes(status)) {
-      return res.status(400).json({ message: "status must be PENDING, APPROVED, or PROCESSED" });
+      return res.status(400).json({ message: 'status must be PENDING, APPROVED, or PROCESSED' });
     }
 
-    // ── Build query for stored Payroll records ─────────────────────────────
+    // Role-based access control: guards can only export their own payroll
     const { start, end } = buildDateRange(startDate, endDate);
     const query = {
-      'period.type':      periodType,
+      'period.type': periodType,
       'period.startDate': { $gte: start },
-      'period.endDate':   { $lte: end },
+      'period.endDate': { $lte: end },
     };
-    if (guardId)    query.guard             = mongoose.isValidObjectId(guardId) ? new mongoose.Types.ObjectId(guardId) : guardId;
-    if (department) query.guardDepartment   = department;
-    if (status)     query.status            = status;
 
-    // Role scoping
+    if (guardId) {
+      query.guard = mongoose.isValidObjectId(guardId)
+        ? new mongoose.Types.ObjectId(guardId)
+        : guardId;
+    }
+    if (department) query.guardDepartment = department;
+    if (status) query.status = status;
+
     if (req.user.role === 'guard') {
       query.guard = new mongoose.Types.ObjectId(req.user._id || req.user.id);
     }
 
     const records = await Payroll.find(query)
-      .populate('approvedBy',  'name email')
+      .populate('approvedBy', 'name email')
       .populate('processedBy', 'name email')
       .sort({ guardName: 1 })
       .lean();
 
     await req.audit.log(req.user._id, ACTIONS.PAYROLL_EXPORTED, {
-      format, periodType, startDate, endDate, count: records.length,
+      format,
+      periodType,
+      startDate,
+      endDate,
+      count: records.length,
     });
 
     if (format === 'csv') {
@@ -340,12 +336,18 @@ export const exportPayroll = async (req, res) => {
   }
 };
 
-// ─── CSV builder ──────────────────────────────────────────────────────────────
-
+// CSV builder helper functions
+/**
+ * Record clock-in / clock-out attendance for a shift.
+ * Body: { shiftId, clockIn, clockOut, notes }
+ * Guards can only record attendance for their own shifts; admins can specify guardId in body.
+ * If clockIn is provided without clockOut, status will be 'incomplete'. If clockOut is before clockIn, an error is returned.
+ * If neither clockIn nor clockOut is provided, status will be 'absent'.
+ * Notes can be added by admins (e.g. "Guard called in sick") or guards (e.g. "Arrived late due to traffic").
+ *  */
 function sendCSV(res, records, periodType, startDate, endDate) {
   const lines = [];
 
-  // ── File header ──────────────────────────────────────────────────────────
   lines.push('SecureShift Payroll Export');
   lines.push(`Period Type,${capitalize(periodType)}`);
   lines.push(`Start Date,${startDate}`);
@@ -353,10 +355,9 @@ function sendCSV(res, records, periodType, startDate, endDate) {
   lines.push(`Generated At,${new Date().toISOString()}`);
   lines.push('');
 
-  // ── Period totals ────────────────────────────────────────────────────────
-  const totalWorked  = round2(records.reduce((s, r) => s + (r.totalWorkedHours   || 0), 0));
-  const totalOT      = round2(records.reduce((s, r) => s + (r.totalOvertimeHours || 0), 0));
-  const totalPay     = round2(records.reduce((s, r) => s + (r.grossPay           || 0), 0));
+  const totalWorked = round2(records.reduce((s, r) => s + (r.totalWorkedHours || 0), 0));
+  const totalOT = round2(records.reduce((s, r) => s + (r.totalOvertimeHours || 0), 0));
+  const totalPay = round2(records.reduce((s, r) => s + (r.grossPay || 0), 0));
 
   lines.push('PERIOD SUMMARY');
   lines.push(`Total Guards,${records.length}`);
@@ -365,7 +366,6 @@ function sendCSV(res, records, periodType, startDate, endDate) {
   lines.push(`Total Gross Pay (AUD),$${totalPay.toFixed(2)}`);
   lines.push('');
 
-  // ── Per-guard summary ────────────────────────────────────────────────────
   lines.push('PER-GUARD SUMMARY');
   lines.push(
     'Guard Name,Email,Role,Sched Hrs,Worked Hrs,Regular Hrs,Overtime Hrs,Gross Pay (AUD),Status,Approved By,Approved At,Processed By,Processed At'
@@ -374,17 +374,17 @@ function sendCSV(res, records, periodType, startDate, endDate) {
   for (const r of records) {
     lines.push(
       [
-        escapeCsv(r.guardName  || ''),
+        escapeCsv(r.guardName || ''),
         escapeCsv(r.guardEmail || ''),
-        escapeCsv(r.guardRole  || ''),
+        escapeCsv(r.guardRole || ''),
         r.totalScheduledHours ?? 0,
-        r.totalWorkedHours    ?? 0,
-        r.totalRegularHours   ?? 0,
-        r.totalOvertimeHours  ?? 0,
+        r.totalWorkedHours ?? 0,
+        r.totalRegularHours ?? 0,
+        r.totalOvertimeHours ?? 0,
         (r.grossPay || 0).toFixed(2),
         r.status || '',
-        escapeCsv(r.approvedBy?.name  || ''),
-        r.approvedAt  ? new Date(r.approvedAt).toISOString()  : '',
+        escapeCsv(r.approvedBy?.name || ''),
+        r.approvedAt ? new Date(r.approvedAt).toISOString() : '',
         escapeCsv(r.processedBy?.name || ''),
         r.processedAt ? new Date(r.processedAt).toISOString() : '',
       ].join(',')
@@ -392,8 +392,6 @@ function sendCSV(res, records, periodType, startDate, endDate) {
   }
 
   lines.push('');
-
-  // ── Per-shift detail ─────────────────────────────────────────────────────
   lines.push('SHIFT DETAILS');
   lines.push(
     'Guard Name,Shift Date,Sched Hrs,Actual Hrs,Regular Hrs,OT Hrs,Pay Rate ($/hr),Regular Pay,OT Pay,Total Pay,Attendance Status'
@@ -406,13 +404,13 @@ function sendCSV(res, records, periodType, startDate, endDate) {
           escapeCsv(r.guardName || ''),
           new Date(e.shiftDate).toLocaleDateString('en-AU'),
           e.scheduledHours ?? 0,
-          e.actualHours    ?? 0,
-          e.regularHours   ?? 0,
-          e.overtimeHours  ?? 0,
-          `$${e.payRate  ?? 0}`,
-          `$${(e.regularPay  || 0).toFixed(2)}`,
+          e.actualHours ?? 0,
+          e.regularHours ?? 0,
+          e.overtimeHours ?? 0,
+          `$${e.payRate ?? 0}`,
+          `$${(e.regularPay || 0).toFixed(2)}`,
           `$${(e.overtimePay || 0).toFixed(2)}`,
-          `$${(e.totalPay    || 0).toFixed(2)}`,
+          `$${(e.totalPay || 0).toFixed(2)}`,
           escapeCsv(e.attendanceStatus || 'n/a'),
         ].join(',')
       );
@@ -426,23 +424,25 @@ function sendCSV(res, records, periodType, startDate, endDate) {
     'Content-Disposition',
     `attachment; filename="payroll-${startDate}-to-${endDate}.csv"`
   );
-  // Prepend BOM so Excel opens UTF-8 correctly
+
   return res.send('\uFEFF' + csv);
 }
 
-// ─── PDF builder ──────────────────────────────────────────────────────────────
-
+// PDF builder helper function
+/**
+ * Generate and send a PDF payroll report.
+ * Uses dynamic import of pdfkit to avoid adding it as a dependency if PDF export is not needed.
+ * If pdfkit is not installed, returns a 500 error with instructions to install it.
+ */
 async function sendPDF(res, records, periodType, startDate, endDate) {
-  // Dynamic import so the app still boots even if pdfkit is not yet installed
   let PDFDocument;
   try {
-    const mod  = await import('pdfkit');
+    const mod = await import('pdfkit');
     PDFDocument = mod.default;
   } catch {
     return res.status(500).json({
       message:
-        'PDF generation requires the pdfkit package. ' +
-        'Run `npm install pdfkit` in app-backend/ and restart the server.',
+        'PDF generation requires the pdfkit package. Run `npm install pdfkit` in app-backend/ and restart the server.',
     });
   }
 
@@ -453,7 +453,6 @@ async function sendPDF(res, records, periodType, startDate, endDate) {
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
   doc.pipe(res);
 
-  // ── Title ────────────────────────────────────────────────────────────────
   doc
     .fontSize(20)
     .font('Helvetica-Bold')
@@ -469,10 +468,9 @@ async function sendPDF(res, records, periodType, startDate, endDate) {
 
   doc.moveDown();
 
-  // ── Period summary ───────────────────────────────────────────────────────
-  const totalWorked = round2(records.reduce((s, r) => s + (r.totalWorkedHours   || 0), 0));
-  const totalOT     = round2(records.reduce((s, r) => s + (r.totalOvertimeHours || 0), 0));
-  const totalPay    = round2(records.reduce((s, r) => s + (r.grossPay           || 0), 0));
+  const totalWorked = round2(records.reduce((s, r) => s + (r.totalWorkedHours || 0), 0));
+  const totalOT = round2(records.reduce((s, r) => s + (r.totalOvertimeHours || 0), 0));
+  const totalPay = round2(records.reduce((s, r) => s + (r.grossPay || 0), 0));
 
   doc.fontSize(13).font('Helvetica-Bold').text('Period Summary');
   doc
@@ -487,11 +485,9 @@ async function sendPDF(res, records, periodType, startDate, endDate) {
   doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
   doc.moveDown();
 
-  // ── Per-guard sections ───────────────────────────────────────────────────
   for (const r of records) {
     if (doc.y > 680) doc.addPage();
 
-    // Guard header
     doc
       .fontSize(12)
       .font('Helvetica-Bold')
@@ -501,42 +497,44 @@ async function sendPDF(res, records, periodType, startDate, endDate) {
       .fontSize(10)
       .font('Helvetica')
       .text(
-        `Role: ${r.guardRole || 'guard'}   ` +
-        `Status: ${r.status}   ` +
-        `Gross Pay: $${(r.grossPay || 0).toFixed(2)} AUD`
+        `Role: ${r.guardRole || 'guard'}   Status: ${r.status}   Gross Pay: $${(r.grossPay || 0).toFixed(2)} AUD`
       )
       .text(
-        `Scheduled: ${r.totalScheduledHours}h   ` +
-        `Worked: ${r.totalWorkedHours}h   ` +
-        `Regular: ${r.totalRegularHours}h   ` +
-        `Overtime: ${r.totalOvertimeHours}h`
+        `Scheduled: ${r.totalScheduledHours}h   Worked: ${r.totalWorkedHours}h   Regular: ${r.totalRegularHours}h   Overtime: ${r.totalOvertimeHours}h`
       );
 
     if (r.approvedBy) {
       doc.text(
-        `Approved by: ${r.approvedBy.name || r.approvedBy}   ` +
-        `at: ${r.approvedAt ? new Date(r.approvedAt).toLocaleDateString('en-AU') : '-'}`
+        `Approved by: ${r.approvedBy.name || r.approvedBy}   at: ${r.approvedAt ? new Date(r.approvedAt).toLocaleDateString('en-AU') : '-'}`
       );
     }
 
-    // Shift detail table
     if (r.entries && r.entries.length > 0) {
       doc.moveDown(0.4);
       doc.fontSize(8).font('Helvetica-Bold');
 
-      const COL = { date: 55, sched: 130, actual: 185, reg: 235, ot: 280, rate: 325, rPay: 375, otPay: 425, total: 475 };
+      const COL = {
+        date: 55,
+        sched: 130,
+        actual: 185,
+        reg: 235,
+        ot: 280,
+        rate: 325,
+        rPay: 375,
+        otPay: 425,
+        total: 475,
+      };
       const tableHeaderY = doc.y;
 
-      // Column headers
-      doc.text('Date',       COL.date,  tableHeaderY, { continued: true });
-      doc.text('Sched h',   COL.sched,  tableHeaderY, { continued: true });
-      doc.text('Actual h',  COL.actual, tableHeaderY, { continued: true });
-      doc.text('Reg h',     COL.reg,    tableHeaderY, { continued: true });
-      doc.text('OT h',      COL.ot,     tableHeaderY, { continued: true });
-      doc.text('Rate',      COL.rate,   tableHeaderY, { continued: true });
-      doc.text('Reg Pay',   COL.rPay,   tableHeaderY, { continued: true });
-      doc.text('OT Pay',    COL.otPay,  tableHeaderY, { continued: true });
-      doc.text('Total Pay', COL.total,  tableHeaderY);
+      doc.text('Date', COL.date, tableHeaderY, { continued: true });
+      doc.text('Sched h', COL.sched, tableHeaderY, { continued: true });
+      doc.text('Actual h', COL.actual, tableHeaderY, { continued: true });
+      doc.text('Reg h', COL.reg, tableHeaderY, { continued: true });
+      doc.text('OT h', COL.ot, tableHeaderY, { continued: true });
+      doc.text('Rate', COL.rate, tableHeaderY, { continued: true });
+      doc.text('Reg Pay', COL.rPay, tableHeaderY, { continued: true });
+      doc.text('OT Pay', COL.otPay, tableHeaderY, { continued: true });
+      doc.text('Total Pay', COL.total, tableHeaderY);
 
       doc.font('Helvetica').fontSize(8);
 
@@ -544,15 +542,15 @@ async function sendPDF(res, records, periodType, startDate, endDate) {
         if (doc.y > 740) doc.addPage();
         const rowY = doc.y;
 
-        doc.text(new Date(e.shiftDate).toLocaleDateString('en-AU'), COL.date,  rowY, { continued: true });
-        doc.text(String(e.scheduledHours),                           COL.sched,  rowY, { continued: true });
-        doc.text(String(e.actualHours),                              COL.actual, rowY, { continued: true });
-        doc.text(String(e.regularHours),                             COL.reg,    rowY, { continued: true });
-        doc.text(String(e.overtimeHours),                            COL.ot,     rowY, { continued: true });
-        doc.text(`$${e.payRate}`,                                    COL.rate,   rowY, { continued: true });
-        doc.text(`$${(e.regularPay  || 0).toFixed(2)}`,              COL.rPay,   rowY, { continued: true });
-        doc.text(`$${(e.overtimePay || 0).toFixed(2)}`,              COL.otPay,  rowY, { continued: true });
-        doc.text(`$${(e.totalPay    || 0).toFixed(2)}`,              COL.total,  rowY);
+        doc.text(new Date(e.shiftDate).toLocaleDateString('en-AU'), COL.date, rowY, { continued: true });
+        doc.text(String(e.scheduledHours), COL.sched, rowY, { continued: true });
+        doc.text(String(e.actualHours), COL.actual, rowY, { continued: true });
+        doc.text(String(e.regularHours), COL.reg, rowY, { continued: true });
+        doc.text(String(e.overtimeHours), COL.ot, rowY, { continued: true });
+        doc.text(`$${e.payRate}`, COL.rate, rowY, { continued: true });
+        doc.text(`$${(e.regularPay || 0).toFixed(2)}`, COL.rPay, rowY, { continued: true });
+        doc.text(`$${(e.overtimePay || 0).toFixed(2)}`, COL.otPay, rowY, { continued: true });
+        doc.text(`$${(e.totalPay || 0).toFixed(2)}`, COL.total, rowY);
       }
     }
 
@@ -561,20 +559,17 @@ async function sendPDF(res, records, periodType, startDate, endDate) {
     doc.undash().moveDown(0.5);
   }
 
-  // ── Footer ───────────────────────────────────────────────────────────────
   doc
     .fontSize(8)
     .fillColor('grey')
-    .text(
-      `SecureShift Confidential – Generated ${new Date().toISOString()}`,
-      { align: 'center' }
-    );
+    .text(`SecureShift Confidential – Generated ${new Date().toISOString()}`, {
+      align: 'center',
+    });
 
   doc.end();
 }
 
-// ─── POST /api/v1/payroll/attendance ─────────────────────────────────────────
-
+// POST /api/v1/payroll/attendance
 /**
  * Create or update a ShiftAttendance record.
  * Admins/branch_admins can record on behalf of any guard.
@@ -596,19 +591,19 @@ export const recordAttendance = async (req, res) => {
       return res.status(400).json({ message: 'shiftId is required and must be a valid ObjectId' });
     }
 
-    // Role scoping
+    // Role-based access control: guards can only record attendance for their own shifts
     const callerRole = req.user.role;
-    const callerId   = String(req.user._id || req.user.id);
+    const callerId = String(req.user._id || req.user.id);
 
     if (callerRole === 'guard') {
-      guardId = callerId; // guards can only record their own attendance
+      guardId = callerId;
     } else {
       if (!guardId || !mongoose.isValidObjectId(guardId)) {
         return res.status(400).json({ message: 'guardId is required and must be a valid ObjectId' });
       }
     }
 
-    // Verify the shift exists and the guard is assigned to it
+    // Verify the shift exists and is assigned to the specified guard
     const shift = await Shift.findById(shiftId).lean();
     if (!shift) {
       return res.status(404).json({ message: 'Shift not found' });
@@ -617,25 +612,25 @@ export const recordAttendance = async (req, res) => {
       return res.status(400).json({ message: 'Guard is not assigned to this shift' });
     }
 
-    // Build scheduled start/end Date objects
+    // Build scheduled start/end datetimes from shift date + times
     const shiftDate = new Date(shift.date);
 
     const [startH, startM] = shift.startTime.split(':').map(Number);
-    const scheduledStart   = new Date(shiftDate);
+    const scheduledStart = new Date(shiftDate);
     scheduledStart.setHours(startH, startM, 0, 0);
 
     const [endH, endM] = shift.endTime.split(':').map(Number);
     const scheduledEnd = new Date(shiftDate);
     scheduledEnd.setHours(endH, endM, 0, 0);
     if (scheduledEnd <= scheduledStart) {
-      scheduledEnd.setDate(scheduledEnd.getDate() + 1); // overnight
+      scheduledEnd.setDate(scheduledEnd.getDate() + 1);
     }
 
-    // Parse and validate clockIn / clockOut
-    const parsedClockIn  = clockIn  ? new Date(clockIn)  : undefined;
+    // Parse and validate clockIn/clockOut datetimes
+    const parsedClockIn = clockIn ? new Date(clockIn) : undefined;
     const parsedClockOut = clockOut ? new Date(clockOut) : undefined;
 
-    if (parsedClockIn  && isNaN(parsedClockIn.getTime()))  {
+    if (parsedClockIn && isNaN(parsedClockIn.getTime())) {
       return res.status(400).json({ message: 'clockIn is not a valid datetime' });
     }
     if (parsedClockOut && isNaN(parsedClockOut.getTime())) {
@@ -645,16 +640,16 @@ export const recordAttendance = async (req, res) => {
       return res.status(400).json({ message: 'clockOut must be after clockIn' });
     }
 
-    // Upsert
+    // Determine attendance status based on provided data
     const update = {
       scheduledStart,
       scheduledEnd,
       recordedBy: callerId,
     };
-    if (parsedClockIn  !== undefined) update.clockIn  = parsedClockIn;
+    if (parsedClockIn !== undefined) update.clockIn = parsedClockIn;
     if (parsedClockOut !== undefined) update.clockOut = parsedClockOut;
-    if (status)                       update.status   = status;
-    if (notes  !== undefined)         update.notes    = notes;
+    if (status) update.status = status;
+    if (notes !== undefined) update.notes = notes;
 
     const attendance = await ShiftAttendance.findOneAndUpdate(
       { shift: shiftId, guard: guardId },
@@ -663,16 +658,18 @@ export const recordAttendance = async (req, res) => {
     );
 
     await req.audit.log(callerId, ACTIONS.ATTENDANCE_RECORDED, {
-      shiftId, guardId, status: attendance.status, hoursWorked: attendance.hoursWorked,
+      shiftId,
+      guardId,
+      status: attendance.status,
+      hoursWorked: attendance.hoursWorked,
     });
 
     return res.status(200).json({
-      message:    'Attendance recorded',
+      message: 'Attendance recorded',
       attendance,
     });
   } catch (err) {
     if (err.code === 11000) {
-      // Should not reach here due to upsert, but just in case
       return res.status(409).json({ message: 'Attendance record already exists for this shift/guard' });
     }
     console.error('[recordAttendance]', err);
@@ -680,11 +677,11 @@ export const recordAttendance = async (req, res) => {
   }
 };
 
-// ─── GET /api/v1/payroll/attendance/:shiftId ──────────────────────────────────
-
+// GET /api/v1/payroll/attendance/:shiftId
 /**
- * Retrieve attendance records for a shift.
- * Admin/employer sees all guards; guard sees only their own.
+ * Get attendance records for a specific shift.
+ * Admins/branch_admins can view attendance for any shift.
+ * Guards can only view attendance for their own shifts.
  */
 export const getAttendanceForShift = async (req, res) => {
   try {
@@ -704,7 +701,7 @@ export const getAttendanceForShift = async (req, res) => {
     }
 
     const records = await ShiftAttendance.find(query)
-      .populate('guard',      'name email role')
+      .populate('guard', 'name email role')
       .populate('recordedBy', 'name email')
       .lean();
 

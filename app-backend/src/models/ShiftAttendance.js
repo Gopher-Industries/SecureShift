@@ -99,7 +99,7 @@ shiftAttendanceSchema.pre('save', function (next) {
     // Partial hours from clock-in to now (capped at scheduled end)
     const now = new Date();
     const cap = this.scheduledEnd || now;
-    const diffMs = Math.min(now, cap) - this.clockIn.getTime();
+    const diffMs = Math.min(now.getTime(), cap.getTime()) - this.clockIn.getTime();
     this.hoursWorked = diffMs > 0 ? Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100 : 0;
   } else if (!this.clockIn) {
     this.status = 'absent';

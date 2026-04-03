@@ -112,3 +112,175 @@ export const deleteUser = async (req, res) => {
     return res.status(500).json({ message: e.message });
   }
 };
+
+/**
+ * @desc    Get logged-in employer's profile (Employer only)
+ * @route   GET /api/v1/users/profile
+ * @access  Private (Employer only)
+ */
+export const getEmployerProfile = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Access denied.' });
+    }
+
+    const employer = await User.findById(req.user.id).select('-password');
+    if (!employer) {
+      return res.status(404).json({ message: 'Employer not found' });
+    }
+
+    res.status(200).json(employer);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * @desc    Update logged-in employer's profile (Employer only)
+ * @route   PUT /api/v1/users/profile
+ * @access  Private (Employer only)
+ */
+export const updateEmployerProfile = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Access denied.' });
+    }
+
+    const fieldsToUpdate = { ...req.body };
+    delete fieldsToUpdate.role;
+    delete fieldsToUpdate.password;
+
+    const updatedEmployer = await User.findByIdAndUpdate(
+      req.user.id,
+      fieldsToUpdate,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedEmployer) return res.status(404).json({ message: 'Employer not found' });
+    res.status(200).json(updatedEmployer);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * @desc    Register or update a push token for the logged-in user
+ * @route   POST /api/v1/users/push-token
+ * @access  Private (all roles)
+ */
+export const registerPushToken = async (req, res) => {
+  try {
+    const { token, platform, deviceId } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ message: 'Push token is required.' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const existing = user.pushTokens?.find((item) => item.token === token);
+    if (existing) {
+      existing.platform = platform ?? existing.platform;
+      existing.deviceId = deviceId ?? existing.deviceId;
+      existing.updatedAt = new Date();
+    } else {
+      user.pushTokens = [
+        ...(user.pushTokens ?? []),
+        {
+          token,
+          platform,
+          deviceId,
+          updatedAt: new Date(),
+        },
+      ];
+    }
+
+    await user.save();
+
+    return res.status(200).json({ message: 'Push token registered.' });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+/**
+ * @desc    Add a guard to favourites
+ * @route   POST /api/v1/users/favourites/:guardId
+ * @access  Private (Employer only)
+ */
+export const addFavouriteGuard = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Only employers can favourite guards.' });
+    }
+
+    const { guardId } = req.params;
+
+    const guard = await User.findById(guardId);
+    if (!guard || guard.role !== 'guard') {
+      return res.status(404).json({ message: 'Guard not found' });
+    }
+
+    const employer = await User.findById(req.user.id);
+
+    if (!employer.favourites.includes(guardId)) {
+      employer.favourites.push(guardId);
+      await employer.save();
+    }
+
+    res.status(200).json({ message: 'Guard added to favourites', favourites: employer.favourites });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+/**
+ * @desc    Remove a guard from favourites
+ * @route   DELETE /api/v1/users/favourites/:guardId
+ * @access  Private (Employer only)
+ */
+export const removeFavouriteGuard = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Only employers can modify favourites.' });
+    }
+
+    const { guardId } = req.params;
+
+    const employer = await User.findById(req.user.id);
+
+    employer.favourites = employer.favourites.filter(
+      (id) => id.toString() !== guardId
+    );
+
+    await employer.save();
+
+    res.status(200).json({ message: 'Guard removed from favourites', favourites: employer.favourites });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+/**
+ * @desc    Get favourite guards list
+ * @route   GET /api/v1/users/favourites
+ * @access  Private (Employer only)
+ */
+export const getFavouriteGuards = async (req, res) => {
+  try {
+    if (req.user.role !== 'employer') {
+      return res.status(403).json({ message: 'Only employers can view favourites.' });
+    }
+
+    const employer = await User.findById(req.user.id)
+      .populate('favourites', '-password');
+
+    res.status(200).json(employer.favourites);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

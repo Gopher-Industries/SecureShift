@@ -15,7 +15,10 @@ import {
   View,
 } from 'react-native';
 
+import logo from '../../assets/logo.png';
 import { registerUser } from '../api/auth';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
 
 type SignupNav = { replace: (name: string) => void };
 
@@ -31,6 +34,9 @@ type ErrorLike = {
 };
 
 export default function SignupScreen({ navigation }: { navigation: SignupNav }) {
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
@@ -85,7 +91,6 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
         name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password,
-        // RN FormData file shape — cast kept local to the callsite
         license: {
           uri: licenseImage.uri,
           name: licenseImage.name || 'license.jpg',
@@ -118,18 +123,17 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
         contentContainerStyle={[styles.container, styles.containerGrow]}
         keyboardShouldPersistTaps="handled"
       >
-        <Image source={require('../../assets/logo.png')} style={styles.logo} />
+        <Image source={logo} style={styles.logo} />
         <Text style={styles.subtitle}>Create an account and start looking for your shift</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {/* Email */}
         <Text style={styles.label}>Email*</Text>
         <View style={styles.inputWrap}>
           <TextInput
             style={styles.input}
             placeholder="Enter your email"
-            placeholderTextColor="#B9BDC7"
+            placeholderTextColor={colors.muted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -139,13 +143,12 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           />
         </View>
 
-        {/* Full Name */}
         <Text style={styles.label}>Full Name*</Text>
         <View style={styles.inputWrap}>
           <TextInput
             style={styles.input}
             placeholder="Enter your full name"
-            placeholderTextColor="#B9BDC7"
+            placeholderTextColor={colors.muted}
             autoCorrect={false}
             textContentType="name"
             value={fullName}
@@ -153,13 +156,12 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           />
         </View>
 
-        {/* Password */}
         <Text style={styles.label}>Password*</Text>
         <View style={styles.inputWrap}>
           <TextInput
             style={[styles.input, styles.padRight]}
             placeholder="Enter your password"
-            placeholderTextColor="#B9BDC7"
+            placeholderTextColor={colors.muted}
             secureTextEntry={!showPass}
             textContentType="password"
             value={password}
@@ -175,18 +177,17 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
             <MaterialCommunityIcons
               name={showPass ? 'eye-off-outline' : 'eye-outline'}
               size={22}
-              color="#6B7280"
+              color={colors.muted}
             />
           </TouchableOpacity>
         </View>
 
-        {/* Confirm Password */}
         <Text style={styles.label}>Confirm Password*</Text>
         <View style={styles.inputWrap}>
           <TextInput
             style={[styles.input, styles.padRight]}
             placeholder="Confirm your password"
-            placeholderTextColor="#B9BDC7"
+            placeholderTextColor={colors.muted}
             secureTextEntry={!showConfirm}
             textContentType="password"
             value={confirm}
@@ -202,12 +203,11 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
             <MaterialCommunityIcons
               name={showConfirm ? 'eye-off-outline' : 'eye-outline'}
               size={22}
-              color="#6B7280"
+              color={colors.muted}
             />
           </TouchableOpacity>
         </View>
 
-        {/* Upload License */}
         <TouchableOpacity
           style={styles.uploadBtn}
           onPress={async () => {
@@ -235,7 +235,7 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           <MaterialCommunityIcons
             name="upload"
             size={20}
-            color="#111827"
+            color={colors.text}
             style={styles.uploadIcon}
           />
         </TouchableOpacity>
@@ -244,7 +244,6 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           <Image source={{ uri: licenseImage.uri }} style={styles.imagePreview} />
         ) : null}
 
-        {/* CTA */}
         <TouchableOpacity
           style={[styles.cta, (ctaDisabled || submitting) && styles.ctaDisabled]}
           onPress={onSubmit}
@@ -253,7 +252,6 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           <Text style={styles.ctaText}>{submitting ? 'Signing up...' : 'Sign Up'}</Text>
         </TouchableOpacity>
 
-        {/* Footer */}
         <Text style={styles.footerText}>
           Already have an account?{' '}
           <Text style={styles.footerLink} onPress={() => navigation.replace('Login')}>
@@ -265,69 +263,71 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
   );
 }
 
-const styles = StyleSheet.create({
-  container: { paddingBottom: 24, paddingHorizontal: 24, paddingTop: 36 },
-  containerGrow: { flexGrow: 1 },
-  cta: {
-    alignItems: 'center',
-    backgroundColor: '#274289',
-    borderRadius: 999,
-    height: 58,
-    justifyContent: 'center',
-    marginTop: 24,
-  },
-  ctaDisabled: { opacity: 0.6 },
-  ctaText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  error: {
-    color: '#B00020',
-    fontWeight: '600',
-    marginBottom: 4,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  footerLink: { fontWeight: '700' },
-  footerText: { color: '#111827', marginTop: 18, textAlign: 'center' },
-  iconRight: { height: 56, justifyContent: 'center', position: 'absolute', right: 14 },
-  imagePreview: {
-    alignSelf: 'center',
-    borderColor: '#ccc',
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 120,
-    marginTop: 12,
-    width: 120,
-  },
-  input: { color: '#111827', fontSize: 16 },
-  inputWrap: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E5E7EB',
-    borderRadius: 14,
-    borderWidth: 1,
-    elevation: 1,
-    height: 56,
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-  },
-  label: { color: '#111827', fontWeight: '600', marginBottom: 8, marginTop: 16 },
-  logo: { alignSelf: 'center', height: 150, resizeMode: 'contain', width: 150 },
-  padRight: { paddingRight: 44 },
-  safe: { backgroundColor: '#F5F6FA', flex: 1 },
-  subtitle: { color: '#6B7280', marginBottom: 18, marginTop: 6, textAlign: 'center' },
-  uploadBtn: {
-    alignItems: 'center',
-    borderColor: '#111827',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    flexDirection: 'row',
-    height: 56,
-    justifyContent: 'center',
-    marginTop: 4,
-    paddingHorizontal: 16,
-  },
-  uploadIcon: { marginLeft: 8 },
-  uploadText: { color: '#111827', fontSize: 15 },
-});
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    container: { paddingBottom: 24, paddingHorizontal: 24, paddingTop: 36 },
+    containerGrow: { flexGrow: 1 },
+    cta: {
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 999,
+      height: 58,
+      justifyContent: 'center',
+      marginTop: 24,
+    },
+    ctaDisabled: { opacity: 0.6 },
+    ctaText: { color: colors.white, fontSize: 16, fontWeight: '600' },
+    error: {
+      color: colors.status.rejected,
+      fontWeight: '600',
+      marginBottom: 4,
+      marginTop: 10,
+      textAlign: 'center',
+    },
+    footerLink: { fontWeight: '700', color: colors.primary },
+    footerText: { color: colors.text, marginTop: 18, textAlign: 'center' },
+    iconRight: { height: 56, justifyContent: 'center', position: 'absolute', right: 14 },
+    imagePreview: {
+      alignSelf: 'center',
+      borderColor: colors.border,
+      borderRadius: 12,
+      borderWidth: 1,
+      height: 120,
+      marginTop: 12,
+      width: 120,
+    },
+    input: { color: colors.text, fontSize: 16 },
+    inputWrap: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 14,
+      borderWidth: 1,
+      elevation: 1,
+      height: 56,
+      justifyContent: 'center',
+      paddingHorizontal: 14,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+    },
+    label: { color: colors.text, fontWeight: '600', marginBottom: 8, marginTop: 16 },
+    logo: { alignSelf: 'center', height: 150, resizeMode: 'contain', width: 150 },
+    padRight: { paddingRight: 44 },
+    safe: { backgroundColor: colors.bg, flex: 1 },
+    subtitle: { color: colors.muted, marginBottom: 18, marginTop: 6, textAlign: 'center' },
+    uploadBtn: {
+      alignItems: 'center',
+      borderColor: colors.text,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      flexDirection: 'row',
+      height: 56,
+      justifyContent: 'center',
+      marginTop: 4,
+      paddingHorizontal: 16,
+      backgroundColor: colors.card,
+    },
+    uploadIcon: { marginLeft: 8 },
+    uploadText: { color: colors.text, fontSize: 15 },
+  });
