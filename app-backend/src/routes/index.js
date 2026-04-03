@@ -11,7 +11,6 @@ import rbacRoutes from './rbac.routes.js';
 import branchRoutes from './branch.routes.js';
 import notificationRoutes from './notification.routes.js'
 
-import branchRoutes from './branch.routes.js'
 import payrollRoutes from './payroll.routes.js';
 import documentRoutes from './document.routes.js';
 const router = express.Router();
