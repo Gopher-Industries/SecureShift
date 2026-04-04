@@ -16,7 +16,7 @@ export interface CreateNotificationPayload {
   type: NotificationType;
   title?: string;
   message: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 // API Calls
