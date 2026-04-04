@@ -5,18 +5,18 @@ import http from '../lib/http';
 export type NotificationType = string;
 
 export interface GetNotificationsParams {
-    page?: number;
-    limit?: number;
-    type?: NotificationType;
-    isRead?: boolean;
+  page?: number;
+  limit?: number;
+  type?: NotificationType;
+  isRead?: boolean;
 }
 
 export interface CreateNotificationPayload {
-    userId: string;
-    type: NotificationType;
-    title?: string;
-    message: string;
-    data?: Record<string, any>;
+  userId: string;
+  type: NotificationType;
+  title?: string;
+  message: string;
+  data?: Record<string, any>;
 }
 
 // API Calls
@@ -26,8 +26,8 @@ export interface CreateNotificationPayload {
  * GET /notifications/unread-count
  */
 export async function getUnreadCount() {
-    const { data } = await http.get('/notifications/unread-count');
-    return data;
+  const { data } = await http.get('/notifications/unread-count');
+  return data;
 }
 
 /**
@@ -35,8 +35,8 @@ export async function getUnreadCount() {
  * PATCH /notifications/read-all
  */
 export async function markAllAsRead() {
-    const { data } = await http.patch('/notifications/read-all');
-    return data;
+  const { data } = await http.patch('/notifications/read-all');
+  return data;
 }
 
 /**
@@ -44,8 +44,8 @@ export async function markAllAsRead() {
  * GET /notifications
  */
 export async function getNotifications(params?: GetNotificationsParams) {
-    const { data } = await http.get('/notifications', { params });
-    return data;
+  const { data } = await http.get('/notifications', { params });
+  return data;
 }
 
 /**
@@ -53,8 +53,8 @@ export async function getNotifications(params?: GetNotificationsParams) {
  * POST /notifications
  */
 export async function createNotification(payload: CreateNotificationPayload) {
-    const { data } = await http.post('/notifications', payload);
-    return data;
+  const { data } = await http.post('/notifications', payload);
+  return data;
 }
 
 /**
@@ -62,8 +62,8 @@ export async function createNotification(payload: CreateNotificationPayload) {
  * GET /notifications/:id
  */
 export async function getNotificationById(id: string) {
-    const { data } = await http.get(`/notifications/${id}`);
-    return data;
+  const { data } = await http.get(`/notifications/${id}`);
+  return data;
 }
 
 /**
@@ -71,6 +71,6 @@ export async function getNotificationById(id: string) {
  * PATCH /notifications/:id/read
  */
 export async function markAsRead(id: string) {
-    const { data } = await http.patch(`/notifications/${id}/read`);
-    return data;
+  const { data } = await http.patch(`/notifications/${id}/read`);
+  return data;
 }

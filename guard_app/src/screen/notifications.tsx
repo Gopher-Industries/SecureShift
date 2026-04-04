@@ -1,7 +1,15 @@
 // src/screen/notifications.tsx
 import { FontAwesome5 } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+} from 'react-native';
 
 import { getNotifications, getUnreadCount, markAsRead } from '../api/notification';
 import { useAppTheme } from '../theme';
@@ -25,7 +33,7 @@ export default function NotificationsScreen() {
         setLoading(true);
         const [notifsRes, countRes] = await Promise.all([
           getNotifications({ page: 1, limit: 20 }),
-          getUnreadCount()
+          getUnreadCount(),
         ]);
 
         if (notifsRes && notifsRes.notifications) {
@@ -55,7 +63,7 @@ export default function NotificationsScreen() {
       if (res && res.notifications) {
         setNotifications((prev) => {
           const newItems = res.notifications.filter(
-            (newItem: any) => !prev.some((existing) => existing._id === newItem._id)
+            (newItem: any) => !prev.some((existing) => existing._id === newItem._id),
           );
           return [...prev, ...newItems];
         });
@@ -72,7 +80,7 @@ export default function NotificationsScreen() {
   };
 
   const handleMarkAllReadLocal = async () => {
-    const unreadItems = notifications.filter(n => !n.isRead);
+    const unreadItems = notifications.filter((n) => !n.isRead);
     if (unreadItems.length === 0) return;
 
     for (let i = 0; i < unreadItems.length; i++) {
@@ -85,7 +93,7 @@ export default function NotificationsScreen() {
     }
 
     // Update local state to reflect that they've been read
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     setUnreadCount(0);
   };
 
@@ -156,7 +164,9 @@ export default function NotificationsScreen() {
           contentContainerStyle={styles.listContent}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color={colors.primary} /> : null}
+          ListFooterComponent={
+            loadingMore ? <ActivityIndicator size="small" color={colors.primary} /> : null
+          }
         />
       )}
     </View>
