@@ -17,7 +17,6 @@ export type ShiftDto = {
     company?: string;
   };
 
-  // backend states (keep only what backend supports)
   status?: 'open' | 'applied' | 'assigned' | 'completed';
 
   payRate?: number;
@@ -77,5 +76,5 @@ export async function myShifts(status?: 'past') {
 // PUT /api/v1/shifts/:id/apply
 export async function applyToShift(id: string) {
   const { data } = await http.put<ApplyResponse>(`/shifts/${id}/apply`);
-  return data; // { message, shift }
+  return data;
 }

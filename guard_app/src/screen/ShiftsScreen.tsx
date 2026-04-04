@@ -3,20 +3,21 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   Modal,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  RefreshControl,
 } from 'react-native';
 
 import { getMe } from '../api/auth';
-import { myShifts, type ShiftDto } from '../api/shifts';
+import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
 import { useAppTheme } from '../theme';
 
 import type { AppColors } from '../theme/colors';
@@ -46,6 +47,17 @@ type CompletedShift = {
   rating: number;
 };
 
+type AllShift = {
+  id: string;
+  title: string;
+  company: string;
+  site: string;
+  rate: string;
+  date: string;
+  time: string;
+  status?: 'Available' | 'Pending' | 'Confirmed';
+};
+
 function dateKeyLocal(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -65,6 +77,7 @@ function mapMineShifts(shifts: ShiftDto[], myUid: string): AppliedShift[] {
     .map((s) => {
       const acceptedId =
         typeof s.acceptedBy === 'object' ? s.acceptedBy?._id : String(s.acceptedBy ?? '');
+
       const applicants = Array.isArray(s.applicants)
         ? s.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
         : [];
@@ -103,13 +116,42 @@ function mapCompleted(shifts: ShiftDto[]): CompletedShift[] {
     }));
 }
 
+function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
+  return shifts
+    .filter((s) => s.status !== 'completed')
+    .map((s) => {
+      const acceptedId =
+        typeof s.acceptedBy === 'object' ? s.acceptedBy?._id : String(s.acceptedBy ?? '');
+
+      const applicants = Array.isArray(s.applicants)
+        ? s.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
+        : [];
+
+      let status: AllShift['status'] = 'Available';
+
+      if (s.status === 'assigned' && acceptedId === myUid) status = 'Confirmed';
+      else if (applicants.includes(myUid) || s.status === 'applied') status = 'Pending';
+
+      return {
+        id: s._id,
+        title: s.title,
+        company: s.createdBy?.company ?? '—',
+        site: s.location ? `${s.location.suburb ?? ''} ${s.location.state ?? ''}`.trim() : '—',
+        rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
+        date: s.date,
+        time: `${s.startTime} - ${s.endTime}`,
+        status,
+      };
+    });
+}
+
 function ShiftDetailsModal({
   shift,
   visible,
   onClose,
   colors,
 }: {
-  shift: AppliedShift | CompletedShift | null;
+  shift: AppliedShift | CompletedShift | AllShift | null;
   visible: boolean;
   onClose: () => void;
   colors: AppColors;
@@ -124,7 +166,9 @@ function ShiftDetailsModal({
       ? colors.status.confirmed
       : status === 'Pending'
         ? colors.link
-        : colors.muted;
+        : status === 'Available'
+          ? colors.primary
+          : colors.muted;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -225,6 +269,7 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
   const getStatusColor = (status?: string) => {
     if (status === 'Confirmed') return colors.status.confirmed;
     if (status === 'Pending') return colors.link;
+    if (status === 'Available') return colors.primary;
     return colors.muted;
   };
 
@@ -292,6 +337,10 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
 
       <View style={s.calLegend}>
         <View style={s.calLegendItem}>
+          <View style={[s.calLegendDot, { backgroundColor: colors.primary }]} />
+          <Text style={s.calLegendText}>Available</Text>
+        </View>
+        <View style={s.calLegendItem}>
           <View style={[s.calLegendDot, { backgroundColor: colors.link }]} />
           <Text style={s.calLegendText}>Applied</Text>
         </View>
@@ -312,29 +361,49 @@ function ShiftCard({
   shift,
   onPress,
   colors,
+  showApply = false,
+  onApply,
+  applying = false,
 }: {
-  shift: AppliedShift | CompletedShift;
+  shift: AppliedShift | CompletedShift | AllShift;
   onPress?: () => void;
   colors: AppColors;
+  showApply?: boolean;
+  onApply?: () => void;
+  applying?: boolean;
 }) {
   const s = getStyles(colors);
 
   const status = 'status' in shift ? shift.status : 'Completed';
+
   const statusColor =
     status === 'Confirmed'
       ? colors.status.confirmed
       : status === 'Pending'
         ? colors.link
-        : colors.muted;
+        : status === 'Available'
+          ? colors.primary
+          : colors.muted;
 
   return (
-    <TouchableOpacity style={s.card} onPress={onPress}>
+    <TouchableOpacity style={s.card} onPress={onPress} activeOpacity={0.9}>
       <View style={s.cardHeader}>
         <View style={s.cardTitleSection}>
           <Text style={s.cardTitle}>{shift.title}</Text>
-          <View style={[s.cardStatusBadge, { backgroundColor: statusColor }]}>
-            <Text style={s.cardStatusText}>{status || 'Available'}</Text>
-          </View>
+
+          {showApply && status === 'Available' ? (
+            <TouchableOpacity
+              style={[s.applyBtn, applying && s.applyBtnDisabled]}
+              onPress={onApply}
+              disabled={applying}
+            >
+              <Text style={s.applyBtnText}>{applying ? 'Applying...' : 'Apply'}</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={[s.cardStatusBadge, { backgroundColor: statusColor }]}>
+              <Text style={s.cardStatusText}>{status || 'Available'}</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -389,6 +458,107 @@ function ViewToggle({
       >
         <Text style={[s.viewToggleIcon, view === 'calendar' && s.viewToggleIconActive]}>📅</Text>
       </TouchableOpacity>
+    </View>
+  );
+}
+
+function AllTab() {
+  const { colors } = useAppTheme();
+  const s = getStyles(colors);
+
+  const [q, setQ] = useState('');
+  const [rows, setRows] = useState<AllShift[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<AllShift | null>(null);
+  const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [applyingId, setApplyingId] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const me = await getMe();
+      const myUid = me?._id ?? me?.id ?? '';
+
+      const resp = await listShifts();
+      const mapped = mapAllShifts(resp.items, myUid);
+      setRows(mapped);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
+  const handleApply = async (shiftId: string) => {
+    try {
+      setApplyingId(shiftId);
+      await applyToShift(shiftId);
+      Alert.alert('Success', 'Shift applied successfully');
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
+    } finally {
+      setApplyingId(null);
+    }
+  };
+
+  const filtered = rows.filter((r) =>
+    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
+  );
+
+  return (
+    <View style={s.screen}>
+      <View style={s.searchRow}>
+        <View style={s.searchContainer}>
+          <Text style={s.searchIcon}>🔍</Text>
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search shifts..."
+            placeholderTextColor={colors.muted}
+            style={s.searchInput}
+          />
+        </View>
+        <ViewToggle view={view} onViewChange={setView} colors={colors} />
+      </View>
+
+      {loading && <ActivityIndicator size="large" color={colors.primary} />}
+
+      {view === 'calendar' ? (
+        <CalendarView shifts={filtered} onShiftPress={setSelectedShift} colors={colors} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(i) => i.id}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <ShiftCard
+              shift={item}
+              onPress={() => setSelectedShift(item)}
+              colors={colors}
+              showApply
+              onApply={() => handleApply(item.id)}
+              applying={applyingId === item.id}
+            />
+          )}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={<Text style={s.emptyText}>No shifts found</Text>}
+        />
+      )}
+
+      <ShiftDetailsModal
+        shift={selectedShift}
+        visible={selectedShift !== null}
+        onClose={() => setSelectedShift(null)}
+        colors={colors}
+      />
     </View>
   );
 }
@@ -584,6 +754,7 @@ export default function ShiftsScreen() {
         tabBarInactiveTintColor: colors.muted,
       }}
     >
+      <Top.Screen name="All" component={AllTab} />
       <Top.Screen name="Applied" component={AppliedTab} />
       <Top.Screen name="Completed" component={CompletedTab} />
     </Top.Navigator>
@@ -677,6 +848,7 @@ const getStyles = (colors: AppColors) =>
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 12,
+      marginLeft: 12,
     },
     cardStatusText: {
       fontSize: 11,
@@ -705,6 +877,22 @@ const getStyles = (colors: AppColors) =>
     cardPay: {
       fontSize: 13,
       color: colors.status.confirmed,
+      fontWeight: '700',
+    },
+
+    applyBtn: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 12,
+      marginLeft: 12,
+    },
+    applyBtnDisabled: {
+      opacity: 0.7,
+    },
+    applyBtnText: {
+      color: colors.white,
+      fontSize: 12,
       fontWeight: '700',
     },
 
@@ -802,6 +990,7 @@ const getStyles = (colors: AppColors) =>
       paddingTop: 16,
       borderTopWidth: 1,
       borderTopColor: colors.border,
+      flexWrap: 'wrap',
     },
     calLegendItem: {
       flexDirection: 'row',
@@ -872,6 +1061,7 @@ const getStyles = (colors: AppColors) =>
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 12,
+      marginLeft: 12,
     },
     statusBadgeText: {
       fontSize: 12,
@@ -890,6 +1080,8 @@ const getStyles = (colors: AppColors) =>
       fontSize: 14,
       fontWeight: '500',
       color: colors.text,
+      flexShrink: 1,
+      textAlign: 'right',
     },
     modalRequirements: {
       marginTop: 12,
@@ -906,6 +1098,7 @@ const getStyles = (colors: AppColors) =>
     modalTags: {
       flexDirection: 'row',
       gap: 8,
+      flexWrap: 'wrap',
     },
     modalTag: {
       backgroundColor: colors.primarySoft,
