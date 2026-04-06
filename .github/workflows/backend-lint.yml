@@ -5,12 +5,15 @@ on:
     branches: [main]
     paths:
       - 'app-backend/**'
-      - '.github/workflows/backend.yml'
+      - '.github/workflows/backend-lint.yml'
   workflow_dispatch: {}
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
