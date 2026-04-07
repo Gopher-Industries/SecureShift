@@ -3,6 +3,7 @@
 import { Ionicons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ExpoConstants from 'expo-constants';
 import React, { useState } from 'react';
 import {
@@ -19,8 +20,11 @@ import {
 } from 'react-native';
 
 import { LocalStorage } from '../lib/localStorage';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 // Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';
@@ -81,6 +85,7 @@ function Row({
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
+  const navigation2 = useNavigation<Nav>();
   const { colors, themeMode, setThemeMode } = useAppTheme();
   const styles = getStyles(colors);
 
@@ -232,7 +237,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Ionicons name="document-text-outline" size={18} color={colors.primary} />}
             label="Privacy Policy"
-            onPress={() => Alert.alert('Privacy Policy', 'Coming soon')}
+            onPress={() => navigation2.navigate('PrivacyPolicy')}
             colors={colors}
           />
           <Row
