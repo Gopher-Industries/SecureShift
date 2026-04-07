@@ -33,7 +33,7 @@ module.exports = [
             "react/prop-types": "off",
             "react-hooks/rules-of-hooks": "error",
             "react-hooks/exhaustive-deps": "warn",
-            "prettier/prettier": "error",
+            "prettier/prettier": ["error", { "endOfLine": "auto" }],
 
             // Accessibility → warnings instead of errors
             "jsx-a11y/click-events-have-key-events": "warn",
