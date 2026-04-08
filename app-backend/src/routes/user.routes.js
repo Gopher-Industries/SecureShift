@@ -8,21 +8,7 @@ import {
   requireSameBranchAsTargetUser,
   ROLES,
 } from '../middleware/rbac.js';
-import {
-  getMyProfile,
-  updateMyProfile,
-  getEmployerProfile,
-  updateEmployerProfile,
-  adminGetUserProfile,
-  adminUpdateUserProfile,
-  getAllGuards,
-  listUsers,
-  deleteUser,
-  addFavouriteGuard,
-  removeFavouriteGuard,
-  getFavouriteGuards,
-  registerPushToken
-} from '../controllers/user.controller.js';
+import userController from '../container/user.container.js';
 
 const router = express.Router();
 
@@ -46,6 +32,8 @@ const router = express.Router();
  *         description: Successfully retrieved profile.
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: User not found
  *   put:
  *     summary: Update logged-in user's profile
  *     tags: [Users]
@@ -64,25 +52,26 @@ const router = express.Router();
  *               email:
  *                 type: string
  *                 example: john.doe@example.com
- *               password:
+ *               phone:
  *                 type: string
- *                 example: newPassword123
- *               role:
+ *                 example: "+61400123456"
+ *               address:
  *                 type: string
- *                 enum: [user, admin]
- *                 example: user
+ *                 example: 123 Main Street
  *     responses:
  *       200:
  *         description: Successfully updated profile.
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: User not found
  *       422:
  *         description: Validation error
  */
 router
   .route('/me')
-  .get(auth, loadUser, getMyProfile)
-  .put(auth, loadUser, updateMyProfile);
+  .get(auth, loadUser, userController.getMyProfile)
+  .put(auth, loadUser, userController.updateMyProfile);
 
 /**
  * @swagger
@@ -103,19 +92,29 @@ router
  *             properties:
  *               token:
  *                 type: string
+ *                 example: expo_push_token_here
  *               platform:
  *                 type: string
+ *                 example: android
  *               deviceId:
  *                 type: string
+ *                 example: device-123
  *     responses:
  *       200:
- *         description: Token registered
+ *         description: Push token registered successfully.
  *       400:
- *         description: Validation error
+ *         description: Push token is required.
  *       401:
  *         description: Unauthorized
+ *       404:
+ *         description: User not found
  */
-router.post('/push-token', auth, loadUser, registerPushToken);
+router.post(
+  '/push-token',
+  auth,
+  loadUser,
+  userController.registerPushToken
+);
 
 /**
  * @swagger
@@ -132,6 +131,8 @@ router.post('/push-token', auth, loadUser, registerPushToken);
  *         description: Unauthorized
  *       403:
  *         description: Forbidden (only employers)
+ *       404:
+ *         description: Employer not found
  *   put:
  *     summary: Update logged-in employer's profile
  *     tags: [Users]
@@ -146,16 +147,16 @@ router.post('/push-token', auth, loadUser, registerPushToken);
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Krish Uppal"
+ *                 example: Krish Uppal
  *               email:
  *                 type: string
- *                 example: "krish@example.com"
+ *                 example: krish@example.com
  *               phone:
  *                 type: string
  *                 example: "+61400123456"
  *               address:
  *                 type: string
- *                 example: "123 Main Street"
+ *                 example: 123 Main Street
  *     responses:
  *       200:
  *         description: Successfully updated employer profile.
@@ -163,13 +164,16 @@ router.post('/push-token', auth, loadUser, registerPushToken);
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: Employer not found
  *       422:
  *         description: Validation error
  */
 router
   .route('/profile')
-  .get(auth, loadUser, getEmployerProfile)
-  .put(auth, loadUser, updateEmployerProfile);
+  .get(auth, loadUser, userController.getEmployerProfile)
+  .put(auth, loadUser, userController.updateEmployerProfile);
+
 /**
  * @swagger
  * /api/v1/users/favourites:
@@ -181,14 +185,18 @@ router
  *     responses:
  *       200:
  *         description: List of favourite guards
+ *       401:
+ *         description: Unauthorized
  *       403:
  *         description: Only employers allowed
+ *       404:
+ *         description: Employer not found
  */
 router.get(
   '/favourites',
   auth,
   loadUser,
-  getFavouriteGuards
+  userController.getFavouriteGuards
 );
 
 /**
@@ -209,16 +217,18 @@ router.get(
  *     responses:
  *       200:
  *         description: Guard added to favourites
+ *       401:
+ *         description: Unauthorized
  *       403:
  *         description: Only employers allowed
  *       404:
- *         description: Guard not found
+ *         description: Guard or employer not found
  */
 router.post(
   '/favourites/:guardId',
   auth,
   loadUser,
-  addFavouriteGuard
+  userController.addFavouriteGuard
 );
 
 /**
@@ -239,15 +249,20 @@ router.post(
  *     responses:
  *       200:
  *         description: Guard removed from favourites
+ *       401:
+ *         description: Unauthorized
  *       403:
  *         description: Only employers allowed
+ *       404:
+ *         description: Employer not found
  */
 router.delete(
   '/favourites/:guardId',
   auth,
   loadUser,
-  removeFavouriteGuard
+  userController.removeFavouriteGuard
 );
+
 /**
  * @swagger
  * /api/v1/users/guards:
@@ -270,7 +285,7 @@ router.get(
   loadUser,
   authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE),
   authorizePermissions('user:read'),
-  getAllGuards
+  userController.getAllGuards
 );
 
 /**
@@ -295,20 +310,20 @@ router.get(
   loadUser,
   authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
   authorizePermissions('user:read', { any: true }),
-  listUsers
+  userController.listUsers
 );
 
 /**
  * @swagger
- * /api/v1/users/{id}:
+ * /api/v1/users/{userId}:
  *   get:
- *     summary: Admin – get another user's profile
+ *     summary: Admin get another user's profile
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: userId
  *         schema:
  *           type: string
  *         required: true
@@ -316,20 +331,20 @@ router.get(
  *     responses:
  *       200:
  *         description: Successfully retrieved user.
- *       404:
- *         description: User not found
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: User not found
  *   put:
- *     summary: Admin – update another user's profile
+ *     summary: Admin update another user's profile
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: userId
  *         required: true
  *         schema:
  *           type: string
@@ -347,22 +362,45 @@ router.get(
  *               email:
  *                 type: string
  *                 example: jane.smith@example.com
- *               password:
- *                 type: string
- *                 example: AdminUpdated123
  *               role:
  *                 type: string
- *                 enum: [user, admin]
  *                 example: admin
+ *               phone:
+ *                 type: string
+ *                 example: "+61400111222"
+ *               address:
+ *                 type: string
+ *                 example: 25 Collins Street
  *     responses:
  *       200:
  *         description: Successfully updated user.
- *       404:
- *         description: User not found
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: User not found
+ *   delete:
+ *     summary: Admin delete a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deleted successfully.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: User not found
  */
 router
   .route('/:userId')
@@ -371,7 +409,7 @@ router
     loadUser,
     authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN),
     authorizePermissions('user:read'),
-    adminGetUserProfile
+    userController.adminGetUserProfile
   )
   .put(
     auth,
@@ -379,14 +417,14 @@ router
     authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
     authorizePermissions('user:write'),
     requireSameBranchAsTargetUser({ paramKey: 'userId' }),
-    adminUpdateUserProfile
+    userController.adminUpdateUserProfile
   )
   .delete(
     auth,
     loadUser,
     authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN),
     authorizePermissions('user:delete'),
-    deleteUser
+    userController.deleteUser
   );
 
 export default router;

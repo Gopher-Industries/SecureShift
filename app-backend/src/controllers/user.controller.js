@@ -1,286 +1,181 @@
-import User from '../models/User.js';
-import { ACTIONS } from "../middleware/logger.js";
-
-/**
- * @desc    View logged-in user's profile
- * @route   GET /api/v1/users/me
- * @access  Private (all roles)
- */
-export const getMyProfile = async (req, res) => {
-  const user = await User.findById(req.user.id).select('-password');
-  res.json(user);
-};
-
-/**
- * @desc    Admin: List all users
- * @route   GET /api/v1/users
- * @access  Private/Admins
- */
-export const listUsers = async (req, res) => {
-  try {
-    const users = await User.find().select('-password');
-    res.json({ total: users.length, users });
-  } catch (e) {
-    res.status(500).json({ message: e.message });
+class UserController {
+  constructor(userService) {
+    this.userService = userService;
   }
-};
 
-/**
- * @desc    Update logged-in user's profile
- * @route   PUT /api/v1/users/me
- * @access  Private (all roles)
- */
-export const updateMyProfile = async (req, res) => {
-  const fieldsToUpdate = { ...req.body };
-  delete fieldsToUpdate.role;       // prevent role changes
-  delete fieldsToUpdate.password;   // don’t allow password here
-
-  const updatedUser = await User.findByIdAndUpdate(
-    req.user.id,
-    fieldsToUpdate,
-    { new: true, runValidators: true }
-  ).select('-password');
-
-  res.json(updatedUser);
-};
-
-/**
- * @desc    Admin: View any user profile
- * @route   GET /api/v1/users/:id
- * @access  Private/Admin
- */
-export const adminGetUserProfile = async (req, res) => {
-  const user = await User.findById(req.params.id).select('-password');
-  if (!user) return res.status(404).json({ message: 'User not found' });
-  res.json(user);
-};
-
-/**
- * @desc    Admin: Update any user's profile
- * @route   PUT /api/v1/users/:id
- * @access  Private/Admin
- */
-export const adminUpdateUserProfile = async (req, res) => {
-  const fieldsToUpdate = { ...req.body };
-  delete fieldsToUpdate.password;   // separate password endpoint if needed
-
-  const updatedUser = await User.findByIdAndUpdate(
-    req.params.id,
-    fieldsToUpdate,
-    { new: true, runValidators: true }
-  ).select('-password');
-
-  if (!updatedUser) return res.status(404).json({ message: 'User not found' });
-
-  await req.audit.log(req.user.id, ACTIONS.PROFILE_UPDATED, {
-    updatedUserId: req.params.id,
-    updatedFields: Object.keys(fieldsToUpdate),
-  });
-
-  res.json(updatedUser);
-};
-
-/**
- * @desc    Get all guards (Admin + Employee only)
- * @route   GET /api/v1/users/guards
- * @access  Private/Admin,Employee
- */
-export const getAllGuards = async (req, res) => {
-  const guards = await User.find({ role: 'guard' }).select('-password');
-  res.json(guards);
-};
-
-/**
- * @desc    Admin: Delete a user
- * @route   DELETE /api/v1/users/:userId
- * @access  Private (Admin, Super Admin)
- */
-export const deleteUser = async (req, res) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+  getMyProfile = async (req, res) => {
+    try {
+      const user = await this.userService.getMyProfile(req.user.id);
+      return res.status(200).json(user);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    await req.audit?.log(req.user.id, ACTIONS.USER_DELETED, {
-      deletedUserId: req.params.userId,
-      deletedUserEmail: user.email,
-    });
-
-    return res.json({ message: 'User deleted successfully' });
-  } catch (e) {
-    return res.status(500).json({ message: e.message });
-  }
-};
-
-/**
- * @desc    Get logged-in employer's profile (Employer only)
- * @route   GET /api/v1/users/profile
- * @access  Private (Employer only)
- */
-export const getEmployerProfile = async (req, res) => {
-  try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Access denied.' });
+  listUsers = async (req, res) => {
+    try {
+      const result = await this.userService.listUsers();
+      return res.status(200).json(result);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    const employer = await User.findById(req.user.id).select('-password');
-    if (!employer) {
-      return res.status(404).json({ message: 'Employer not found' });
+  updateMyProfile = async (req, res) => {
+    try {
+      const updatedUser = await this.userService.updateMyProfile(
+        req.user.id,
+        req.body
+      );
+
+      return res.status(200).json(updatedUser);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    res.status(200).json(employer);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-/**
- * @desc    Update logged-in employer's profile (Employer only)
- * @route   PUT /api/v1/users/profile
- * @access  Private (Employer only)
- */
-export const updateEmployerProfile = async (req, res) => {
-  try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Access denied.' });
+  adminGetUserProfile = async (req, res) => {
+    try {
+      const user = await this.userService.adminGetUserProfile(req.params.userId);
+      return res.status(200).json(user);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    const fieldsToUpdate = { ...req.body };
-    delete fieldsToUpdate.role;
-    delete fieldsToUpdate.password;
+  adminUpdateUserProfile = async (req, res) => {
+    try {
+      const updatedUser = await this.userService.adminUpdateUserProfile(
+        req.user.id,
+        req.params.userId,
+        req.body,
+        req.audit
+      );
 
-    const updatedEmployer = await User.findByIdAndUpdate(
-      req.user.id,
-      fieldsToUpdate,
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    if (!updatedEmployer) return res.status(404).json({ message: 'Employer not found' });
-    res.status(200).json(updatedEmployer);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-/**
- * @desc    Register or update a push token for the logged-in user
- * @route   POST /api/v1/users/push-token
- * @access  Private (all roles)
- */
-export const registerPushToken = async (req, res) => {
-  try {
-    const { token, platform, deviceId } = req.body;
-
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({ message: 'Push token is required.' });
+      return res.status(200).json(updatedUser);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+  getAllGuards = async (req, res) => {
+    try {
+      const guards = await this.userService.getAllGuards();
+      return res.status(200).json(guards);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    const existing = user.pushTokens?.find((item) => item.token === token);
-    if (existing) {
-      existing.platform = platform ?? existing.platform;
-      existing.deviceId = deviceId ?? existing.deviceId;
-      existing.updatedAt = new Date();
-    } else {
-      user.pushTokens = [
-        ...(user.pushTokens ?? []),
-        {
-          token,
-          platform,
-          deviceId,
-          updatedAt: new Date(),
-        },
-      ];
+  deleteUser = async (req, res) => {
+    try {
+      const result = await this.userService.deleteUser(
+        req.user.id,
+        req.params.userId,
+        req.audit
+      );
+
+      return res.status(200).json(result);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    await user.save();
-
-    return res.status(200).json({ message: 'Push token registered.' });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-};
-/**
- * @desc    Add a guard to favourites
- * @route   POST /api/v1/users/favourites/:guardId
- * @access  Private (Employer only)
- */
-export const addFavouriteGuard = async (req, res) => {
-  try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Only employers can favourite guards.' });
+  getEmployerProfile = async (req, res) => {
+    try {
+      const employer = await this.userService.getEmployerProfile(req.user);
+      return res.status(200).json(employer);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    const { guardId } = req.params;
+  updateEmployerProfile = async (req, res) => {
+    try {
+      const updatedEmployer = await this.userService.updateEmployerProfile(
+        req.user,
+        req.body
+      );
 
-    const guard = await User.findById(guardId);
-    if (!guard || guard.role !== 'guard') {
-      return res.status(404).json({ message: 'Guard not found' });
+      return res.status(200).json(updatedEmployer);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    const employer = await User.findById(req.user.id);
+  registerPushToken = async (req, res) => {
+    try {
+      const result = await this.userService.registerPushToken(
+        req.user.id,
+        req.body
+      );
 
-    if (!employer.favourites.includes(guardId)) {
-      employer.favourites.push(guardId);
-      await employer.save();
+      return res.status(200).json(result);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    res.status(200).json({ message: 'Guard added to favourites', favourites: employer.favourites });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+  addFavouriteGuard = async (req, res) => {
+    try {
+      const result = await this.userService.addFavouriteGuard(
+        req.user,
+        req.params.guardId
+      );
 
-
-/**
- * @desc    Remove a guard from favourites
- * @route   DELETE /api/v1/users/favourites/:guardId
- * @access  Private (Employer only)
- */
-export const removeFavouriteGuard = async (req, res) => {
-  try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Only employers can modify favourites.' });
+      return res.status(200).json(result);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    const { guardId } = req.params;
+  removeFavouriteGuard = async (req, res) => {
+    try {
+      const result = await this.userService.removeFavouriteGuard(
+        req.user,
+        req.params.guardId
+      );
 
-    const employer = await User.findById(req.user.id);
-
-    employer.favourites = employer.favourites.filter(
-      (id) => id.toString() !== guardId
-    );
-
-    await employer.save();
-
-    res.status(200).json({ message: 'Guard removed from favourites', favourites: employer.favourites });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-/**
- * @desc    Get favourite guards list
- * @route   GET /api/v1/users/favourites
- * @access  Private (Employer only)
- */
-export const getFavouriteGuards = async (req, res) => {
-  try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Only employers can view favourites.' });
+      return res.status(200).json(result);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
     }
+  };
 
-    const employer = await User.findById(req.user.id)
-      .populate('favourites', '-password');
+  getFavouriteGuards = async (req, res) => {
+    try {
+      const favourites = await this.userService.getFavouriteGuards(req.user);
+      return res.status(200).json(favourites);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.message });
+    }
+  };
+}
 
-    res.status(200).json(employer.favourites);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+export default UserController;
