@@ -20,7 +20,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import PageTitleHandler from './components/PageTitleHandler';
 
-import ProtectedRoute from "./routes/ProtectedRoute";
+import ProtectedRoute from './routes/ProtectedRoute';
 
 /**
  * PUBLIC ROUTE: Task Detail (no layout)
@@ -41,9 +41,7 @@ function ProtectedLayout({ children }) {
     <ProtectedRoute>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Header />
-        <main style={{ flex: 1, paddingBottom: '20px' }}>
-          {children}
-        </main>
+        <main style={{ flex: 1, paddingBottom: '20px' }}>{children}</main>
         <Footer />
       </div>
     </ProtectedRoute>
@@ -59,7 +57,6 @@ function App() {
       <PageTitleHandler />
 
       <Routes>
-
         {/* PUBLIC ROUTES (NO AUTH REQUIRED) */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
@@ -133,7 +130,6 @@ function App() {
             </ProtectedLayout>
           }
         />
-
       </Routes>
     </Router>
   );
