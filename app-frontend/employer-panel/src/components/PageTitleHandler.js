@@ -34,6 +34,9 @@ function PageTitleHandler() {
             case "/expression-of-interest":
                 document.title = "SecureShift - Expression Of Interest";
                 break;
+            case "/timesheet":
+                document.title = "SecureShift - Timesheet";
+                break;
             default:
                 document.title = "SecureShift";
         }
