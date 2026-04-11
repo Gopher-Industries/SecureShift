@@ -1,26 +1,26 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import logo from "../logo.png";
-import "./Login.css";
-import http from "../lib/http";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import logo from '../logo.png';
+import './Login.css';
+import http from '../lib/http';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
-      const { data } = await http.post("/auth/login", { email, password });
+      const { data } = await http.post('/auth/login', { email, password });
 
       // ✅ Login succeeded → redirect to OTP page
-      navigate("/2fa", { state: { email } });
+      navigate('/2fa', { state: { email } });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -68,7 +68,7 @@ export default function Login() {
             {loading && <div className="loadingMessage">Sending OTP...</div>}
 
             <button type="submit" className="loginButton" disabled={loading}>
-              {loading ? "Please wait..." : "Log In"}
+              {loading ? 'Please wait...' : 'Log In'}
             </button>
           </form>
 

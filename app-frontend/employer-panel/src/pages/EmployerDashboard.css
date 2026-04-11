@@ -18,7 +18,7 @@
 
 body {
   margin: 0;
-  font: 15px/1.5 "Segoe UI", Roboto, Arial, sans-serif;
+  font: 15px/1.5 'Segoe UI', Roboto, Arial, sans-serif;
   color: var(--ss-text);
 }
 
@@ -57,11 +57,13 @@ body {
 .ss-plus {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
 }
 
 .ss-ico {
   width: 14px;
   height: 14px;
+  color: #666;
 }
 
 .ss-avatar svg {
@@ -152,6 +154,7 @@ body {
   background: var(--ss-panel);
   border-radius: var(--radius-xl);
   padding: 18px;
+  min-height: 420px;
   overflow: hidden;
 }
 

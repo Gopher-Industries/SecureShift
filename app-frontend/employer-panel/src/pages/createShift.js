@@ -1,51 +1,71 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Controller, useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import http from "../lib/http";
-import "./createShift.css";
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Controller, useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import http from '../lib/http';
+import './CreateShift.css';
 
 const toDateTime = (date, time) => {
   if (!date || !time) return null;
   return new Date(`${date}T${time}`);
 };
 
+const getNextDayDate = (date) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + 1);
+
+  return d.toISOString().split('T')[0];
+};
+
 const shiftSchema = yup.object({
-  title: yup.string().required("Shift title is required"),
+  title: yup.string().required('Shift title is required'),
   siteId: yup
     .string()
-    .required("Select a site")
-    .notOneOf(["__new"], "Save the new site before continuing"),
-  date: yup.string().required("Date is required"),
-  startTime: yup.string().required("Start time is required"),
+    .required('Select a site')
+    .notOneOf(['__new'], 'Save the new site before continuing'),
+  date: yup.string().required('Date is required'),
+  startTime: yup.string().required('Start time is required'),
   endTime: yup
     .string()
-    .required("End time is required")
-    .test("after-start", "End time must be after start time", function (value) {
-      const { startTime, date } = this.parent;
+    .required('End time is required')
+    .test('after-start', 'End time must be after start time', function (value) {
+      const { startTime, date, shiftType } = this.parent;
+
       if (!value || !startTime || !date) return true;
+
       const start = toDateTime(date, startTime);
-      const end = toDateTime(date, value);
-      return end && start && end > start;
+      let end = toDateTime(date, value);
+
+      if (end <= start) {
+        if (shiftType === 'day') {
+          return this.createError({
+            message: 'Day shifts cannot run overnight',
+          });
+        }
+
+        end.setDate(end.getDate() + 1);
+      }
+
+      return end > start;
     }),
   breakMinutes: yup
     .number()
-    .typeError("Break time must be a number")
-    .min(0, "Break time cannot be negative")
-    .max(180, "Break time seems too long")
-    .required("Break time is required"),
+    .typeError('Break time must be a number')
+    .min(0, 'Break time cannot be negative')
+    .max(180, 'Break time seems too long')
+    .required('Break time is required'),
   payRate: yup
     .number()
-    .typeError("Pay rate must be a number")
-    .min(0, "Pay rate cannot be negative")
-    .required("Pay rate is required"),
-  shiftType: yup.string().oneOf(["day", "night"]).required(),
+    .typeError('Pay rate must be a number')
+    .min(0, 'Pay rate cannot be negative')
+    .required('Pay rate is required'),
+  shiftType: yup.string().oneOf(['day', 'night']).required(),
   instructions: yup
     .string()
-    .required("Provide shift instructions")
-    .min(10, "Add a few more details for clarity"),
-  location: yup.string().required("Location is required"),
+    .required('Provide shift instructions')
+    .min(10, 'Add a few more details for clarity'),
+  location: yup.string().required('Location is required'),
   guards: yup.array().of(yup.string()),
   newSiteName: yup.string(),
   newSiteAddress: yup.string(),
@@ -53,64 +73,69 @@ const shiftSchema = yup.object({
 
 const seededSites = [
   {
-    id: "marvel-stadium",
-    name: "Marvel Stadium",
-    address: "740 Bourke St, Docklands VIC",
+    id: 'marvel-stadium',
+    name: 'Marvel Stadium',
+    address: '740 Bourke St, Docklands VIC',
     lat: -37.8167,
     lng: 144.9475,
   },
   {
-    id: "chadstone",
-    name: "Chadstone Shopping Centre",
-    address: "1341 Dandenong Rd, Chadstone VIC",
+    id: 'chadstone',
+    name: 'Chadstone Shopping Centre',
+    address: '1341 Dandenong Rd, Chadstone VIC',
     lat: -37.8864,
     lng: 145.0828,
   },
   {
-    id: "aig-hq",
-    name: "AIG Solutions HQ",
-    address: "373 Collins St, Melbourne VIC",
+    id: 'aig-hq',
+    name: 'AIG Solutions HQ',
+    address: '373 Collins St, Melbourne VIC',
     lat: -37.8172,
     lng: 144.9632,
   },
 ];
 
 const guardOptions = [
-  { id: "g-smith", name: "John Smith", skills: "Events, RSA" },
-  { id: "g-chan", name: "Amy Chan", skills: "Retail, Concierge" },
-  { id: "g-rojas", name: "Marco Rojas", skills: "Night patrol" },
-  { id: "g-nguyen", name: "Hanh Nguyen", skills: "Crowd control" },
+  { id: 'g-smith', name: 'John Smith', skills: 'Events, RSA' },
+  { id: 'g-chan', name: 'Amy Chan', skills: 'Retail, Concierge' },
+  { id: 'g-rojas', name: 'Marco Rojas', skills: 'Night patrol' },
+  { id: 'g-nguyen', name: 'Hanh Nguyen', skills: 'Crowd control' },
 ];
 
 const guardAssignments = {
-  "g-smith": [
-    { date: "2026-01-17", startTime: "13:00", endTime: "21:00", siteName: "Marvel Stadium" },
+  'g-smith': [
+    { date: '2026-01-17', startTime: '13:00', endTime: '21:00', siteName: 'Marvel Stadium' },
   ],
-  "g-chan": [
-    { date: "2026-01-16", startTime: "09:00", endTime: "17:30", siteName: "Chadstone Shopping Centre" },
+  'g-chan': [
+    {
+      date: '2026-01-16',
+      startTime: '09:00',
+      endTime: '17:30',
+      siteName: 'Chadstone Shopping Centre',
+    },
   ],
-  "g-rojas": [
-    { date: "2026-01-18", startTime: "18:00", endTime: "23:30", siteName: "AIG Solutions HQ" },
+  'g-rojas': [
+    { date: '2026-01-18', startTime: '18:00', endTime: '23:30', siteName: 'AIG Solutions HQ' },
   ],
-  "g-nguyen": [],
+  'g-nguyen': [],
 };
 
 const existingShifts = [
   {
-    id: "shift-142",
-    siteId: "marvel-stadium",
-    siteName: "Marvel Stadium",
-    date: "2026-01-17",
-    startTime: "12:00",
-    endTime: "20:30",
+    id: 'shift-142',
+    siteId: 'marvel-stadium',
+    siteName: 'Marvel Stadium',
+    date: '2026-01-17',
+    startTime: '12:00',
+    endTime: '20:30',
   },
   {
-    id: "shift-205",
-    siteId: "chadstone",
-    siteName: "Chadstone Shopping Centre",
-    date: "2026-01-18",
-    startTime: "07:00",
-    endTime: "15:00",
+    id: 'shift-205',
+    siteId: 'chadstone',
+    siteName: 'Chadstone Shopping Centre',
+    date: '2026-01-18',
+    startTime: '07:00',
+    endTime: '15:00',
   },
 ];
 
@@ -119,8 +144,8 @@ const mapDefault = { lat: -37.8136, lng: 144.9631 }; // Melbourne CBD
 const slugify = (text) =>
   text
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
     .slice(0, 40) || `site-${Date.now()}`;
 
 const loadGooglePlaces = (onReady, onError) => {
@@ -128,11 +153,11 @@ const loadGooglePlaces = (onReady, onError) => {
     onReady();
     return;
   }
-  if (document.getElementById("ss-places-script")) return;
-  const script = document.createElement("script");
-  script.id = "ss-places-script";
-  const key = process.env.REACT_APP_GOOGLE_MAPS_KEY || "";
-  const keyParam = key ? `&key=${key}` : "";
+  if (document.getElementById('ss-places-script')) return;
+  const script = document.createElement('script');
+  script.id = 'ss-places-script';
+  const key = process.env.REACT_APP_GOOGLE_MAPS_KEY || '';
+  const keyParam = key ? `&key=${key}` : '';
   script.src = `https://maps.googleapis.com/maps/api/js?libraries=places${keyParam}`;
   script.async = true;
   script.defer = true;
@@ -170,26 +195,26 @@ const CreateShift = ({ isModal = false, onClose }) => {
   } = useForm({
     resolver: yupResolver(shiftSchema),
     defaultValues: {
-      title: "",
-      siteId: "",
-      date: "",
-      startTime: "",
-      endTime: "",
+      title: '',
+      siteId: '',
+      date: '',
+      startTime: '',
+      endTime: '',
       breakMinutes: 30,
       payRate: 0,
-      shiftType: "day",
-      instructions: "",
-      location: "",
+      shiftType: 'day',
+      instructions: '',
+      location: '',
       guards: [],
-      newSiteName: "",
-      newSiteAddress: "",
+      newSiteName: '',
+      newSiteAddress: '',
     },
   });
 
-  const watchSiteId = watch("siteId");
-  const watchGuards = watch("guards");
-  const newSiteNameReg = register("newSiteName");
-  const newSiteAddressReg = register("newSiteAddress");
+  const watchSiteId = watch('siteId');
+  const watchGuards = watch('guards');
+  const newSiteNameReg = register('newSiteName');
+  const newSiteAddressReg = register('newSiteAddress');
 
   useEffect(() => {
     loadGooglePlaces(
@@ -205,15 +230,15 @@ const CreateShift = ({ isModal = false, onClose }) => {
       return;
     }
     const instance = new window.google.maps.places.Autocomplete(locationInputRef.current, {
-      fields: ["formatted_address", "geometry", "name"],
+      fields: ['formatted_address', 'geometry', 'name'],
     });
     locationAutocompleteRef.current = instance;
-    instance.addListener("place_changed", () => {
+    instance.addListener('place_changed', () => {
       const place = instance.getPlace();
       const formatted = place.formatted_address || place.name || locationInputRef.current.value;
       const loc = place.geometry?.location;
       if (formatted) {
-        setValue("location", formatted, { shouldValidate: true, shouldDirty: true });
+        setValue('location', formatted, { shouldValidate: true, shouldDirty: true });
       }
       if (loc) {
         setLocationPin({ lat: loc.lat(), lng: loc.lng() });
@@ -228,16 +253,16 @@ const CreateShift = ({ isModal = false, onClose }) => {
       return;
     }
     const instance = new window.google.maps.places.Autocomplete(newSiteInputRef.current, {
-      fields: ["formatted_address", "geometry", "name"],
+      fields: ['formatted_address', 'geometry', 'name'],
     });
     newSiteAutocompleteRef.current = instance;
-    instance.addListener("place_changed", () => {
+    instance.addListener('place_changed', () => {
       const place = instance.getPlace();
       const formatted = place.formatted_address || place.name || newSiteInputRef.current.value;
       const loc = place.geometry?.location;
       if (formatted) {
-        setValue("newSiteAddress", formatted, { shouldValidate: true, shouldDirty: true });
-        setValue("location", formatted, { shouldValidate: true, shouldDirty: true });
+        setValue('newSiteAddress', formatted, { shouldValidate: true, shouldDirty: true });
+        setValue('location', formatted, { shouldValidate: true, shouldDirty: true });
       }
       if (loc) {
         setLocationPin({ lat: loc.lat(), lng: loc.lng() });
@@ -259,7 +284,10 @@ const CreateShift = ({ isModal = false, onClose }) => {
           zoom: 13,
           disableDefaultUI: true,
         });
-        markerRef.current = new window.google.maps.Marker({ position: locationPin, map: mapInstance.current });
+        markerRef.current = new window.google.maps.Marker({
+          position: locationPin,
+          map: mapInstance.current,
+        });
       } else {
         mapInstance.current.setCenter(locationPin);
         markerRef.current?.setPosition(locationPin);
@@ -269,14 +297,14 @@ const CreateShift = ({ isModal = false, onClose }) => {
 
   useEffect(() => {
     if (!watchSiteId) return;
-    if (watchSiteId === "__new") {
+    if (watchSiteId === '__new') {
       setShowNewSite(true);
       return;
     }
     const selectedSite = sites.find((s) => s.id === watchSiteId);
     if (!selectedSite) return;
     setShowNewSite(false);
-    setValue("location", selectedSite.address, { shouldValidate: true });
+    setValue('location', selectedSite.address, { shouldValidate: true });
     if (selectedSite.lat && selectedSite.lng) {
       setLocationPin({ lat: selectedSite.lat, lng: selectedSite.lng });
     }
@@ -296,28 +324,36 @@ const CreateShift = ({ isModal = false, onClose }) => {
       (shift) =>
         shift.siteId === payload.siteId &&
         shift.date === payload.date &&
-        overlaps(start, end, toDateTime(shift.date, shift.startTime), toDateTime(shift.date, shift.endTime))
+        overlaps(
+          start,
+          end,
+          toDateTime(shift.date, shift.startTime),
+          toDateTime(shift.date, shift.endTime)
+        )
     );
 
     if (timeConflicts.length) {
       issues.push(
         `Time clash: ${timeConflicts
           .map((c) => `${c.siteName} ${c.startTime}–${c.endTime}`)
-          .join(", ")}`
+          .join(', ')}`
       );
     }
 
     const guardConflicts = (payload.guards || []).flatMap((guardId) => {
       const blocks = guardAssignments[guardId] || [];
-      const hit = blocks.find((b) =>
-        b.date === payload.date &&
-        overlaps(start, end, toDateTime(b.date, b.startTime), toDateTime(b.date, b.endTime))
+      const hit = blocks.find(
+        (b) =>
+          b.date === payload.date &&
+          overlaps(start, end, toDateTime(b.date, b.startTime), toDateTime(b.date, b.endTime))
       );
-      return hit ? [`${guardOptions.find((g) => g.id === guardId)?.name || guardId} busy at ${hit.siteName}`] : [];
+      return hit
+        ? [`${guardOptions.find((g) => g.id === guardId)?.name || guardId} busy at ${hit.siteName}`]
+        : [];
     });
 
     if (guardConflicts.length) {
-      issues.push(`Guard availability conflicts: ${guardConflicts.join(", ")}`);
+      issues.push(`Guard availability conflicts: ${guardConflicts.join(', ')}`);
     }
 
     return issues;
@@ -328,10 +364,10 @@ const CreateShift = ({ isModal = false, onClose }) => {
     const trimmedName = newSiteName.trim();
     const trimmedAddress = newSiteAddress.trim();
     const missing = [];
-    if (!trimmedName) missing.push("name");
-    if (!trimmedAddress) missing.push("address");
+    if (!trimmedName) missing.push('name');
+    if (!trimmedAddress) missing.push('address');
     if (missing.length) {
-      setBlockingIssues([`Add new site: ${missing.join(" and ")} required`]);
+      setBlockingIssues([`Add new site: ${missing.join(' and ')} required`]);
       return;
     }
     const newId = slugify(trimmedName);
@@ -343,7 +379,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
       lng: locationPin.lng,
     };
     setSites((prev) => [...prev, nextSite]);
-    setValue("siteId", newId, { shouldValidate: true });
+    setValue('siteId', newId, { shouldValidate: true });
     setShowNewSite(false);
     setBlockingIssues([]);
   };
@@ -386,11 +422,11 @@ const CreateShift = ({ isModal = false, onClose }) => {
     };
 
     try {
-      await http.post("/shifts", payload);
+      await http.post('/shifts', payload);
       setPreviewData(null);
-      navigate("/manage-shift");
+      navigate('/manage-shift');
     } catch (err) {
-      const message = err?.response?.data?.message || err.message || "Unable to create shift";
+      const message = err?.response?.data?.message || err.message || 'Unable to create shift';
       setBlockingIssues([message]);
     }
   };
@@ -404,11 +440,21 @@ const CreateShift = ({ isModal = false, onClose }) => {
         <div>
           <p className="cs-kicker">Shift creation</p>
           <h1 className="cs-title">Create a new shift</h1>
-          <p className="cs-subtitle">Structured, full-screen flow with guard checks and location precision.</p>
+          <p className="cs-subtitle">
+            Structured, full-screen flow with guard checks and location precision.
+          </p>
         </div>
         <div className="cs-topbar__actions">
-          <button className="cs-ghost" type="button" onClick={() => navigate("/manage-shift")}>Cancel</button>
-          <button className="cs-ghost" type="button" onClick={() => navigate("/employer-dashboard")}>Back to dashboard</button>
+          <button className="cs-ghost" type="button" onClick={() => navigate('/manage-shift')}>
+            Cancel
+          </button>
+          <button
+            className="cs-ghost"
+            type="button"
+            onClick={() => navigate('/employer-dashboard')}
+          >
+            Back to dashboard
+          </button>
         </div>
       </div>
 
@@ -425,23 +471,27 @@ const CreateShift = ({ isModal = false, onClose }) => {
           <div className="cs-section">
             <div className="cs-field">
               <label htmlFor="title">Shift title</label>
-              <input id="title" placeholder="e.g. Retail security" {...register("title")} />
-              {renderFieldError("title")}
+              <input id="title" placeholder="e.g. Retail security" {...register('title')} />
+              {renderFieldError('title')}
             </div>
 
             <div className="cs-field">
               <label htmlFor="siteId">Select site</label>
               <div className="cs-site-row">
-                <select id="siteId" {...register("siteId")}>
+                <select id="siteId" {...register('siteId')}>
                   <option value="">Choose a saved site</option>
                   {sites.map((site) => (
-                    <option key={site.id} value={site.id}>{site.name}</option>
+                    <option key={site.id} value={site.id}>
+                      {site.name}
+                    </option>
                   ))}
                   <option value="__new">➕ Add new site</option>
                 </select>
-                <button type="button" className="cs-ghost" onClick={() => setShowNewSite(true)}>Add new</button>
+                <button type="button" className="cs-ghost" onClick={() => setShowNewSite(true)}>
+                  Add new
+                </button>
               </div>
-              {renderFieldError("siteId")}
+              {renderFieldError('siteId')}
             </div>
 
             {showNewSite && (
@@ -469,13 +519,17 @@ const CreateShift = ({ isModal = false, onClose }) => {
                     }}
                     onChange={(e) => {
                       newSiteAddressReg.onChange(e);
-                      setValue("location", e.target.value, { shouldDirty: true });
+                      setValue('location', e.target.value, { shouldDirty: true });
                     }}
                   />
                 </div>
                 <div className="cs-inline-actions">
-                  <button type="button" className="cs-ghost" onClick={() => setShowNewSite(false)}>Cancel</button>
-                  <button type="button" className="cs-primary" onClick={handleAddSite}>Save site</button>
+                  <button type="button" className="cs-ghost" onClick={() => setShowNewSite(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="cs-primary" onClick={handleAddSite}>
+                    Save site
+                  </button>
                 </div>
               </div>
             )}
@@ -500,57 +554,73 @@ const CreateShift = ({ isModal = false, onClose }) => {
                   />
                 )}
               />
-              {renderFieldError("location")}
-              <p className="cs-hint">We pin this exact location on the map. Use autocomplete for accuracy.</p>
+              {renderFieldError('location')}
+              <p className="cs-hint">
+                We pin this exact location on the map. Use autocomplete for accuracy.
+              </p>
             </div>
 
             <div className="cs-two-col">
               <div className="cs-field">
                 <label htmlFor="date">Date</label>
-                <input id="date" type="date" {...register("date")} />
-                {renderFieldError("date")}
+                <input id="date" type="date" {...register('date')} />
+                {renderFieldError('date')}
               </div>
               <div className="cs-field">
                 <label>Shift type</label>
                 <div className="cs-pillset">
-                  {["day", "night"].map((type) => (
-                    <label key={type} className={`cs-pill ${watch("shiftType") === type ? "is-active" : ""}`}>
-                      <input type="radio" value={type} {...register("shiftType")} />
-                      {type === "day" ? "Day" : "Night"}
+                  {['day', 'night'].map((type) => (
+                    <label
+                      key={type}
+                      className={`cs-pill ${watch('shiftType') === type ? 'is-active' : ''}`}
+                    >
+                      <input type="radio" value={type} {...register('shiftType')} />
+                      {type === 'day' ? 'Day' : 'Night'}
                     </label>
                   ))}
                 </div>
-                {renderFieldError("shiftType")}
+                {renderFieldError('shiftType')}
               </div>
             </div>
 
             <div className="cs-three-col">
               <div className="cs-field">
                 <label htmlFor="startTime">Start time</label>
-                <input id="startTime" type="time" {...register("startTime")} />
-                {renderFieldError("startTime")}
+                <input id="startTime" type="time" {...register('startTime')} />
+                {renderFieldError('startTime')}
               </div>
               <div className="cs-field">
                 <label htmlFor="endTime">End time</label>
-                <input id="endTime" type="time" {...register("endTime")} />
-                {renderFieldError("endTime")}
+                <input id="endTime" type="time" {...register('endTime')} />
+                {renderFieldError('endTime')}
               </div>
               <div className="cs-field">
                 <label htmlFor="breakMinutes">Break time (minutes)</label>
-                <input id="breakMinutes" type="number" min="0" max="180" {...register("breakMinutes")} />
-                {renderFieldError("breakMinutes")}
+                <input
+                  id="breakMinutes"
+                  type="number"
+                  min="0"
+                  max="180"
+                  {...register('breakMinutes')}
+                />
+                {renderFieldError('breakMinutes')}
               </div>
               <div className="cs-field">
                 <label htmlFor="payRate">Pay rate ($/hr)</label>
-                <input id="payRate" type="number" min="0" step="0.01" {...register("payRate")} />
-                {renderFieldError("payRate")}
+                <input id="payRate" type="number" min="0" step="0.01" {...register('payRate')} />
+                {renderFieldError('payRate')}
               </div>
             </div>
 
             <div className="cs-field">
               <label htmlFor="instructions">Detailed instructions</label>
-              <textarea id="instructions" rows={4} placeholder="Access notes, contact on arrival, PPE requirements" {...register("instructions")} />
-              {renderFieldError("instructions")}
+              <textarea
+                id="instructions"
+                rows={4}
+                placeholder="Access notes, contact on arrival, PPE requirements"
+                {...register('instructions')}
+              />
+              {renderFieldError('instructions')}
             </div>
 
             <div className="cs-field">
@@ -564,7 +634,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
                       {guardOptions.map((guard) => {
                         const selected = field.value?.includes(guard.id);
                         return (
-                          <label key={guard.id} className={`cs-tag ${selected ? "is-active" : ""}`}>
+                          <label key={guard.id} className={`cs-tag ${selected ? 'is-active' : ''}`}>
                             <input
                               type="checkbox"
                               value={guard.id}
@@ -572,7 +642,10 @@ const CreateShift = ({ isModal = false, onClose }) => {
                               onChange={(e) => {
                                 const checked = e.target.checked;
                                 if (checked) field.onChange([...(field.value || []), guard.id]);
-                                else field.onChange((field.value || []).filter((id) => id !== guard.id));
+                                else
+                                  field.onChange(
+                                    (field.value || []).filter((id) => id !== guard.id)
+                                  );
                               }}
                             />
                             <span>{guard.name}</span>
@@ -588,8 +661,12 @@ const CreateShift = ({ isModal = false, onClose }) => {
           </div>
 
           <div className="cs-actions">
-            <button type="button" className="cs-ghost" onClick={() => navigate("/manage-shift")}>Save draft</button>
-            <button type="submit" className="cs-primary">Preview shift</button>
+            <button type="button" className="cs-ghost" onClick={() => navigate('/manage-shift')}>
+              Save draft
+            </button>
+            <button type="submit" className="cs-primary">
+              Preview shift
+            </button>
           </div>
         </section>
 
@@ -602,28 +679,37 @@ const CreateShift = ({ isModal = false, onClose }) => {
           </div>
 
           <div className="cs-map" ref={mapRef}>
-            {!mapsReady && !mapsFailed && <div className="cs-map__loading">Loading Google Maps…</div>}
-            {mapsFailed && <div className="cs-map__loading">Map unavailable. Location will still be saved.</div>}
+            {!mapsReady && !mapsFailed && (
+              <div className="cs-map__loading">Loading Google Maps…</div>
+            )}
+            {mapsFailed && (
+              <div className="cs-map__loading">Map unavailable. Location will still be saved.</div>
+            )}
           </div>
 
           <div className="cs-side-list">
             <div className="cs-side-row">
               <span>Shift type</span>
-              <strong className="cs-chip">{watch("shiftType") === "night" ? "Night" : "Day"}</strong>
+              <strong className="cs-chip">
+                {watch('shiftType') === 'night' ? 'Night' : 'Day'}
+              </strong>
             </div>
             <div className="cs-side-row">
               <span>Schedule</span>
               <strong>
-                {watch("date") || "—"} · {watch("startTime") || "--:--"} – {watch("endTime") || "--:--"}
+                {watch('date') || '—'} · {watch('startTime') || '--:--'} –{' '}
+                {watch('endTime') && watch('startTime') && watch('endTime') <= watch('startTime')
+                  ? `${getNextDayDate(watch('date'))} ${watch('endTime')}`
+                  : watch('endTime') || '--:--'}
               </strong>
             </div>
             <div className="cs-side-row">
               <span>Break time</span>
-              <strong>{watch("breakMinutes") || 0} min</strong>
+              <strong>{watch('breakMinutes') || 0} min</strong>
             </div>
             <div className="cs-side-row">
               <span>Assigned guards</span>
-              <strong>{watchGuards?.length ? `${watchGuards.length} selected` : "Optional"}</strong>
+              <strong>{watchGuards?.length ? `${watchGuards.length} selected` : 'Optional'}</strong>
             </div>
           </div>
         </aside>
@@ -637,7 +723,9 @@ const CreateShift = ({ isModal = false, onClose }) => {
                 <p className="cs-kicker">Review</p>
                 <h3>Preview shift before posting</h3>
               </div>
-              <button type="button" className="cs-ghost" onClick={() => setPreviewData(null)}>Edit details</button>
+              <button type="button" className="cs-ghost" onClick={() => setPreviewData(null)}>
+                Edit details
+              </button>
             </div>
 
             <div className="cs-preview-grid">
@@ -647,20 +735,25 @@ const CreateShift = ({ isModal = false, onClose }) => {
               </div>
               <div>
                 <p className="cs-label">Site</p>
-                <h4>{previewData.selectedSite?.name || "—"}</h4>
-                <p className="cs-subtle">{previewData.selectedSite?.address || previewData.location}</p>
+                <h4>{previewData.selectedSite?.name || '—'}</h4>
+                <p className="cs-subtle">
+                  {previewData.selectedSite?.address || previewData.location}
+                </p>
               </div>
               <div>
                 <p className="cs-label">Timing</p>
                 <h4>
-                  {previewData.date} · {previewData.startTime} – {previewData.endTime}
+                  {previewData.date} · {previewData.startTime} -{' '}
+                  {previewData.endTime <= previewData.startTime
+                    ? `${getNextDayDate(previewData.date)} ${previewData.endTime}`
+                    : previewData.endTime}
                 </h4>
                 <p className="cs-subtle">Break: {previewData.breakMinutes} min</p>
                 <p className="cs-subtle">Pay rate: ${previewData.payRate}/hr</p>
               </div>
               <div>
                 <p className="cs-label">Shift type</p>
-                <h4>{previewData.shiftType === "night" ? "Night" : "Day"}</h4>
+                <h4>{previewData.shiftType === 'night' ? 'Night' : 'Day'}</h4>
               </div>
               <div>
                 <p className="cs-label">Guards</p>
@@ -668,8 +761,8 @@ const CreateShift = ({ isModal = false, onClose }) => {
                   {previewData.guards?.length
                     ? previewData.guards
                         .map((id) => guardOptions.find((g) => g.id === id)?.name || id)
-                        .join(", ")
-                    : "Not assigned"}
+                        .join(', ')
+                    : 'Not assigned'}
                 </h4>
               </div>
               <div>
@@ -682,8 +775,13 @@ const CreateShift = ({ isModal = false, onClose }) => {
               <button type="button" className="cs-ghost" onClick={() => setPreviewData(null)}>
                 Back to form
               </button>
-              <button type="button" className="cs-primary" disabled={isSubmitting} onClick={handleSubmit(onSubmit)}>
-                {isSubmitting ? "Posting…" : "Confirm & create"}
+              <button
+                type="button"
+                className="cs-primary"
+                disabled={isSubmitting}
+                onClick={handleSubmit(onSubmit)}
+              >
+                {isSubmitting ? 'Posting…' : 'Confirm & create'}
               </button>
             </div>
           </div>
