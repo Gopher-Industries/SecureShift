@@ -22,6 +22,8 @@ import PageTitleHandler from './components/PageTitleHandler';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 
+import Timesheet from "./pages/Timesheet";
+
 /**
  * PUBLIC ROUTE: Task Detail (no layout)
  */
@@ -82,6 +84,14 @@ function App() {
           element={
             <ProtectedLayout>
               <CreateShift />
+            </ProtectedLayout>
+          }
+        />
+        <Route
+          path="/timesheet"
+          element={
+            <ProtectedLayout>
+              <Timesheet />
             </ProtectedLayout>
           }
         />
