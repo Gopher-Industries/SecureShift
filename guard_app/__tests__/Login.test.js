@@ -1,5 +1,9 @@
+/* eslint-env jest */
+
 import React from 'react';
+
 import { render, fireEvent } from '@testing-library/react-native';
+
 import LoginScreen from '../src/screen/loginscreen';
 
 describe('Login Screen', () => {
@@ -9,9 +13,7 @@ describe('Login Screen', () => {
   };
 
   it('renders the login form correctly', () => {
-    const { getByPlaceholderText, getByText } = render(
-      <LoginScreen navigation={navigation} />
-    );
+    const { getByPlaceholderText, getByText } = render(<LoginScreen navigation={navigation} />);
 
     expect(getByText('Login with your email and password')).toBeTruthy();
     expect(getByPlaceholderText('Enter your email')).toBeTruthy();
@@ -20,9 +22,7 @@ describe('Login Screen', () => {
   });
 
   it('shows validation error when fields are empty', () => {
-    const { getByText } = render(
-      <LoginScreen navigation={navigation} />
-    );
+    const { getByText } = render(<LoginScreen navigation={navigation} />);
 
     const loginButton = getByText('Login');
 
