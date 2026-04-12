@@ -4,45 +4,6 @@ import { useLocation } from 'react-router-dom';
 function PageTitleHandler() {
   const location = useLocation();
 
-<<<<<<< HEAD
-    useEffect(() => {
-        switch (location.pathname) {
-            case "/":
-            case "/login":
-                document.title = "SecureShift - Login";
-                break;
-            case "/2fa":
-                document.title = "SecureShift - Two-Factor Authentication";
-                break;
-            case "/employer-dashboard":
-                document.title = "SecureShift - Employer Dashboard";
-                break;
-            case "/create-shift":
-                document.title = "SecureShift - Create Shift";
-                break;
-            case "/manage-shift":
-                document.title = "SecureShift - Manage Shift";
-                break;
-            case "/guard-profiles":
-                document.title = "SecureShift - Guard Profiles";
-                break;
-            case "/company-profile":
-                document.title = "SecureShift - Company Profile";
-                break;
-            case "/submission":
-                document.title = "SecureShift - Submission Confirmation";
-                break;
-            case "/expression-of-interest":
-                document.title = "SecureShift - Expression Of Interest";
-                break;
-            case "/timesheet":
-                document.title = "SecureShift - Timesheet";
-                break;
-            default:
-                document.title = "SecureShift";
-        }
-    }, [location]);
-=======
   useEffect(() => {
     switch (location.pathname) {
       case '/':
@@ -73,11 +34,13 @@ function PageTitleHandler() {
       case '/expression-of-interest':
         document.title = 'SecureShift - Expression Of Interest';
         break;
+      case '/timesheet':
+        document.title = 'SecureShift - Timesheet';
+        break;
       default:
         document.title = 'SecureShift';
     }
   }, [location]);
->>>>>>> e11fa1398a7f1c73722ca15813bf355fc97f5624
 
   return null;
 }
