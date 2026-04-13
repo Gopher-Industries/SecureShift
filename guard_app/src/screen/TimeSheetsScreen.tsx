@@ -246,4 +246,3 @@ const getStyles = (colors: AppColors) =>
       padding: 16,
     },
   });
-  
