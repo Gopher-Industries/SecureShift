@@ -44,30 +44,30 @@ export default function Header() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* Home button */}
         <div onClick={handleHomeClick} style={navButtonStyle}>
           Home
         </div>
 
-        {/* Other buttons using Link to avoid full page reload */}
         <Link to="/manage-shift" style={navButtonStyle}>
           Shifts
         </Link>
+
         <Link to="/guard-profiles" style={navButtonStyle}>
           Guard
         </Link>
 
-        {/* Email Settings - Admin only (backend will enforce) */}
+        <Link to="/timesheet" style={navButtonStyle}>
+          Timesheet
+        </Link>
+
         {localStorage.getItem('userRole') === 'admin' && (
           <Link to="/email-settings" style={navButtonStyle}>
             Email
           </Link>
         )}
 
-        {/* Notifications */}
         <NotificationsPopup />
 
-        {/* Avatar */}
         <div onClick={() => navigate('/company-profile')} style={{ cursor: 'pointer' }}>
           <img
             src={ProfilePicPlaceHolder}

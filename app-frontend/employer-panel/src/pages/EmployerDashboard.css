@@ -18,7 +18,7 @@
 
 body {
   margin: 0;
-  font: 15px/1.5 'Segoe UI', Roboto, Arial, sans-serif;
+  font: 15px/1.5 "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--ss-text);
 }
 
@@ -36,11 +36,11 @@ body {
   margin-top: 28px;
 }
 
-/* --- Force sane icon sizes --- */
-.ss-main svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
+.ss-panel__top {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .ss-viewtoggle__btn svg {
@@ -48,51 +48,10 @@ body {
   height: 16px;
 }
 
-.ss-card__createicon svg,
-.ss-create-icon {
-  width: 28px;
-  height: 28px;
-}
-
 .ss-plus {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-}
-
-.ss-ico {
-  width: 14px;
-  height: 14px;
-  color: #666;
-}
-
-.ss-avatar svg {
-  width: 22px;
-  height: 22px;
-}
-
-.star {
-  width: 16px;
-  height: 16px;
-  fill: #c7d0ea;
-}
-
-.star.filled {
-  fill: #2453ff;
-}
-
-/* --- Controls --- */
-.ss-controls {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 14px;
-}
-
-.ss-controls-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .ss-primary {
@@ -110,10 +69,6 @@ body {
 
 .ss-primary:hover {
   background: var(--ss-blue-700);
-}
-
-.ss-primary--wide {
-  white-space: nowrap;
 }
 
 .ss-viewtoggle {
@@ -141,7 +96,6 @@ body {
   color: #141b2e;
 }
 
-/* --- Overview panel --- */
 .ss-overview {
   display: flex;
   align-items: center;
@@ -171,7 +125,6 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
-  align-items: start;
 }
 
 .ss-shifts--list,
@@ -182,7 +135,6 @@ body {
   gap: 10px;
 }
 
-/* --- Cards --- */
 .ss-card {
   background: #fff;
   border-radius: 14px;
@@ -191,7 +143,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 160px;
 }
 
 .ss-card .ss-status {
@@ -202,7 +153,6 @@ body {
 .ss-card__head {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
   font-weight: 600;
 }
 
@@ -264,7 +214,46 @@ body {
   gap: 6px;
 }
 
-/* --- Rows --- */
+.ss-incident-toolbar {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, minmax(140px, 1fr)) auto;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ss-incident-toolbar select,
+.ss-incident-search {
+  border: 1px solid var(--ss-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.ss-incident-summary {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.ss-incident-summary span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #23457a;
+  background: #eef4ff;
+  border: 1px solid #d8e5ff;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.ss-row--empty {
+  justify-content: center;
+  font-weight: 600;
+  color: var(--ss-muted);
+  min-height: 68px;
+}
+
 .ss-row {
   display: grid;
   align-items: center;
@@ -348,7 +337,6 @@ body {
   width: 100px;
 }
 
-/* --- Arrows --- */
 .ss-arrow {
   border: none;
   width: 38px;
@@ -367,7 +355,6 @@ body {
   background: #e5e8f2;
 }
 
-/* --- Priority shifts --- */
 .ss-priority-topstats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -451,7 +438,6 @@ body {
   font-weight: 600;
 }
 
-/* --- Reviews --- */
 .ss-reviews {
   display: flex;
   align-items: center;
@@ -506,7 +492,6 @@ body {
   place-items: center;
 }
 
-/* --- Modal --- */
 .create-shift-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -621,7 +606,6 @@ body {
   cursor: pointer;
 }
 
-/* --- Responsive --- */
 @media (max-width: 1100px) {
   .ss-shifts--list .ss-row,
   .ss-row--incident,
@@ -640,6 +624,12 @@ body {
 
   .ss-reviews {
     align-items: stretch;
+  }
+}
+
+@media (max-width: 980px) {
+  .ss-incident-toolbar {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -665,5 +655,11 @@ body {
   .actions {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@media (max-width: 640px) {
+  .ss-incident-toolbar {
+    grid-template-columns: 1fr;
   }
 }

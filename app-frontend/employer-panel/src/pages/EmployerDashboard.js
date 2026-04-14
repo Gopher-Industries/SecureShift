@@ -1,10 +1,10 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './EmployerDashboard.css';
-import CreateShift from './createShift';
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./EmployerDashboard.css";
+import CreateShift from "./createShift";
 
 /* --- icons --- */
-const IconCalendar = ({ className = '', ...props }) => (
+const IconCalendar = ({ className = "", ...props }) => (
   <svg viewBox="0 0 24 24" className={className} {...props}>
     <rect
       x="3"
@@ -22,7 +22,7 @@ const IconCalendar = ({ className = '', ...props }) => (
   </svg>
 );
 
-const IconClock = ({ className = '', ...props }) => (
+const IconClock = ({ className = "", ...props }) => (
   <svg viewBox="0 0 24 24" className={className} {...props}>
     <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
     <line
@@ -46,7 +46,7 @@ const IconClock = ({ className = '', ...props }) => (
   </svg>
 );
 
-const IconPlus = ({ className = '', ...props }) => (
+const IconPlus = ({ className = "", ...props }) => (
   <svg viewBox="0 0 24 24" className={className} {...props}>
     <line
       x1="12"
@@ -69,7 +69,7 @@ const IconPlus = ({ className = '', ...props }) => (
   </svg>
 );
 
-const IconGrid = ({ className = '', ...props }) => (
+const IconGrid = ({ className = "", ...props }) => (
   <svg viewBox="0 0 24 24" className={className} {...props}>
     <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" />
     <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" />
@@ -78,7 +78,7 @@ const IconGrid = ({ className = '', ...props }) => (
   </svg>
 );
 
-const IconList = ({ className = '', ...props }) => (
+const IconList = ({ className = "", ...props }) => (
   <svg viewBox="0 0 24 24" className={className} {...props}>
     <rect x="3" y="4" width="18" height="3" rx="1" fill="currentColor" />
     <rect x="3" y="10.5" width="18" height="3" rx="1" fill="currentColor" />
@@ -86,7 +86,7 @@ const IconList = ({ className = '', ...props }) => (
   </svg>
 );
 
-const IconUser = ({ className = '', ...props }) => (
+const IconUser = ({ className = "", ...props }) => (
   <svg viewBox="0 0 24 24" className={className} {...props}>
     <circle cx="12" cy="8" r="4" fill="currentColor" />
     <path d="M4 20c0-4.4183 3.5817-8 8-8s8 3.5817 8 8" fill="currentColor" />
@@ -94,13 +94,37 @@ const IconUser = ({ className = '', ...props }) => (
 );
 
 const Star = ({ filled }) => (
-  <svg viewBox="0 0 24 24" className={`star ${filled ? 'filled' : ''}`}>
+  <svg viewBox="0 0 24 24" className={`star ${filled ? "filled" : ""}`}>
     <path d="M12 2l3.09 6.28 6.93 1-5 4.86L18.18 22 12 18.56 5.82 22l1.16-7.86-5-4.86 6.93-1L12 2z" />
   </svg>
 );
 
+const severityRank = {
+  High: 3,
+  Medium: 2,
+  Low: 1,
+};
+
+const parseIncidentDateTime = (incident) => {
+  const [day, month, year] = incident.date.split("-").map(Number);
+  const baseDate = new Date(year, month - 1, day);
+  const timeMatch = incident.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+
+  if (!timeMatch) return baseDate.getTime();
+
+  let hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const meridian = timeMatch[3].toUpperCase();
+
+  if (meridian === "PM" && hours < 12) hours += 12;
+  if (meridian === "AM" && hours === 12) hours = 0;
+
+  baseDate.setHours(hours, minutes, 0, 0);
+  return baseDate.getTime();
+};
+
 export default function EmployerDashboard() {
-  const [view, setView] = useState('list');
+  const [view, setView] = useState("list");
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
   const navigate = useNavigate();
@@ -111,30 +135,63 @@ export default function EmployerDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [selectedIncident, setSelectedIncident] = useState(null);
+  const [incidentDraft, setIncidentDraft] = useState({ severity: "Medium", comments: "" });
+  const [incidentQuery, setIncidentQuery] = useState("");
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState("All");
+  const [incidentSeverityFilter, setIncidentSeverityFilter] = useState("All");
+  const [incidentSort, setIncidentSort] = useState("Newest");
   const [incidents, setIncidents] = useState([
     {
-      id: 'INC-9921',
-      guard: 'John Doe',
-      shift: 'Crowd Control - Marvel',
-      date: '09-08-2025',
-      time: '10:45 PM',
-      status: 'Pending',
-      severity: 'High',
+      id: "INC-9921",
+      guard: "John Doe",
+      shift: "Crowd Control - Marvel",
+      date: "09-08-2025",
+      time: "10:45 PM",
+      status: "Pending",
+      severity: "High",
       description:
-        'A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.',
+        "A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.",
       photos: [
-        'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80',
+        "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80",
       ],
-      comments: '',
+      comments: "",
+    },
+    {
+      id: "INC-9920",
+      guard: "Leah Carter",
+      shift: "Gate Check - MCG",
+      date: "08-08-2025",
+      time: "08:15 PM",
+      status: "Resolved",
+      severity: "Medium",
+      description:
+        "A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.",
+      photos: [],
+      comments: "Resolved on site, no further action required.",
+    },
+    {
+      id: "INC-9919",
+      guard: "Aiden Ross",
+      shift: "Shopping Centre Security - Chadstone",
+      date: "07-08-2025",
+      time: "03:05 PM",
+      status: "Pending",
+      severity: "Low",
+      description:
+        "Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.",
+      photos: [
+        "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80",
+      ],
+      comments: "",
     },
   ]);
 
   useEffect(() => {
     const fetchShifts = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
 
-        const response = await fetch('http://localhost:5000/api/v1/shifts', {
+        const response = await fetch("http://localhost:5000/api/v1/shifts", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -143,75 +200,76 @@ export default function EmployerDashboard() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to load shifts.');
+          throw new Error(data.message || "Failed to load shifts.");
         }
 
         const fetchedShifts = Array.isArray(data.items) ? data.items : [];
 
         const mappedShifts = fetchedShifts.map((shift, index) => ({
           id: shift.id || index,
-          role: shift.role || shift.title || 'Shift',
-          company: shift.company || shift.companyName || 'SecureShift',
-          venue: shift.venue || shift.location || 'N/A',
+          role: shift.role || shift.title || "Shift",
+          company: shift.company || shift.companyName || "SecureShift",
+          venue: shift.venue || shift.location || "N/A",
           rate: shift.rate || shift.hourlyRate || 0,
-          date: shift.date || shift.shiftDate || 'N/A',
-          time: shift.time || shift.shiftTime || 'N/A',
-          status: shift.status || { text: 'Pending', tone: 'pending' },
-          priority: shift.priority || (index % 3 === 0 ? 'High' : index % 3 === 1 ? 'Medium' : 'Low'),
+          date: shift.date || shift.shiftDate || "N/A",
+          time: shift.time || shift.shiftTime || "N/A",
+          status: shift.status || { text: "Pending", tone: "pending" },
+          priority:
+            shift.priority || (index % 3 === 0 ? "High" : index % 3 === 1 ? "Medium" : "Low"),
           assignedGuards: shift.assignedGuards ?? shift.guardsAssigned ?? 0,
         }));
 
         setShifts(mappedShifts);
       } catch (err) {
-        setError(err.message || 'Failed to load shifts.');
+        setError(err.message || "Failed to load shifts.");
 
         setShifts([
           {
             id: 1,
-            role: 'Crowd Control',
-            company: 'AIG Solutions',
-            venue: 'Marvel Stadium',
+            role: "Crowd Control",
+            company: "AIG Solutions",
+            venue: "Marvel Stadium",
             rate: 55,
-            status: { text: 'Confirmed', tone: 'confirmed' },
-            date: '22-03-2026',
-            time: '5:00 pm - 1:00 am',
-            priority: 'High',
+            status: { text: "Confirmed", tone: "confirmed" },
+            date: "22-03-2026",
+            time: "5:00 pm - 1:00 am",
+            priority: "High",
             assignedGuards: 2,
           },
           {
             id: 2,
-            role: 'Shopping Centre Security',
-            company: 'Vicinity Centres',
-            venue: 'Chadstone Shopping Centre',
+            role: "Shopping Centre Security",
+            company: "Vicinity Centres",
+            venue: "Chadstone Shopping Centre",
             rate: 75,
-            status: { text: 'Pending', tone: 'pending' },
-            date: '24-03-2026',
-            time: '1:00 pm - 9:00 pm',
-            priority: 'Medium',
+            status: { text: "Pending", tone: "pending" },
+            date: "24-03-2026",
+            time: "1:00 pm - 9:00 pm",
+            priority: "Medium",
             assignedGuards: 1,
           },
           {
             id: 3,
-            role: 'Event Security',
-            company: 'SecureShift',
-            venue: 'Rod Laver Arena',
+            role: "Event Security",
+            company: "SecureShift",
+            venue: "Rod Laver Arena",
             rate: 65,
-            status: { text: 'Confirmed', tone: 'confirmed' },
-            date: '26-03-2026',
-            time: '2:00 pm - 10:00 pm',
-            priority: 'High',
+            status: { text: "Confirmed", tone: "confirmed" },
+            date: "26-03-2026",
+            time: "2:00 pm - 10:00 pm",
+            priority: "High",
             assignedGuards: 3,
           },
           {
             id: 4,
-            role: 'Static Guarding',
-            company: 'AIG Solutions',
-            venue: 'Corporate Office',
+            role: "Static Guarding",
+            company: "AIG Solutions",
+            venue: "Corporate Office",
             rate: 50,
-            status: { text: 'Completed (Rated)', tone: 'completed' },
-            date: '27-03-2026',
-            time: '8:00 am - 4:00 pm',
-            priority: 'Low',
+            status: { text: "Completed (Rated)", tone: "completed" },
+            date: "27-03-2026",
+            time: "8:00 am - 4:00 pm",
+            priority: "Low",
             assignedGuards: 1,
           },
         ]);
@@ -225,9 +283,9 @@ export default function EmployerDashboard() {
 
   const reviews = useMemo(
     () => [
-      { name: 'John Smith', role: 'Crowd Control', stars: 5 },
-      { name: 'Andrew Goddard', role: 'Crowd Control', stars: 4 },
-      { name: 'Amy Huggins', role: 'Crowd Control', stars: 4 },
+      { name: "John Smith", role: "Crowd Control", stars: 5 },
+      { name: "Andrew Goddard", role: "Crowd Control", stars: 4 },
+      { name: "Amy Huggins", role: "Crowd Control", stars: 4 },
     ],
     []
   );
@@ -243,7 +301,7 @@ export default function EmployerDashboard() {
   }, [shifts]);
 
   const highPriorityCount = useMemo(
-    () => shifts.filter((shift) => shift.priority === 'High').length,
+    () => shifts.filter((shift) => shift.priority === "High").length,
     [shifts]
   );
 
@@ -256,7 +314,7 @@ export default function EmployerDashboard() {
 
   const scrollByAmount = (ref, amt) => {
     if (!ref.current) return;
-    ref.current.scrollBy({ left: amt, behavior: 'smooth' });
+    ref.current.scrollBy({ left: amt, behavior: "smooth" });
   };
 
   const updateIncident = (id, newStatus, newSeverity, newComments) => {
@@ -269,6 +327,63 @@ export default function EmployerDashboard() {
     );
     setSelectedIncident(null);
   };
+
+  const openIncidentModal = (incident) => {
+    setSelectedIncident(incident);
+    setIncidentDraft({
+      severity: incident.severity,
+      comments: incident.comments || "",
+    });
+  };
+
+  const filteredIncidents = useMemo(() => {
+    const normalizedQuery = incidentQuery.trim().toLowerCase();
+
+    return incidents
+      .filter((incident) => {
+        const matchesQuery =
+          normalizedQuery.length === 0 ||
+          incident.id.toLowerCase().includes(normalizedQuery) ||
+          incident.guard.toLowerCase().includes(normalizedQuery) ||
+          incident.shift.toLowerCase().includes(normalizedQuery) ||
+          incident.description.toLowerCase().includes(normalizedQuery);
+
+        const matchesStatus =
+          incidentStatusFilter === "All" || incident.status === incidentStatusFilter;
+
+        const matchesSeverity =
+          incidentSeverityFilter === "All" || incident.severity === incidentSeverityFilter;
+
+        return matchesQuery && matchesStatus && matchesSeverity;
+      })
+      .sort((a, b) => {
+        if (incidentSort === "Newest") {
+          return parseIncidentDateTime(b) - parseIncidentDateTime(a);
+        }
+
+        if (incidentSort === "Oldest") {
+          return parseIncidentDateTime(a) - parseIncidentDateTime(b);
+        }
+
+        if (incidentSort === "Severity") {
+          return (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
+        }
+
+        return 0;
+      });
+  }, [incidents, incidentQuery, incidentSeverityFilter, incidentSort, incidentStatusFilter]);
+
+  const incidentSummary = useMemo(() => {
+    return incidents.reduce(
+      (acc, incident) => {
+        acc.total += 1;
+        if (incident.status === "Pending") acc.pending += 1;
+        if (incident.status === "Resolved") acc.resolved += 1;
+        return acc;
+      },
+      { total: 0, pending: 0, resolved: 0 }
+    );
+  }, [incidents]);
 
   return (
     <div className="ss-page">
@@ -287,15 +402,15 @@ export default function EmployerDashboard() {
 
             <div className="ss-viewtoggle">
               <button
-                className={`ss-viewtoggle__btn ${view === 'grid' ? 'is-active' : ''}`}
-                onClick={() => setView('grid')}
+                className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
+                onClick={() => setView("grid")}
                 type="button"
               >
                 <IconGrid />
               </button>
               <button
-                className={`ss-viewtoggle__btn ${view === 'list' ? 'is-active' : ''}`}
-                onClick={() => setView('list')}
+                className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`}
+                onClick={() => setView("list")}
                 type="button"
               >
                 <IconList />
@@ -316,10 +431,10 @@ export default function EmployerDashboard() {
           <div className="ss-panel">
             <div
               ref={overviewScroller}
-              className={`ss-shifts ${view === 'grid' ? 'ss-shifts--grid' : 'ss-shifts--list'}`}
+              className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}
             >
-              {view === 'grid' && (
-                <div className="ss-card ss-card--create" onClick={() => navigate('/create-shift')}>
+              {view === "grid" && (
+                <div className="ss-card ss-card--create" onClick={() => navigate("/create-shift")}>
                   <div className="ss-card__createicon">
                     <IconPlus className="ss-create-icon" />
                   </div>
@@ -328,11 +443,11 @@ export default function EmployerDashboard() {
               )}
 
               {loading && <div>Loading shifts...</div>}
-              {error && <div style={{ color: 'red' }}>{error}</div>}
+              {error && <div style={{ color: "red" }}>{error}</div>}
               {!loading && !error && shifts.length === 0 && <div>No shifts found.</div>}
 
               {shifts.map((s, idx) =>
-                view === 'grid' ? (
+                view === "grid" ? (
                   <div className="ss-card" key={s.id || idx}>
                     <div className="ss-card__head">
                       <div className="ss-role">{s.role}</div>
@@ -341,7 +456,7 @@ export default function EmployerDashboard() {
                     <div className="ss-meta">
                       {s.company} — {s.venue}
                     </div>
-                    <div className={`ss-status ss-status--${s.status.tone || 'pending'}`}>
+                    <div className={`ss-status ss-status--${s.status.tone || "pending"}`}>
                       Status: {s.status.text || s.status}
                     </div>
                     <div className="ss-when">
@@ -358,9 +473,7 @@ export default function EmployerDashboard() {
                 ) : (
                   <div className="ss-row" key={s.id || idx}>
                     <div className="ss-col ss-role">{s.role}</div>
-                    <div className="ss-col ss-company">
-                      {s.company} — {s.venue}
-                    </div>
+                    <div className="ss-col ss-company">{s.company} — {s.venue}</div>
                     <div className="ss-col ss-rate">${s.rate} p/h</div>
                     <div className="ss-col ss-date">
                       <IconCalendar className="ss-ico" />
@@ -370,7 +483,7 @@ export default function EmployerDashboard() {
                       <IconClock className="ss-ico" />
                       {s.time}
                     </div>
-                    <div className={`ss-col ss-status ss-status--${s.status.tone || 'pending'}`}>
+                    <div className={`ss-col ss-status ss-status--${s.status.tone || "pending"}`}>
                       Status: {s.status.text || s.status}
                     </div>
                   </div>
@@ -442,10 +555,58 @@ export default function EmployerDashboard() {
         </div>
 
         <h2 className="ss-h1 ss-h1--spaced">Incident Reports</h2>
+        <div className="ss-incident-toolbar">
+          <input
+            className="ss-incident-search"
+            placeholder="Search by incident ID, guard, shift, or description"
+            value={incidentQuery}
+            onChange={(e) => setIncidentQuery(e.target.value)}
+          />
+          <select value={incidentStatusFilter} onChange={(e) => setIncidentStatusFilter(e.target.value)}>
+            <option value="All">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+          <select value={incidentSeverityFilter} onChange={(e) => setIncidentSeverityFilter(e.target.value)}>
+            <option value="All">All Severities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <select value={incidentSort} onChange={(e) => setIncidentSort(e.target.value)}>
+            <option value="Newest">Sort: Newest</option>
+            <option value="Oldest">Sort: Oldest</option>
+            <option value="Severity">Sort: Severity</option>
+          </select>
+          <button
+            className="ss-secondary"
+            type="button"
+            onClick={() => {
+              setIncidentQuery("");
+              setIncidentStatusFilter("All");
+              setIncidentSeverityFilter("All");
+              setIncidentSort("Newest");
+            }}
+          >
+            Reset
+          </button>
+        </div>
+
+        <div className="ss-incident-summary">
+          <span>{incidentSummary.total} Total</span>
+          <span>{incidentSummary.pending} Pending</span>
+          <span>{incidentSummary.resolved} Resolved</span>
+          <span>{filteredIncidents.length} Showing</span>
+        </div>
+
         <div className="ss-overview">
           <div className="ss-panel">
             <div className="ss-incidents-list">
-              {incidents.map((inc, i) => (
+              {filteredIncidents.length === 0 && (
+                <div className="ss-row ss-row--empty">No incident reports match the current filters.</div>
+              )}
+
+              {filteredIncidents.map((inc, i) => (
                 <div className="ss-row ss-row--incident" key={i}>
                   <div className="ss-col ss-role">
                     <b>{inc.guard}</b>
@@ -462,7 +623,7 @@ export default function EmployerDashboard() {
                   <div className="ss-col ss-incident-action">
                     <button
                       className="ss-secondary ss-secondary--small"
-                      onClick={() => setSelectedIncident(inc)}
+                      onClick={() => openIncidentModal(inc)}
                       type="button"
                     >
                       Review
@@ -522,17 +683,13 @@ export default function EmployerDashboard() {
 
       {selectedIncident && (
         <div className="create-shift-modal-backdrop" onClick={() => setSelectedIncident(null)}>
-          <div
-            className="create-shift-card"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '700px' }}
-          >
+          <div className="create-shift-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
             <div className="create-shift-header">
               <div>
                 <h1>
                   Incident Details (<span className="ss-incident-id">{selectedIncident.id}</span>)
                 </h1>
-                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>
                   Recorded on: {selectedIncident.date} at {selectedIncident.time}
                 </p>
               </div>
@@ -542,10 +699,10 @@ export default function EmployerDashboard() {
               </span>
             </div>
 
-            <div className="form-grid" style={{ marginBottom: '20px' }}>
+            <div className="form-grid" style={{ marginBottom: "20px" }}>
               <div className="form-group">
                 <label>Reported By</label>
-                <div className="ss-input-static" style={{ padding: '10px', borderRadius: '4px' }}>
+                <div className="ss-input-static" style={{ padding: "10px", borderRadius: "4px" }}>
                   {selectedIncident.guard}
                 </div>
               </div>
@@ -553,9 +710,9 @@ export default function EmployerDashboard() {
               <div className="form-group">
                 <label>Assign Severity Level</label>
                 <select
-                  defaultValue={selectedIncident.severity}
-                  id="severitySelect"
-                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  value={incidentDraft.severity}
+                  onChange={(e) => setIncidentDraft((prev) => ({ ...prev, severity: e.target.value }))}
+                  style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }}
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -564,41 +721,44 @@ export default function EmployerDashboard() {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '20px' }}>
+            <div className="form-group" style={{ marginBottom: "20px" }}>
               <label>Guard&apos;s Description</label>
               <div className="ss-incident-description">{selectedIncident.description}</div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '20px' }}>
+            <div className="form-group" style={{ marginBottom: "20px" }}>
               <label>Evidence Photos</label>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {selectedIncident.photos.map((url, idx) => (
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                {(selectedIncident.photos || []).map((url, idx) => (
                   <img key={idx} src={url} alt="incident evidence" className="ss-evidence-img" />
                 ))}
+                {(!selectedIncident.photos || selectedIncident.photos.length === 0) && (
+                  <p style={{ margin: 0, color: "#666" }}>No evidence photos attached.</p>
+                )}
               </div>
             </div>
 
             <div className="form-group">
               <label>Employer Comments</label>
               <textarea
-                id="employerComments"
                 placeholder="Add internal notes..."
-                defaultValue={selectedIncident.comments}
-                style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }}
+                value={incidentDraft.comments}
+                onChange={(e) => setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))}
+                style={{ border: "1px solid #ddd", borderRadius: "4px", padding: "10px" }}
                 rows={4}
               />
             </div>
 
-            <div className="actions" style={{ marginTop: '30px' }}>
+            <div className="actions" style={{ marginTop: "30px" }}>
               <button
                 className="primary"
                 type="button"
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    'Resolved',
-                    document.getElementById('severitySelect').value,
-                    document.getElementById('employerComments').value
+                    "Resolved",
+                    incidentDraft.severity,
+                    incidentDraft.comments
                   )
                 }
               >
@@ -611,9 +771,9 @@ export default function EmployerDashboard() {
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    'Pending',
-                    document.getElementById('severitySelect').value,
-                    document.getElementById('employerComments').value
+                    "Pending",
+                    incidentDraft.severity,
+                    incidentDraft.comments
                   )
                 }
               >
@@ -623,7 +783,7 @@ export default function EmployerDashboard() {
               <button
                 className="secondary"
                 type="button"
-                style={{ color: '#666' }}
+                style={{ color: "#666" }}
                 onClick={() => setSelectedIncident(null)}
               >
                 Close

@@ -1,5 +1,5 @@
 // src/screen/TimesheetsScreen.tsx
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { AxiosError } from 'axios';
 import React, { useCallback, useState } from 'react';
 import {
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 
 import { getMyAttendance, type Attendance } from '../api/attendance';
@@ -42,6 +43,7 @@ function fmtShiftLabel(att: Attendance) {
 }
 
 export default function TimesheetsScreen() {
+  const navigation = useNavigation<any>();
   const { colors } = useAppTheme();
   const s = getStyles(colors);
 
@@ -81,8 +83,19 @@ export default function TimesheetsScreen() {
     const checkedIn = !!item.checkInTime;
     const checkedOut = !!item.checkOutTime;
 
+    const hours =
+      item.checkInTime && item.checkOutTime
+        ? (
+            (new Date(item.checkOutTime).getTime() - new Date(item.checkInTime).getTime()) /
+            (1000 * 60 * 60)
+          ).toFixed(1) + ' hrs'
+        : '—';
+
     return (
-      <View style={s.card}>
+      <TouchableOpacity
+        style={s.card}
+        onPress={() => navigation.navigate('ShiftDetails', { shiftId: item.shiftId })}
+      >
         <Text style={s.title}>{fmtShiftLabel(item)}</Text>
 
         <View style={s.row}>
@@ -93,6 +106,11 @@ export default function TimesheetsScreen() {
         <View style={s.row}>
           <Text style={s.label}>Check Out:</Text>
           <Text style={s.value}>{fmtDateTime(item.checkOutTime)}</Text>
+        </View>
+
+        <View style={s.row}>
+          <Text style={s.label}>Hours:</Text>
+          <Text style={s.value}>{hours}</Text>
         </View>
 
         <View style={s.rowBetween}>
@@ -109,7 +127,7 @@ export default function TimesheetsScreen() {
             </Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
