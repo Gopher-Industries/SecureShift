@@ -1,6 +1,6 @@
 // src/screen/TimesheetsScreen.tsx
-
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { AxiosError } from 'axios';
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -30,7 +30,7 @@ function fmtDateTime(d?: string | null) {
 }
 
 function fmtShiftLabel(att: Attendance) {
-  const s = att.shiftId as any;
+  const s = att.shiftId;
 
   if (s && typeof s === 'object') {
     const title = s.title ?? 'Shift';
@@ -55,9 +55,13 @@ export default function TimesheetsScreen() {
     try {
       const rows = await getMyAttendance();
       setItems(rows);
-    } catch (e: any) {
-      const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
-      Alert.alert('Error', msg);
+    } catch (e: unknown) {
+      if (e instanceof AxiosError) {
+        const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
+        Alert.alert('Error', msg);
+      } else {
+        Alert.alert('Error', 'Failed to load timesheets');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
