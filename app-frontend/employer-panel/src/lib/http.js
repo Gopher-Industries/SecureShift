@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 // Create an Axios instance with a base URL and timeout
+/* global process */
 const http = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api/v1',
   timeout: 20000, // 20 second timeout for requests

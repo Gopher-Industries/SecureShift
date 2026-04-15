@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
-import TextInput from '../input/TextInput';
 import AppIcon from '../images/app_icon.png';
 import http from '../lib/http';
 
@@ -26,8 +25,6 @@ export default function EmailSettings() {
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors },
     reset,
   } = useForm({
@@ -379,7 +376,7 @@ export default function EmailSettings() {
             </li>
           </ul>
           <p style={{ marginTop: '15px', color: '#d32f2f', fontWeight: 'bold' }}>
-            ⚠️ Important: The "From Email" must be verified in your email provider:
+            ⚠️ Important: The &quot;From Email&quot; must be verified in your email provider:
           </p>
           <ul style={{ marginLeft: '20px', color: '#d32f2f' }}>
             <li>

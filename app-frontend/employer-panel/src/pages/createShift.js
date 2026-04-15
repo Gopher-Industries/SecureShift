@@ -156,6 +156,7 @@ const loadGooglePlaces = (onReady, onError) => {
   if (document.getElementById('ss-places-script')) return;
   const script = document.createElement('script');
   script.id = 'ss-places-script';
+  /* global process */
   const key = process.env.REACT_APP_GOOGLE_MAPS_KEY || '';
   const keyParam = key ? `&key=${key}` : '';
   script.src = `https://maps.googleapis.com/maps/api/js?libraries=places${keyParam}`;
@@ -166,7 +167,7 @@ const loadGooglePlaces = (onReady, onError) => {
   document.body.appendChild(script);
 };
 
-const CreateShift = ({ isModal = false, onClose }) => {
+const CreateShift = () => {
   const navigate = useNavigate();
   const [sites, setSites] = useState(seededSites);
   const [showNewSite, setShowNewSite] = useState(false);

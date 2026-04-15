@@ -1,6 +1,7 @@
 // frontend/src/api/api.js
 import axios from 'axios';
 
+/* global process */
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL, // adjust backend URL
 });

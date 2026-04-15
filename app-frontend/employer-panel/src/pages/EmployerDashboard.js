@@ -576,7 +576,7 @@ export default function EmployerDashboard() {
             </div>
 
             <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label>Guard's Description</label>
+              <label>Guard&apos;s Description</label>
               <div className="ss-incident-description">{selectedIncident.description}</div>
             </div>
 

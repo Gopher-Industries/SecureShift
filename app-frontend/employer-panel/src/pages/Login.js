@@ -17,7 +17,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { data } = await http.post('/auth/login', { email, password });
+      await http.post('/auth/login', { email, password });
 
       // ✅ Login succeeded → redirect to OTP page
       navigate('/2fa', { state: { email } });
