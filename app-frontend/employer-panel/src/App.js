@@ -22,7 +22,7 @@ import PageTitleHandler from './components/PageTitleHandler';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 
-import Timesheet from "./pages/Timesheet";
+import Timesheet from './pages/Timesheet';
 
 /**
  * PUBLIC ROUTE: Task Detail (no layout)
