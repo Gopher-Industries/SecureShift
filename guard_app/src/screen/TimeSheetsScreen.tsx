@@ -1,5 +1,6 @@
 // src/screen/TimesheetsScreen.tsx
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { AxiosError } from 'axios';
 import React, { useCallback, useState } from 'react';
 import {
   View,
@@ -9,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 
 import { getMyAttendance, type Attendance } from '../api/attendance';
@@ -28,7 +30,7 @@ function fmtDateTime(d?: string | null) {
 }
 
 function fmtShiftLabel(att: Attendance) {
-  const s = att.shiftId as any;
+  const s = att.shiftId;
 
   if (s && typeof s === 'object') {
     const title = s.title ?? 'Shift';
@@ -41,6 +43,7 @@ function fmtShiftLabel(att: Attendance) {
 }
 
 export default function TimesheetsScreen() {
+  const navigation = useNavigation<any>();
   const { colors } = useAppTheme();
   const s = getStyles(colors);
 
@@ -52,9 +55,13 @@ export default function TimesheetsScreen() {
     try {
       const rows = await getMyAttendance();
       setItems(rows);
-    } catch (e: any) {
-      const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
-      Alert.alert('Error', msg);
+    } catch (e: unknown) {
+      if (e instanceof AxiosError) {
+        const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
+        Alert.alert('Error', msg);
+      } else {
+        Alert.alert('Error', 'Failed to load timesheets');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -76,8 +83,19 @@ export default function TimesheetsScreen() {
     const checkedIn = !!item.checkInTime;
     const checkedOut = !!item.checkOutTime;
 
+    const hours =
+      item.checkInTime && item.checkOutTime
+        ? (
+            (new Date(item.checkOutTime).getTime() - new Date(item.checkInTime).getTime()) /
+            (1000 * 60 * 60)
+          ).toFixed(1) + ' hrs'
+        : '—';
+
     return (
-      <View style={s.card}>
+      <TouchableOpacity
+        style={s.card}
+        onPress={() => navigation.navigate('ShiftDetails', { shiftId: item.shiftId })}
+      >
         <Text style={s.title}>{fmtShiftLabel(item)}</Text>
 
         <View style={s.row}>
@@ -88,6 +106,11 @@ export default function TimesheetsScreen() {
         <View style={s.row}>
           <Text style={s.label}>Check Out:</Text>
           <Text style={s.value}>{fmtDateTime(item.checkOutTime)}</Text>
+        </View>
+
+        <View style={s.row}>
+          <Text style={s.label}>Hours:</Text>
+          <Text style={s.value}>{hours}</Text>
         </View>
 
         <View style={s.rowBetween}>
@@ -104,7 +127,7 @@ export default function TimesheetsScreen() {
             </Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -123,7 +146,7 @@ export default function TimesheetsScreen() {
         data={items}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={s.listContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={<Text style={s.empty}>No timesheet records yet.</Text>}
       />
@@ -235,5 +258,9 @@ const getStyles = (colors: AppColors) =>
 
     badgeTextWarn: {
       color: colors.link,
+    },
+
+    listContainer: {
+      padding: 16,
     },
   });

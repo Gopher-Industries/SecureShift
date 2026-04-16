@@ -13,7 +13,8 @@
 
 .cs-shell {
   min-height: calc(100vh - 120px);
-  background: radial-gradient(circle at 10% 20%, rgba(127, 255, 212, 0.08), transparent 30%),
+  background:
+    radial-gradient(circle at 10% 20%, rgba(127, 255, 212, 0.08), transparent 30%),
     radial-gradient(circle at 70% 10%, rgba(79, 139, 255, 0.12), transparent 35%),
     linear-gradient(135deg, #050915 0%, #0c1736 50%, #0a1026 100%);
   color: #f4f6fb;

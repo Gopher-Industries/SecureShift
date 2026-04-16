@@ -2,6 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -95,9 +96,14 @@ export default function ShiftDetailsScreen() {
       }
 
       if (route.params.refresh) route.params.refresh();
-    } catch (e: any) {
+    } catch (e: unknown) {
       setModalVisible(false);
-      const msg = e?.response?.data?.message ?? e?.message ?? 'Action failed';
+      let msg;
+      if (e instanceof AxiosError) {
+        msg = e?.response?.data?.message ?? e?.message ?? 'Action failed';
+      } else {
+        msg = 'Action failed';
+      }
 
       if (typeof msg === 'string' && msg.toLowerCase().includes('location')) {
         Alert.alert('Location Error', 'You are not at the shift location ❌');
