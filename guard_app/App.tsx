@@ -14,6 +14,7 @@ import {
 } from './src/lib/pushNotifications';
 import AppNavigator, { RootStackParamList } from './src/navigation/AppNavigator';
 import { ThemeProvider, useAppTheme } from './src/theme';
+import { setUpNotifications } from './src/utils/notificationHelpers';
 
 //allows navigation outside of components (e.g., from API handlers)
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -23,6 +24,8 @@ function AppContent() {
 
   //allows navigation outside of components (e.g., from API handlers)
   useEffect(() => {
+    void setUpNotifications();
+
     let subscription: { remove: () => void } | null = null;
 
     const register = async () => {

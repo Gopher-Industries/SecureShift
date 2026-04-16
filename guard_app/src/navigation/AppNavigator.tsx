@@ -7,6 +7,7 @@ import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
+import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
+  PrivacyPolicy: undefined;
   EditProfile: undefined;
   Messages:
     | {
@@ -61,6 +63,11 @@ export default function AppNavigator() {
         name="Settings"
         component={SettingsScreen}
         options={{ headerShown: true, title: 'Settings' }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ headerShown: true, title: 'Privacy Policy' }}
       />
       <Stack.Screen
         name="Messages"

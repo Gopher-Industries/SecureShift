@@ -153,6 +153,14 @@ export default function AvailabilityScreen() {
     setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
   };
 
+  const getOrderedShortDays = () => {
+    const orderedShortDays = [];
+    for (let i = 0; i < WEEK_DAYS.length; i++) {
+      if (days.includes(WEEK_DAYS[i])) orderedShortDays.push(SHORT_DAYS[i]);
+    }
+    return <Text>{orderedShortDays.join(' ')}</Text>;
+  };
+
   const clearSlots = () => {
     setTimeSlots([]);
   };
@@ -294,7 +302,9 @@ export default function AvailabilityScreen() {
       ) : (
         timeSlots.map((slot) => (
           <View key={slot} style={styles.slotRow}>
-            <Text style={styles.slotItem}>• {slot}</Text>
+            <Text style={styles.slotItem}>
+              • {getOrderedShortDays()} - {slot}
+            </Text>
             <TouchableOpacity onPress={() => handleRemoveSlot(slot)} style={styles.removeButton}>
               <Text style={styles.removeButtonText}>Remove</Text>
             </TouchableOpacity>
@@ -606,19 +616,21 @@ const getStyles = (colors: AppColors) =>
     loadingText: { marginTop: 8, color: colors.text },
     errorText: { color: colors.status.rejected, marginBottom: 12 },
 
+    // View Toggle
     viewToggle: {
       flexDirection: 'row',
       backgroundColor: colors.primarySoft,
       borderRadius: 8,
       padding: 4,
       margin: 16,
+      marginBottom: 7,
+      shadowColor: '#000',
+      shadowOpacity: 0.12,
+      shadowOffset: { width: 0, height: 8 },
+      shadowRadius: 16,
+      elevation: 8,
     },
-    toggleBtn: {
-      flex: 1,
-      paddingVertical: 8,
-      alignItems: 'center',
-      borderRadius: 6,
-    },
+    toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6 },
     toggleBtnActive: { backgroundColor: colors.primary },
     toggleText: { fontSize: 14, fontWeight: '600', color: colors.muted },
     toggleTextActive: { color: colors.white },
@@ -644,15 +656,16 @@ const getStyles = (colors: AppColors) =>
     todayBtnText: { fontSize: 14, fontWeight: '600', color: colors.primary },
     navDate: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '600', color: colors.text },
 
+    // Simple Mode (existing)
     sectionTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 8, color: colors.text },
     helperTextMuted: { color: colors.muted, marginBottom: 8 },
     daysRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
     dayChip: {
-      paddingHorizontal: 10,
+      paddingHorizontal: 8.35,
       paddingVertical: 6,
       borderRadius: 8,
-      marginRight: 6,
-      marginBottom: 6,
+      marginHorizontal: 3,
+      marginVertical: 6,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -661,25 +674,28 @@ const getStyles = (colors: AppColors) =>
       backgroundColor: colors.primarySoft,
       borderColor: colors.primary,
     },
-    dayChipText: { color: colors.text },
-    dayChipTextSelected: { color: colors.primary, fontWeight: '600' },
-
+    dayChipText: { color: '#000' },
+    dayChipTextSelected: { color: '#003f88', fontWeight: '600' },
     slotRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginVertical: 4,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
+      borderRadius: 6,
+      marginBottom: 8,
+      shadowColor: '#000',
+      shadowOpacity: 0.12,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 16,
+      elevation: 2,
     },
     slotItem: { color: colors.text },
-
     removeButton: {
-      paddingHorizontal: 10,
+      paddingHorizontal: 7,
       paddingVertical: 4,
       borderRadius: 8,
       borderWidth: 1,
@@ -687,10 +703,8 @@ const getStyles = (colors: AppColors) =>
       backgroundColor: colors.card,
     },
     removeButtonText: { color: colors.status.rejected, fontSize: 12, fontWeight: '600' },
-
     actionsRow: { flexDirection: 'row', marginTop: 12 },
     spacer: { width: 8 },
-
     primaryButton: {
       flex: 1,
       backgroundColor: colors.primary,
@@ -700,7 +714,6 @@ const getStyles = (colors: AppColors) =>
     },
     primaryButtonDisabled: { opacity: 0.6 },
     primaryButtonText: { color: colors.white, fontWeight: '700' },
-
     secondaryButton: {
       flex: 1,
       borderRadius: 10,
@@ -711,7 +724,7 @@ const getStyles = (colors: AppColors) =>
       backgroundColor: colors.card,
     },
     secondaryButtonText: { color: colors.text, fontWeight: '600' },
-    saveButtonWrapper: { marginTop: 24 },
+    saveButtonWrapper: { marginTop: 24, height: 44 },
 
     calendarContainer: { flex: 1, backgroundColor: colors.bg },
 
