@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import NotificationIcon from '../components/NotificationIcon.svg';
 import http from '../lib/http';
 
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 15_000;
 
 export default function NotificationsPopup() {
   const navigate = useNavigate();
@@ -84,7 +84,7 @@ export default function NotificationsPopup() {
     const init = async () => {
       const existing = await loadNotifications();
       seedSeen(existing);
-      pollShifts();
+      await pollShifts();
     };
     init();
     const interval = setInterval(pollShifts, POLL_INTERVAL_MS);
