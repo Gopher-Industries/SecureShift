@@ -22,14 +22,11 @@ const ManageShiftDetails = () => {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('No auth token found');
 
-        const res = await fetch(
-          `http://localhost:5000/api/v1/shifts/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`http://localhost:5000/api/v1/shifts/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!res.ok) throw new Error(await res.text());
 
@@ -53,14 +50,11 @@ const ManageShiftDetails = () => {
     const fetchMessages = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(
-          `http://localhost:5000/api/v1/shifts/${id}/messages`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`http://localhost:5000/api/v1/shifts/${id}/messages`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!res.ok) return;
 
@@ -81,17 +75,14 @@ const ManageShiftDetails = () => {
     try {
       const token = localStorage.getItem('token');
 
-      const res = await fetch(
-        `http://localhost:5000/api/v1/shifts/${id}/approve`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ guardId }),
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/v1/shifts/${id}/approve`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ guardId }),
+      });
 
       if (!res.ok) throw new Error(await res.text());
 
@@ -111,17 +102,14 @@ const ManageShiftDetails = () => {
     try {
       const token = localStorage.getItem('token');
 
-      const res = await fetch(
-        `http://localhost:5000/api/v1/shifts/${id}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ content: newMessage }),
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/v1/shifts/${id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: newMessage }),
+      });
 
       if (!res.ok) throw new Error('Failed to send message');
 
@@ -153,9 +141,7 @@ const ManageShiftDetails = () => {
       {/* ================= Applicants ================= */}
       <h2>Applicants</h2>
 
-      {shift.applicants && shift.applicants.length === 0 && (
-        <p>No applicants yet.</p>
-      )}
+      {shift.applicants && shift.applicants.length === 0 && <p>No applicants yet.</p>}
 
       {shift.applicants &&
         shift.applicants.map((applicant) => (
@@ -172,17 +158,11 @@ const ManageShiftDetails = () => {
             }}
           >
             <div>
-              <p style={{ margin: 0, fontWeight: 600 }}>
-                {applicant.name}
-              </p>
-              <p style={{ margin: 0, color: '#666' }}>
-                {applicant.email}
-              </p>
+              <p style={{ margin: 0, fontWeight: 600 }}>{applicant.name}</p>
+              <p style={{ margin: 0, color: '#666' }}>{applicant.email}</p>
             </div>
 
-            <button onClick={() => approveGuard(applicant._id)}>
-              Approve
-            </button>
+            <button onClick={() => approveGuard(applicant._id)}>Approve</button>
           </div>
         ))}
 

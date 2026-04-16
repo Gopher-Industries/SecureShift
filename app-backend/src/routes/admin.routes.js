@@ -1,10 +1,10 @@
 // routes/admin.routes.js
 import express from 'express';
 
-import { 
-    adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs, 
+import {
+    adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs,
     getUserById, getAllMessages, deleteUserById, deleteMessageById,
-    listPendingLicenses, verifyGuardLicense, rejectGuardLicense,
+    listPendingDocuments, verifyGuardLicense, rejectGuardLicense,
     getSmtpSettings, updateSmtpSettings, testSmtpSettings,
 } from '../controllers/admin.controller.js';
 
@@ -330,22 +330,34 @@ router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
  * @swagger
  * /api/v1/admin/guards/pending:
  *   get:
- *     summary: List guards with pending license uploads
- *     description: Returns guards whose `license.status` is `pending`.
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of guards with pending licenses
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden (admin only)
- *       500:
- *         description: Server error
+ *    summary: List guards with pending documents uploads
+ *    parameters:
+ *      - in: query
+ *        name: status
+ *        schema:
+ *          type: string`
+ *          enum: [pending, verified, rejected, none, expired, expiring]
+ *        description: Filter by document status
+ *      - in: query
+ *        name: type
+ *        schema:
+ *          type: string
+ *          enum: [license, id_card, passport, firstAid, certificate, rsa, other]
+ *          description: Filter by document type 
+ *    tags: [Admin]
+ *    security:
+ *      - bearerAuth: []
+ *    responses:
+ *      200:
+ *        description: List of guards with pending documents
+ *      401:
+ *        description: Unauthorized
+ *      403:
+ *        description: Forbidden (admin only)
+ *      500:
+ *        description: Server error
  */
-router.get('/guards/pending', auth, adminOnly, listPendingLicenses);
+router.get('/guards/pending', auth, adminOnly, listPendingDocuments);
 
 
 /**

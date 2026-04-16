@@ -5,25 +5,29 @@ import { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
-  Image,
+  TextInput,
   TouchableOpacity,
+  Alert,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Image,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 
 import logo from '../../assets/logo.png';
-import {
-  login as apiLogin,
-  verifyOtp as apiVerifyOtp,
-  getMe, // Added to fetch current user's profile
-} from '../api/auth';
+import { login as apiLogin, verifyOtp as apiVerifyOtp, getMe } from '../api/auth';
 import { LocalStorage } from '../lib/localStorage';
 import { registerPushTokenIfNeeded } from '../lib/pushNotifications';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
 
 export default function LoginScreen({ navigation }: any) {
+  const { colors } = useAppTheme();
+  const styles = getStyles(colors);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -45,22 +49,25 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const handleLogin = async () => {
+    Keyboard.dismiss();
+
     const msg = validate();
     if (msg) {
       setError(msg);
       Alert.alert('Invalid input', msg);
       return;
     }
+
     try {
       setSubmitting(true);
       const res = await apiLogin({ email: email.trim(), password });
 
       if (res.token) {
-        await LocalStorage.setToken(res.token); // Save token
+        await LocalStorage.setToken(res.token);
         await registerPushTokenIfNeeded();
-        await goToApp(); // Direct login
+        await goToApp();
       } else {
-        setOtpMode(true); // Switch to OTP input
+        setOtpMode(true);
         Alert.alert('OTP required', 'Please enter the code sent to your email.');
       }
     } catch (e: any) {
@@ -72,12 +79,14 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  // OTP verification logic with license status check
   const handleVerifyOtp = async () => {
+    Keyboard.dismiss();
+
     if (!otp.trim()) {
       Alert.alert('OTP required', 'Enter your OTP code.');
       return;
     }
+
     try {
       setSubmitting(true);
       const res = await apiVerifyOtp({ email: email.trim(), otp: otp.trim() });
@@ -85,11 +94,9 @@ export default function LoginScreen({ navigation }: any) {
       const token = res.token;
       if (!token) throw new Error('No token returned');
 
-      // Save token
       await LocalStorage.setToken(token);
       await registerPushTokenIfNeeded();
 
-      // Fetch user profile to check license status
       const user = await getMe();
       const license = user?.license;
 
@@ -126,141 +133,221 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.safe}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.container}>
-        <Image source={logo} style={styles.logo} />
-        <Text style={styles.subtitle}>Login with your email and password</Text>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <Text style={styles.label}>Email*</Text>
-        <View style={styles.inputWrap}>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your email"
-            placeholderTextColor="#B9BDC7"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              if (otpMode) {
-                setOtpMode(false);
-                setOtp('');
-              }
-              if (error) setError(null);
-            }}
-            autoCorrect={false}
-            textContentType="emailAddress"
-          />
-        </View>
-
-        <Text style={[styles.label, styles.mt16]}>Password*</Text>
-        <View style={styles.inputWrap}>
-          <TextInput
-            style={[styles.input, styles.padRight]}
-            placeholder="Enter your password"
-            placeholderTextColor="#B9BDC7"
-            secureTextEntry={!showPass}
-            value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              if (error) setError(null);
-            }}
-            textContentType="password"
-          />
-          <TouchableOpacity
-            onPress={() => setShowPass((s) => !s)}
-            style={styles.eye}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <MaterialCommunityIcons
-              name={showPass ? 'eye-off-outline' : 'eye-outline'}
-              size={22}
-              color="#6B7280"
-            />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.button, submitting && { opacity: 0.6 }]}
-          onPress={handleLogin}
-          disabled={submitting}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        style={styles.safe}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Login'}</Text>
-        </TouchableOpacity>
+          <View style={styles.container}>
+            <Image source={logo} style={styles.logo} />
+            <Text style={styles.subtitle}>Login with your email and password</Text>
 
-        {otpMode && (
-          <>
-            <Text style={styles.label}>Enter OTP*</Text>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <Text style={styles.label}>Email*</Text>
             <View style={styles.inputWrap}>
               <TextInput
                 style={styles.input}
-                placeholder="123456"
-                placeholderTextColor="#B9BDC7"
-                keyboardType="number-pad"
-                value={otp}
-                onChangeText={setOtp}
+                placeholder="Enter your email"
+                placeholderTextColor={colors.muted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={(t) => {
+                  setEmail(t);
+                  if (otpMode) {
+                    setOtpMode(false);
+                    setOtp('');
+                  }
+                  if (error) setError(null);
+                }}
+                autoCorrect={false}
+                textContentType="emailAddress"
+                returnKeyType="next"
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.button, { marginTop: 16 }, submitting && { opacity: 0.6 }]}
-              onPress={handleVerifyOtp}
-              disabled={submitting}
-            >
-              <Text style={styles.buttonText}>{submitting ? 'Verifying...' : 'Verify OTP'}</Text>
-            </TouchableOpacity>
-          </>
-        )}
+            <Text style={[styles.label, styles.mt16]}>Password*</Text>
+            <View style={styles.inputWrap}>
+              <TextInput
+                style={[styles.input, styles.padRight]}
+                placeholder="Enter your password"
+                placeholderTextColor={colors.muted}
+                secureTextEntry={!showPass}
+                value={password}
+                onChangeText={(t) => {
+                  setPassword(t);
+                  if (error) setError(null);
+                }}
+                textContentType="password"
+                returnKeyType={otpMode ? 'next' : 'done'}
+                onSubmitEditing={handleLogin}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPass((s) => !s)}
+                style={styles.eye}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <MaterialCommunityIcons
+                  name={showPass ? 'eye-off-outline' : 'eye-outline'}
+                  size={22}
+                  color={colors.muted}
+                />
+              </TouchableOpacity>
+            </View>
 
-        <Text style={styles.footerText}>
-          Don’t have an account?{' '}
-          <Text style={styles.footerLink} onPress={() => navigation.navigate('Signup')}>
-            Sign Up
-          </Text>
-        </Text>
-      </View>
-    </KeyboardAvoidingView>
+            <TouchableOpacity
+              style={[styles.button, submitting && { opacity: 0.6 }]}
+              onPress={handleLogin}
+              disabled={submitting}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Login'}</Text>
+            </TouchableOpacity>
+
+            {otpMode && (
+              <>
+                <Text style={styles.label}>Enter OTP*</Text>
+                <View style={styles.inputWrap}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="123456"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="number-pad"
+                    value={otp}
+                    onChangeText={(t) => {
+                      setOtp(t);
+                      if (error) setError(null);
+                    }}
+                    returnKeyType="done"
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.button, styles.otpButton, submitting && { opacity: 0.6 }]}
+                  onPress={handleVerifyOtp}
+                  disabled={submitting}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.buttonText}>
+                    {submitting ? 'Verifying...' : 'Verify OTP'}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            <Text style={styles.footerText}>
+              Don’t have an account?{' '}
+              <Text style={styles.footerLink} onPress={() => navigation.navigate('Signup')}>
+                Sign Up
+              </Text>
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F5F6FA' },
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 80 },
-  logo: { width: 150, height: 150, alignSelf: 'center', resizeMode: 'contain' },
-  subtitle: { marginTop: 6, textAlign: 'center', color: '#6B7280' },
-  error: { color: '#B00020', textAlign: 'center', marginTop: 12, fontWeight: '600' },
-  label: { marginTop: 24, marginBottom: 8, color: '#111827', fontWeight: '600' },
-  mt16: { marginTop: 16 },
-  inputWrap: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 14,
-    height: 56,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  input: { fontSize: 16, color: '#111827' },
-  padRight: { paddingRight: 44 },
-  eye: { position: 'absolute', right: 14, height: 56, justifyContent: 'center' },
-  button: {
-    marginTop: 28,
-    height: 58,
-    borderRadius: 999,
-    backgroundColor: '#274289',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  footerText: { textAlign: 'center', marginTop: 22, color: '#111827' },
-  footerLink: { fontWeight: '700' },
-});
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    container: {
+      flexGrow: 1,
+      paddingHorizontal: 24,
+      paddingTop: 80,
+      paddingBottom: 40,
+      backgroundColor: colors.bg,
+    },
+    logo: {
+      width: 150,
+      height: 150,
+      alignSelf: 'center',
+      resizeMode: 'contain',
+    },
+    subtitle: {
+      marginTop: 6,
+      textAlign: 'center',
+      color: colors.muted,
+    },
+    error: {
+      color: colors.status.rejected,
+      textAlign: 'center',
+      marginTop: 12,
+      fontWeight: '600',
+    },
+    label: {
+      marginTop: 24,
+      marginBottom: 8,
+      color: colors.text,
+      fontWeight: '600',
+    },
+    mt16: {
+      marginTop: 16,
+    },
+    inputWrap: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 14,
+      height: 56,
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 1,
+    },
+    input: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    padRight: {
+      paddingRight: 44,
+    },
+    eye: {
+      position: 'absolute',
+      right: 14,
+      height: 56,
+      justifyContent: 'center',
+    },
+    button: {
+      marginTop: 28,
+      height: 58,
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    otpButton: {
+      marginBottom: 16,
+    },
+    buttonText: {
+      color: colors.white,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    footerText: {
+      textAlign: 'center',
+      marginTop: 22,
+      marginBottom: 24,
+      color: colors.text,
+    },
+    footerLink: {
+      fontWeight: '700',
+      color: colors.primary,
+    },
+  });

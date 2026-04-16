@@ -7,10 +7,13 @@ import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
+import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
+import { useAppTheme } from '../theme';
+
 export type RootStackParamList = {
   AppTabs: undefined;
   Splash: undefined;
@@ -18,6 +21,7 @@ export type RootStackParamList = {
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
+  PrivacyPolicy: undefined;
   EditProfile: undefined;
   Messages:
     | {
@@ -29,7 +33,6 @@ export type RootStackParamList = {
         generalParticipantName?: string;
       }
     | undefined;
-
   Notifications: undefined;
   Certificates: undefined;
   ShiftDetails: { shift: any; refresh?: () => void };
@@ -38,8 +41,19 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+  const { colors } = useAppTheme();
+
   return (
-    <Stack.Navigator initialRouteName="AppTabs" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      initialRouteName="Splash"
+      screenOptions={{
+        headerShown: false,
+        headerStyle: { backgroundColor: colors.card },
+        headerTintColor: colors.text,
+        headerTitleStyle: { color: colors.text },
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
       <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
@@ -49,6 +63,11 @@ export default function AppNavigator() {
         name="Settings"
         component={SettingsScreen}
         options={{ headerShown: true, title: 'Settings' }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ headerShown: true, title: 'Privacy Policy' }}
       />
       <Stack.Screen
         name="Messages"

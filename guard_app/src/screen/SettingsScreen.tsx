@@ -3,6 +3,7 @@
 import { Ionicons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ExpoConstants from 'expo-constants';
 import React, { useState } from 'react';
 import {
@@ -18,12 +19,15 @@ import {
   View,
 } from 'react-native';
 
+import { LocalStorage } from '../lib/localStorage';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
 // Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';
-
-const NAVY = '#274b93';
-const BORDER = '#E7EBF2';
-const MUTED = '#5C667A';
 const CANVAS_PADDING = 20;
 
 function Row({
@@ -33,6 +37,7 @@ function Row({
   onPress,
   accessibilityLabel,
   testID,
+  colors,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -40,7 +45,10 @@ function Row({
   onPress?: () => void;
   accessibilityLabel?: string;
   testID?: string;
+  colors: AppColors;
 }) {
+  const styles = getStyles(colors);
+
   const content = (
     <View style={styles.rowInner}>
       <View style={styles.rowLeft}>
@@ -49,7 +57,7 @@ function Row({
       </View>
       <View style={styles.rowRight}>
         {right}
-        {onPress ? <Ionicons name="chevron-forward" size={18} color={MUTED} /> : null}
+        {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.muted} /> : null}
       </View>
     </View>
   );
@@ -77,10 +85,13 @@ function Row({
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
+  const navigation2 = useNavigation<Nav>();
+  const { colors, themeMode, setThemeMode } = useAppTheme();
+  const styles = getStyles(colors);
 
-  // Local-only toggles (no backend yet)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+
+  const darkMode = themeMode === 'dark';
 
   const appName =
     (ExpoConstants?.expoConfig as unknown as { name?: string })?.name ||
@@ -92,11 +103,19 @@ export default function SettingsScreen() {
     (ExpoConstants as unknown as { manifest?: { version?: string } })?.manifest?.version ||
     '1.0.0';
 
-  const handleLogout = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' as never }],
-    });
+  const handleLogout = async () => {
+    try {
+      await LocalStorage.removeToken(); // clear auth tokens
+      await LocalStorage.removePushToken(); // clear push tokens
+      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY); // clear profile data
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' as never }],
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      Alert.alert('Logout Failed', 'An error occurred while logging out. Please try again.');
+    }
   };
 
   const openMail = () =>
@@ -137,93 +156,98 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* About */}
         <View style={styles.card} testID="about-card">
           <Text style={styles.cardTitle}>About</Text>
           <Row
-            icon={<Ionicons name="information-circle-outline" size={18} color={NAVY} />}
+            icon={<Ionicons name="information-circle-outline" size={18} color={colors.primary} />}
             label={appName}
             right={<Text style={styles.meta}>v{appVersion}</Text>}
+            colors={colors}
           />
           <Row
-            icon={<Feather name="file-text" size={18} color={NAVY} />}
+            icon={<Feather name="file-text" size={18} color={colors.primary} />}
             label="Release Notes"
             onPress={() => Alert.alert('Release Notes', 'Coming soon')}
+            colors={colors}
           />
         </View>
 
-        {/* Contact Us */}
         <View style={styles.card} testID="contact-card">
           <Text style={styles.cardTitle}>Contact Us</Text>
           <Row
-            icon={<Ionicons name="mail-outline" size={18} color={NAVY} />}
+            icon={<Ionicons name="mail-outline" size={18} color={colors.primary} />}
             label="Email Support"
             onPress={openMail}
+            colors={colors}
           />
           <Row
-            icon={<Ionicons name="call-outline" size={18} color={NAVY} />}
+            icon={<Ionicons name="call-outline" size={18} color={colors.primary} />}
             label="Call Support"
             onPress={callSupport}
+            colors={colors}
           />
           <Row
-            icon={<Ionicons name="globe-outline" size={18} color={NAVY} />}
+            icon={<Ionicons name="globe-outline" size={18} color={colors.primary} />}
             label="Visit Website"
             onPress={openWebsite}
+            colors={colors}
           />
         </View>
 
-        {/* Preferences (local only) */}
         <View style={styles.card} testID="prefs-card">
           <Text style={styles.cardTitle}>Preferences</Text>
           <Row
-            icon={<Ionicons name="notifications-outline" size={18} color={NAVY} />}
+            icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />}
             label="Notifications"
             right={
               <Switch
                 value={notificationsEnabled}
                 onValueChange={setNotificationsEnabled}
-                thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
-                trackColor={{ false: '#d1d5db', true: NAVY }}
+                thumbColor={Platform.OS === 'android' ? colors.white : undefined}
+                trackColor={{ false: colors.border, true: colors.primary }}
               />
             }
             accessibilityLabel="Toggle notifications"
+            colors={colors}
           />
           <Row
-            icon={<Ionicons name="moon-outline" size={18} color={NAVY} />}
+            icon={<Ionicons name="moon-outline" size={18} color={colors.primary} />}
             label="Dark Mode"
             right={
               <Switch
                 value={darkMode}
-                onValueChange={setDarkMode}
-                thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
-                trackColor={{ false: '#d1d5db', true: NAVY }}
+                onValueChange={(value) => void setThemeMode(value ? 'dark' : 'light')}
+                thumbColor={Platform.OS === 'android' ? colors.white : undefined}
+                trackColor={{ false: colors.border, true: colors.primary }}
               />
             }
             accessibilityLabel="Toggle dark mode"
+            colors={colors}
           />
         </View>
 
-        {/* Data & Privacy */}
         <View style={styles.card} testID="privacy-card">
           <Text style={styles.cardTitle}>Data & Privacy</Text>
           <Row
-            icon={<Ionicons name="trash-outline" size={18} color="#B91C1C" />}
+            icon={<Ionicons name="trash-outline" size={18} color={colors.status.rejected} />}
             label="Clear Local Data"
             onPress={clearLocalData}
+            colors={colors}
           />
           <Row
-            icon={<Ionicons name="document-text-outline" size={18} color={NAVY} />}
+            icon={<Ionicons name="document-text-outline" size={18} color={colors.primary} />}
             label="Privacy Policy"
-            onPress={() => Alert.alert('Privacy Policy', 'Coming soon')}
+            onPress={() => navigation2.navigate('PrivacyPolicy')}
+            colors={colors}
           />
           <Row
-            icon={<Ionicons name="shield-checkmark-outline" size={18} color={NAVY} />}
+            icon={<Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />}
             label="Terms of Service"
             onPress={() => Alert.alert('Terms of Service', 'Coming soon')}
+            colors={colors}
           />
         </View>
 
-        {/* Logout */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.logoutBtn}
@@ -240,60 +264,70 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  // keep class names alphabetized
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderColor: BORDER,
-    borderRadius: 24,
-    borderWidth: 1,
-    elevation: 6,
-    marginBottom: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-  },
-  cardTitle: { color: '#0F172A', fontSize: 16, fontWeight: '800', marginBottom: 8 },
-  footer: { alignItems: 'center', marginTop: 8 },
-  logoutBtn: {
-    alignItems: 'center',
-    backgroundColor: NAVY,
-    borderRadius: 9999,
-    elevation: 3,
-    minWidth: 180,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  logoutText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.5 },
-  meta: { color: MUTED, fontSize: 12 },
-  row: {
-    backgroundColor: '#FFFFFF',
-    borderColor: BORDER,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 10,
-    padding: 12,
-  },
-  rowIcon: {
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    height: 36,
-    justifyContent: 'center',
-    marginRight: 10,
-    width: 36,
-  },
-  rowInner: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  rowLabel: { color: '#111827', flexShrink: 1, fontSize: 14, fontWeight: '600' },
-  rowLeft: { alignItems: 'center', flexDirection: 'row', flexShrink: 1 },
-  rowRight: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  safe: { backgroundColor: '#F9FAFB', flex: 1 },
-  scroll: { padding: CANVAS_PADDING },
-  spacer: { height: 20 },
-});
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 24,
+      borderWidth: 1,
+      elevation: 6,
+      marginBottom: 16,
+      padding: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+    },
+    cardTitle: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: '800',
+      marginBottom: 8,
+    },
+    footer: { alignItems: 'center', marginTop: 8 },
+    logoutBtn: {
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 9999,
+      elevation: 3,
+      minWidth: 180,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    logoutText: {
+      color: colors.white,
+      fontSize: 16,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+    },
+    meta: { color: colors.muted, fontSize: 12 },
+    row: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 16,
+      borderWidth: 1,
+      marginTop: 10,
+      padding: 12,
+    },
+    rowIcon: {
+      alignItems: 'center',
+      backgroundColor: colors.primarySoft,
+      borderRadius: 12,
+      height: 36,
+      justifyContent: 'center',
+      marginRight: 10,
+      width: 36,
+    },
+    rowInner: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+    rowLabel: { color: colors.text, flexShrink: 1, fontSize: 14, fontWeight: '600' },
+    rowLeft: { alignItems: 'center', flexDirection: 'row', flexShrink: 1 },
+    rowRight: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+    safe: { backgroundColor: colors.bg, flex: 1 },
+    scroll: { padding: CANVAS_PADDING },
+    spacer: { height: 20 },
+  });

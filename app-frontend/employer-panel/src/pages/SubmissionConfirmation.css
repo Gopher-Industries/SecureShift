@@ -8,7 +8,6 @@
   font-weight: 400; /* ensure uniform font weight */
 }
 
-
 .submission-card {
   display: flex;
   background: #fff;
@@ -28,8 +27,8 @@
 }
 
 .confirmation-title {
-  font-size: 32px;   /* bigger */
-  font-weight: 700;  /* bold */
+  font-size: 32px; /* bigger */
+  font-weight: 700; /* bold */
   margin: 15px 0;
   color: #000;
 }
@@ -68,7 +67,6 @@
   height: auto;
 }
 
-
 /* Mobile responsiveness */
 @media (max-width: 600px) {
   .submission-card {
@@ -76,7 +74,8 @@
     max-width: 100%;
     padding: 20px;
   }
-  .submission-left, .submission-right {
+  .submission-left,
+  .submission-right {
     padding: 20px;
     flex: 1;
   }
@@ -89,11 +88,13 @@
   .brand-title {
     font-size: 16px;
   }
-  .header, .footer-top {
+  .header,
+  .footer-top {
     flex-direction: column;
     text-align: center;
   }
-  .header-nav, .footer-nav {
+  .header-nav,
+  .footer-nav {
     margin-top: 10px;
   }
   .footer-divider {

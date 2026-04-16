@@ -3,21 +3,25 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   Modal,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  RefreshControl,
 } from 'react-native';
 
 import { getMe } from '../api/auth';
-import { myShifts, type ShiftDto } from '../api/shifts';
-import { COLORS } from '../theme/colors';
+import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
+import { useAppTheme } from '../theme';
+
+import type { AppColors } from '../theme/colors';
+
 const { width } = Dimensions.get('window');
 
 type AppliedShift = {
@@ -43,6 +47,17 @@ type CompletedShift = {
   rating: number;
 };
 
+type AllShift = {
+  id: string;
+  title: string;
+  company: string;
+  site: string;
+  rate: string;
+  date: string;
+  time: string;
+  status?: 'Available' | 'Pending' | 'Confirmed';
+};
+
 function dateKeyLocal(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -62,6 +77,7 @@ function mapMineShifts(shifts: ShiftDto[], myUid: string): AppliedShift[] {
     .map((s) => {
       const acceptedId =
         typeof s.acceptedBy === 'object' ? s.acceptedBy?._id : String(s.acceptedBy ?? '');
+
       const applicants = Array.isArray(s.applicants)
         ? s.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
         : [];
@@ -100,24 +116,59 @@ function mapCompleted(shifts: ShiftDto[]): CompletedShift[] {
     }));
 }
 
+function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
+  return shifts
+    .filter((s) => s.status !== 'completed')
+    .map((s) => {
+      const acceptedId =
+        typeof s.acceptedBy === 'object' ? s.acceptedBy?._id : String(s.acceptedBy ?? '');
+
+      const applicants = Array.isArray(s.applicants)
+        ? s.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
+        : [];
+
+      let status: AllShift['status'] = 'Available';
+
+      if (s.status === 'assigned' && acceptedId === myUid) status = 'Confirmed';
+      else if (applicants.includes(myUid) || s.status === 'applied') status = 'Pending';
+
+      return {
+        id: s._id,
+        title: s.title,
+        company: s.createdBy?.company ?? '—',
+        site: s.location ? `${s.location.suburb ?? ''} ${s.location.state ?? ''}`.trim() : '—',
+        rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
+        date: s.date,
+        time: `${s.startTime} - ${s.endTime}`,
+        status,
+      };
+    });
+}
+
 function ShiftDetailsModal({
   shift,
   visible,
   onClose,
+  colors,
 }: {
-  shift: AppliedShift | CompletedShift | null;
+  shift: AppliedShift | CompletedShift | AllShift | null;
   visible: boolean;
   onClose: () => void;
+  colors: AppColors;
 }) {
+  const s = getStyles(colors);
+
   if (!shift) return null;
 
   const status = 'status' in shift ? shift.status : 'Completed';
   const statusColor =
     status === 'Confirmed'
-      ? '#10B981'
+      ? colors.status.confirmed
       : status === 'Pending'
-        ? '#3B82F6'
-        : '#6B7280';
+        ? colors.link
+        : status === 'Available'
+          ? colors.primary
+          : colors.muted;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -186,10 +237,13 @@ function ShiftDetailsModal({
 function CalendarView<T extends { id: string; date: string; title: string; status?: string }>({
   shifts,
   onShiftPress,
+  colors,
 }: {
   shifts: T[];
   onShiftPress: (shift: T) => void;
+  colors: AppColors;
 }) {
+  const s = getStyles(colors);
   const [monthCursor, setMonthCursor] = useState(() => new Date());
 
   const monthStart = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
@@ -213,9 +267,10 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
   const monthLabel = monthStart.toLocaleString(undefined, { month: 'long', year: 'numeric' });
 
   const getStatusColor = (status?: string) => {
-    if (status === 'Confirmed') return '#10B981';
-    if (status === 'Pending') return '#3B82F6';
-    return '#6B7280';
+    if (status === 'Confirmed') return colors.status.confirmed;
+    if (status === 'Pending') return colors.link;
+    if (status === 'Available') return colors.primary;
+    return colors.muted;
   };
 
   return (
@@ -264,18 +319,13 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
               onPress={() => hasShifts && onShiftPress(dayShifts[0])}
               disabled={!hasShifts}
             >
-              <Text style={[s.calDayNumber, !inMonth && s.calDayNumberDim]}>
-                {d.getDate()}
-              </Text>
+              <Text style={[s.calDayNumber, !inMonth && s.calDayNumberDim]}>{d.getDate()}</Text>
               {hasShifts && (
                 <View style={s.calShiftIndicators}>
                   {dayShifts.slice(0, 3).map((shift, i) => (
                     <View
                       key={i}
-                      style={[
-                        s.calShiftDot,
-                        { backgroundColor: getStatusColor(shift.status) },
-                      ]}
+                      style={[s.calShiftDot, { backgroundColor: getStatusColor(shift.status) }]}
                     />
                   ))}
                 </View>
@@ -287,15 +337,19 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
 
       <View style={s.calLegend}>
         <View style={s.calLegendItem}>
-          <View style={[s.calLegendDot, { backgroundColor: '#3B82F6' }]} />
+          <View style={[s.calLegendDot, { backgroundColor: colors.primary }]} />
+          <Text style={s.calLegendText}>Available</Text>
+        </View>
+        <View style={s.calLegendItem}>
+          <View style={[s.calLegendDot, { backgroundColor: colors.link }]} />
           <Text style={s.calLegendText}>Applied</Text>
         </View>
         <View style={s.calLegendItem}>
-          <View style={[s.calLegendDot, { backgroundColor: '#10B981' }]} />
+          <View style={[s.calLegendDot, { backgroundColor: colors.status.confirmed }]} />
           <Text style={s.calLegendText}>Accepted</Text>
         </View>
         <View style={s.calLegendItem}>
-          <View style={[s.calLegendDot, { backgroundColor: '#6B7280' }]} />
+          <View style={[s.calLegendDot, { backgroundColor: colors.muted }]} />
           <Text style={s.calLegendText}>Completed</Text>
         </View>
       </View>
@@ -306,26 +360,50 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
 function ShiftCard({
   shift,
   onPress,
+  colors,
+  showApply = false,
+  onApply,
+  applying = false,
 }: {
-  shift: AppliedShift | CompletedShift;
+  shift: AppliedShift | CompletedShift | AllShift;
   onPress?: () => void;
+  colors: AppColors;
+  showApply?: boolean;
+  onApply?: () => void;
+  applying?: boolean;
 }) {
+  const s = getStyles(colors);
+
   const status = 'status' in shift ? shift.status : 'Completed';
+
   const statusColor =
     status === 'Confirmed'
-      ? '#10B981'
+      ? colors.status.confirmed
       : status === 'Pending'
-        ? '#3B82F6'
-        : '#6B7280';
+        ? colors.link
+        : status === 'Available'
+          ? colors.primary
+          : colors.muted;
 
   return (
-    <TouchableOpacity style={s.card} onPress={onPress}>
+    <TouchableOpacity style={s.card} onPress={onPress} activeOpacity={0.9}>
       <View style={s.cardHeader}>
         <View style={s.cardTitleSection}>
           <Text style={s.cardTitle}>{shift.title}</Text>
-          <View style={[s.cardStatusBadge, { backgroundColor: statusColor }]}>
-            <Text style={s.cardStatusText}>{status || 'Available'}</Text>
-          </View>
+
+          {showApply && status === 'Available' ? (
+            <TouchableOpacity
+              style={[s.applyBtn, applying && s.applyBtnDisabled]}
+              onPress={onApply}
+              disabled={applying}
+            >
+              <Text style={s.applyBtnText}>{applying ? 'Applying...' : 'Apply'}</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={[s.cardStatusBadge, { backgroundColor: statusColor }]}>
+              <Text style={s.cardStatusText}>{status || 'Available'}</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -358,10 +436,14 @@ function ShiftCard({
 function ViewToggle({
   view,
   onViewChange,
+  colors,
 }: {
   view: 'list' | 'calendar';
   onViewChange: (view: 'list' | 'calendar') => void;
+  colors: AppColors;
 }) {
+  const s = getStyles(colors);
+
   return (
     <View style={s.viewToggle}>
       <TouchableOpacity
@@ -380,7 +462,111 @@ function ViewToggle({
   );
 }
 
+function AllTab() {
+  const { colors } = useAppTheme();
+  const s = getStyles(colors);
+
+  const [q, setQ] = useState('');
+  const [rows, setRows] = useState<AllShift[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedShift, setSelectedShift] = useState<AllShift | null>(null);
+  const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [applyingId, setApplyingId] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const me = await getMe();
+      const myUid = me?._id ?? me?.id ?? '';
+
+      const resp = await listShifts();
+      const mapped = mapAllShifts(resp.items, myUid);
+      setRows(mapped);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
+  const handleApply = async (shiftId: string) => {
+    try {
+      setApplyingId(shiftId);
+      await applyToShift(shiftId);
+      Alert.alert('Success', 'Shift applied successfully');
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
+    } finally {
+      setApplyingId(null);
+    }
+  };
+
+  const filtered = rows.filter((r) =>
+    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
+  );
+
+  return (
+    <View style={s.screen}>
+      <View style={s.searchRow}>
+        <View style={s.searchContainer}>
+          <Text style={s.searchIcon}>🔍</Text>
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search shifts..."
+            placeholderTextColor={colors.muted}
+            style={s.searchInput}
+          />
+        </View>
+        <ViewToggle view={view} onViewChange={setView} colors={colors} />
+      </View>
+
+      {loading && <ActivityIndicator size="large" color={colors.primary} />}
+
+      {view === 'calendar' ? (
+        <CalendarView shifts={filtered} onShiftPress={setSelectedShift} colors={colors} />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(i) => i.id}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <ShiftCard
+              shift={item}
+              onPress={() => setSelectedShift(item)}
+              colors={colors}
+              showApply
+              onApply={() => handleApply(item.id)}
+              applying={applyingId === item.id}
+            />
+          )}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={<Text style={s.emptyText}>No shifts found</Text>}
+        />
+      )}
+
+      <ShiftDetailsModal
+        shift={selectedShift}
+        visible={selectedShift !== null}
+        onClose={() => setSelectedShift(null)}
+        colors={colors}
+      />
+    </View>
+  );
+}
+
 function AppliedTab() {
+  const { colors } = useAppTheme();
+  const s = getStyles(colors);
+
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<AppliedShift[]>([]);
   const [loading, setLoading] = useState(false);
@@ -425,24 +611,24 @@ function AppliedTab() {
             value={q}
             onChangeText={setQ}
             placeholder="Search shifts..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.muted}
             style={s.searchInput}
           />
         </View>
-        <ViewToggle view={view} onViewChange={setView} />
+        <ViewToggle view={view} onViewChange={setView} colors={colors} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
+      {loading && <ActivityIndicator size="large" color={colors.primary} />}
 
       {view === 'calendar' ? (
-        <CalendarView shifts={filtered} onShiftPress={setSelectedShift} />
+        <CalendarView shifts={filtered} onShiftPress={setSelectedShift} colors={colors} />
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} />
+            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>No shifts found</Text>}
@@ -453,12 +639,16 @@ function AppliedTab() {
         shift={selectedShift}
         visible={selectedShift !== null}
         onClose={() => setSelectedShift(null)}
+        colors={colors}
       />
     </View>
   );
 }
 
 function CompletedTab() {
+  const { colors } = useAppTheme();
+  const s = getStyles(colors);
+
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<CompletedShift[]>([]);
   const [loading, setLoading] = useState(false);
@@ -497,19 +687,20 @@ function CompletedTab() {
             value={q}
             onChangeText={setQ}
             placeholder="Search shifts..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.muted}
             style={s.searchInput}
           />
         </View>
-        <ViewToggle view={view} onViewChange={setView} />
+        <ViewToggle view={view} onViewChange={setView} colors={colors} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={COLORS.primary} />}
+      {loading && <ActivityIndicator size="large" color={colors.primary} />}
 
       {view === 'calendar' ? (
         <CalendarView
           shifts={filtered.map((s) => ({ ...s, status: 'Completed' }))}
           onShiftPress={setSelectedShift}
+          colors={colors}
         />
       ) : (
         <FlatList
@@ -517,7 +708,7 @@ function CompletedTab() {
           keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} />
+            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>No completed shifts found</Text>}
@@ -528,6 +719,7 @@ function CompletedTab() {
         shift={selectedShift}
         visible={selectedShift !== null}
         onClose={() => setSelectedShift(null)}
+        colors={colors}
       />
     </View>
   );
@@ -536,18 +728,20 @@ function CompletedTab() {
 const Top = createMaterialTopTabNavigator();
 
 export default function ShiftsScreen() {
+  const { colors } = useAppTheme();
+
   return (
     <Top.Navigator
       screenOptions={{
         tabBarStyle: {
-          backgroundColor: '#E5E7EB',
+          backgroundColor: colors.primarySoft,
           borderRadius: 12,
           marginHorizontal: 16,
           marginTop: 12,
           marginBottom: 8,
         },
         tabBarIndicatorStyle: {
-          backgroundColor: COLORS.primary,
+          backgroundColor: colors.primary,
           height: '100%',
           borderRadius: 12,
         },
@@ -556,344 +750,371 @@ export default function ShiftsScreen() {
           textTransform: 'none',
           fontSize: 14,
         },
-        tabBarActiveTintColor: '#FFFFFF',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: colors.white,
+        tabBarInactiveTintColor: colors.muted,
       }}
     >
+      <Top.Screen name="All" component={AllTab} />
       <Top.Screen name="Applied" component={AppliedTab} />
       <Top.Screen name="Completed" component={CompletedTab} />
     </Top.Navigator>
   );
 }
 
-const s = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
+const getStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: colors.bg,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+    },
 
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#111827',
-  },
+    searchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      gap: 8,
+    },
+    searchContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchIcon: {
+      fontSize: 16,
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.text,
+    },
 
-  viewToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    overflow: 'hidden',
-  },
-  viewToggleBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewToggleBtnActive: {
-    backgroundColor: COLORS.primary,
-  },
-  viewToggleIcon: {
-    fontSize: 18,
-    color: '#6B7280',
-  },
-  viewToggleIconActive: {
-    color: '#FFFFFF',
-  },
+    viewToggle: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    viewToggleBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    viewToggleBtnActive: {
+      backgroundColor: colors.primary,
+    },
+    viewToggleIcon: {
+      fontSize: 18,
+      color: colors.muted,
+    },
+    viewToggleIconActive: {
+      color: colors.white,
+    },
 
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  cardHeader: {
-    marginBottom: 8,
-  },
-  cardTitleSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    flex: 1,
-  },
-  cardStatusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  cardStatusText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  cardCompany: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 12,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    marginBottom: 6,
-  },
-  cardLabel: {
-    fontSize: 13,
-    color: '#6B7280',
-    width: 60,
-  },
-  cardValue: {
-    fontSize: 13,
-    color: '#111827',
-    fontWeight: '500',
-  },
-  cardPay: {
-    fontSize: 13,
-    color: '#10B981',
-    fontWeight: '700',
-  },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardHeader: {
+      marginBottom: 8,
+    },
+    cardTitleSection: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    cardTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      flex: 1,
+    },
+    cardStatusBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 12,
+      marginLeft: 12,
+    },
+    cardStatusText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.white,
+    },
+    cardCompany: {
+      fontSize: 13,
+      color: colors.muted,
+      marginBottom: 12,
+    },
+    cardRow: {
+      flexDirection: 'row',
+      marginBottom: 6,
+    },
+    cardLabel: {
+      fontSize: 13,
+      color: colors.muted,
+      width: 60,
+    },
+    cardValue: {
+      fontSize: 13,
+      color: colors.text,
+      fontWeight: '500',
+    },
+    cardPay: {
+      fontSize: 13,
+      color: colors.status.confirmed,
+      fontWeight: '700',
+    },
 
-  calendarContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  calHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  calMonthText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  calNavButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  calNavBtn: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  calNavBtnText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  calWeekHeader: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  calWeekCell: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  calWeekText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  calGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  calDayCell: {
-    width: (width - 32 - 16 * 2 - 24) / 7,
-    aspectRatio: 1,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 4,
-  },
-  calDayCellDim: {
-    opacity: 0.3,
-  },
-  calDayNumber: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  calDayNumberDim: {
-    color: '#9CA3AF',
-  },
-  calShiftIndicators: {
-    flexDirection: 'row',
-    gap: 3,
-    marginTop: 4,
-  },
-  calShiftDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  calLegend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  calLegendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  calLegendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  calLegendText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
+    applyBtn: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 12,
+      marginLeft: 12,
+    },
+    applyBtnDisabled: {
+      opacity: 0.7,
+    },
+    applyBtnText: {
+      color: colors.white,
+      fontSize: 12,
+      fontWeight: '700',
+    },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#2D3748',
-    width: width - 48,
-    borderRadius: 16,
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  modalCloseBtn: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCloseText: {
-    fontSize: 20,
-    color: '#9CA3AF',
-  },
-  modalBody: {
-    gap: 12,
-  },
-  modalTitleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  modalShiftTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  modalDetail: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalLabel: {
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-  modalValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  modalRequirements: {
-    marginTop: 12,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#4A5568',
-  },
-  modalRequirementsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  modalTags: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  modalTag: {
-    backgroundColor: '#4A5568',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  modalTagText: {
-    fontSize: 12,
-    color: '#E5E7EB',
-  },
+    calendarContainer: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    calHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    calMonthText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    calNavButtons: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    calNavBtn: {
+      width: 32,
+      height: 32,
+      backgroundColor: colors.primarySoft,
+      borderRadius: 6,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    calNavBtnText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    calWeekHeader: {
+      flexDirection: 'row',
+      marginBottom: 8,
+    },
+    calWeekCell: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    calWeekText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.muted,
+    },
+    calGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 4,
+    },
+    calDayCell: {
+      width: (width - 32 - 16 * 2 - 24) / 7,
+      aspectRatio: 1,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 4,
+      backgroundColor: colors.card,
+    },
+    calDayCellDim: {
+      opacity: 0.3,
+    },
+    calDayNumber: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    calDayNumberDim: {
+      color: colors.muted,
+    },
+    calShiftIndicators: {
+      flexDirection: 'row',
+      gap: 3,
+      marginTop: 4,
+    },
+    calShiftDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+    },
+    calLegend: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 16,
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      flexWrap: 'wrap',
+    },
+    calLegendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    calLegendDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    calLegendText: {
+      fontSize: 12,
+      color: colors.muted,
+    },
 
-  emptyText: {
-    textAlign: 'center',
-    color: '#9CA3AF',
-    marginTop: 40,
-    fontSize: 14,
-  },
-});
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: colors.card,
+      width: width - 48,
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    modalCloseBtn: {
+      width: 28,
+      height: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalCloseText: {
+      fontSize: 20,
+      color: colors.muted,
+    },
+    modalBody: {
+      gap: 12,
+    },
+    modalTitleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    modalShiftTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      flex: 1,
+    },
+    statusBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      marginLeft: 12,
+    },
+    statusBadgeText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.white,
+    },
+    modalDetail: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    modalLabel: {
+      fontSize: 14,
+      color: colors.muted,
+    },
+    modalValue: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.text,
+      flexShrink: 1,
+      textAlign: 'right',
+    },
+    modalRequirements: {
+      marginTop: 12,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    modalRequirementsTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    modalTags: {
+      flexDirection: 'row',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    modalTag: {
+      backgroundColor: colors.primarySoft,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+    },
+    modalTagText: {
+      fontSize: 12,
+      color: colors.text,
+    },
+
+    emptyText: {
+      textAlign: 'center',
+      color: colors.muted,
+      marginTop: 40,
+      fontSize: 14,
+    },
+  });
