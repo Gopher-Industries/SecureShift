@@ -72,11 +72,8 @@ function GuardProfiles() {
       } catch (e) {
   if (!mounted) return;
 
-  if (e.response?.status === 403) {
-    setError("You don’t have permission to view guards yet.");
-  } else {
-    setError(e.response?.data?.message || e.message || "Failed to fetch guards");
-  }
+  setError(""); // don't block UI
+ 
 }        finally {                                                      // NEW
         if (mounted) setLoading(false);                                // NEW
       }                                                                // NEW
