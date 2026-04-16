@@ -91,6 +91,7 @@ export default function NotificationsPopup() {
     return () => clearInterval(interval);
   }, []);
 
+  // Close popup when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (popupRef.current && !popupRef.current.contains(e.target)) {
