@@ -8,6 +8,7 @@ import userRoutes from './user.routes.js';
 import adminRoutes from './admin.routes.js';
 import availabilityRoutes from './availability.routes.js'; 
 import rbacRoutes from './rbac.routes.js';
+import incidentRoutes from "./incident.routes.js";
 import branchRoutes from './branch.routes.js';
 import notificationRoutes from './notification.routes.js'
 
@@ -24,6 +25,7 @@ router.use('/availability', availabilityRoutes);
 router.use('/users', userRoutes);  
 router.use('/rbac', rbacRoutes);
 router.use('/branch', branchRoutes);
+router.use("/incidents", incidentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payroll', payrollRoutes);
 
