@@ -142,8 +142,8 @@ const shiftSchema = new Schema(
     // Domain fields
     status: {
       type: String,
-      enum: ['open', 'applied', 'assigned', 'completed'],
-      default: 'open',
+      enum: ['draft', 'open', 'applied', 'assigned', 'completed'],
+      default: 'draft',
       index: true,
     },
 
