@@ -12,6 +12,7 @@ import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
 import { useAppTheme } from '../theme';
+import TermsScreen from '../screen/TermsScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -34,6 +35,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   Certificates: undefined;
   ShiftDetails: { shift: any; refresh?: () => void };
+  Terms: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -87,6 +89,11 @@ export default function AppNavigator() {
         component={ShiftDetailsScreen}
         options={{ headerShown: true, title: 'Shift Details' }}
       />
+      <Stack.Screen
+       name="Terms"
+       component={TermsScreen}
+       options={{ headerShown: true, title: 'Terms of Service' }}
+/>
     </Stack.Navigator>
   );
 }

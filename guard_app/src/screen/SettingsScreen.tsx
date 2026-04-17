@@ -238,7 +238,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />}
             label="Terms of Service"
-            onPress={() => Alert.alert('Terms of Service', 'Coming soon')}
+            onPress={() => navigation.navigate('Terms')}
             colors={colors}
           />
         </View>
