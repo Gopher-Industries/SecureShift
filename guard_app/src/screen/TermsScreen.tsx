@@ -8,23 +8,19 @@ const TermsScreen = () => {
 
       <Text style={styles.sectionTitle}>Usage Rules</Text>
       <Text style={styles.text}>
-        - Use the app responsibly{"\n"}
-        - Do not misuse the platform{"\n"}
-        - Follow all guidelines provided
+        - Use the app responsibly{'\n'}- Do not misuse the platform{'\n'}- Follow all guidelines
+        provided
       </Text>
 
       <Text style={styles.sectionTitle}>User Responsibilities</Text>
       <Text style={styles.text}>
-        - Keep your account secure{"\n"}
-        - Provide accurate information{"\n"}
-        - Respect other users
+        - Keep your account secure{'\n'}- Provide accurate information{'\n'}- Respect other users
       </Text>
 
       <Text style={styles.sectionTitle}>Account Restrictions</Text>
       <Text style={styles.text}>
-        - Accounts may be suspended for violations{"\n"}
-        - Multiple fake accounts are not allowed{"\n"}
-        - Any suspicious activity may lead to termination
+        - Accounts may be suspended for violations{'\n'}- Multiple fake accounts are not allowed
+        {'\n'}- Any suspicious activity may lead to termination
       </Text>
     </ScrollView>
   );

@@ -11,8 +11,8 @@ import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
-import { useAppTheme } from '../theme';
 import TermsScreen from '../screen/TermsScreen';
+import { useAppTheme } from '../theme';
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -90,10 +90,10 @@ export default function AppNavigator() {
         options={{ headerShown: true, title: 'Shift Details' }}
       />
       <Stack.Screen
-       name="Terms"
-       component={TermsScreen}
-       options={{ headerShown: true, title: 'Terms of Service' }}
-/>
+        name="Terms"
+        component={TermsScreen}
+        options={{ headerShown: true, title: 'Terms of Service' }}
+      />
     </Stack.Navigator>
   );
 }
