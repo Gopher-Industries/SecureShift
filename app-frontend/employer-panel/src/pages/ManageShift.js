@@ -10,6 +10,14 @@ const statusDisplayMap = {
   open: 'Open',
 };
 
+// Map display status back to backend status
+const displayToBackendStatusMap = {
+  'Completed': 'completed',
+  'In Progress': 'assigned',
+  'Pending': 'applied',
+  'Open': 'open',
+};
+
 const Filter = Object.freeze({
   All: 'All',
   Completed: 'Completed',
@@ -63,7 +71,6 @@ const ManageShift = () => {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [formErrors, setFormErrors] = useState({});
-  const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.DETAILS);
   const [applicantAction, setApplicantAction] = useState({});
   const itemsPerPage = 9;
@@ -316,12 +323,8 @@ const ManageShift = () => {
         ...(detailForm.field?.trim() ? { field: detailForm.field.trim() } : {}),
         urgency: detailForm.urgency,
         ...(hasLocation ? { location: cleanedLocation } : {}),
+        status: displayToBackendStatusMap[detailForm.status] || detailForm.status,
       };
-      setOptimisticSnapshot({ shifts, selectedShift });
-      const optimistic = { ...selectedShift, ...payload, status: detailForm.status };
-      setShifts((prev) =>
-        prev.map((s) => (s.id === selectedShift.id ? { ...s, ...optimistic } : s))
-      );
       const { data } = await http.patch(`/shifts/${selectedShift.id}`, payload);
       const updated = normalizeShift(data.shift || { ...selectedShift, ...payload });
       const updatedWithUiStatus = { ...updated, status: detailForm.status };
@@ -348,10 +351,6 @@ const ManageShift = () => {
     } catch (err) {
       const message = err?.response?.data?.message || 'Failed to update shift';
       setFeedback(message);
-      if (optimisticSnapshot) {
-        setShifts(optimisticSnapshot.shifts);
-        setSelectedShift(optimisticSnapshot.selectedShift);
-      }
     } finally {
       setSaving(false);
     }
