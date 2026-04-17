@@ -113,6 +113,11 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *                 type: string
  *                 enum: [Day, Night]
  *                 example: "Night"
+ *               status:
+ *                 type: string
+ *                 enum: [draft, open]
+ *                 example: "draft"
+ *                 description: "Shift visibility status. draft = hidden, open = visible to guards"
  *               breakTime:
  *                 type: number
  *                 example: 30
@@ -188,6 +193,80 @@ router
 router
   .route('/:id')
   .patch(protect, authorizeRole('employer', 'admin'), updateShift);
+
+/**
+ * @swagger
+ * /api/v1/shifts/{id}:
+ *   patch:
+ *     summary: Update a shift (Employer/Admin only)
+ *     description: |
+ *       Allows updating editable shift fields before it starts or is completed.
+ *       - Only shift owner (employer) or admin can update
+ *       - Cannot update completed shifts
+ *       - Cannot update shifts that have already started
+ *       - Supports partial updates
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Shift ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *               startTime:
+ *                 type: string
+ *                 example: "08:00"
+ *               endTime:
+ *                 type: string
+ *                 example: "16:00"
+ *               payRate:
+ *                 type: number
+ *               urgency:
+ *                 type: string
+ *                 enum: [normal, priority, last-minute]
+ *               field:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               requirements:
+ *                 type: string
+ *               location:
+ *                 type: object
+ *                 properties:
+ *                   street:
+ *                     type: string
+ *                   suburb:
+ *                     type: string
+ *                   state:
+ *                     type: string
+ *                   postcode:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Shift updated successfully
+ *       400:
+ *         description: Validation error or invalid state (past/completed)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Shift not found
+ */
 
 /**
  * @swagger

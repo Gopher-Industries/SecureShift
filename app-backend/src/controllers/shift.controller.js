@@ -82,6 +82,7 @@ export const createShift = async (req, res) => {
       detailedInstructions,
       guardIds = [],
       siteId,
+      status,
     } = req.body;
 
     if (!title || !date || !startTime || !endTime || !location || payRate == null) {
@@ -271,7 +272,18 @@ export const createShift = async (req, res) => {
         }
       }
     }
+    // ✅ STATUS VALIDATION (NEW)
+    const allowedStatus = ['draft', 'open'];
+    let finalStatus = 'draft';
 
+    if (status !== undefined) {
+      if (!allowedStatus.includes(status)) {
+        return res.status(400).json({
+          message: 'Invalid status. Allowed: draft, open'
+        });
+      }
+      finalStatus = status;
+    }
     const shift = await Shift.create({
       title,
       date: d,
@@ -289,13 +301,15 @@ export const createShift = async (req, res) => {
       detailedInstructions,
       guardIds: normalizedGuardIds,
       siteId,
+      status: finalStatus,
     });
 
     await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
       shiftId: shift._id,
       title: shift.title,
       date: shift.date,
-      payRate: shift.payRate
+      payRate: shift.payRate,
+      status: shift.status
     });
 
     return res.status(201).json(shift);
@@ -418,7 +432,37 @@ export const updateShift = async (req, res) => {
       if (postcode !== undefined) loc.postcode = postcode;
       updates.location = loc;
     }
+    if (status !== undefined) {
+      const allowedStatuses = ['draft', 'open'];
 
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+          message: 'Invalid status. Allowed: draft, open'
+        });
+      }
+
+      // current status
+      const current = shift.status;
+
+      // allow same value (no-op)
+      if (status === current) {
+        updates.status = status;
+      } else {
+        // allowed transitions
+        const allowedTransitions = {
+          draft: ['open'],
+          open: ['draft'],
+        };
+
+        if (!allowedTransitions[current]?.includes(status)) {
+          return res.status(400).json({
+            message: `Invalid status transition: ${current} → ${status}`
+          });
+        }
+
+        updates.status = status;
+      }
+    }
     Object.assign(shift, updates);
     await shift.save();
     await req.audit.log(req.user?._id, ACTIONS.SHIFT_UPDATED, {
@@ -521,6 +565,9 @@ export const applyForShift = async (req, res) => {
 
     const shift = await Shift.findById(id);
     if (!shift) return res.status(404).json({ message: 'Shift not found' });
+    if (shift.status !== 'open') {
+  return res.status(400).json({ message: 'Can only apply to open shifts' });
+    }
 
     if (['assigned', 'completed'].includes(shift.status)) {
       return res.status(400).json({ message: `Cannot apply; shift is ${shift.status}` });
