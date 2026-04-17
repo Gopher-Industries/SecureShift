@@ -13,6 +13,10 @@ import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
+<<<<<<< HEAD
+=======
+import TermsScreen from '../screen/TermsScreen';
+>>>>>>> dc993c34 (Add Terms of Service screen and replace Coming Soon alert)
 import { useAppTheme } from '../theme';
 
 export type RootStackParamList = {
@@ -100,6 +104,14 @@ export default function AppNavigator() {
         component={ShiftDetailsScreen}
         options={{ headerShown: true, title: t('nav.shiftDetails') }}
       />
+<<<<<<< HEAD
+=======
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ headerShown: true, title: 'Terms of Service' }}
+      />
+>>>>>>> dc993c34 (Add Terms of Service screen and replace Coming Soon alert)
     </Stack.Navigator>
   );
 }
