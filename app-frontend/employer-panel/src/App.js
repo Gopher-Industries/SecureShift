@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 
 import ExpressionOfInterest from './pages/ExpressionOfInterest';
 import Login from './pages/Login';
-import TwoFA from './pages/2FA';
 
 import EmployerDashboard from './pages/EmployerDashboard';
 import CreateShift from './pages/createShift';
@@ -62,7 +61,7 @@ function App() {
         {/* PUBLIC ROUTES (NO AUTH REQUIRED) */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/2fa" element={<TwoFA />} />
+        <Route path="/2fa" element={<Login />} />
         <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
         <Route path="/submission" element={<SubmissionConfirmation />} />
 
