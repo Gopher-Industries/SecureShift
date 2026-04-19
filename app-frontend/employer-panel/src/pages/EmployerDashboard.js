@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
-import CreateShift from "./createShift";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -84,7 +83,6 @@ export default function EmployerDashboard() {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false); // <-- added
 
   // States for Incident Management
   const [selectedIncident, setSelectedIncident] = useState(null);
@@ -158,7 +156,7 @@ useEffect(() => {
         throw new Error(data.message || "Failed to load shifts.");
       }
 
-      setShifts(Array.isArray(data) ? data : []);
+      setShifts(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "Failed to load shifts.");
       console.error(err);
@@ -562,12 +560,7 @@ useEffect(() => {
         </div>
       )}
 
-      {showCreateModal && (
-        <CreateShift
-          isModal
-          onClose={() => setShowCreateModal(false)}
-        />
-      )}
+
     </div>
   );
 }

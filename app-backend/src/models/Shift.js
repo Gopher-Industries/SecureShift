@@ -12,10 +12,12 @@ const hhmmToMinutes = (s) => {
 
 const locationSchema = new Schema(
   {
-    street:   { type: String, trim: true },
-    suburb:   { type: String, trim: true },
-    state:    { type: String, trim: true },
+    street: { type: String, trim: true },
+    suburb: { type: String, trim: true },
+    state: { type: String, trim: true },
     postcode: { type: String, match: /^\d{4}$/ }, // 4 digits (AU)
+    latitude: { type: Number, min: -90, max: 90 },
+    longitude: { type: Number, min: -180, max: 180 },
   },
   { _id: false }
 );
@@ -59,7 +61,7 @@ const shiftSchema = new Schema(
       validate: {
         validator: function (v) {
           const start = hhmmToMinutes(this.startTime);
-          const end   = hhmmToMinutes(v);
+          const end = hhmmToMinutes(v);
           if (Number.isNaN(start) || Number.isNaN(end)) return false;
           const duration = (end - start + 1440) % 1440;
           return duration > 0;
@@ -70,6 +72,48 @@ const shiftSchema = new Schema(
 
     // Computed flag
     spansMidnight: { type: Boolean, default: false },
+
+    shiftType: {
+      type: String,
+      enum: ['Day', 'Night'],
+    },
+
+    // Break time in minutes
+    breakTime: {
+      type: Number,
+      min: [0, 'Break time cannot be negative'],
+      validate: {
+        validator: function (v) {
+          if (v == null) return true;
+          const start = hhmmToMinutes(this.startTime);
+          const end = hhmmToMinutes(this.endTime);
+          if (Number.isNaN(start) || Number.isNaN(end)) return true;
+          const duration = (end - start + 1440) % 1440;
+          return v < duration; // break must be less than total shift duration
+        },
+        message: 'Break time must be less than total shift duration',
+      },
+    },
+
+    // Optional instructions
+    detailedInstructions: { type: String, trim: true, maxlength: 4000 },
+
+    // Branch ID for multi-branch support
+    siteId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Branch',
+      index: true,
+    },
+
+    // Guard assignments
+    guardIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
+      validate: {
+        validator: (arr) => Array.isArray(arr) && arr.every(Boolean),
+        message: 'Guard IDs cannot contain null/undefined',
+      },
+    },
 
     // Location
     location: locationSchema,
@@ -98,8 +142,8 @@ const shiftSchema = new Schema(
     // Domain fields
     status: {
       type: String,
-      enum: ['open', 'applied', 'assigned', 'completed'],
-      default: 'open',
+      enum: ['draft', 'open', 'applied', 'assigned', 'completed'],
+      default: 'draft',
       index: true,
     },
 
@@ -156,6 +200,24 @@ shiftSchema
   .set(function (v) {
     this.acceptedBy = v;
   });
+
+// Virtual for attendance record
+shiftSchema
+  .virtual('attendance', {
+    ref:          'ShiftAttendance',
+    localField:   '_id',
+    foreignField: 'shiftId',
+    justOne:      true,
+});
+
+// Virtuals for check-in/out status
+shiftSchema.virtual('hasCheckedIn').get(function () {
+  return this.attendance?.checkInTime != null;
+});
+
+shiftSchema.virtual('hasCheckedOut').get(function () {
+  return this.attendance?.checkOutTime != null;
+});
 
 // Ensure virtuals in responses
 shiftSchema.set('toJSON', { virtuals: true });
