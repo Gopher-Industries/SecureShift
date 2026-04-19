@@ -103,6 +103,11 @@
   outline: none;
 }
 
+.cs-field select option {
+  color: #000000;
+  background: #ffffff;
+}
+
 .cs-field input:focus,
 .cs-field select:focus,
 .cs-field textarea:focus {
