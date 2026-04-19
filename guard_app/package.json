@@ -5,6 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "test": "jest",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -14,53 +15,59 @@
     "format:check": "prettier -c .",
     "prepare": "husky"
   },
+
+  "jest": {
+  "preset": "jest-expo",
+  "setupFilesAfterEnv": [
+    "<rootDir>/jest.setup.js"
+  ]
+},
+
   "dependencies": {
-    "@expo/metro-runtime": "~6.1.2",
-    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/bottom-tabs": "^7.4.7",
     "@react-navigation/material-top-tabs": "^7.3.7",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/native-stack": "^7.3.26",
-    "axios": "^1.7.9",
+    "axios": "^1.11.0",
     "date-fns": "^4.1.0",
-    "expo": "^54.0.33",
-    "expo-constants": "~18.0.13",
-    "expo-dev-client": "~6.0.20",
-    "expo-device": "~8.0.10",
+    "expo": "~54.0.0",
+    "expo-constants": "~17.1.7",
     "expo-document-picker": "~14.0.8",
-    "expo-image-picker": "~17.0.10",
-    "expo-location": "~19.0.8",
-    "expo-notifications": "~0.32.16",
-    "expo-status-bar": "~3.0.9",
+    "expo-image-picker": "~16.1.4",
+    "expo-modules-autolinking": "~3.0.22",
+    "expo-status-bar": "~2.2.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-pager-view": "6.9.1",
-    "react-native-progress": "^5.0.1",
-    "react-native-safe-area-context": "~5.6.0",
-    "react-native-screens": "~4.16.0",
-    "react-native-svg": "15.12.1",
-    "react-native-tab-view": "^4.1.3",
-    "react-native-web": "^0.21.0"
+    "react-native-pager-view": "6.7.1",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
+    "react-native-tab-view": "^4.1.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@types/react": "~19.1.10",
-    "@typescript-eslint/eslint-plugin": "^8.54.0",
-    "@typescript-eslint/parser": "^8.54.0",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/react": "^19.1.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-react": "^7.37.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-native": "^5.0.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-native": "^4.0.0",
     "husky": "^9.1.6",
+    "jest": "^29.7.0",
+    "jest-expo": "^55.0.15",
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
-    "typescript": "~5.9.2"
+    "react-test-renderer": "^19.1.0",
+    "typescript": "~5.5.4"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": [
