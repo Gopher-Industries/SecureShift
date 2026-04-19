@@ -132,24 +132,31 @@ export default function EmployerDashboard() {
     }
   ]);
 
+  // Fetch shifts for the logged-in employer 
 useEffect(() => {
   const fetchShifts = async () => {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://localhost:5000/api/v1/shifts", {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      console.log("fetch url:", `${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`);
+      console.log("response status:", response.status);
+      console.log("content-type:", response.headers.get("content-type"));
+      console.log("response url:", response.url);
+
       const data = await response.json();
+      console.log("shift response:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to load shifts.");
       }
 
-      setShifts(Array.isArray(data.items) ? data.items : []);
+      setShifts(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "Failed to load shifts.");
       console.error(err);
@@ -242,13 +249,13 @@ useEffect(() => {
       {/* -------- Overview -------- */}
       <main className="ss-main">
         <h2 className="ss-h1">Overview</h2>
-
+  
         {/* Controls ABOVE grey grid */}
         <div className="ss-controls">
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-              onClick={() => navigate("/create-shift")}
+              onClick={() => setShowCreateModal(true)}
             >
               <IconPlus className="ss-plus" /> Create Shift
             </button>
@@ -268,51 +275,110 @@ useEffect(() => {
             </div>
           </div>
         </div>
-
+  
         {/* Grey Grid */}
         <div className="ss-overview">
-          <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(overviewScroller, -320)}>‹</button>
+          <button
+            className="ss-arrow ss-arrow--left"
+            onClick={() => scrollByAmount(overviewScroller, -320)}
+          >
+            ‹
+          </button>
+  
           <div className="ss-panel">
-            <div ref={overviewScroller} className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}>
-
-
+            <div
+              ref={overviewScroller}
+              className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}
+            >
+  
+              {/* Create Shift Card (only in grid view) */}
+              {view === "grid" && (
+                <div
+                  className="ss-card ss-card--create"
+                  onClick={() => navigate("/create-shift")}
+                >
+                  <div className="ss-card__createicon"><IconPlus /></div>
+                  <div className="ss-card__createtext">Create Shift</div>
+                </div>
+              )}
+  
               {loading && <div>Loading shifts...</div>}
-              {error && <div style={{color:'red'}}>{error}</div>}
-              {!loading && !error && shifts.length === 0 && <div>No shifts found.</div>}
-              {shifts.map((s, idx) =>
-                view === "grid" ? (
-                  <div className="ss-card" key={idx}>
+              {error && <div style={{ color: "red" }}>{error}</div>}
+              {!loading && !error && shifts.length === 0 && <div>No shifts yet. Create your first shift.</div>}
+  
+              {shifts.map((s, idx) => {
+                const displayLocation =
+                  typeof s.location === "string"
+                    ? s.location
+                    : s.location
+                      ? [s.location.street, s.location.suburb, s.location.state]
+                          .filter(Boolean)
+                          .join(", ")
+                      : "No location";
+  
+                const displayDate = s.date
+                  ? new Date(s.date).toLocaleDateString()
+                  : "--";
+  
+                const displayTime =
+                  s.startTime && s.endTime
+                    ? `${s.startTime} - ${s.endTime}`
+                    : s.time || "--";
+  
+                const displayStatus = s.status || "open";
+                const displayRate = s.payRate ?? s.rate ?? 0;
+                const displayTitle = s.title || s.role || "Shift";
+  
+                return view === "grid" ? (
+                  <div className="ss-card" key={s._id || s.id || idx}>
                     <div className="ss-card__head">
-                      <div className="ss-role">{s.role}</div>
-                      <div className="ss-rate">${s.rate} p/h</div>
+                      <div className="ss-role">{displayTitle}</div>
+                      <div className="ss-rate">${displayRate} p/h</div>
                     </div>
-                    <div className="ss-meta">{s.company} — {s.venue}</div>
-                    <div className={`ss-status ss-status--${s.status.tone}`}>Status: {s.status.text}</div>
+  
+                    <div className="ss-meta">{displayLocation}</div>
+  
+                    <div className={`ss-status ss-status--${String(displayStatus).toLowerCase()}`}>
+                      Status: {displayStatus}
+                    </div>
+  
                     <div className="ss-when">
-                      <span className="ss-when__item"><IconCalendar className="ss-ico" />{s.date}</span>
-                      <span className="ss-when__item"><IconClock className="ss-ico" />{s.time}</span>
+                      <span className="ss-when__item">
+                        <IconCalendar className="ss-ico" />
+                        {displayDate}
+                      </span>
+                      <span className="ss-when__item">
+                        <IconClock className="ss-ico" />
+                        {displayTime}
+                      </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="ss-row" key={idx}>
-                    <div className="ss-col ss-role">{s.role}</div>
-                    <div className="ss-col ss-company">{s.company} — {s.venue}</div>
-                    <div className="ss-col ss-rate">${s.rate} p/h</div>
+                  <div className="ss-row" key={s._id || s.id || idx}>
+                    <div className="ss-col ss-role">{displayTitle}</div>
+                    <div className="ss-col ss-company">{displayLocation}</div>
+                    <div className="ss-col ss-rate">${displayRate} p/h</div>
                     <div className="ss-col ss-date">
-                      <IconCalendar className="ss-ico" /> {s.date}
+                      <IconCalendar className="ss-ico" /> {displayDate}
                     </div>
                     <div className="ss-col ss-time">
-                      <IconClock className="ss-ico" /> {s.time}
+                      <IconClock className="ss-ico" /> {displayTime}
                     </div>
-                    <div className={`ss-col ss-status ss-status--${s.status.tone}`}>
-                      Status: {s.status.text}
+                    <div className={`ss-col ss-status ss-status--${String(displayStatus).toLowerCase()}`}>
+                      Status: {displayStatus}
                     </div>
                   </div>
-                )
-              )}
+                );
+              })}
             </div>
           </div>
-          <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(overviewScroller, 320)}>›</button>
+  
+          <button
+            className="ss-arrow ss-arrow--right"
+            onClick={() => scrollByAmount(overviewScroller, 320)}
+          >
+            ›
+          </button>
         </div>
 
         {/* Incident Reports */}
