@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
-import CreateShift from "./createShift";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -84,7 +83,6 @@ export default function EmployerDashboard() {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false); // <-- added
 
   // States for Incident Management
   const [selectedIncident, setSelectedIncident] = useState(null);
@@ -250,7 +248,7 @@ useEffect(() => {
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-                onClick={() => setShowCreateModal(true)}
+              onClick={() => navigate("/create-shift")}
             >
               <IconPlus className="ss-plus" /> Create Shift
             </button>
@@ -277,13 +275,7 @@ useEffect(() => {
           <div className="ss-panel">
             <div ref={overviewScroller} className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}>
 
-              {/* Create Shift Card (only in grid view) */}
-              {view === "grid" && (
-                <div className="ss-card ss-card--create" onClick={() => navigate("/create-shift")}> 
-                  <div className="ss-card__createicon"><IconPlus /></div>
-                  <div className="ss-card__createtext">Create Shift</div>
-                </div>
-              )}
+
               {loading && <div>Loading shifts...</div>}
               {error && <div style={{color:'red'}}>{error}</div>}
               {!loading && !error && shifts.length === 0 && <div>No shifts found.</div>}
@@ -502,12 +494,7 @@ useEffect(() => {
         </div>
       )}
 
-      {showCreateModal && (
-        <CreateShift
-          isModal
-          onClose={() => setShowCreateModal(false)}
-        />
-      )}
+
     </div>
   );
 }

@@ -71,29 +71,6 @@ const shiftSchema = yup.object({
   newSiteAddress: yup.string(),
 });
 
-const seededSites = [
-  {
-    id: 'marvel-stadium',
-    name: 'Marvel Stadium',
-    address: '740 Bourke St, Docklands VIC',
-    lat: -37.8167,
-    lng: 144.9475,
-  },
-  {
-    id: 'chadstone',
-    name: 'Chadstone Shopping Centre',
-    address: '1341 Dandenong Rd, Chadstone VIC',
-    lat: -37.8864,
-    lng: 145.0828,
-  },
-  {
-    id: 'aig-hq',
-    name: 'AIG Solutions HQ',
-    address: '373 Collins St, Melbourne VIC',
-    lat: -37.8172,
-    lng: 144.9632,
-  },
-];
 
 const guardOptions = [
   { id: 'g-smith', name: 'John Smith', skills: 'Events, RSA' },
@@ -141,6 +118,12 @@ const existingShifts = [
 
 const mapDefault = { lat: -37.8136, lng: 144.9631 }; // Melbourne CBD
 
+const parseAddress = (address) => {
+  const match = address.match(/^(.+),\s*(.+?)\s+([A-Z]{2,3})\s+(\d{4})$/);
+  if (match) return { street: match[1], suburb: match[2], state: match[3], postcode: match[4] };
+  return { street: address, suburb: '', state: '', postcode: '' };
+};
+
 const slugify = (text) =>
   text
     .toLowerCase()
@@ -168,7 +151,8 @@ const loadGooglePlaces = (onReady, onError) => {
 
 const CreateShift = ({ isModal = false, onClose }) => {
   const navigate = useNavigate();
-  const [sites, setSites] = useState(seededSites);
+  const [sites, setSites] = useState([]);
+  const [pendingSiteId, setPendingSiteId] = useState(null);
   const [showNewSite, setShowNewSite] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [blockingIssues, setBlockingIssues] = useState([]);
@@ -213,8 +197,27 @@ const CreateShift = ({ isModal = false, onClose }) => {
 
   const watchSiteId = watch('siteId');
   const watchGuards = watch('guards');
+  const isExistingSite = Boolean(watchSiteId && watchSiteId !== '__new');
   const newSiteNameReg = register('newSiteName');
   const newSiteAddressReg = register('newSiteAddress');
+
+  useEffect(() => {
+    http.get('/branch/site')
+      .then((res) => {
+        const fetched = (res.data.sites || []).map((s) => ({
+          id: s._id,
+          name: s.name,
+          address: [s.location?.line1, s.location?.city, s.location?.state, s.location?.postcode]
+            .filter(Boolean).join(', '),
+          street: s.location?.line1,
+          suburb: s.location?.city,
+          state: s.location?.state,
+          postcode: s.location?.postcode,
+        }));
+        setSites(fetched);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     loadGooglePlaces(
@@ -310,6 +313,14 @@ const CreateShift = ({ isModal = false, onClose }) => {
     }
   }, [watchSiteId, sites, setValue]);
 
+  useEffect(() => {
+    if (!pendingSiteId) return;
+    if (sites.find((s) => s.id === pendingSiteId)) {
+      setValue('siteId', pendingSiteId, { shouldValidate: true });
+      setPendingSiteId(null);
+    }
+  }, [sites, pendingSiteId, setValue]);
+
   const overlaps = (startA, endA, startB, endB) => {
     if (!startA || !endA || !startB || !endB) return false;
     return startA < endB && endA > startB;
@@ -370,18 +381,26 @@ const CreateShift = ({ isModal = false, onClose }) => {
       setBlockingIssues([`Add new site: ${missing.join(' and ')} required`]);
       return;
     }
-    const newId = slugify(trimmedName);
-    const nextSite = {
-      id: newId,
-      name: trimmedName,
-      address: trimmedAddress,
-      lat: locationPin.lat,
-      lng: locationPin.lng,
-    };
-    setSites((prev) => [...prev, nextSite]);
-    setValue('siteId', newId, { shouldValidate: true });
-    setShowNewSite(false);
-    setBlockingIssues([]);
+    try {
+      const res = await http.post('/branch/site', {
+        name: trimmedName,
+        code: slugify(trimmedName),
+        location: { line1: trimmedAddress },
+      });
+      const newSite = res.data;
+      const nextSite = {
+        id: newSite._id,
+        name: newSite.name,
+        address: trimmedAddress,
+      };
+      setSites((prev) => [...prev, nextSite]);
+      setPendingSiteId(newSite._id);
+      setShowNewSite(false);
+      setBlockingIssues([]);
+    } catch (err) {
+      const message = err?.response?.data?.message || 'Failed to create site';
+      setBlockingIssues([message]);
+    }
   };
 
   const onPreview = (values) => {
@@ -411,14 +430,18 @@ const CreateShift = ({ isModal = false, onClose }) => {
       endTime: values.endTime,
       breakMinutes: values.breakMinutes,
       payRate: values.payRate,
-      shiftType: values.shiftType,
-      instructions: values.instructions,
+      shiftType: values.shiftType === 'day' ? 'Day' : 'Night',
+      description: values.instructions,
       guards: values.guards || [],
-      location: {
-        street: values.location,
-        lat: locationPin.lat,
-        lng: locationPin.lng,
-      },
+      location: (() => {
+        const parsed = parseAddress(selectedSite?.address || values.location);
+        return {
+          street: selectedSite?.street || parsed.street,
+          suburb: selectedSite?.suburb || parsed.suburb,
+          state: selectedSite?.state || parsed.state,
+          postcode: selectedSite?.postcode || parsed.postcode,
+        };
+      })(),
     };
 
     try {
@@ -542,21 +565,25 @@ const CreateShift = ({ isModal = false, onClose }) => {
                 render={({ field }) => (
                   <input
                     id="location"
-                    placeholder="Type to search and pin"
+                    placeholder={isExistingSite ? '' : 'Type to search and pin'}
+                    readOnly={isExistingSite}
                     {...field}
                     ref={(node) => {
                       locationInputRef.current = node;
                       field.ref(node);
                     }}
                     onChange={(e) => {
-                      field.onChange(e.target.value);
+                      if (!isExistingSite) field.onChange(e.target.value);
                     }}
+                    style={isExistingSite ? { cursor: 'default', opacity: 0.7 } : undefined}
                   />
                 )}
               />
               {renderFieldError('location')}
               <p className="cs-hint">
-                We pin this exact location on the map. Use autocomplete for accuracy.
+                {isExistingSite
+                  ? 'Location is set by the selected site.'
+                  : 'We pin this exact location on the map. Use autocomplete for accuracy.'}
               </p>
             </div>
 
