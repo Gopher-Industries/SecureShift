@@ -23,10 +23,11 @@ const DEFAULT_ROLE_PERMISSIONS = {
   [ROLES.SUPER_ADMIN]: ['*'],
   [ROLES.ADMIN]: [
     'user:read', 'user:write', 'user:delete',
-    'shift:read', 'shift:write', 'shift:assign',
-    'payment:read', 'payment:write', 'payment:refund',
-    'branch:read', 'branch:write',
-    'rbac:read', 'rbac:write',
+  'shift:read', 'shift:write', 'shift:assign',
+  'payment:read', 'payment:write', 'payment:refund',
+  'branch:read', 'branch:write',
+  'rbac:read', 'rbac:write',
+  'incident:create', 'incident:view', 'incident:update', 'incident:delete'
   ],
   [ROLES.BRANCH_ADMIN]: [
     'user:read', 'user:write',
@@ -36,10 +37,12 @@ const DEFAULT_ROLE_PERMISSIONS = {
   ],
   [ROLES.EMPLOYER]: [
     'shift:read', 'shift:write',
-    'payment:read', 'payment:write',
+  'payment:read', 'payment:write',
+  'incident:view', 'incident:update'
   ],
   [ROLES.GUARD]: [
     'shift:read', 'shift:accept', 'shift:checkin', 'shift:apply',
+  'incident:create', 'incident:view', 'incident:update'
   ],
   [ROLES.CLIENT]: [
     'shift:read',

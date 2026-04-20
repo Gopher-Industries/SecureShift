@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
-import CreateShift from "./createShift";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -52,6 +51,30 @@ const Star = ({ filled }) => (
   </svg>
 );
 
+const severityRank = {
+  High: 3,
+  Medium: 2,
+  Low: 1,
+};
+
+const parseIncidentDateTime = (incident) => {
+  const [day, month, year] = incident.date.split("-").map(Number);
+  const baseDate = new Date(year, month - 1, day);
+  const timeMatch = incident.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+
+  if (!timeMatch) return baseDate.getTime();
+
+  let hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const meridian = timeMatch[3].toUpperCase();
+
+  if (meridian === "PM" && hours < 12) hours += 12;
+  if (meridian === "AM" && hours === 12) hours = 0;
+
+  baseDate.setHours(hours, minutes, 0, 0);
+  return baseDate.getTime();
+};
+
 export default function EmployerDashboard() {
   const [view, setView] = useState("list"); // default list view
   const overviewScroller = useRef(null);
@@ -60,10 +83,14 @@ export default function EmployerDashboard() {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false); // <-- added
 
   // States for Incident Management
   const [selectedIncident, setSelectedIncident] = useState(null);
+  const [incidentDraft, setIncidentDraft] = useState({ severity: "Medium", comments: "" });
+  const [incidentQuery, setIncidentQuery] = useState("");
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState("All");
+  const [incidentSeverityFilter, setIncidentSeverityFilter] = useState("All");
+  const [incidentSort, setIncidentSort] = useState("Newest");
   const [incidents, setIncidents] = useState([
     { 
       id: "INC-9921", 
@@ -78,27 +105,58 @@ export default function EmployerDashboard() {
       // Demo Image
       photos: ["https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80"], 
       comments: ""
+    },
+    {
+      id: "INC-9920",
+      guard: "Leah Carter",
+      shift: "Gate Check - MCG",
+      date: "08-08-2025",
+      time: "08:15 PM",
+      status: "Resolved",
+      severity: "Medium",
+      description: "A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.",
+      photos: [],
+      comments: "Resolved on site, no further action required."
+    },
+    {
+      id: "INC-9919",
+      guard: "Aiden Ross",
+      shift: "Shopping Centre Security - Chadstone",
+      date: "07-08-2025",
+      time: "03:05 PM",
+      status: "Pending",
+      severity: "Low",
+      description: "Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.",
+      photos: ["https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80"],
+      comments: ""
     }
   ]);
 
+  // Fetch shifts for the logged-in employer 
 useEffect(() => {
   const fetchShifts = async () => {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://localhost:5000/api/v1/shifts", {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      console.log("fetch url:", `${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`);
+      console.log("response status:", response.status);
+      console.log("content-type:", response.headers.get("content-type"));
+      console.log("response url:", response.url);
+
       const data = await response.json();
+      console.log("shift response:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to load shifts.");
       }
 
-      setShifts(Array.isArray(data.items) ? data.items : []);
+      setShifts(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "Failed to load shifts.");
       console.error(err);
@@ -128,19 +186,76 @@ useEffect(() => {
     setSelectedIncident(null);
   };
 
+  const openIncidentModal = (incident) => {
+    setSelectedIncident(incident);
+    setIncidentDraft({
+      severity: incident.severity,
+      comments: incident.comments || "",
+    });
+  };
+
+  const filteredIncidents = useMemo(() => {
+    const normalizedQuery = incidentQuery.trim().toLowerCase();
+
+    return incidents
+      .filter((incident) => {
+        const matchesQuery =
+          normalizedQuery.length === 0 ||
+          incident.id.toLowerCase().includes(normalizedQuery) ||
+          incident.guard.toLowerCase().includes(normalizedQuery) ||
+          incident.shift.toLowerCase().includes(normalizedQuery) ||
+          incident.description.toLowerCase().includes(normalizedQuery);
+
+        const matchesStatus =
+          incidentStatusFilter === "All" || incident.status === incidentStatusFilter;
+
+        const matchesSeverity =
+          incidentSeverityFilter === "All" || incident.severity === incidentSeverityFilter;
+
+        return matchesQuery && matchesStatus && matchesSeverity;
+      })
+      .sort((a, b) => {
+        if (incidentSort === "Newest") {
+          return parseIncidentDateTime(b) - parseIncidentDateTime(a);
+        }
+
+        if (incidentSort === "Oldest") {
+          return parseIncidentDateTime(a) - parseIncidentDateTime(b);
+        }
+
+        if (incidentSort === "Severity") {
+          return (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
+        }
+
+        return 0;
+      });
+  }, [incidents, incidentQuery, incidentSeverityFilter, incidentSort, incidentStatusFilter]);
+
+  const incidentSummary = useMemo(() => {
+    return incidents.reduce(
+      (acc, incident) => {
+        acc.total += 1;
+        if (incident.status === "Pending") acc.pending += 1;
+        if (incident.status === "Resolved") acc.resolved += 1;
+        return acc;
+      },
+      { total: 0, pending: 0, resolved: 0 }
+    );
+  }, [incidents]);
+
   return (
     <div className="ss-page">
   
       {/* -------- Overview -------- */}
       <main className="ss-main">
         <h2 className="ss-h1">Overview</h2>
-
+  
         {/* Controls ABOVE grey grid */}
         <div className="ss-controls">
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-                onClick={() => setShowCreateModal(true)}
+              onClick={() => setShowCreateModal(true)}
             >
               <IconPlus className="ss-plus" /> Create Shift
             </button>
@@ -160,66 +275,164 @@ useEffect(() => {
             </div>
           </div>
         </div>
-
+  
         {/* Grey Grid */}
         <div className="ss-overview">
-          <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(overviewScroller, -320)}>‹</button>
+          <button
+            className="ss-arrow ss-arrow--left"
+            onClick={() => scrollByAmount(overviewScroller, -320)}
+          >
+            ‹
+          </button>
+  
           <div className="ss-panel">
-            <div ref={overviewScroller} className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}>
-
+            <div
+              ref={overviewScroller}
+              className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}
+            >
+  
               {/* Create Shift Card (only in grid view) */}
               {view === "grid" && (
-                <div className="ss-card ss-card--create" onClick={() => navigate("/create-shift")}> 
+                <div
+                  className="ss-card ss-card--create"
+                  onClick={() => navigate("/create-shift")}
+                >
                   <div className="ss-card__createicon"><IconPlus /></div>
                   <div className="ss-card__createtext">Create Shift</div>
                 </div>
               )}
+  
               {loading && <div>Loading shifts...</div>}
-              {error && <div style={{color:'red'}}>{error}</div>}
-              {!loading && !error && shifts.length === 0 && <div>No shifts found.</div>}
-              {shifts.map((s, idx) =>
-                view === "grid" ? (
-                  <div className="ss-card" key={idx}>
+              {error && <div style={{ color: "red" }}>{error}</div>}
+              {!loading && !error && shifts.length === 0 && <div>No shifts yet. Create your first shift.</div>}
+  
+              {shifts.map((s, idx) => {
+                const displayLocation =
+                  typeof s.location === "string"
+                    ? s.location
+                    : s.location
+                      ? [s.location.street, s.location.suburb, s.location.state]
+                          .filter(Boolean)
+                          .join(", ")
+                      : "No location";
+  
+                const displayDate = s.date
+                  ? new Date(s.date).toLocaleDateString()
+                  : "--";
+  
+                const displayTime =
+                  s.startTime && s.endTime
+                    ? `${s.startTime} - ${s.endTime}`
+                    : s.time || "--";
+  
+                const displayStatus = s.status || "open";
+                const displayRate = s.payRate ?? s.rate ?? 0;
+                const displayTitle = s.title || s.role || "Shift";
+  
+                return view === "grid" ? (
+                  <div className="ss-card" key={s._id || s.id || idx}>
                     <div className="ss-card__head">
-                      <div className="ss-role">{s.role}</div>
-                      <div className="ss-rate">${s.rate} p/h</div>
+                      <div className="ss-role">{displayTitle}</div>
+                      <div className="ss-rate">${displayRate} p/h</div>
                     </div>
-                    <div className="ss-meta">{s.company} — {s.venue}</div>
-                    <div className={`ss-status ss-status--${s.status.tone}`}>Status: {s.status.text}</div>
+  
+                    <div className="ss-meta">{displayLocation}</div>
+  
+                    <div className={`ss-status ss-status--${String(displayStatus).toLowerCase()}`}>
+                      Status: {displayStatus}
+                    </div>
+  
                     <div className="ss-when">
-                      <span className="ss-when__item"><IconCalendar className="ss-ico" />{s.date}</span>
-                      <span className="ss-when__item"><IconClock className="ss-ico" />{s.time}</span>
+                      <span className="ss-when__item">
+                        <IconCalendar className="ss-ico" />
+                        {displayDate}
+                      </span>
+                      <span className="ss-when__item">
+                        <IconClock className="ss-ico" />
+                        {displayTime}
+                      </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="ss-row" key={idx}>
-                    <div className="ss-col ss-role">{s.role}</div>
-                    <div className="ss-col ss-company">{s.company} — {s.venue}</div>
-                    <div className="ss-col ss-rate">${s.rate} p/h</div>
+                  <div className="ss-row" key={s._id || s.id || idx}>
+                    <div className="ss-col ss-role">{displayTitle}</div>
+                    <div className="ss-col ss-company">{displayLocation}</div>
+                    <div className="ss-col ss-rate">${displayRate} p/h</div>
                     <div className="ss-col ss-date">
-                      <IconCalendar className="ss-ico" /> {s.date}
+                      <IconCalendar className="ss-ico" /> {displayDate}
                     </div>
                     <div className="ss-col ss-time">
-                      <IconClock className="ss-ico" /> {s.time}
+                      <IconClock className="ss-ico" /> {displayTime}
                     </div>
-                    <div className={`ss-col ss-status ss-status--${s.status.tone}`}>
-                      Status: {s.status.text}
+                    <div className={`ss-col ss-status ss-status--${String(displayStatus).toLowerCase()}`}>
+                      Status: {displayStatus}
                     </div>
                   </div>
-                )
-              )}
+                );
+              })}
             </div>
           </div>
-          <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(overviewScroller, 320)}>›</button>
+  
+          <button
+            className="ss-arrow ss-arrow--right"
+            onClick={() => scrollByAmount(overviewScroller, 320)}
+          >
+            ›
+          </button>
         </div>
 
         {/* Incident Reports */}
         <h2 className="ss-h1 ss-h1--spaced">Incident Reports</h2>
+        <div className="ss-incident-toolbar">
+          <input
+            className="ss-incident-search"
+            placeholder="Search by incident ID, guard, shift, or description"
+            value={incidentQuery}
+            onChange={(e) => setIncidentQuery(e.target.value)}
+          />
+          <select value={incidentStatusFilter} onChange={(e) => setIncidentStatusFilter(e.target.value)}>
+            <option value="All">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+          <select value={incidentSeverityFilter} onChange={(e) => setIncidentSeverityFilter(e.target.value)}>
+            <option value="All">All Severities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <select value={incidentSort} onChange={(e) => setIncidentSort(e.target.value)}>
+            <option value="Newest">Sort: Newest</option>
+            <option value="Oldest">Sort: Oldest</option>
+            <option value="Severity">Sort: Severity</option>
+          </select>
+          <button
+            className="ss-secondary"
+            type="button"
+            onClick={() => {
+              setIncidentQuery("");
+              setIncidentStatusFilter("All");
+              setIncidentSeverityFilter("All");
+              setIncidentSort("Newest");
+            }}
+          >
+            Reset
+          </button>
+        </div>
+        <div className="ss-incident-summary">
+          <span>{incidentSummary.total} Total</span>
+          <span>{incidentSummary.pending} Pending</span>
+          <span>{incidentSummary.resolved} Resolved</span>
+          <span>{filteredIncidents.length} Showing</span>
+        </div>
         <div className="ss-overview">
           <div style={{ width: "44px" }}></div>
           <div className="ss-panel">
             <div className="ss-shifts ss-shifts--list">
-              {incidents.map((inc, i) => (
+              {filteredIncidents.length === 0 && (
+                <div className="ss-row ss-row--empty">No incident reports match the current filters.</div>
+              )}
+              {filteredIncidents.map((inc, i) => (
                 <div className="ss-row" key={i}>
                   <div className="ss-col ss-role"><b>{inc.guard}</b></div>
                   <div className="ss-col ss-company">{inc.shift}</div>
@@ -231,7 +444,7 @@ useEffect(() => {
                     {inc.status}
                   </div>
                   <div className="ss-col ss-time" style={{ textAlign: "right" }}>
-                    <button className="ss-secondary" style={{ width: '100px' }} onClick={() => setSelectedIncident(inc)}>Review</button>
+                    <button className="ss-secondary" style={{ width: '100px' }} onClick={() => openIncidentModal(inc)}>Review</button>
                   </div>
                 </div>
               ))}
@@ -288,7 +501,11 @@ useEffect(() => {
               </div>
               <div className="form-group">
                 <label>Assign Severity Level</label>
-                <select defaultValue={selectedIncident.severity} id="severitySelect" style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
+                <select
+                  value={incidentDraft.severity}
+                  onChange={(e) => setIncidentDraft((prev) => ({ ...prev, severity: e.target.value }))}
+                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
@@ -304,32 +521,46 @@ useEffect(() => {
             <div className="form-group" style={{ marginBottom: '20px' }}>
               <label>Evidence Photos</label>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {selectedIncident.photos.map((url, idx) => (
+                {(selectedIncident.photos || []).map((url, idx) => (
                   <img key={idx} src={url} alt="incident evidence" className="ss-evidence-img" />
                 ))}
+                {(!selectedIncident.photos || selectedIncident.photos.length === 0) && (
+                  <p style={{ margin: 0, color: '#666' }}>No evidence photos attached.</p>
+                )}
               </div>
             </div>
 
             <div className="form-group">
               <label>Employer Comments</label>
-              <textarea id="employerComments" placeholder="Add internal notes..." defaultValue={selectedIncident.comments} style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }} rows={4} />
+              <textarea
+                placeholder="Add internal notes..."
+                value={incidentDraft.comments}
+                onChange={(e) => setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))}
+                style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }}
+                rows={4}
+              />
             </div>
 
             <div className="actions" style={{ marginTop: '30px' }}>
-              <button className="primary" onClick={() => updateIncident(selectedIncident.id, "Resolved", document.getElementById('severitySelect').value, document.getElementById('employerComments').value)}>Mark as Resolved</button>
-              <button className="secondary" onClick={() => updateIncident(selectedIncident.id, "Pending", document.getElementById('severitySelect').value, document.getElementById('employerComments').value)}>Save as Pending</button>
+              <button
+                className="primary"
+                onClick={() => updateIncident(selectedIncident.id, "Resolved", incidentDraft.severity, incidentDraft.comments)}
+              >
+                Mark as Resolved
+              </button>
+              <button
+                className="secondary"
+                onClick={() => updateIncident(selectedIncident.id, "Pending", incidentDraft.severity, incidentDraft.comments)}
+              >
+                Save as Pending
+              </button>
               <button className="secondary" style={{ color: '#666' }} onClick={() => setSelectedIncident(null)}>Close</button>
             </div>
           </div>
         </div>
       )}
 
-      {showCreateModal && (
-        <CreateShift
-          isModal
-          onClose={() => setShowCreateModal(false)}
-        />
-      )}
+
     </div>
   );
 }

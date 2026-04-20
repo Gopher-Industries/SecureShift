@@ -52,12 +52,11 @@ export const createNotification = async (req, res) => {
       });
     }
 
-    // Role-based restriction
     const allowedRoles = [
-      ROLES.SUPER_ADMIN,
-      ROLES.ADMIN,
-      ROLES.BRANCH_ADMIN,
-      ROLES.EMPLOYER,
+      'super_admin',
+      'admin',
+      'branch_admin',
+      'employer',
     ];
 
     if (!allowedRoles.includes(req.user.role)) {

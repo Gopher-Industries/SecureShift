@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import http from "../lib/http";
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import http from '../lib/http';
 
 export default function GuardProfilePage() {
   const { guardId } = useParams();
@@ -15,7 +15,7 @@ export default function GuardProfilePage() {
         const res = await http.get(`/guards/${guardId}/profile`);
         setData(res.data);
       } catch (err) {
-        setError("Failed to load guard profile");
+        setError('Failed to load guard profile');
       } finally {
         setLoading(false);
       }
@@ -28,7 +28,7 @@ export default function GuardProfilePage() {
   if (error) return <div>{error}</div>;
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: '20px' }}>
       <h1>Guard Profile</h1>
       <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
