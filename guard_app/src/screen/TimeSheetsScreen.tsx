@@ -13,7 +13,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { getMyAttendance, type Attendance } from '../api/attendance';
+import { getUserAttendance, type Attendance } from '../api/attendance';
+import http from '../lib/http';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
@@ -53,12 +54,21 @@ export default function TimesheetsScreen() {
 
   const load = async () => {
     try {
-      const rows = await getMyAttendance();
+      const { data: me } = await http.get('/users/me');
+      const userId = me?._id;
+
+      if (!userId) {
+        throw new Error('Unable to find logged-in user');
+      }
+
+      const rows = await getUserAttendance(userId);
       setItems(rows);
     } catch (e: unknown) {
       if (e instanceof AxiosError) {
         const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
         Alert.alert('Error', msg);
+      } else if (e instanceof Error) {
+        Alert.alert('Error', e.message);
       } else {
         Alert.alert('Error', 'Failed to load timesheets');
       }
@@ -94,7 +104,11 @@ export default function TimesheetsScreen() {
     return (
       <TouchableOpacity
         style={s.card}
-        onPress={() => navigation.navigate('ShiftDetails', { shiftId: item.shiftId })}
+        onPress={() =>
+          navigation.navigate('ShiftDetails', {
+            shiftId: typeof item.shiftId === 'object' ? item.shiftId?._id : item.shiftId,
+          })
+        }
       >
         <Text style={s.title}>{fmtShiftLabel(item)}</Text>
 
