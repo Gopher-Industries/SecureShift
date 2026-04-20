@@ -65,7 +65,7 @@ export async function checkOut(shiftId: string, loc: LocationPayload) {
 // ✅ Timesheets list
 export async function getUserAttendance(
   userId: string,
-  params?: { from?: string; to?: string }
+  params?: { from?: string; to?: string },
 ): Promise<Attendance[]> {
   if (!userId || userId === 'undefined' || userId === 'null') {
     throw new Error('Missing valid userId for attendance request');
