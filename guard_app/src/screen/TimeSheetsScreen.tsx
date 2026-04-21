@@ -2,6 +2,7 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { AxiosError } from 'axios';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -47,6 +48,7 @@ export default function TimesheetsScreen() {
   const navigation = useNavigation<any>();
   const { colors } = useAppTheme();
   const s = getStyles(colors);
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -98,7 +100,9 @@ export default function TimesheetsScreen() {
         ? (
             (new Date(item.checkOutTime).getTime() - new Date(item.checkInTime).getTime()) /
             (1000 * 60 * 60)
-          ).toFixed(1) + ' hrs'
+          ).toFixed(1) +
+          ' ' +
+          t('timesheet.hrs')
         : '—';
 
     return (
@@ -113,31 +117,35 @@ export default function TimesheetsScreen() {
         <Text style={s.title}>{fmtShiftLabel(item)}</Text>
 
         <View style={s.row}>
-          <Text style={s.label}>Check In:</Text>
+          <Text style={s.label}>{t('timesheet.checkIn')}</Text>
           <Text style={s.value}>{fmtDateTime(item.checkInTime)}</Text>
         </View>
 
         <View style={s.row}>
-          <Text style={s.label}>Check Out:</Text>
+          <Text style={s.label}>{t('timesheet.checkOut')}</Text>
           <Text style={s.value}>{fmtDateTime(item.checkOutTime)}</Text>
         </View>
 
         <View style={s.row}>
-          <Text style={s.label}>Hours:</Text>
+          <Text style={s.label}>{t('timesheet.hours')}</Text>
           <Text style={s.value}>{hours}</Text>
         </View>
 
         <View style={s.rowBetween}>
           <Text style={s.meta}>
-            Status:{' '}
+            {t('timesheet.status')}{' '}
             <Text style={checkedIn ? s.ok : s.muted}>
-              {checkedOut ? 'Completed' : checkedIn ? 'In progress' : 'Not started'}
+              {checkedOut
+                ? t('timesheet.completed')
+                : checkedIn
+                  ? t('timesheet.inProgress')
+                  : t('timesheet.notStarted')}
             </Text>
           </Text>
 
           <View style={[s.badge, item.locationVerified ? s.badgeOk : s.badgeWarn]}>
             <Text style={[s.badgeText, item.locationVerified ? s.badgeTextOk : s.badgeTextWarn]}>
-              {item.locationVerified ? 'Verified' : 'Not verified'}
+              {item.locationVerified ? t('timesheet.verified') : t('timesheet.notVerified')}
             </Text>
           </View>
         </View>
@@ -149,7 +157,7 @@ export default function TimesheetsScreen() {
     return (
       <View style={s.center}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={s.loadingText}>Loading timesheets...</Text>
+        <Text style={s.loadingText}>{t('timesheet.loading')}</Text>
       </View>
     );
   }
@@ -162,7 +170,7 @@ export default function TimesheetsScreen() {
         renderItem={renderItem}
         contentContainerStyle={s.listContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={<Text style={s.empty}>No timesheet records yet.</Text>}
+        ListEmptyComponent={<Text style={s.empty}>{t('timesheet.empty')}</Text>}
       />
     </View>
   );

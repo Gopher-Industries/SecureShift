@@ -1,6 +1,7 @@
 // guard_app/src/screen/AvailabilityScreen.tsx
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -33,7 +34,29 @@ function extractTimeSlots(data: unknown): string[] {
 
 export default function AvailabilityScreen() {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const styles = getStyles(colors);
+
+  const getLocalizedDay = (dayEn: string, short = false) => {
+    switch (dayEn) {
+      case 'Monday':
+        return short ? t('avail.mon') : t('avail.monFull');
+      case 'Tuesday':
+        return short ? t('avail.tue') : t('avail.tueFull');
+      case 'Wednesday':
+        return short ? t('avail.wed') : t('avail.wedFull');
+      case 'Thursday':
+        return short ? t('avail.thu') : t('avail.thuFull');
+      case 'Friday':
+        return short ? t('avail.fri') : t('avail.friFull');
+      case 'Saturday':
+        return short ? t('avail.sat') : t('avail.satFull');
+      case 'Sunday':
+        return short ? t('avail.sun') : t('avail.sunFull');
+      default:
+        return dayEn;
+    }
+  };
 
   const [userId, setUserId] = useState<string | null>(null);
   const [days, setDays] = useState<string[]>([]);
@@ -96,12 +119,12 @@ export default function AvailabilityScreen() {
     options?: { showSuccess?: boolean },
   ) => {
     if (!userId) {
-      Alert.alert('Error', 'User not loaded');
+      Alert.alert(t('avail.errorText'), t('avail.userNotLoaded'));
       return false;
     }
 
     if (nextDays.length === 0 || nextTimeSlots.length === 0) {
-      Alert.alert('Validation', 'Please select at least one day and one time slot.');
+      Alert.alert(t('avail.validation'), t('avail.selectOneMsg'));
       return false;
     }
 
@@ -110,12 +133,12 @@ export default function AvailabilityScreen() {
       const payload: AvailabilityData = { userId, days: nextDays, timeSlots: nextTimeSlots };
       await upsertAvailability(payload);
       if (options?.showSuccess) {
-        Alert.alert('Success', 'Availability saved');
+        Alert.alert(t('docs.success') || 'Success', t('avail.savedSuccess'));
       }
       return true;
     } catch (e) {
       console.error(e);
-      Alert.alert('Error', 'Failed to save availability');
+      Alert.alert(t('avail.errorText'), t('avail.saveFailed'));
       return false;
     } finally {
       setSaving(false);
@@ -130,7 +153,7 @@ export default function AvailabilityScreen() {
 
         const me = await getMe();
         const id = me?._id ?? me?.id;
-        if (!id) throw new Error('Unable to determine user ID');
+        if (!id) throw new Error(t('avail.determineIdFailed'));
         setUserId(id);
 
         const data = await getAvailability(id);
@@ -140,7 +163,7 @@ export default function AvailabilityScreen() {
         }
       } catch (e) {
         console.error(e);
-        setError('Failed to load availability');
+        setError(t('avail.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -156,7 +179,7 @@ export default function AvailabilityScreen() {
   const getOrderedShortDays = () => {
     const orderedShortDays = [];
     for (let i = 0; i < WEEK_DAYS.length; i++) {
-      if (days.includes(WEEK_DAYS[i])) orderedShortDays.push(SHORT_DAYS[i]);
+      if (days.includes(WEEK_DAYS[i])) orderedShortDays.push(getLocalizedDay(WEEK_DAYS[i], true));
     }
     return <Text>{orderedShortDays.join(' ')}</Text>;
   };
@@ -205,7 +228,7 @@ export default function AvailabilityScreen() {
     if (!selectedDate) return;
 
     if (!fromTime || !toTime) {
-      Alert.alert('Error', 'Please enter both start and end times');
+      Alert.alert(t('avail.errorText'), t('avail.enterStartEnd'));
       return;
     }
 
@@ -215,7 +238,7 @@ export default function AvailabilityScreen() {
     };
 
     if (convertToMinutes(fromTime) >= convertToMinutes(toTime)) {
-      Alert.alert('Error', 'End time must be after start time');
+      Alert.alert(t('avail.errorText'), t('avail.endAfterStart'));
       return;
     }
 
@@ -236,15 +259,15 @@ export default function AvailabilityScreen() {
   };
 
   const handleRemoveCalendarSlot = async (slotLabel: string) => {
-    Alert.alert('Remove', 'Remove this time slot?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('avail.removeTitle'), t('avail.removeMsg'), [
+      { text: t('avail.cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: t('avail.removeBtn'),
         style: 'destructive',
         onPress: async () => {
           const nextTimeSlots = timeSlots.filter((s) => s !== slotLabel);
           if (nextTimeSlots.length === 0) {
-            Alert.alert('Validation', 'Please keep at least one time slot.');
+            Alert.alert(t('avail.validation'), t('avail.keepOneSlot'));
             return;
           }
 
@@ -277,7 +300,7 @@ export default function AvailabilityScreen() {
     <View style={styles.container}>
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      <Text style={styles.sectionTitle}>Days you are available</Text>
+      <Text style={styles.sectionTitle}>{t('avail.daysAvailable')}</Text>
       <View style={styles.daysRow}>
         {WEEK_DAYS.map((day) => {
           const selected = days.includes(day);
@@ -288,17 +311,17 @@ export default function AvailabilityScreen() {
               onPress={() => toggleDay(day)}
             >
               <Text style={selected ? styles.dayChipTextSelected : styles.dayChipText}>
-                {day.slice(0, 3)}
+                {getLocalizedDay(day, true)}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      <Text style={styles.sectionTitle}>Time slots</Text>
+      <Text style={styles.sectionTitle}>{t('avail.timeSlots')}</Text>
 
       {timeSlots.length === 0 ? (
-        <Text style={styles.helperTextMuted}>No time slots added yet.</Text>
+        <Text style={styles.helperTextMuted}>{t('avail.noSlotsAdded')}</Text>
       ) : (
         timeSlots.map((slot) => (
           <View key={slot} style={styles.slotRow}>
@@ -306,7 +329,7 @@ export default function AvailabilityScreen() {
               • {getOrderedShortDays()} - {slot}
             </Text>
             <TouchableOpacity onPress={() => handleRemoveSlot(slot)} style={styles.removeButton}>
-              <Text style={styles.removeButtonText}>Remove</Text>
+              <Text style={styles.removeButtonText}>{t('avail.removeBtn')}</Text>
             </TouchableOpacity>
           </View>
         ))
@@ -314,13 +337,13 @@ export default function AvailabilityScreen() {
 
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.primaryButton} onPress={() => setModalVisible(true)}>
-          <Text style={styles.primaryButtonText}>Add availability</Text>
+          <Text style={styles.primaryButtonText}>{t('avail.addAvailability')}</Text>
         </TouchableOpacity>
 
         <View style={styles.spacer} />
 
         <TouchableOpacity style={styles.secondaryButton} onPress={clearSlots}>
-          <Text style={styles.secondaryButtonText}>Clear slots</Text>
+          <Text style={styles.secondaryButtonText}>{t('avail.clearSlots')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -330,7 +353,9 @@ export default function AvailabilityScreen() {
           onPress={handleSave}
           disabled={saving}
         >
-          <Text style={styles.primaryButtonText}>{saving ? 'Saving…' : 'Save Availability'}</Text>
+          <Text style={styles.primaryButtonText}>
+            {saving ? t('avail.saving') : t('avail.save')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -347,7 +372,9 @@ export default function AvailabilityScreen() {
       <View style={styles.weekHeader}>
         {weekDays.map((day, idx) => (
           <View key={idx} style={styles.weekDay}>
-            <Text style={styles.weekDayName}>{SHORT_DAYS[idx]}</Text>
+            <Text style={styles.weekDayName}>
+              {getLocalizedDay(WEEK_DAYS[day.getDay() === 0 ? 6 : day.getDay() - 1], true)}
+            </Text>
             <Text style={styles.weekDayDate}>{day.getDate()}</Text>
           </View>
         ))}
@@ -388,7 +415,7 @@ export default function AvailabilityScreen() {
       </ScrollView>
 
       <View style={styles.slotsSummary}>
-        <Text style={styles.slotsSummaryTitle}>This Week&apos;s Availability</Text>
+        <Text style={styles.slotsSummaryTitle}>{t('avail.thisWeek')}</Text>
         {weekDays.map((day, idx) => {
           const daySlots = getSlotsForDate(day);
           if (daySlots.length === 0) return null;
@@ -396,13 +423,14 @@ export default function AvailabilityScreen() {
           return (
             <View key={idx} style={styles.daySummary}>
               <Text style={styles.daySummaryDay}>
-                {SHORT_DAYS[idx]} {day.getDate()}
+                {getLocalizedDay(WEEK_DAYS[day.getDay() === 0 ? 6 : day.getDay() - 1], true)}{' '}
+                {day.getDate()}
               </Text>
               {daySlots.map((slot) => (
                 <View key={slot} style={styles.slotItemRow}>
                   <Text style={styles.slotTime}>{slot}</Text>
                   <TouchableOpacity onPress={() => handleRemoveCalendarSlot(slot)}>
-                    <Text style={styles.removeButtonText}>Remove</Text>
+                    <Text style={styles.removeButtonText}>{t('avail.removeBtn')}</Text>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -417,9 +445,9 @@ export default function AvailabilityScreen() {
     <ScrollView style={styles.calendarContainer}>
       <View style={styles.monthGrid}>
         <View style={styles.monthWeekHeader}>
-          {SHORT_DAYS.map((day, idx) => (
+          {SHORT_DAYS.map((_, idx) => (
             <View key={idx} style={styles.monthWeekDay}>
-              <Text style={styles.monthWeekDayText}>{day}</Text>
+              <Text style={styles.monthWeekDayText}>{getLocalizedDay(WEEK_DAYS[idx], true)}</Text>
             </View>
           ))}
         </View>
@@ -471,7 +499,7 @@ export default function AvailabilityScreen() {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={colors.primary} />
-        <Text style={styles.loadingText}>Loading availability…</Text>
+        <Text style={styles.loadingText}>{t('avail.loading')}</Text>
       </View>
     );
   }
@@ -491,7 +519,7 @@ export default function AvailabilityScreen() {
           onPress={() => setViewMode('simple')}
         >
           <Text style={[styles.toggleText, viewMode === 'simple' && styles.toggleTextActive]}>
-            Simple
+            {t('avail.simple')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -499,7 +527,7 @@ export default function AvailabilityScreen() {
           onPress={() => setViewMode('weekly')}
         >
           <Text style={[styles.toggleText, viewMode === 'weekly' && styles.toggleTextActive]}>
-            Weekly
+            {t('avail.weekly')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -507,7 +535,7 @@ export default function AvailabilityScreen() {
           onPress={() => setViewMode('monthly')}
         >
           <Text style={[styles.toggleText, viewMode === 'monthly' && styles.toggleTextActive]}>
-            Monthly
+            {t('avail.monthly')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -519,7 +547,7 @@ export default function AvailabilityScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={goToToday} style={styles.todayBtn}>
-            <Text style={styles.todayBtnText}>Today</Text>
+            <Text style={styles.todayBtnText}>{t('avail.today')}</Text>
           </TouchableOpacity>
 
           <Text style={styles.navDate}>{headerDate}</Text>
@@ -537,11 +565,11 @@ export default function AvailabilityScreen() {
       <Modal visible={showCalendarModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Availability</Text>
+            <Text style={styles.modalTitle}>{t('avail.addAvailTitle')}</Text>
 
             {selectedDate && (
               <View style={styles.modalField}>
-                <Text style={styles.modalLabel}>Date</Text>
+                <Text style={styles.modalLabel}>{t('avail.date')}</Text>
                 <Text style={styles.modalValue}>
                   {selectedDate.toLocaleDateString('en-US', {
                     weekday: 'short',
@@ -554,7 +582,7 @@ export default function AvailabilityScreen() {
             )}
 
             <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>From</Text>
+              <Text style={styles.modalLabel}>{t('avail.from')}</Text>
               <TextInput
                 style={styles.modalInput}
                 value={fromTime}
@@ -565,7 +593,7 @@ export default function AvailabilityScreen() {
             </View>
 
             <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>To</Text>
+              <Text style={styles.modalLabel}>{t('avail.to')}</Text>
               <TextInput
                 style={styles.modalInput}
                 value={toTime}
@@ -585,7 +613,7 @@ export default function AvailabilityScreen() {
                   setToTime('17:00');
                 }}
               >
-                <Text style={styles.modalBtnCancelText}>Cancel</Text>
+                <Text style={styles.modalBtnCancelText}>{t('avail.cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -593,7 +621,7 @@ export default function AvailabilityScreen() {
                 onPress={handleAddCalendarSlot}
                 disabled={saving}
               >
-                <Text style={styles.modalBtnAddText}>Add</Text>
+                <Text style={styles.modalBtnAddText}>{t('avail.addBtn')}</Text>
               </TouchableOpacity>
             </View>
           </View>
