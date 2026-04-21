@@ -1,6 +1,7 @@
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -157,6 +158,7 @@ function ShiftDetailsModal({
   colors: AppColors;
 }) {
   const s = getStyles(colors);
+  const { t } = useTranslation();
 
   if (!shift) return null;
 
@@ -175,7 +177,7 @@ function ShiftDetailsModal({
       <Pressable style={s.modalOverlay} onPress={onClose}>
         <Pressable style={s.modalContent} onPress={(e) => e.stopPropagation()}>
           <View style={s.modalHeader}>
-            <Text style={s.modalTitle}>Shift Details</Text>
+            <Text style={s.modalTitle}>{t('shifts.shiftDetails')}</Text>
             <TouchableOpacity onPress={onClose} style={s.modalCloseBtn}>
               <Text style={s.modalCloseText}>✕</Text>
             </TouchableOpacity>
@@ -185,12 +187,14 @@ function ShiftDetailsModal({
             <View style={s.modalTitleRow}>
               <Text style={s.modalShiftTitle}>{shift.title}</Text>
               <View style={[s.statusBadge, { backgroundColor: statusColor }]}>
-                <Text style={s.statusBadgeText}>{status || 'Available'}</Text>
+                <Text style={s.statusBadgeText}>
+                  {status ? t(`shifts.${status.toLowerCase()}`, status) : t('shifts.available')}
+                </Text>
               </View>
             </View>
 
             <View style={s.modalDetail}>
-              <Text style={s.modalLabel}>Date:</Text>
+              <Text style={s.modalLabel}>{t('shifts.date')}</Text>
               <Text style={s.modalValue}>
                 {new Date(shift.date).toLocaleDateString('en-US', {
                   weekday: 'short',
@@ -202,22 +206,22 @@ function ShiftDetailsModal({
             </View>
 
             <View style={s.modalDetail}>
-              <Text style={s.modalLabel}>Time:</Text>
+              <Text style={s.modalLabel}>{t('shifts.time')}</Text>
               <Text style={s.modalValue}>{shift.time}</Text>
             </View>
 
             <View style={s.modalDetail}>
-              <Text style={s.modalLabel}>Location:</Text>
+              <Text style={s.modalLabel}>{t('shifts.location')}</Text>
               <Text style={s.modalValue}>{shift.site}</Text>
             </View>
 
             <View style={s.modalDetail}>
-              <Text style={s.modalLabel}>Pay Rate:</Text>
+              <Text style={s.modalLabel}>{t('shifts.payRate')}</Text>
               <Text style={s.modalValue}>{shift.rate}</Text>
             </View>
 
             <View style={s.modalRequirements}>
-              <Text style={s.modalRequirementsTitle}>Requirements:</Text>
+              <Text style={s.modalRequirementsTitle}>{t('shifts.requirements')}</Text>
               <View style={s.modalTags}>
                 <View style={s.modalTag}>
                   <Text style={s.modalTagText}>Security License</Text>
@@ -244,6 +248,7 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
   colors: AppColors;
 }) {
   const s = getStyles(colors);
+  const { t } = useTranslation();
   const [monthCursor, setMonthCursor] = useState(() => new Date());
 
   const monthStart = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
@@ -338,19 +343,19 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
       <View style={s.calLegend}>
         <View style={s.calLegendItem}>
           <View style={[s.calLegendDot, { backgroundColor: colors.primary }]} />
-          <Text style={s.calLegendText}>Available</Text>
+          <Text style={s.calLegendText}>{t('shifts.available')}</Text>
         </View>
         <View style={s.calLegendItem}>
           <View style={[s.calLegendDot, { backgroundColor: colors.link }]} />
-          <Text style={s.calLegendText}>Applied</Text>
+          <Text style={s.calLegendText}>{t('shifts.applied')}</Text>
         </View>
         <View style={s.calLegendItem}>
           <View style={[s.calLegendDot, { backgroundColor: colors.status.confirmed }]} />
-          <Text style={s.calLegendText}>Accepted</Text>
+          <Text style={s.calLegendText}>{t('shifts.accepted')}</Text>
         </View>
         <View style={s.calLegendItem}>
           <View style={[s.calLegendDot, { backgroundColor: colors.muted }]} />
-          <Text style={s.calLegendText}>Completed</Text>
+          <Text style={s.calLegendText}>{t('shifts.completed')}</Text>
         </View>
       </View>
     </View>
@@ -373,6 +378,7 @@ function ShiftCard({
   applying?: boolean;
 }) {
   const s = getStyles(colors);
+  const { t } = useTranslation();
 
   const status = 'status' in shift ? shift.status : 'Completed';
 
@@ -397,11 +403,15 @@ function ShiftCard({
               onPress={onApply}
               disabled={applying}
             >
-              <Text style={s.applyBtnText}>{applying ? 'Applying...' : 'Apply'}</Text>
+              <Text style={s.applyBtnText}>
+                {applying ? t('shifts.applying') : t('shifts.apply')}
+              </Text>
             </TouchableOpacity>
           ) : (
             <View style={[s.cardStatusBadge, { backgroundColor: statusColor }]}>
-              <Text style={s.cardStatusText}>{status || 'Available'}</Text>
+              <Text style={s.cardStatusText}>
+                {status ? t(`shifts.${status.toLowerCase()}`, status) : t('shifts.available')}
+              </Text>
             </View>
           )}
         </View>
@@ -410,7 +420,7 @@ function ShiftCard({
       <Text style={s.cardCompany}>{shift.company}</Text>
 
       <View style={s.cardRow}>
-        <Text style={s.cardLabel}>Date:</Text>
+        <Text style={s.cardLabel}>{t('shifts.date')}</Text>
         <Text style={s.cardValue}>
           {new Date(shift.date).toLocaleDateString('en-US', {
             month: 'short',
@@ -421,12 +431,12 @@ function ShiftCard({
       </View>
 
       <View style={s.cardRow}>
-        <Text style={s.cardLabel}>Time:</Text>
+        <Text style={s.cardLabel}>{t('shifts.time')}</Text>
         <Text style={s.cardValue}>{shift.time}</Text>
       </View>
 
       <View style={s.cardRow}>
-        <Text style={s.cardLabel}>Pay:</Text>
+        <Text style={s.cardLabel}>{t('shifts.payRate')}</Text>
         <Text style={s.cardPay}>{shift.rate}</Text>
       </View>
     </TouchableOpacity>
@@ -465,6 +475,7 @@ function ViewToggle({
 function AllTab() {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
+  const { t } = useTranslation();
 
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<AllShift[]>([]);
@@ -521,7 +532,7 @@ function AllTab() {
           <TextInput
             value={q}
             onChangeText={setQ}
-            placeholder="Search shifts..."
+            placeholder={t('shifts.search')}
             placeholderTextColor={colors.muted}
             style={s.searchInput}
           />
@@ -549,7 +560,7 @@ function AllTab() {
             />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>No shifts found</Text>}
+          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
         />
       )}
 
@@ -566,6 +577,7 @@ function AllTab() {
 function AppliedTab() {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
+  const { t } = useTranslation();
 
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<AppliedShift[]>([]);
@@ -610,7 +622,7 @@ function AppliedTab() {
           <TextInput
             value={q}
             onChangeText={setQ}
-            placeholder="Search shifts..."
+            placeholder={t('shifts.search')}
             placeholderTextColor={colors.muted}
             style={s.searchInput}
           />
@@ -631,7 +643,7 @@ function AppliedTab() {
             <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>No shifts found</Text>}
+          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
         />
       )}
 
@@ -648,6 +660,7 @@ function AppliedTab() {
 function CompletedTab() {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
+  const { t } = useTranslation();
 
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<CompletedShift[]>([]);
@@ -686,7 +699,7 @@ function CompletedTab() {
           <TextInput
             value={q}
             onChangeText={setQ}
-            placeholder="Search shifts..."
+            placeholder={t('shifts.search')}
             placeholderTextColor={colors.muted}
             style={s.searchInput}
           />
@@ -711,7 +724,7 @@ function CompletedTab() {
             <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>No completed shifts found</Text>}
+          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noCompleted')}</Text>}
         />
       )}
 
@@ -729,6 +742,7 @@ const Top = createMaterialTopTabNavigator();
 
 export default function ShiftsScreen() {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <Top.Navigator
@@ -754,9 +768,17 @@ export default function ShiftsScreen() {
         tabBarInactiveTintColor: colors.muted,
       }}
     >
-      <Top.Screen name="All" component={AllTab} />
-      <Top.Screen name="Applied" component={AppliedTab} />
-      <Top.Screen name="Completed" component={CompletedTab} />
+      <Top.Screen name="All" component={AllTab} options={{ tabBarLabel: t('shifts.all') }} />
+      <Top.Screen
+        name="Applied"
+        component={AppliedTab}
+        options={{ tabBarLabel: t('shifts.applied') }}
+      />
+      <Top.Screen
+        name="Completed"
+        component={CompletedTab}
+        options={{ tabBarLabel: t('shifts.completed') }}
+      />
     </Top.Navigator>
   );
 }

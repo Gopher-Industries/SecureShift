@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -27,6 +28,7 @@ import { AppColors } from '../theme/colors';
 export default function LoginScreen({ navigation }: any) {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,8 +41,8 @@ export default function LoginScreen({ navigation }: any) {
   const validate = () => {
     const e = email.trim().toLowerCase();
     const emailOk = /^\S+@\S+\.\S+$/.test(e);
-    if (!emailOk) return 'Please enter a valid email address.';
-    if (password.length < 6) return 'Password must be at least 6 characters.';
+    if (!emailOk) return t('err.invalidEmail');
+    if (password.length < 6) return t('err.shortPassword');
     return null;
   };
 
@@ -54,7 +56,7 @@ export default function LoginScreen({ navigation }: any) {
     const msg = validate();
     if (msg) {
       setError(msg);
-      Alert.alert('Invalid input', msg);
+      Alert.alert(t('login.invalidInput'), msg);
       return;
     }
 
@@ -68,12 +70,12 @@ export default function LoginScreen({ navigation }: any) {
         await goToApp();
       } else {
         setOtpMode(true);
-        Alert.alert('OTP required', 'Please enter the code sent to your email.');
+        Alert.alert(t('login.otpRequired'), t('login.otpMsg'));
       }
     } catch (e: any) {
-      const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Try again';
+      const apiMsg = e?.response?.data?.message ?? e?.message ?? t('err.tryAgain');
       setError(apiMsg);
-      Alert.alert('Login failed', apiMsg);
+      Alert.alert(t('login.loginFailed'), apiMsg);
     } finally {
       setSubmitting(false);
     }
@@ -83,7 +85,7 @@ export default function LoginScreen({ navigation }: any) {
     Keyboard.dismiss();
 
     if (!otp.trim()) {
-      Alert.alert('OTP required', 'Enter your OTP code.');
+      Alert.alert(t('login.otpRequired'), t('login.otpMsgReq'));
       return;
     }
 
@@ -124,9 +126,9 @@ export default function LoginScreen({ navigation }: any) {
         Alert.alert('Unknown License Status', `Status: ${status}`);
       }
     } catch (e: any) {
-      const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Invalid or expired code';
+      const apiMsg = e?.response?.data?.message ?? e?.message ?? t('err.tryAgain');
       setError(apiMsg);
-      Alert.alert('OTP verification failed', apiMsg);
+      Alert.alert(t('login.otpFailed'), apiMsg);
     } finally {
       setSubmitting(false);
     }
@@ -146,21 +148,21 @@ export default function LoginScreen({ navigation }: any) {
         >
           <View style={styles.container}>
             <Image source={logo} style={styles.logo} />
-            <Text style={styles.subtitle}>Login with your email and password</Text>
+            <Text style={styles.subtitle}>{t('login.title')}</Text>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Text style={styles.label}>Email*</Text>
+            <Text style={styles.label}>{t('login.email')}</Text>
             <View style={styles.inputWrap}>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
+                placeholder={t('login.emailPlaceholder')}
                 placeholderTextColor={colors.muted}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
-                onChangeText={(t) => {
-                  setEmail(t);
+                onChangeText={(text) => {
+                  setEmail(text);
                   if (otpMode) {
                     setOtpMode(false);
                     setOtp('');
@@ -173,16 +175,16 @@ export default function LoginScreen({ navigation }: any) {
               />
             </View>
 
-            <Text style={[styles.label, styles.mt16]}>Password*</Text>
+            <Text style={[styles.label, styles.mt16]}>{t('login.password')}</Text>
             <View style={styles.inputWrap}>
               <TextInput
                 style={[styles.input, styles.padRight]}
-                placeholder="Enter your password"
+                placeholder={t('login.passwordPlaceholder')}
                 placeholderTextColor={colors.muted}
                 secureTextEntry={!showPass}
                 value={password}
-                onChangeText={(t) => {
-                  setPassword(t);
+                onChangeText={(text) => {
+                  setPassword(text);
                   if (error) setError(null);
                 }}
                 textContentType="password"
@@ -208,12 +210,14 @@ export default function LoginScreen({ navigation }: any) {
               disabled={submitting}
               activeOpacity={0.85}
             >
-              <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Login'}</Text>
+              <Text style={styles.buttonText}>
+                {submitting ? t('login.loggingIn') : t('login.button')}
+              </Text>
             </TouchableOpacity>
 
             {otpMode && (
               <>
-                <Text style={styles.label}>Enter OTP*</Text>
+                <Text style={styles.label}>{t('login.enterOtp')}</Text>
                 <View style={styles.inputWrap}>
                   <TextInput
                     style={styles.input}
@@ -221,8 +225,8 @@ export default function LoginScreen({ navigation }: any) {
                     placeholderTextColor={colors.muted}
                     keyboardType="number-pad"
                     value={otp}
-                    onChangeText={(t) => {
-                      setOtp(t);
+                    onChangeText={(text) => {
+                      setOtp(text);
                       if (error) setError(null);
                     }}
                     returnKeyType="done"
@@ -236,16 +240,16 @@ export default function LoginScreen({ navigation }: any) {
                   activeOpacity={0.85}
                 >
                   <Text style={styles.buttonText}>
-                    {submitting ? 'Verifying...' : 'Verify OTP'}
+                    {submitting ? t('login.verifying') : t('login.verifyOtp')}
                   </Text>
                 </TouchableOpacity>
               </>
             )}
 
             <Text style={styles.footerText}>
-              Don’t have an account?{' '}
+              {t('login.noAccount')}{' '}
               <Text style={styles.footerLink} onPress={() => navigation.navigate('Signup')}>
-                Sign Up
+                {t('login.signupLink')}
               </Text>
             </Text>
           </View>

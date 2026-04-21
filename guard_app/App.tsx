@@ -7,6 +7,7 @@ import {
 // App.tsx
 import React, { useEffect } from 'react';
 
+import './src/i18n'; // Initialize i18n
 import { attach401Handler } from './src/lib/http';
 import {
   registerPushTokenIfNeeded,

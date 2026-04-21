@@ -1,6 +1,7 @@
 // src/screen/notifications.tsx
 import { FontAwesome5 } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   FlatList,
@@ -19,6 +20,7 @@ type IconName = 'check-circle' | 'calendar-alt' | 'exclamation-circle' | 'bell';
 export default function NotificationsScreen() {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
+  const { t } = useTranslation();
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -142,10 +144,10 @@ export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer} accessible accessibilityRole="header">
-        <Text style={styles.headerText}>Recent Notifications</Text>
+        <Text style={styles.headerText}>{t('notif.header', 'Recent Notifications')}</Text>
         {unreadCount > 0 && (
           <TouchableOpacity style={styles.badge} onPress={handleMarkAllReadLocal}>
-            <Text style={styles.badgeText}>Mark {unreadCount} as read</Text>
+            <Text style={styles.badgeText}>{t('notif.markRead', 'Mark all as read')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -154,7 +156,7 @@ export default function NotificationsScreen() {
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
       ) : notifications.length === 0 ? (
         <Text style={{ textAlign: 'center', marginTop: 20, color: colors.muted }}>
-          No notifications yet.
+          {t('notif.empty', 'No notifications yet.')}
         </Text>
       ) : (
         <FlatList

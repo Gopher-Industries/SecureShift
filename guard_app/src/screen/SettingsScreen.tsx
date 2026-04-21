@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ExpoConstants from 'expo-constants';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Linking,
@@ -17,6 +18,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Modal,
 } from 'react-native';
 
 import { LocalStorage } from '../lib/localStorage';
@@ -88,8 +90,10 @@ export default function SettingsScreen() {
   const navigation2 = useNavigation<Nav>();
   const { colors, themeMode, setThemeMode } = useAppTheme();
   const styles = getStyles(colors);
+  const { t, i18n } = useTranslation();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [langModalVisible, setLangModalVisible] = useState(false);
 
   const darkMode = themeMode === 'dark';
 
@@ -133,19 +137,18 @@ export default function SettingsScreen() {
 
   const clearLocalData = () => {
     Alert.alert(
-      'Clear Local Data',
-      'This will remove locally stored profile data (e.g., contact/certifications). Continue?',
+      t('settings.clearLocalData'),
+      'This will remove locally stored profile data. Continue?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('lang.cancel'), style: 'cancel' },
         {
           text: 'Clear',
           style: 'destructive',
           onPress: async () => {
             try {
               await AsyncStorage.removeItem(PROFILE_STORAGE_KEY);
-              Alert.alert('Done', 'Local profile data cleared.');
             } catch {
-              Alert.alert('Error', 'Could not clear local data.');
+              // Ignore
             }
           },
         },
@@ -153,11 +156,14 @@ export default function SettingsScreen() {
     );
   };
 
+  const currentLangLabel =
+    i18n.language === 'zh-CN' ? '简体中文' : i18n.language === 'zh-TW' ? '繁體中文' : 'English';
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.card} testID="about-card">
-          <Text style={styles.cardTitle}>About</Text>
+          <Text style={styles.cardTitle}>{t('settings.about')}</Text>
           <Row
             icon={<Ionicons name="information-circle-outline" size={18} color={colors.primary} />}
             label={appName}
@@ -166,39 +172,38 @@ export default function SettingsScreen() {
           />
           <Row
             icon={<Feather name="file-text" size={18} color={colors.primary} />}
-            label="Release Notes"
-            onPress={() => Alert.alert('Release Notes', 'Coming soon')}
+            label={t('settings.releaseNotes')}
             colors={colors}
           />
         </View>
 
         <View style={styles.card} testID="contact-card">
-          <Text style={styles.cardTitle}>Contact Us</Text>
+          <Text style={styles.cardTitle}>{t('settings.contactUs')}</Text>
           <Row
             icon={<Ionicons name="mail-outline" size={18} color={colors.primary} />}
-            label="Email Support"
+            label={t('settings.emailSupport')}
             onPress={openMail}
             colors={colors}
           />
           <Row
             icon={<Ionicons name="call-outline" size={18} color={colors.primary} />}
-            label="Call Support"
+            label={t('settings.callSupport')}
             onPress={callSupport}
             colors={colors}
           />
           <Row
             icon={<Ionicons name="globe-outline" size={18} color={colors.primary} />}
-            label="Visit Website"
+            label={t('settings.visitWebsite')}
             onPress={openWebsite}
             colors={colors}
           />
         </View>
 
         <View style={styles.card} testID="prefs-card">
-          <Text style={styles.cardTitle}>Preferences</Text>
+          <Text style={styles.cardTitle}>{t('settings.preferences')}</Text>
           <Row
             icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />}
-            label="Notifications"
+            label={t('settings.notifications')}
             right={
               <Switch
                 value={notificationsEnabled}
@@ -207,12 +212,18 @@ export default function SettingsScreen() {
                 trackColor={{ false: colors.border, true: colors.primary }}
               />
             }
-            accessibilityLabel="Toggle notifications"
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="language-outline" size={18} color={colors.primary} />}
+            label={t('settings.language')}
+            right={<Text style={styles.meta}>{currentLangLabel}</Text>}
+            onPress={() => setLangModalVisible(true)}
             colors={colors}
           />
           <Row
             icon={<Ionicons name="moon-outline" size={18} color={colors.primary} />}
-            label="Dark Mode"
+            label={t('settings.darkMode')}
             right={
               <Switch
                 value={darkMode}
@@ -221,29 +232,27 @@ export default function SettingsScreen() {
                 trackColor={{ false: colors.border, true: colors.primary }}
               />
             }
-            accessibilityLabel="Toggle dark mode"
             colors={colors}
           />
         </View>
 
         <View style={styles.card} testID="privacy-card">
-          <Text style={styles.cardTitle}>Data & Privacy</Text>
+          <Text style={styles.cardTitle}>{t('settings.dataPrivacy')}</Text>
           <Row
             icon={<Ionicons name="trash-outline" size={18} color={colors.status.rejected} />}
-            label="Clear Local Data"
+            label={t('settings.clearLocalData')}
             onPress={clearLocalData}
             colors={colors}
           />
           <Row
             icon={<Ionicons name="document-text-outline" size={18} color={colors.primary} />}
-            label="Privacy Policy"
+            label={t('settings.privacyPolicy')}
             onPress={() => navigation2.navigate('PrivacyPolicy')}
             colors={colors}
           />
           <Row
             icon={<Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />}
-            label="Terms of Service"
-            onPress={() => Alert.alert('Terms of Service', 'Coming soon')}
+            label={t('settings.tos')}
             colors={colors}
           />
         </View>
@@ -252,14 +261,53 @@ export default function SettingsScreen() {
           <TouchableOpacity
             style={styles.logoutBtn}
             onPress={handleLogout}
-            accessibilityLabel="Log out"
+            accessibilityLabel={t('settings.logout')}
           >
-            <Text style={styles.logoutText}>Logout</Text>
+            <Text style={styles.logoutText}>{t('settings.logout')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.spacer} />
       </ScrollView>
+
+      <Modal
+        visible={langModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLangModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBg}
+          activeOpacity={1}
+          onPress={() => setLangModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('lang.select')}</Text>
+            {[
+              { code: 'en', label: 'English' },
+              { code: 'zh-CN', label: '简体中文' },
+              { code: 'zh-TW', label: '繁體中文' },
+            ].map((lng) => (
+              <TouchableOpacity
+                key={lng.code}
+                style={styles.langOpt}
+                onPress={() => {
+                  i18n.changeLanguage(lng.code);
+                  setLangModalVisible(false);
+                }}
+              >
+                <Text style={styles.langOptText}>{lng.label}</Text>
+                {i18n.language === lng.code && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setLangModalVisible(false)}>
+              <Text style={styles.cancelBtnText}>{t('lang.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -330,4 +378,42 @@ const getStyles = (colors: AppColors) =>
     safe: { backgroundColor: colors.bg, flex: 1 },
     scroll: { padding: CANVAS_PADDING },
     spacer: { height: 20 },
+    modalBg: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      padding: 30,
+    },
+    modalContent: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 20,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    langOpt: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    langOptText: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    cancelBtn: {
+      marginTop: 20,
+      alignItems: 'center',
+      paddingVertical: 12,
+    },
+    cancelBtnText: {
+      color: colors.status.rejected,
+      fontWeight: 'bold',
+    },
   });

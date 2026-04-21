@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -16,17 +17,6 @@ import {
 
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
-
-// Document types available for guards
-const DOCUMENT_TYPES = [
-  { id: 'security_license', label: 'Security License' },
-  { id: 'first_aid', label: 'First Aid Certificate' },
-  { id: 'id_proof', label: 'ID Proof (Passport/Driver License)' },
-  { id: 'police_check', label: 'Police Check' },
-  { id: 'working_rights', label: 'Working Rights' },
-  { id: 'resume', label: 'Resume/CV' },
-  { id: 'other', label: 'Other Document' },
-];
 
 interface UploadedDocument {
   id: string;
@@ -43,7 +33,18 @@ const STORAGE_KEY = 'uploaded_documents';
 
 export default function DocumentsScreen() {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const styles = getStyles(colors);
+
+  const documentTypes = [
+    { id: 'security_license', label: t('docs.types.security_license') },
+    { id: 'first_aid', label: t('docs.types.first_aid') },
+    { id: 'id_proof', label: t('docs.types.id_proof') },
+    { id: 'police_check', label: t('docs.types.police_check') },
+    { id: 'working_rights', label: t('docs.types.working_rights') },
+    { id: 'resume', label: t('docs.types.resume') },
+    { id: 'other', label: t('docs.types.other') },
+  ];
 
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [selectedDocType, setSelectedDocType] = useState<string>('');
@@ -62,7 +63,7 @@ export default function DocumentsScreen() {
       }
     } catch (error) {
       console.error('Error loading documents:', error);
-      Alert.alert('Error', 'Failed to load documents');
+      Alert.alert(t('docs.error'), t('docs.failedToLoad'));
     }
   }, []);
 
@@ -74,7 +75,7 @@ export default function DocumentsScreen() {
 
   const pickAndUploadDocument = async () => {
     if (!selectedDocType) {
-      Alert.alert('Document Type Required', 'Please select a document type first');
+      Alert.alert(t('docs.docTypeRequired'), t('docs.selectDocTypeFirstMsg'));
       return;
     }
 
@@ -89,20 +90,20 @@ export default function DocumentsScreen() {
 
         const maxSize = 10 * 1024 * 1024;
         if (file.size && file.size > maxSize) {
-          Alert.alert('File Too Large', 'Please select a file smaller than 10MB');
+          Alert.alert(t('docs.fileTooLarge'), t('docs.selectFileSmaller'));
           return;
         }
 
         setUploading(true);
 
-        const documentTypeInfo = DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType);
+        const documentTypeInfo = documentTypes.find((dt) => dt.id === selectedDocType);
 
         const newDocument: UploadedDocument = {
           id: Date.now().toString(),
           name: file.name,
           type: file.mimeType || 'application/octet-stream',
           documentType: selectedDocType,
-          documentTypeLabel: documentTypeInfo?.label || 'Unknown',
+          documentTypeLabel: documentTypeInfo?.label || t('docs.unknown'),
           size: file.size || 0,
           uri: file.uri,
           uploadedAt: new Date().toISOString(),
@@ -134,10 +135,10 @@ export default function DocumentsScreen() {
   };
 
   const handleDeleteDocument = (doc: UploadedDocument) => {
-    Alert.alert('Delete Document', 'Are you sure you want to delete this document?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('docs.deleteDocument'), t('docs.deleteConfirm'), [
+      { text: t('docs.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('docs.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -147,10 +148,10 @@ export default function DocumentsScreen() {
 
             setDocuments(updatedDocs);
 
-            Alert.alert('Success', 'Document deleted');
+            Alert.alert(t('docs.success'), t('docs.deleteSuccess'));
           } catch (error) {
             console.error('Error deleting document:', error);
-            Alert.alert('Error', 'Failed to delete document');
+            Alert.alert(t('docs.error'), t('docs.deleteFailed'));
           }
         },
       },
@@ -174,19 +175,16 @@ export default function DocumentsScreen() {
     });
   };
 
-  const selectedDocTypeLabel = DOCUMENT_TYPES.find((dt) => dt.id === selectedDocType)?.label;
+  const selectedDocTypeLabel = documentTypes.find((dt) => dt.id === selectedDocType)?.label;
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.infoCard}>
-          <Text style={styles.infoText}>
-            Keep your documents organized. Upload your licenses and certifications. All documents
-            are stored locally on your device.
-          </Text>
+          <Text style={styles.infoText}>{t('docs.infoText')}</Text>
         </View>
 
-        <Text style={styles.label}>Document Type</Text>
+        <Text style={styles.label}>{t('docs.documentType')}</Text>
         <TouchableOpacity
           style={styles.dropdown}
           onPress={() => setShowDropdown(!showDropdown)}
@@ -195,14 +193,14 @@ export default function DocumentsScreen() {
           <Text
             style={selectedDocType ? styles.dropdownTextSelected : styles.dropdownTextPlaceholder}
           >
-            {selectedDocTypeLabel || 'Select document type'}
+            {selectedDocTypeLabel || t('docs.selectDocumentType')}
           </Text>
           <Text style={styles.dropdownIcon}>{showDropdown ? '▲' : '▼'}</Text>
         </TouchableOpacity>
 
         {showDropdown && (
           <View style={styles.dropdownMenu}>
-            {DOCUMENT_TYPES.map((docType) => (
+            {documentTypes.map((docType) => (
               <TouchableOpacity
                 key={docType.id}
                 style={[
@@ -240,23 +238,23 @@ export default function DocumentsScreen() {
           ) : null}
           <Text style={styles.uploadText}>
             {uploading
-              ? 'Uploading...'
+              ? t('docs.uploading')
               : selectedDocType
-                ? 'Tap to upload'
-                : 'Select a document type first'}
+                ? t('docs.tapToUpload')
+                : t('docs.selectTypeFirst')}
           </Text>
-          <Text style={styles.uploadSubtext}>PDF, JPG, or PNG up to 10MB</Text>
+          <Text style={styles.uploadSubtext}>{t('docs.uploadSubtext')}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Uploaded Documents ({documents.length})</Text>
+        <Text style={styles.sectionTitle}>
+          {t('docs.uploadedDocuments')} ({documents.length})
+        </Text>
 
         {documents.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateIcon}>📄</Text>
-            <Text style={styles.emptyStateText}>No documents uploaded yet</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Select a document type above and tap to upload
-            </Text>
+            <Text style={styles.emptyStateText}>{t('docs.noDocumentsUploaded')}</Text>
+            <Text style={styles.emptyStateSubtext}>{t('docs.noDocumentsSubtext')}</Text>
           </View>
         ) : (
           <View style={styles.documentsList}>
@@ -279,7 +277,7 @@ export default function DocumentsScreen() {
                 </View>
 
                 <View style={styles.localBadge}>
-                  <Text style={styles.localBadgeText}>Local</Text>
+                  <Text style={styles.localBadgeText}>{t('docs.local')}</Text>
                 </View>
 
                 <TouchableOpacity
