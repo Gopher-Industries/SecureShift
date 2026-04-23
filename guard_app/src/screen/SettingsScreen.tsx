@@ -253,6 +253,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />}
             label={t('settings.tos')}
+            onPress={() => navigation2.navigate('Terms')}
             colors={colors}
           />
         </View>
