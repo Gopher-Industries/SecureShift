@@ -2,7 +2,7 @@
 import GuardVerification from '../models/GuardVerification.js';
 import ManualVerification from '../models/ManualVerification.js';
 import Guard from '../models/Guard.js';
-import { encryptLicence, decryptLicence } from '../utils/crypto.js';
+import { encryptLicence } from '../utils/crypto.js';
 import { verifyNSW } from '../adapters/verification/nswAdapter.js';
 import { createManualVerification } from '../adapters/verification/manualAdapter.js';
 

@@ -191,12 +191,10 @@ const upload = multer({
 
 // ---------------- MongoDB GridFS Setup ----------------
 const mongoUri = process.env.MONGO_URI; // e.g., mongodb://localhost:27017/secureShift
-let dbClient;
 let gridFSBucket;
 
 MongoClient.connect(mongoUri)
   .then(client => {
-    dbClient = client;
     const db = client.db(); // default DB from URI
     gridFSBucket = new GridFSBucket(db, { bucketName: 'eoiDocuments' });
     console.log('Connected to MongoDB GridFS for EOI uploads');
@@ -309,7 +307,7 @@ const fileInfos = await Promise.all(req.files.map(file => {
     };
 
     // Use your submitEOI controller to store eoiData in a collection
-    const { eoi, employerCreated } = await submitEOI(eoiData);
+    const { employerCreated } = await submitEOI(eoiData);
 
     let message = 'EOI submitted successfully';
     if (!employerCreated) {
