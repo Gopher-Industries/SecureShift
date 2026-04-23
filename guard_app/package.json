@@ -5,8 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo start --go --android",
+    "ios": "expo start --go --ios",
     "web": "expo start --web",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "npm run lint -- --fix",
