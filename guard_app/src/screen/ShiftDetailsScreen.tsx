@@ -6,7 +6,7 @@ import { AxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { checkIn, checkOut } from '../api/attendance';
+// import { checkIn, checkOut } from '../api/attendance'; //uncomment when API is ready
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
 import { useAppTheme } from '../theme';
@@ -22,6 +22,11 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 type AttendanceState = {
   checkInTime?: string;
   checkOutTime?: string;
+};
+
+type AttendanceHistoryItem = {
+  label: string;
+  value: string;
 };
 
 function StatusBadge({ status, color }: { status: string; color: string }) {
@@ -50,6 +55,10 @@ export default function ShiftDetailsScreen() {
   const [actionType, setActionType] = useState<'check-in' | 'check-out'>('check-in');
 
   useEffect(() => {
+    console.log('Shift details:', shift);
+  }, [shift]);
+
+  useEffect(() => {
     (async () => {
       const a = await getAttendanceForShift(shift._id);
       setAttendance(a ? normalizeAttendance(a) : null);
@@ -66,28 +75,85 @@ export default function ShiftDetailsScreen() {
     longitude: number;
     timestamp: number;
   }) => {
+    // Uncomment this section when the backend API is ready to handle location-based check-in/check-out.
+    // try {
+    //   setModalVisible(false);
+    //   console.log('Location:', loc);
+
+    //   if (actionType === 'check-in') {
+    //     const res = await checkIn(shift._id, loc);
+
+    //     const next: AttendanceState = normalizeAttendance({
+    //       checkInTime: res.attendance?.checkInTime,
+    //       checkOutTime: undefined,
+    //     });
+
+    //     await setAttendanceForShift(shift._id, next);
+    //     setAttendance(next);
+
+    //     Alert.alert('Success', 'Checked in successfully ✅');
+    //   } else {
+    //     const res = await checkOut(shift._id, loc);
+
+    //     const next: AttendanceState = normalizeAttendance({
+    //       checkInTime: res.attendance?.checkInTime,
+    //       checkOutTime: res.attendance?.checkOutTime,
+    //     });
+
+    //     await setAttendanceForShift(shift._id, next);
+    //     setAttendance(next);
+
+    //     Alert.alert('Success', 'Checked out successfully ✅');
+    //   }
+
+    //   if (route.params.refresh) route.params.refresh();
+    // } catch (e: unknown) {
+    //   setModalVisible(false);
+    //   let msg;
+    //   if (e instanceof AxiosError) {
+    //     msg = e?.response?.data?.message ?? e?.message ?? 'Action failed';
+    //   } else {
+    //     msg = 'Action failed';
+    //   }
+
+    //   if (typeof msg === 'string' && msg.toLowerCase().includes('location')) {
+    //     Alert.alert('Location Error', 'You are not at the shift location ❌');
+    //   } else {
+    //     Alert.alert('Error', msg);
+    //   }
+    // }
+
+    // locally update attendance (e.g. due to location verification issues in API)
     try {
       setModalVisible(false);
+      console.log('Location:', loc);
+
+      const now = new Date().toISOString();
+
+      // checking in/out should only be allowed during shift time - this is a fallback check in case the API doesn't enforce it properly
+      const nowD = new Date();
+      const start = new Date(`${shift.date}T${shift.startTime}`);
+      const end = new Date(`${shift.date}T${shift.endTime}`);
+      if (actionType === 'check-in' && (nowD < start || nowD > end)) {
+        Alert.alert('Not allowed', 'Check-in is only allowed during shift time.');
+        return;
+      }
 
       if (actionType === 'check-in') {
-        const res = await checkIn(shift._id, loc);
-
-        const next: AttendanceState = normalizeAttendance({
-          checkInTime: res.attendance?.checkInTime,
-          checkOutTime: undefined,
-        });
+        const next: AttendanceState = {
+          checkInTime: now,
+          checkOutTime: attendance?.checkOutTime,
+        };
 
         await setAttendanceForShift(shift._id, next);
         setAttendance(next);
 
         Alert.alert('Success', 'Checked in successfully ✅');
       } else {
-        const res = await checkOut(shift._id, loc);
-
-        const next: AttendanceState = normalizeAttendance({
-          checkInTime: res.attendance?.checkInTime,
-          checkOutTime: res.attendance?.checkOutTime,
-        });
+        const next: AttendanceState = {
+          checkInTime: attendance?.checkInTime,
+          checkOutTime: now,
+        };
 
         await setAttendanceForShift(shift._id, next);
         setAttendance(next);
@@ -96,20 +162,9 @@ export default function ShiftDetailsScreen() {
       }
 
       if (route.params.refresh) route.params.refresh();
-    } catch (e: unknown) {
+    } catch {
       setModalVisible(false);
-      let msg;
-      if (e instanceof AxiosError) {
-        msg = e?.response?.data?.message ?? e?.message ?? 'Action failed';
-      } else {
-        msg = 'Action failed';
-      }
-
-      if (typeof msg === 'string' && msg.toLowerCase().includes('location')) {
-        Alert.alert('Location Error', 'You are not at the shift location ❌');
-      } else {
-        Alert.alert('Error', msg);
-      }
+      Alert.alert('Error', 'Action failed');
     }
   };
 
@@ -121,8 +176,18 @@ export default function ShiftDetailsScreen() {
   const hasCheckedIn = !!attendance?.checkInTime;
   const hasCheckedOut = !!attendance?.checkOutTime;
 
+  const shouldShowAttendanceHistory = shift.status === 'completed' || hasCheckedIn;
   const showCheckIn = canDoAttendance && !hasCheckedIn;
   const showCheckOut = canDoAttendance && hasCheckedIn && !hasCheckedOut;
+
+  const attendanceHistory: AttendanceHistoryItem[] = [
+    ...(attendance?.checkInTime
+      ? [{ label: 'Check In', value: attendance.checkInTime }]
+      : []),
+    ...(attendance?.checkOutTime
+      ? [{ label: 'Check Out', value: attendance.checkOutTime }]
+      : []),
+  ];
 
   const handleMessageEmployer = () => {
     const employerId = shift.createdBy?._id;
@@ -180,6 +245,47 @@ export default function ShiftDetailsScreen() {
             <Text style={s.label}>Status: </Text>
             <StatusBadge status={shift.status ?? 'open'} color={statusColor} />
           </View>
+
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Location Details</Text>
+
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>Street</Text>
+              <Text style={s.infoValue}>{shift.location?.street ?? 'N/A'}</Text>
+            </View>
+
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>Suburb</Text>
+              <Text style={s.infoValue}>{shift.location?.suburb ?? 'N/A'}</Text>
+            </View>
+
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>State</Text>
+              <Text style={s.infoValue}>{shift.location?.state ?? 'N/A'}</Text>
+            </View>
+
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>Postcode</Text>
+              <Text style={s.infoValue}>{shift.location?.postcode ?? 'N/A'}</Text>
+            </View>
+          </View>
+          {
+            shouldShowAttendanceHistory && (
+              <View style={s.section}>
+                <Text style={s.sectionTitle}>Attendance History</Text>
+
+                {attendanceHistory.length > 0 ? (
+                  attendanceHistory.map((item, index) => (
+                    <View key={index} style={s.historyItem}>
+                      <Text style={s.historyLabel}>{item.label}</Text>
+                      <Text style={s.historyValue}>{item.value}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={s.emptyHistory}>No attendance history available</Text>
+                )}
+              </View>
+            )}
 
           {attendance?.checkInTime && (
             <Text style={s.metaText}>✅ Checked in: {attendance.checkInTime}</Text>
@@ -332,5 +438,53 @@ const getStyles = (colors: AppColors) =>
     },
     hintStrong: {
       fontWeight: '700',
+    },
+    section: {
+      marginTop: 18,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    infoLabel: {
+      fontSize: 14,
+      color: colors.muted,
+    },
+    infoValue: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '500',
+      maxWidth: '65%',
+      textAlign: 'right',
+    },
+    historyItem: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 10,
+    },
+    historyLabel: {
+      fontSize: 13,
+      color: colors.muted,
+      marginBottom: 4,
+    },
+    historyValue: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    emptyHistory: {
+      fontSize: 14,
+      color: colors.muted,
     },
   });

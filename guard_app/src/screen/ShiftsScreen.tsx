@@ -1,6 +1,6 @@
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ import {
 import { getMe } from '../api/auth';
 import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
 import { useAppTheme } from '../theme';
+import { getAttendanceForShift } from '../lib/attendancestore';
 
 import type { AppColors } from '../theme/colors';
 
@@ -158,6 +159,20 @@ function ShiftDetailsModal({
 }) {
   const s = getStyles(colors);
 
+  const [attendance, setAttendance] = useState<{
+    checkInTime?: string;
+    checkOutTime?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!shift || !visible) return;
+
+    (async () => {
+      const data = await getAttendanceForShift(shift?.id);
+      setAttendance(data);
+    })();
+  }, [shift, visible]);
+
   if (!shift) return null;
 
   const status = 'status' in shift ? shift.status : 'Completed';
@@ -227,6 +242,25 @@ function ShiftDetailsModal({
                 </View>
               </View>
             </View>
+            {(attendance?.checkInTime || attendance?.checkOutTime) && (
+              <View style={s.modalRequirements}>
+                <Text style={s.modalRequirementsTitle}>Attendance History</Text>
+
+                {attendance?.checkInTime && (
+                  <View style={s.modalDetail}>
+                    <Text style={s.modalLabel}>Check In:</Text>
+                    <Text style={s.modalValue}>{attendance.checkInTime}</Text>
+                  </View>
+                )}
+
+                {attendance?.checkOutTime && (
+                  <View style={s.modalDetail}>
+                    <Text style={s.modalLabel}>Check Out:</Text>
+                    <Text style={s.modalValue}>{attendance.checkOutTime}</Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         </Pressable>
       </Pressable>

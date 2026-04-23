@@ -107,6 +107,7 @@ export default function SettingsScreen() {
     try {
       await LocalStorage.removeToken(); // clear auth tokens
       await LocalStorage.removePushToken(); // clear push tokens
+      await LocalStorage.clearAll();
       await AsyncStorage.removeItem(PROFILE_STORAGE_KEY); // clear profile data
       navigation.reset({
         index: 0,
