@@ -421,7 +421,8 @@ export default function ShiftDetailsScreen() {
 
           {!canDoAttendance ? (
             <Text style={s.hint}>
-              You can only check in/out when the shift is <Text style={s.hintStrong}>ASSIGNED</Text>.
+              You can only check in/out when the shift is <Text style={s.hintStrong}>ASSIGNED</Text>
+              .
             </Text>
           ) : null}
         </View>

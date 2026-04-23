@@ -1,5 +1,5 @@
 import * as Location from 'expo-location';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -37,11 +37,7 @@ type ErrorState = {
   onSecondaryPress?: () => void;
 } | null;
 
-export default function LocationVerificationModal({
-  visible,
-  onClose,
-  onVerified,
-}: Props) {
+export default function LocationVerificationModal({ visible, onClose, onVerified }: Props) {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
 
@@ -50,42 +46,47 @@ export default function LocationVerificationModal({
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
+  const retryRequestedRef = useRef(false);
 
-  useEffect(() => {
-    if (visible) {
-      cancelledRef.current = false;
-      void startCheck();
-    } else {
-      cancelledRef.current = true;
-      setStatus('idle');
-      setErrorState(null);
-      clearTimer();
-    }
-
-    return () => {
-      cancelledRef.current = true;
-      clearTimer();
-    };
-  }, [visible]);
-
-  const clearTimer = () => {
+  const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
     timerRef.current = null;
-  };
+  }, []);
 
-  const closeErrorBox = () => {
+  const resetState = useCallback(() => {
+    setStatus('idle');
     setErrorState(null);
-  };
+  }, []);
 
-  const showErrorBox = (next: ErrorState) => {
+  const closeErrorBox = useCallback(() => {
+    setErrorState(null);
+  }, []);
+
+  const showErrorBox = useCallback((next: ErrorState) => {
     setErrorState(next);
-  };
+  }, []);
 
-  const startCheck = async () => {
+  const openSettings = useCallback(async () => {
     try {
-      console.log('🚀 startCheck called');
+      await Linking.openSettings();
+    } catch {
+      showErrorBox({
+        title: 'Open Settings manually',
+        message:
+          Platform.OS === 'ios'
+            ? 'Please open Settings > Privacy & Security > Location Services and enable permission for the app.'
+            : 'Please open Settings > Location and enable permission for the app.',
+        primaryLabel: 'OK',
+        onPrimaryPress: closeErrorBox,
+      });
+    }
+  }, [closeErrorBox, showErrorBox]);
+
+  const startCheck = useCallback(async () => {
+    try {
+      retryRequestedRef.current = false;
       setStatus('requesting');
       setErrorState(null);
       clearTimer();
@@ -100,7 +101,7 @@ export default function LocationVerificationModal({
           primaryLabel: 'Retry',
           onPrimaryPress: () => {
             closeErrorBox();
-            void startCheck();
+            retryRequestedRef.current = true;
           },
           secondaryLabel: 'Cancel',
           onSecondaryPress: () => {
@@ -111,7 +112,6 @@ export default function LocationVerificationModal({
       }, 30000);
 
       const servicesEnabled = await Location.hasServicesEnabledAsync();
-      console.log('📍 services enabled:', servicesEnabled);
 
       if (!servicesEnabled) {
         clearTimer();
@@ -134,14 +134,10 @@ export default function LocationVerificationModal({
         return;
       }
 
-      const currentPerm = await Location.getForegroundPermissionsAsync();
-      console.log('📌 current permission:', currentPerm);
+      let perm = await Location.getForegroundPermissionsAsync();
 
-      let perm = currentPerm;
-
-      if (currentPerm.status !== 'granted') {
+      if (perm.status !== 'granted') {
         perm = await Location.requestForegroundPermissionsAsync();
-        console.log('📌 requested permission result:', perm);
       }
 
       if (perm.status !== 'granted') {
@@ -167,12 +163,11 @@ export default function LocationVerificationModal({
         } else {
           showErrorBox({
             title: 'Location permission required',
-            message:
-              'You need to allow location access before you can check in or check out.',
+            message: 'You need to allow location access before you can check in or check out.',
             primaryLabel: 'Try Again',
             onPrimaryPress: () => {
               closeErrorBox();
-              void startCheck();
+              retryRequestedRef.current = true;
             },
             secondaryLabel: 'Cancel',
             onSecondaryPress: () => {
@@ -187,9 +182,8 @@ export default function LocationVerificationModal({
       if (Platform.OS === 'android') {
         try {
           await Location.enableNetworkProviderAsync();
-          console.log('📶 Android network provider enabled');
-        } catch (providerError) {
-          console.log('⚠️ enableNetworkProviderAsync failed:', providerError);
+        } catch {
+          // no-op
         }
       }
 
@@ -202,27 +196,24 @@ export default function LocationVerificationModal({
           Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.High,
           }),
-          new Promise<Location.LocationObject>((_, reject) =>
-            setTimeout(
-              () => reject(new Error('Location request exceeded internal timeout')),
-              20000,
-            ),
-          ),
+          new Promise<Location.LocationObject>((_, reject) => {
+            setTimeout(() => {
+              reject(new Error('Location request exceeded internal timeout'));
+            }, 20000);
+          }),
         ]);
-      } catch (currentError) {
-        console.log('⚠️ getCurrentPositionAsync failed, trying last known:', currentError);
+      } catch {
+        // fall back to last known position
       }
 
       if (!loc) {
         const lastKnown = await Location.getLastKnownPositionAsync();
-        console.log('📍 last known position:', lastKnown);
 
         if (lastKnown) {
           loc = {
             coords: lastKnown.coords,
             timestamp: lastKnown.timestamp,
           } as Location.LocationObject;
-          console.log('📍 using last known position');
         }
       }
 
@@ -236,7 +227,7 @@ export default function LocationVerificationModal({
           primaryLabel: 'Retry',
           onPrimaryPress: () => {
             closeErrorBox();
-            void startCheck();
+            retryRequestedRef.current = true;
           },
           secondaryLabel: 'Cancel',
           onSecondaryPress: () => {
@@ -249,23 +240,17 @@ export default function LocationVerificationModal({
 
       if (cancelledRef.current) return;
 
-      console.log('📍 getCurrentPositionAsync success:', {
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        timestamp: loc.timestamp,
-      });
-
       setStatus('idle');
-      console.log('✅ calling onVerified');
+
+      const resolvedTimestamp = typeof loc.timestamp === 'number' ? loc.timestamp : 0;
 
       onVerified({
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
-        timestamp: loc.timestamp ?? Date.now(),
+        timestamp: resolvedTimestamp,
       });
     } catch (e: unknown) {
       clearTimer();
-      console.log('❌ startCheck failed:', e);
 
       const msg = e instanceof Error ? e.message : 'Failed to get location';
       setStatus('idle');
@@ -276,7 +261,7 @@ export default function LocationVerificationModal({
         primaryLabel: 'Retry',
         onPrimaryPress: () => {
           closeErrorBox();
-          void startCheck();
+          retryRequestedRef.current = true;
         },
         secondaryLabel: 'Cancel',
         onSecondaryPress: () => {
@@ -285,23 +270,46 @@ export default function LocationVerificationModal({
         },
       });
     }
-  };
+  }, [clearTimer, closeErrorBox, onClose, onVerified, openSettings, showErrorBox]);
 
-  const openSettings = async () => {
-    try {
-      await Linking.openSettings();
-    } catch {
-      showErrorBox({
-        title: 'Open Settings manually',
-        message:
-          Platform.OS === 'ios'
-            ? 'Please open Settings > Privacy & Security > Location Services and enable permission for the app.'
-            : 'Please open Settings > Location and enable permission for the app.',
-        primaryLabel: 'OK',
-        onPrimaryPress: closeErrorBox,
-      });
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    if (visible) {
+      cancelledRef.current = false;
+      timeoutId = setTimeout(() => {
+        void startCheck();
+      }, 0);
+    } else {
+      cancelledRef.current = true;
+      clearTimer();
+      timeoutId = setTimeout(() => {
+        resetState();
+      }, 0);
     }
-  };
+
+    return () => {
+      cancelledRef.current = true;
+      clearTimer();
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [clearTimer, resetState, startCheck, visible]);
+
+  useEffect(() => {
+    if (!visible || !retryRequestedRef.current) return;
+
+    const timeoutId = setTimeout(() => {
+      retryRequestedRef.current = false;
+      void startCheck();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [startCheck, visible, errorState]);
 
   const renderContent = () => {
     if (status === 'requesting') {
@@ -327,7 +335,7 @@ export default function LocationVerificationModal({
 
   return (
     <>
-      <Modal transparent visible={visible} animationType="fade" onRequestClose={() => {}}>
+      <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
         <View style={s.overlay}>
           <View style={s.card}>
             <Text style={s.title}>Location Verification</Text>
