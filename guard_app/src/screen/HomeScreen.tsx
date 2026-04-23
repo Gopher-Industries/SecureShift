@@ -255,7 +255,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={`${s.title}-${i}`}
                   onPress={() =>
-                    navigation.navigate('ShiftDetails', { shift: s as any, refresh: load })
+                    navigation.navigate('ShiftDetails', { shift: s as any })
                   }
                 >
                   <RowItem
@@ -290,7 +290,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={`${s.title}-${i}`}
                   onPress={() =>
-                    navigation.navigate('ShiftDetails', { shift: s as any, refresh: load })
+                    navigation.navigate('ShiftDetails', { shift: s as any })
                   }
                 >
                   <RowItem
