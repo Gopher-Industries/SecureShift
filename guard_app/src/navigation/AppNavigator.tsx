@@ -36,7 +36,7 @@ export type RootStackParamList = {
     | undefined;
   Notifications: undefined;
   Certificates: undefined;
-  ShiftDetails: { shift: any; refresh?: () => void };
+  ShiftDetails: { shift: any };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

@@ -260,9 +260,7 @@ export default function HomeScreen() {
               todayShifts.map((s, i) => (
                 <TouchableOpacity
                   key={`${s.title}-${i}`}
-                  onPress={() =>
-                    navigation.navigate('ShiftDetails', { shift: s as any, refresh: load })
-                  }
+                  onPress={() => navigation.navigate('ShiftDetails', { shift: s as any })}
                 >
                   <RowItem
                     title={s.title}
@@ -295,9 +293,7 @@ export default function HomeScreen() {
               upcomingShifts.slice(0, 2).map((s, i) => (
                 <TouchableOpacity
                   key={`${s.title}-${i}`}
-                  onPress={() =>
-                    navigation.navigate('ShiftDetails', { shift: s as any, refresh: load })
-                  }
+                  onPress={() => navigation.navigate('ShiftDetails', { shift: s as any })}
                 >
                   <RowItem
                     title={s.title}

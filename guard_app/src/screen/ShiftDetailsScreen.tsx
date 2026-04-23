@@ -1,4 +1,3 @@
-// src/screen/ShiftDetailsScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { checkIn, checkOut } from '../api/attendance';
+import ErrorMessageBox from '../components/ErrorMessageBox';
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
 import { useAppTheme } from '../theme';
@@ -24,8 +24,18 @@ type AttendanceState = {
   checkOutTime?: string;
 };
 
+type ErrorState = {
+  title: string;
+  message: string;
+} | null;
+
+type Coordinates = {
+  latitude: number;
+  longitude: number;
+};
+
 function StatusBadge({ status, color }: { status: string; color: string }) {
-  return <Text style={{ color, fontWeight: '700' }}>{status.toUpperCase()}</Text>;
+  return <Text style={[stylesInline.statusBadge, { color }]}>{status.toUpperCase()}</Text>;
 }
 
 const normalizeAttendance = (
@@ -38,6 +48,66 @@ const normalizeAttendance = (
   checkOutTime: attendance?.checkOutTime ?? undefined,
 });
 
+function formatLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getShiftDateKey(shiftDateValue: string | Date) {
+  const shiftDate = new Date(shiftDateValue);
+  return formatLocalDateKey(shiftDate);
+}
+
+function parseTimeToDate(baseDateValue: string | Date, timeValue?: string) {
+  if (!timeValue) return null;
+
+  const [hoursText, minutesText] = timeValue.split(':');
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return null;
+  }
+
+  const baseDate = new Date(baseDateValue);
+  baseDate.setHours(hours, minutes, 0, 0);
+  return baseDate;
+}
+
+function toRadians(value: number) {
+  return (value * Math.PI) / 180;
+}
+
+function getDistanceInMeters(a: Coordinates, b: Coordinates) {
+  const earthRadius = 6371000;
+
+  const dLat = toRadians(b.latitude - a.latitude);
+  const dLon = toRadians(b.longitude - a.longitude);
+
+  const lat1 = toRadians(a.latitude);
+  const lat2 = toRadians(b.latitude);
+
+  const haversine =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+
+  const c = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+  return earthRadius * c;
+}
+
+function getShiftCoordinates(shift: ShiftDto): Coordinates | null {
+  const latitude = (shift.location as any)?.latitude;
+  const longitude = (shift.location as any)?.longitude;
+
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+    return null;
+  }
+
+  return { latitude, longitude };
+}
+
 export default function ShiftDetailsScreen() {
   const route = useRoute<ScreenRouteProp>();
   const navigation = useNavigation<Nav>();
@@ -48,11 +118,12 @@ export default function ShiftDetailsScreen() {
   const [attendance, setAttendance] = useState<AttendanceState | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [actionType, setActionType] = useState<'check-in' | 'check-out'>('check-in');
+  const [errorState, setErrorState] = useState<ErrorState>(null);
 
   useEffect(() => {
     (async () => {
-      const a = await getAttendanceForShift(shift._id);
-      setAttendance(a ? normalizeAttendance(a) : null);
+      const storedAttendance = await getAttendanceForShift(shift._id);
+      setAttendance(storedAttendance ? normalizeAttendance(storedAttendance) : null);
     })();
   }, [shift._id]);
 
@@ -61,15 +132,90 @@ export default function ShiftDetailsScreen() {
     setModalVisible(true);
   };
 
+  const closeErrorBox = () => {
+    setErrorState(null);
+  };
+
+  const showErrorBox = (title: string, message: string) => {
+    setErrorState({ title, message });
+  };
+
+  const validateCheckInRules = (loc: Coordinates) => {
+    const now = new Date();
+    const todayKey = formatLocalDateKey(now);
+    const shiftDateKey = getShiftDateKey(shift.date);
+
+    if (shiftDateKey !== todayKey) {
+      return {
+        title: 'Check-in unavailable',
+        message: 'You can only check in on the shift date.',
+      };
+    }
+
+    const shiftStart = parseTimeToDate(shift.date, shift.startTime);
+    if (shiftStart && now < shiftStart) {
+      return {
+        title: 'Check-in unavailable',
+        message: 'You cannot check in before the shift start time.',
+      };
+    }
+
+    const shiftCoords = getShiftCoordinates(shift);
+    if (shiftCoords) {
+      const distance = getDistanceInMeters(loc, shiftCoords);
+
+      if (distance > 100) {
+        return {
+          title: 'Location mismatch',
+          message:
+            'You need to be within 100 metres of the shift location to check in. Please move closer to the site and try again.',
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const validateCheckOutRules = (loc: Coordinates) => {
+    const shiftCoords = getShiftCoordinates(shift);
+
+    if (shiftCoords) {
+      const distance = getDistanceInMeters(loc, shiftCoords);
+
+      if (distance > 100) {
+        return {
+          title: 'Location mismatch',
+          message:
+            'You need to be within 100 metres of the shift location to check out. Please move closer to the site and try again.',
+        };
+      }
+    }
+
+    return null;
+  };
+
   const handleVerificationSuccess = async (loc: {
     latitude: number;
     longitude: number;
     timestamp: number;
   }) => {
+    console.log('✅ handleVerificationSuccess called with:', loc);
+
     try {
       setModalVisible(false);
 
       if (actionType === 'check-in') {
+        const clientValidationError = validateCheckInRules({
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+        });
+
+        if (clientValidationError) {
+          showErrorBox(clientValidationError.title, clientValidationError.message);
+          return;
+        }
+
+        console.log('➡️ checkIn request for shift:', shift._id);
         const res = await checkIn(shift._id, loc);
 
         const next: AttendanceState = normalizeAttendance({
@@ -82,6 +228,17 @@ export default function ShiftDetailsScreen() {
 
         Alert.alert('Success', 'Checked in successfully ✅');
       } else {
+        const clientValidationError = validateCheckOutRules({
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+        });
+
+        if (clientValidationError) {
+          showErrorBox(clientValidationError.title, clientValidationError.message);
+          return;
+        }
+
+        console.log('➡️ checkOut request for shift:', shift._id);
         const res = await checkOut(shift._id, loc);
 
         const next: AttendanceState = normalizeAttendance({
@@ -94,22 +251,64 @@ export default function ShiftDetailsScreen() {
 
         Alert.alert('Success', 'Checked out successfully ✅');
       }
-
-      if (route.params.refresh) route.params.refresh();
     } catch (e: unknown) {
       setModalVisible(false);
-      let msg;
-      if (e instanceof AxiosError) {
-        msg = e?.response?.data?.message ?? e?.message ?? 'Action failed';
-      } else {
-        msg = 'Action failed';
+      console.log('❌ attendance API failed:', e);
+
+      const msg =
+        e instanceof AxiosError
+          ? String(e.response?.data?.message ?? e.message ?? 'Action failed')
+          : e instanceof Error
+            ? e.message
+            : 'Action failed';
+
+      console.log('📝 normalized backend message:', msg);
+
+      const normalizedMsg = msg.toLowerCase();
+
+      if (
+        normalizedMsg.includes('check in on the shift date') ||
+        normalizedMsg.includes('before the shift start time') ||
+        normalizedMsg.includes('too early') ||
+        normalizedMsg.includes('too late') ||
+        normalizedMsg.includes('check-in window')
+      ) {
+        showErrorBox(
+          actionType === 'check-in' ? 'Check-in unavailable' : 'Check-out unavailable',
+          msg,
+        );
+        return;
       }
 
-      if (typeof msg === 'string' && msg.toLowerCase().includes('location')) {
-        Alert.alert('Location Error', 'You are not at the shift location ❌');
-      } else {
-        Alert.alert('Error', msg);
+      if (
+        normalizedMsg.includes('not within shift radius') ||
+        normalizedMsg.includes('not at the shift location') ||
+        normalizedMsg.includes('location') ||
+        normalizedMsg.includes('radius') ||
+        normalizedMsg.includes('100m') ||
+        normalizedMsg.includes('100 m') ||
+        normalizedMsg.includes('within 100 metres')
+      ) {
+        showErrorBox('Location mismatch', msg);
+        return;
       }
+
+      if (normalizedMsg.includes('shift is not defined')) {
+        showErrorBox(
+          actionType === 'check-in' ? 'Unable to check in' : 'Unable to check out',
+          'The server could not process this shift right now. Please try again later.',
+        );
+        return;
+      }
+
+      showErrorBox(
+        actionType === 'check-in' ? 'Unable to check in' : 'Unable to check out',
+        msg.trim().length > 0
+          ? msg
+          : `Something went wrong while trying to ${
+              actionType === 'check-in' ? 'check in' : 'check out'
+            }. Please try again.`,
+      );
     }
   };
 
@@ -118,14 +317,15 @@ export default function ShiftDetailsScreen() {
   if (shift.status === 'completed') statusColor = colors.primary;
 
   const canDoAttendance = shift.status === 'assigned';
-  const hasCheckedIn = !!attendance?.checkInTime;
-  const hasCheckedOut = !!attendance?.checkOutTime;
+  const hasCheckedIn = Boolean(attendance?.checkInTime);
+  const hasCheckedOut = Boolean(attendance?.checkOutTime);
 
   const showCheckIn = canDoAttendance && !hasCheckedIn;
   const showCheckOut = canDoAttendance && hasCheckedIn && !hasCheckedOut;
 
   const handleMessageEmployer = () => {
     const employerId = shift.createdBy?._id;
+
     if (!employerId) {
       Alert.alert('Unavailable', 'Employer details not found for this shift.');
       return;
@@ -181,12 +381,13 @@ export default function ShiftDetailsScreen() {
             <StatusBadge status={shift.status ?? 'open'} color={statusColor} />
           </View>
 
-          {attendance?.checkInTime && (
+          {attendance?.checkInTime ? (
             <Text style={s.metaText}>✅ Checked in: {attendance.checkInTime}</Text>
-          )}
-          {attendance?.checkOutTime && (
+          ) : null}
+
+          {attendance?.checkOutTime ? (
             <Text style={s.metaText}>✅ Checked out: {attendance.checkOutTime}</Text>
-          )}
+          ) : null}
         </View>
 
         <View style={s.actions}>
@@ -194,36 +395,36 @@ export default function ShiftDetailsScreen() {
             <Text style={s.btnText}>Message Employer</Text>
           </TouchableOpacity>
 
-          {showCheckIn && (
+          {showCheckIn ? (
             <TouchableOpacity
               style={[s.btn, { backgroundColor: colors.status.confirmed }]}
               onPress={() => openModalFor('check-in')}
             >
               <Text style={s.btnText}>Check In</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
 
-          {showCheckOut && (
+          {showCheckOut ? (
             <TouchableOpacity
               style={[s.btn, { backgroundColor: colors.status.rejected }]}
               onPress={() => openModalFor('check-out')}
             >
               <Text style={s.btnText}>Check Out</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
 
-          {shift.status === 'completed' && (
+          {shift.status === 'completed' ? (
             <View style={s.completedBox}>
               <Text style={s.completedText}>Shift Completed ✅</Text>
             </View>
-          )}
+          ) : null}
 
-          {!canDoAttendance && (
+          {!canDoAttendance ? (
             <Text style={s.hint}>
               You can only check in/out when the shift is <Text style={s.hintStrong}>ASSIGNED</Text>
               .
             </Text>
-          )}
+          ) : null}
         </View>
       </ScrollView>
 
@@ -232,9 +433,22 @@ export default function ShiftDetailsScreen() {
         onClose={() => setModalVisible(false)}
         onVerified={handleVerificationSuccess}
       />
+
+      <ErrorMessageBox
+        visible={Boolean(errorState)}
+        title={errorState?.title}
+        message={errorState?.message}
+        onClose={closeErrorBox}
+      />
     </View>
   );
 }
+
+const stylesInline = StyleSheet.create({
+  statusBadge: {
+    fontWeight: '700',
+  },
+});
 
 const getStyles = (colors: AppColors) =>
   StyleSheet.create({
