@@ -104,14 +104,14 @@ export default function AppNavigator() {
         component={ShiftDetailsScreen}
         options={{ headerShown: true, title: t('nav.shiftDetails') }}
       />
-<<<<<<< HEAD
-=======
+       HEAD
+
       <Stack.Screen
         name="Terms"
         component={TermsScreen}
         options={{ headerShown: true, title: 'Terms of Service' }}
       />
->>>>>>> dc993c34 (Add Terms of Service screen and replace Coming Soon alert)
+       dc993c34 (Add Terms of Service screen and replace Coming Soon alert)
     </Stack.Navigator>
   );
 }
