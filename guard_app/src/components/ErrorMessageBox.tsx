@@ -1,5 +1,4 @@
 import React from 'react';
-
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAppTheme } from '../theme';
