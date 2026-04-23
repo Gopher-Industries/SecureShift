@@ -2,6 +2,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Image,
@@ -36,6 +37,7 @@ type ErrorLike = {
 export default function SignupScreen({ navigation }: { navigation: SignupNav }) {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -52,20 +54,28 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
     const e = email.trim().toLowerCase();
     const n = fullName.trim();
 
-    if (!e || !n || !password || !confirm) return 'Please fill all required fields.';
+    if (!e || !n || !password || !confirm)
+      return t('err.requiredFields', 'Please fill all required fields.');
 
     const nameOk = /^[A-Za-z\s'-]+$/.test(n);
-    if (!nameOk) return "Name can only contain letters, spaces, hyphens (-), and apostrophes (').";
+    if (!nameOk)
+      return t(
+        'err.invalidName',
+        "Name can only contain letters, spaces, hyphens (-), and apostrophes (').",
+      );
 
     const emailOk = /^\S+@\S+\.\S+$/.test(e);
-    if (!emailOk) return 'Please enter a valid email address.';
+    if (!emailOk) return t('err.invalidEmail');
 
     const pwOk = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(password);
     if (!pwOk) {
-      return 'Password needs 6+ chars with uppercase, lowercase, number, and special character.';
+      return t(
+        'err.weakPassword',
+        'Password needs 6+ chars with uppercase, lowercase, number, and special character.',
+      );
     }
 
-    if (password !== confirm) return 'Passwords do not match.';
+    if (password !== confirm) return t('err.passwordMatch', 'Passwords do not match.');
 
     return null;
   };
@@ -74,12 +84,15 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
     const msg = validate();
     if (msg) {
       setError(msg);
-      Alert.alert('Invalid input', msg);
+      Alert.alert(t('login.invalidInput', 'Invalid input'), msg);
       return;
     }
 
     if (!licenseImage) {
-      Alert.alert('License required', 'Please upload your license image.');
+      Alert.alert(
+        t('signup.licenseReq', 'License required'),
+        t('signup.uploadLicense', 'Please upload your license image.'),
+      );
       return;
     }
 
@@ -98,14 +111,19 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
         } as unknown as File,
       });
 
-      Alert.alert('Success', 'Account created. Please log in.');
+      Alert.alert(
+        t('signup.success', 'Success'),
+        t('signup.created', 'Account created. Please log in.'),
+      );
       navigation.replace('Login');
     } catch (e: unknown) {
       const err = e as ErrorLike;
       const apiMsg =
-        err?.response?.data?.message ?? err?.message ?? 'Signup failed. Please try again.';
+        err?.response?.data?.message ??
+        err?.message ??
+        t('err.tryAgain', 'Signup failed. Please try again.');
       setError(apiMsg);
-      Alert.alert('Signup failed', apiMsg);
+      Alert.alert(t('signup.failed', 'Signup failed'), apiMsg);
     } finally {
       setSubmitting(false);
     }
@@ -124,15 +142,17 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
         keyboardShouldPersistTaps="handled"
       >
         <Image source={logo} style={styles.logo} />
-        <Text style={styles.subtitle}>Create an account and start looking for your shift</Text>
+        <Text style={styles.subtitle}>
+          {t('signup.subtitle', 'Create an account and start looking for your shift')}
+        </Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Text style={styles.label}>Email*</Text>
+        <Text style={styles.label}>{t('signup.email', 'Email*')}</Text>
         <View style={styles.inputWrap}>
           <TextInput
             style={styles.input}
-            placeholder="Enter your email"
+            placeholder={t('login.emailPlaceholder', 'Enter your email')}
             placeholderTextColor={colors.muted}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -143,11 +163,11 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           />
         </View>
 
-        <Text style={styles.label}>Full Name*</Text>
+        <Text style={styles.label}>{t('signup.fullName', 'Full Name*')}</Text>
         <View style={styles.inputWrap}>
           <TextInput
             style={styles.input}
-            placeholder="Enter your full name"
+            placeholder={t('signup.fullNamePlaceholder', 'Enter your full name')}
             placeholderTextColor={colors.muted}
             autoCorrect={false}
             textContentType="name"
@@ -156,11 +176,11 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           />
         </View>
 
-        <Text style={styles.label}>Password*</Text>
+        <Text style={styles.label}>{t('signup.password', 'Password*')}</Text>
         <View style={styles.inputWrap}>
           <TextInput
             style={[styles.input, styles.padRight]}
-            placeholder="Enter your password"
+            placeholder={t('login.passwordPlaceholder', 'Enter your password')}
             placeholderTextColor={colors.muted}
             secureTextEntry={!showPass}
             textContentType="password"
@@ -182,11 +202,11 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.label}>Confirm Password*</Text>
+        <Text style={styles.label}>{t('signup.confirmPassword', 'Confirm Password*')}</Text>
         <View style={styles.inputWrap}>
           <TextInput
             style={[styles.input, styles.padRight]}
-            placeholder="Confirm your password"
+            placeholder={t('signup.confirmPasswordPlaceholder', 'Confirm your password')}
             placeholderTextColor={colors.muted}
             secureTextEntry={!showConfirm}
             textContentType="password"
@@ -227,10 +247,12 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
             }
           }}
           accessibilityRole="button"
-          accessibilityLabel="Upload your security license"
+          accessibilityLabel={t('signup.uploadLicense', 'Upload your security license')}
         >
           <Text style={styles.uploadText}>
-            {licenseImage ? 'License uploaded' : 'Upload your security license'}
+            {licenseImage
+              ? t('signup.licenseUploaded', 'License uploaded')
+              : t('signup.uploadLicense', 'Upload your security license')}
           </Text>
           <MaterialCommunityIcons
             name="upload"
@@ -249,13 +271,15 @@ export default function SignupScreen({ navigation }: { navigation: SignupNav }) 
           onPress={onSubmit}
           disabled={ctaDisabled || submitting}
         >
-          <Text style={styles.ctaText}>{submitting ? 'Signing up...' : 'Sign Up'}</Text>
+          <Text style={styles.ctaText}>
+            {submitting ? t('signup.signingUp', 'Signing up...') : t('signup.button', 'Sign Up')}
+          </Text>
         </TouchableOpacity>
 
         <Text style={styles.footerText}>
-          Already have an account?{' '}
+          {t('signup.haveAccount', 'Already have an account?')}*?{' '}
           <Text style={styles.footerLink} onPress={() => navigation.replace('Login')}>
-            Login
+            {t('signup.loginLink', 'Login')}
           </Text>
         </Text>
       </ScrollView>

@@ -3,6 +3,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -24,6 +25,7 @@ import { AppColors } from '../theme/colors';
 export default function ProfileScreen({ navigation, route }: any) {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
+  const { t } = useTranslation();
 
   const [data, setData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -132,45 +134,49 @@ export default function ProfileScreen({ navigation, route }: any) {
         <View style={styles.editButtonContainer}>
           <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
             <Ionicons name="pencil" size={16} color={colors.primary} />
-            <Text style={styles.editButtonText}>Edit</Text>
+            <Text style={styles.editButtonText}>{t('profile.edit')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={[styles.card, styles.performanceCard]}>
           <View style={styles.cardTitleContainer}>
             <Ionicons name="star" size={18} color={colors.text} style={{ marginBottom: 10 }} />
-            <Text style={styles.cardTitle}>Performance Summary</Text>
+            <Text style={styles.cardTitle}>{t('profile.perfSummary')}</Text>
           </View>
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: '#4F46E5' }]}>140</Text>
-              <Text style={styles.statLabel}>Total Shifts</Text>
+              <Text style={styles.statLabel}>{t('profile.totalShifts')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: '#facc15' }]}>
                 {data?.rating ? data.rating.toFixed(1) : '0.0'}
               </Text>
-              <Text style={styles.statLabel}>Rating</Text>
+              <Text style={styles.statLabel}>{t('profile.rating')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: colors.status.confirmed }]}>
                 {data?.numberOfReviews || 0}
               </Text>
-              <Text style={styles.statLabel}>Reviews</Text>
+              <Text style={styles.statLabel}>{t('profile.reviews')}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Contact Information</Text>
-          <Text style={styles.infoText}>Email: {data?.email || '—'}</Text>
-          <Text style={[styles.infoText, { marginTop: 6 }]}>Phone: {data?.phone || '—'}</Text>
+          <Text style={styles.cardTitle}>{t('profile.contactInfo')}</Text>
+          <Text style={styles.infoText}>
+            {t('profile.email')} {data?.email || '—'}
+          </Text>
+          <Text style={[styles.infoText, { marginTop: 6 }]}>
+            {t('profile.phone')} {data?.phone || '—'}
+          </Text>
         </View>
 
         {data?.address && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Address</Text>
+            <Text style={styles.cardTitle}>{t('profile.address')}</Text>
             <Text style={styles.infoText}>
               {data.address.street && `${data.address.street}, `}
               {data.address.suburb && `${data.address.suburb}, `}
@@ -182,10 +188,10 @@ export default function ProfileScreen({ navigation, route }: any) {
 
         {data?.license && (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>License Status</Text>
+            <Text style={styles.cardTitle}>{t('profile.licenseStatus')}</Text>
             <View style={styles.licenseContainer}>
               <View style={styles.licenseStatus}>
-                <Text style={styles.licenseLabel}>Status:</Text>
+                <Text style={styles.licenseLabel}>{t('profile.status')}</Text>
                 <View style={[styles.statusBadge, getStatusBadgeStyle(data.license.status)]}>
                   <Text style={[styles.statusText, getStatusTextStyle(data.license.status)]}>
                     {data.license.status.charAt(0).toUpperCase() + data.license.status.slice(1)}
@@ -193,7 +199,9 @@ export default function ProfileScreen({ navigation, route }: any) {
                 </View>
               </View>
               {data.license.rejectionReason && (
-                <Text style={styles.rejectionReason}>Reason: {data.license.rejectionReason}</Text>
+                <Text style={styles.rejectionReason}>
+                  {t('profile.reason')} {data.license.rejectionReason}
+                </Text>
               )}
             </View>
           </View>
@@ -204,7 +212,7 @@ export default function ProfileScreen({ navigation, route }: any) {
           style={styles.card}
           onPress={() => navigation.navigate('Certificates')}
         >
-          <Text style={styles.cardTitle}>Certifications</Text>
+          <Text style={styles.cardTitle}>{t('profile.certifications')}</Text>
           <View style={styles.badgesRow}>
             {['Security License', 'CPR', 'First Aid'].map((badge) => (
               <Pressable
