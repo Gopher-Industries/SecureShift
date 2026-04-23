@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ExpoConstants from 'expo-constants';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -30,6 +30,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 // Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';
+const NOTIFICATIONS_STORAGE_KEY = '@guard_notifications_enabled';
 const CANVAS_PADDING = 20;
 
 function Row({
@@ -95,6 +96,37 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [langModalVisible, setLangModalVisible] = useState(false);
 
+  useEffect(() => {
+    const loadNotificationPreference = async () => {
+      try {
+        const savedValue = await AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+
+        if (savedValue !== null) {
+          setNotificationsEnabled(savedValue === 'true');
+        }
+      } catch (error) {
+        console.error('Failed to load notification preference:', error);
+      }
+    };
+
+    void loadNotificationPreference();
+  }, []);
+
+  const handleToggleNotifications = async (value: boolean) => {
+    try {
+      setNotificationsEnabled(value);
+      await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, String(value));
+
+      Alert.alert(
+        'Notifications',
+        value ? 'Notifications have been enabled.' : 'Notifications have been disabled.',
+      );
+    } catch (error) {
+      console.error('Failed to save notification preference:', error);
+      Alert.alert('Error', 'Unable to update notification preference.');
+    }
+  };
+
   const darkMode = themeMode === 'dark';
 
   const appName =
@@ -109,9 +141,9 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     try {
-      await LocalStorage.removeToken(); // clear auth tokens
-      await LocalStorage.removePushToken(); // clear push tokens
-      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY); // clear profile data
+      await LocalStorage.removeToken();
+      await LocalStorage.removePushToken();
+      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY);
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' as never }],
@@ -207,7 +239,7 @@ export default function SettingsScreen() {
             right={
               <Switch
                 value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
+                onValueChange={(value) => void handleToggleNotifications(value)}
                 thumbColor={Platform.OS === 'android' ? colors.white : undefined}
                 trackColor={{ false: colors.border, true: colors.primary }}
               />
