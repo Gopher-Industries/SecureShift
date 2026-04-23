@@ -252,23 +252,25 @@ router.delete(
  * @swagger
  * /api/v1/users/guards:
  *   get:
- *     summary: Get all guards (Admin + Employee only)
+ *     summary: Get all guards (Admin only)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Successfully retrieved all guards.
+ *         description: Successfully retrieved all guards (admin access only).
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
  */
+// TODO: Enable employer access with scoped filtering (guards by organisation)
+// Do not expose this endpoint to employers until proper RBAC + filtering is implemented
 router.get(
   '/guards',
   auth,
   loadUser,
-  authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE),
+  authorizeRoles(ROLES.ADMIN),
   authorizePermissions('user:read'),
   getAllGuards
 );
