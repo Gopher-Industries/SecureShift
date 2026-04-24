@@ -181,12 +181,8 @@ export default function ShiftDetailsScreen() {
   const showCheckOut = canDoAttendance && hasCheckedIn && !hasCheckedOut;
 
   const attendanceHistory: AttendanceHistoryItem[] = [
-    ...(attendance?.checkInTime
-      ? [{ label: 'Check In', value: attendance.checkInTime }]
-      : []),
-    ...(attendance?.checkOutTime
-      ? [{ label: 'Check Out', value: attendance.checkOutTime }]
-      : []),
+    ...(attendance?.checkInTime ? [{ label: 'Check In', value: attendance.checkInTime }] : []),
+    ...(attendance?.checkOutTime ? [{ label: 'Check Out', value: attendance.checkOutTime }] : []),
   ];
 
   const handleMessageEmployer = () => {
@@ -269,23 +265,22 @@ export default function ShiftDetailsScreen() {
               <Text style={s.infoValue}>{shift.location?.postcode ?? 'N/A'}</Text>
             </View>
           </View>
-          {
-            shouldShowAttendanceHistory && (
-              <View style={s.section}>
-                <Text style={s.sectionTitle}>Attendance History</Text>
+          {shouldShowAttendanceHistory && (
+            <View style={s.section}>
+              <Text style={s.sectionTitle}>Attendance History</Text>
 
-                {attendanceHistory.length > 0 ? (
-                  attendanceHistory.map((item, index) => (
-                    <View key={index} style={s.historyItem}>
-                      <Text style={s.historyLabel}>{item.label}</Text>
-                      <Text style={s.historyValue}>{item.value}</Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={s.emptyHistory}>No attendance history available</Text>
-                )}
-              </View>
-            )}
+              {attendanceHistory.length > 0 ? (
+                attendanceHistory.map((item, index) => (
+                  <View key={index} style={s.historyItem}>
+                    <Text style={s.historyLabel}>{item.label}</Text>
+                    <Text style={s.historyValue}>{item.value}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={s.emptyHistory}>No attendance history available</Text>
+              )}
+            </View>
+          )}
 
           {attendance?.checkInTime && (
             <Text style={s.metaText}>✅ Checked in: {attendance.checkInTime}</Text>
