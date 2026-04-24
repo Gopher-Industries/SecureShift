@@ -189,13 +189,13 @@ export default function SettingsScreen() {
   };
 
   const currentLangLabel =
-  i18n.language === 'zh-CN'
-    ? '简体中文'
-    : i18n.language === 'zh-TW'
-      ? '繁體中文'
-      : i18n.language === 'hi'
-        ? 'हिन्दी'
-        : 'English';
+    i18n.language === 'zh-CN'
+      ? '简体中文'
+      : i18n.language === 'zh-TW'
+        ? '繁體中文'
+        : i18n.language === 'hi'
+          ? 'हिन्दी'
+          : 'English';
 
   return (
     <SafeAreaView style={styles.safe}>
