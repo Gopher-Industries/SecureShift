@@ -81,10 +81,7 @@ export interface ShiftAttendanceRecord {
   updatedAt: string;
 }
 
-export interface AttendanceResponse {
-  message: string;
-  attendance: ShiftAttendanceRecord;
-}
+
 
 export interface ShiftAttendanceListResponse {
   shiftId: string;
@@ -126,20 +123,7 @@ export async function exportPayroll(params: {
   return data;
 }
 
-/**
- * Record clock-in / clock-out attendance for a shift.
- */
-export async function recordAttendance(payload: {
-  shiftId: string;
-  guardId?: string; // Required for admin; defaults to self for guard
-  clockIn?: string;
-  clockOut?: string;
-  status?: 'absent' | 'scheduled';
-  notes?: string;
-}) {
-  const { data } = await http.post<AttendanceResponse>('/payroll/attendance', payload);
-  return data;
-}
+
 
 /**
  * Get attendance records for a specific shift.
