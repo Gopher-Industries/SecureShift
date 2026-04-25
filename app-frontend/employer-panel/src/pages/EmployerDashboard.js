@@ -255,7 +255,7 @@ useEffect(() => {
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => navigate("/create-shift")}
             >
               <IconPlus className="ss-plus" /> Create Shift
             </button>
