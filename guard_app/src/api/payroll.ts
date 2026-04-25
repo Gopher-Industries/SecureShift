@@ -81,8 +81,6 @@ export interface ShiftAttendanceRecord {
   updatedAt: string;
 }
 
-
-
 export interface ShiftAttendanceListResponse {
   shiftId: string;
   count: number;
@@ -122,8 +120,6 @@ export async function exportPayroll(params: {
   });
   return data;
 }
-
-
 
 /**
  * Get attendance records for a specific shift.
