@@ -6,6 +6,7 @@ import "./Timesheet.css";
 const LATE_GRACE_MINUTES = 5;
 const PAGE_SIZE = 10;
 const STATUS_FILTERS = ["All", "Active", "Completed", "Late", "Absent"];
+const Sort = Object.freeze({ DateDesc: "Date (Desc)", DateAsc: "Date (Asc)" });
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -76,6 +77,7 @@ function buildRows(shifts, attendanceLists) {
     return {
       id: shift._id,
       guard: shift.acceptedBy?.name || "--",
+      sortDate: new Date(shift.date).getTime() || 0,
       shiftDate: formatDate(shift.date),
       location: formatLocation(shift.location, shift.title),
       clockIn: record ? formatTime(record.clockIn) : "--",
@@ -96,6 +98,7 @@ export default function Timesheet() {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSite, setSelectedSite] = useState("All Sites");
+  const [sortBy, setSortBy] = useState(Sort.DateDesc);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -126,9 +129,7 @@ export default function Timesheet() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const summary = useMemo(() => {
@@ -151,22 +152,26 @@ export default function Timesheet() {
 
   const filteredRows = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    return rows.filter((r) => {
-      const matchesStatus =
-        selectedFilter === "All" || r.status === selectedFilter;
-      const matchesSite =
-        selectedSite === "All Sites" || r.location === selectedSite;
-      const matchesSearch =
-        !q ||
-        r.guard.toLowerCase().includes(q) ||
-        r.location.toLowerCase().includes(q);
-      return matchesStatus && matchesSite && matchesSearch;
-    });
-  }, [rows, selectedFilter, selectedSite, searchTerm]);
+    return rows
+      .filter((r) => {
+        const matchesStatus =
+          selectedFilter === "All" || r.status === selectedFilter;
+        const matchesSite =
+          selectedSite === "All Sites" || r.location === selectedSite;
+        const matchesSearch =
+          !q ||
+          r.guard.toLowerCase().includes(q) ||
+          r.location.toLowerCase().includes(q);
+        return matchesStatus && matchesSite && matchesSearch;
+      })
+      .sort((a, b) =>
+        sortBy === Sort.DateDesc ? b.sortDate - a.sortDate : a.sortDate - b.sortDate
+      );
+  }, [rows, selectedFilter, selectedSite, searchTerm, sortBy]);
 
   useEffect(() => {
     setPage(1);
-  }, [selectedFilter, selectedSite, searchTerm]);
+  }, [selectedFilter, selectedSite, searchTerm, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -204,9 +209,7 @@ export default function Timesheet() {
             onChange={(e) => setSelectedSite(e.target.value)}
           >
             {siteOptions.map((site) => (
-              <option key={site} value={site}>
-                {site}
-              </option>
+              <option key={site} value={site}>{site}</option>
             ))}
           </select>
 
@@ -214,9 +217,7 @@ export default function Timesheet() {
             {STATUS_FILTERS.map((filter) => (
               <button
                 key={filter}
-                className={`filter-btn ${
-                  selectedFilter === filter ? "active-filter" : ""
-                }`}
+                className={`filter-btn ${selectedFilter === filter ? "active-filter" : ""}`}
                 onClick={() => setSelectedFilter(filter)}
               >
                 {filter}
@@ -224,7 +225,19 @@ export default function Timesheet() {
             ))}
           </div>
 
-          <div className="timesheet-sort">Sort by: Date (DESC)</div>
+          <div style={sortGroupStyle}>
+            <img src="/ic-sort.svg" alt="Sort" style={{ width: 20, height: 20 }} />
+            <span style={labelStyle}>Sort by:</span>
+            <select
+              style={sortSelectStyle}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              {Object.values(Sort).map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {error && (
@@ -248,13 +261,9 @@ export default function Timesheet() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={9}>Loading timesheets…</td>
-                </tr>
+                <tr><td colSpan={9}>Loading timesheets…</td></tr>
               ) : pageRows.length === 0 ? (
-                <tr>
-                  <td colSpan={9}>No timesheet entries yet.</td>
-                </tr>
+                <tr><td colSpan={9}>No timesheet entries yet.</td></tr>
               ) : (
                 pageRows.map((item) => (
                   <tr key={item.id}>
@@ -271,9 +280,7 @@ export default function Timesheet() {
                     <td>{item.totalHours}</td>
                     <td>{item.payRate}</td>
                     <td>
-                      <span
-                        className={`status-badge ${item.status.toLowerCase()}`}
-                      >
+                      <span className={`status-badge ${item.status.toLowerCase()}`}>
                         {item.status}
                       </span>
                     </td>
@@ -289,17 +296,16 @@ export default function Timesheet() {
           <div className="pagination">
             <button
               type="button"
+              className="pagination-nav"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={safePage <= 1}
             >
               ‹
             </button>
-            <span>
-              {" "}
-              Page {safePage} of {totalPages}{" "}
-            </span>
+            {" "}Page {safePage} of {totalPages}{" "}
             <button
               type="button"
+              className="pagination-nav"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage >= totalPages}
             >
@@ -317,3 +323,18 @@ export default function Timesheet() {
     </div>
   );
 }
+
+const labelStyle = { fontSize: "14px", fontWeight: "400", color: "#1E1E1E" };
+
+const sortGroupStyle = { display: "flex", alignItems: "center", gap: "12px" };
+
+const sortSelectStyle = {
+  backgroundColor: "white",
+  border: "1px solid #e0e0e0",
+  borderRadius: "12px",
+  padding: "8px 16px",
+  fontSize: "14px",
+  color: "#666",
+  cursor: "pointer",
+};
+
