@@ -138,8 +138,9 @@ export default function ShiftDetailsScreen() {
 
         const records = await getUserAttendance(userId);
         const match = records.find(
-          (r) => String(r.shiftId === 'object' ? (r.shiftId as any)?._id : r.shiftId) === String(shift._id) ||
-                 String(r.shiftId) === String(shift._id),
+          (r) =>
+            String(r.shiftId === 'object' ? (r.shiftId as any)?._id : r.shiftId) ===
+              String(shift._id) || String(r.shiftId) === String(shift._id),
         );
         if (match?.checkInTime) {
           const synced = normalizeAttendance(match);
