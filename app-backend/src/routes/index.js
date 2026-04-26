@@ -10,6 +10,7 @@ import availabilityRoutes from './availability.routes.js';
 import rbacRoutes from './rbac.routes.js';
 import branchRoutes from './branch.routes.js'
 import incidentRoutes from './incident.routes.js'
+import shiftRequestRoutes from './shiftRequest.routes.js';
 
 const router = express.Router();
 
@@ -23,5 +24,6 @@ router.use('/users', userRoutes);
 router.use('/rbac', rbacRoutes);
 router.use('/branch', branchRoutes);
 router.use('/incidents', incidentRoutes);
+router.use('/shifts', shiftRequestRoutes);
 
 export default router;
