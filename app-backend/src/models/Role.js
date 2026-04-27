@@ -17,7 +17,7 @@ const roleSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// index removed — `unique: true` on the field already creates this index
+roleSchema.index({ name: 1 }, { unique: true });
 
 const Role = mongoose.model('Role', roleSchema);
 export default Role;
