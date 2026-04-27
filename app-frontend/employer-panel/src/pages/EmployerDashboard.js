@@ -291,7 +291,7 @@ useEffect(() => {
               className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}
             >
   
-              {/* Create Shift Card (only in grid view) */}
+              
   
               {loading && <div>Loading shifts...</div>}
               {error && <div style={{ color: "red" }}>{error}</div>}
