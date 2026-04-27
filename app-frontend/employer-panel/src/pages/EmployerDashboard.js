@@ -255,7 +255,7 @@ useEffect(() => {
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => navigate("/create-shift")}
             >
               <IconPlus className="ss-plus" /> Create Shift
             </button>
@@ -291,16 +291,7 @@ useEffect(() => {
               className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}
             >
   
-              {/* Create Shift Card (only in grid view) */}
-              {view === "grid" && (
-                <div
-                  className="ss-card ss-card--create"
-                  onClick={() => navigate("/create-shift")}
-                >
-                  <div className="ss-card__createicon"><IconPlus /></div>
-                  <div className="ss-card__createtext">Create Shift</div>
-                </div>
-              )}
+              
   
               {loading && <div>Loading shifts...</div>}
               {error && <div style={{ color: "red" }}>{error}</div>}
