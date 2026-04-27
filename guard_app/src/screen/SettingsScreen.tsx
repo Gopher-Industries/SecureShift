@@ -189,7 +189,13 @@ export default function SettingsScreen() {
   };
 
   const currentLangLabel =
-    i18n.language === 'zh-CN' ? '简体中文' : i18n.language === 'zh-TW' ? '繁體中文' : 'English';
+    i18n.language === 'zh-CN'
+      ? '简体中文'
+      : i18n.language === 'zh-TW'
+        ? '繁體中文'
+        : i18n.language === 'hi'
+          ? 'हिन्दी'
+          : 'English';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -320,6 +326,7 @@ export default function SettingsScreen() {
               { code: 'en', label: 'English' },
               { code: 'zh-CN', label: '简体中文' },
               { code: 'zh-TW', label: '繁體中文' },
+              { code: 'hi', label: 'हिन्दी' },
             ].map((lng) => (
               <TouchableOpacity
                 key={lng.code}

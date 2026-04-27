@@ -6,6 +6,7 @@ import { initReactI18next } from 'react-i18next';
 import en from '../locales/en.json';
 import zhCN from '../locales/zh-CN.json';
 import zhTW from '../locales/zh-TW.json';
+import hi from '../locales/hi.json';
 
 const STORE_LANGUAGE_KEY = 'settings.lang';
 
@@ -13,6 +14,7 @@ const resources = {
   en: { translation: en },
   'zh-CN': { translation: zhCN },
   'zh-TW': { translation: zhTW },
+  hi: { translation: hi },
 };
 
 const languageDetectorPlugin = {
