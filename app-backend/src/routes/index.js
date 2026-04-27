@@ -15,6 +15,8 @@ import notificationRoutes from './notification.routes.js'
 
 import payrollRoutes from './payroll.routes.js';
 import documentRoutes from './document.routes.js';
+import incidentReportRoutes from "./incidentreport.routes.js";
+
 const router = express.Router();
 router.use('/documents', documentRoutes);
 router.use('/health', healthRoutes);
@@ -30,5 +32,6 @@ router.use('/attendance', shiftAttendanceRoutes);
 router.use("/incidents", incidentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payroll', payrollRoutes);
+router.use('/incidentreports', incidentReportRoutes);
 
 export default router;
