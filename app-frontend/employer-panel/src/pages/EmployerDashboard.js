@@ -292,15 +292,6 @@ useEffect(() => {
             >
   
               {/* Create Shift Card (only in grid view) */}
-              {view === "grid" && (
-                <div
-                  className="ss-card ss-card--create"
-                  onClick={() => navigate("/create-shift")}
-                >
-                  <div className="ss-card__createicon"><IconPlus /></div>
-                  <div className="ss-card__createtext">Create Shift</div>
-                </div>
-              )}
   
               {loading && <div>Loading shifts...</div>}
               {error && <div style={{ color: "red" }}>{error}</div>}
