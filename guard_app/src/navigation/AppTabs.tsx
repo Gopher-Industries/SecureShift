@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next';
 
 import AvailabilityScreen from '../screen/AvailabilityScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
@@ -22,6 +23,7 @@ const Tab = createBottomTabNavigator<AppTabParamList>();
 
 export default function AppTabs() {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -58,12 +60,36 @@ export default function AppTabs() {
         tabBarInactiveTintColor: colors.muted,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Shifts" component={ShiftsScreen} />
-      <Tab.Screen name="Availability" component={AvailabilityScreen} />
-      <Tab.Screen name="Documents" component={DocumentsScreen} />
-      <Tab.Screen name="Timesheets" component={TimesheetsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ tabBarLabel: t('tabs.home'), headerTitle: t('tabs.home') }}
+      />
+      <Tab.Screen
+        name="Shifts"
+        component={ShiftsScreen}
+        options={{ tabBarLabel: t('tabs.shifts'), headerTitle: t('tabs.shifts') }}
+      />
+      <Tab.Screen
+        name="Availability"
+        component={AvailabilityScreen}
+        options={{ tabBarLabel: t('tabs.availability'), headerTitle: t('tabs.availability') }}
+      />
+      <Tab.Screen
+        name="Documents"
+        component={DocumentsScreen}
+        options={{ tabBarLabel: t('tabs.documents'), headerTitle: t('tabs.documents') }}
+      />
+      <Tab.Screen
+        name="Timesheets"
+        component={TimesheetsScreen}
+        options={{ tabBarLabel: t('tabs.timesheets'), headerTitle: t('tabs.timesheets') }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ tabBarLabel: t('tabs.profile'), headerTitle: t('tabs.profile') }}
+      />
     </Tab.Navigator>
   );
 }

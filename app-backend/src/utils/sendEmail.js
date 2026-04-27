@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
 
-if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+const EMAIL_ENABLED = process.env.EMAIL_ENABLED === 'true';
+
+if (EMAIL_ENABLED && (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS)) {
   console.warn('⚠️  SMTP configuration is missing. Email sending will fail.');
   console.warn('   Please set SMTP_HOST, SMTP_USER, and SMTP_PASS in your .env file');
 }
@@ -90,6 +92,17 @@ const getOtpHtmlTemplate = ({ otp, name }) => {
 let transporter = createTransporter();
 
 export const sendOTP = async (email, otp, recipientName = '') => {
+  if (!EMAIL_ENABLED) {
+    console.log('');
+    console.log('┌─────────────────────────────────────────┐');
+    console.log(`│  📬 OTP for ${email.padEnd(28)}│`);
+    console.log(`│  🔑 Code : ${String(otp).padEnd(30)}│`);
+    console.log('│  ⏰ Expires in 5 minutes                │');
+    console.log('└─────────────────────────────────────────┘');
+    console.log('');
+    return;
+  }
+
   transporter = createTransporter();
   const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
 
@@ -117,7 +130,7 @@ export const sendOTP = async (email, otp, recipientName = '') => {
     console.error('   SMTP Config - Secure:', process.env.SMTP_SECURE || 'false');
     console.error('   SMTP Config - From Email:', fromEmail || 'NOT SET');
     console.error('   SMTP Config - Password Set:', process.env.SMTP_PASS ? 'YES' : 'NO');
-    
+
     if (!process.env.SMTP_HOST) {
       throw new Error('SMTP_HOST is not configured. Please set it in your .env file');
     }
@@ -127,45 +140,43 @@ export const sendOTP = async (email, otp, recipientName = '') => {
     if (!process.env.SMTP_FROM_EMAIL) {
       throw new Error('SMTP_FROM_EMAIL is not configured. For SendGrid, this must be a verified sender email. Please set it in your .env file or Email Settings UI');
     }
-    
+
     if (errorMsg.includes('Authentication failed') || errorMsg.includes('535')) {
       if (process.env.SMTP_HOST === 'smtp.sendgrid.net' && process.env.SMTP_USER !== 'apikey') {
         throw new Error('For SendGrid, SMTP_USER must be exactly "apikey" (not an email address). SMTP_PASS should be your SendGrid API key.');
       }
       throw new Error(`SMTP Authentication failed. Check your SMTP_USER and SMTP_PASS credentials. Error: ${errorMsg}`);
     }
-    
+
     if (errorMsg.includes('550') || errorMsg.includes('verified Sender Identity')) {
       throw new Error(`The FROM email address (${fromEmail}) is not verified in SendGrid. Please verify this email in SendGrid Dashboard → Settings → Sender Authentication. Error: ${errorMsg}`);
     }
-    
+
     throw new Error(`Failed to send OTP email: ${errorMsg}`);
   }
 };
 
 export const sendEmployerCredentials = async (email, tempPassword, contactPerson, companyName) => {
+  if (!EMAIL_ENABLED) {
+    console.log('');
+    console.log('┌─────────────────────────────────────────┐');
+    console.log(`│  📬 Employer credentials for ${email.substring(0, 12).padEnd(12)}│`);
+    console.log(`│  🔑 Temp Password : ${String(tempPassword).padEnd(21)}│`);
+    console.log('└─────────────────────────────────────────┘');
+    console.log('');
+    return;
+  }
+
   transporter = createTransporter();
-  
-  const subject = 'Your SecureShift Employer Account Credentials';
+
   const greetingName = contactPerson || companyName || 'there';
-  const text = `Hello ${greetingName},
-
-An employer account has been created for you on SecureShift.
-
-Email: ${email}
-Temporary Password: ${tempPassword}
-
-For security, please log in and change your password immediately.
-
-Best regards,
-SecureShift Team`;
-
   const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+
   const mailOptions = {
     from: `"SecureShift" <${fromEmail}>`,
     to: email,
-    subject,
-    text,
+    subject: 'Your SecureShift Employer Account Credentials',
+    text: `Hello ${greetingName},\n\nAn employer account has been created for you on SecureShift.\n\nEmail: ${email}\nTemporary Password: ${tempPassword}\n\nFor security, please log in and change your password immediately.\n\nBest regards,\nSecureShift Team`,
   };
 
   try {

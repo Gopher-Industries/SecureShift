@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EmployerDashboard.css";
-import CreateShift from "./createShift";
 
 /* --- icons --- */
 const IconCalendar = ({ className = "", ...props }) => (
@@ -132,7 +131,6 @@ export default function EmployerDashboard() {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [incidentDraft, setIncidentDraft] = useState({ severity: "Medium", comments: "" });
@@ -394,7 +392,7 @@ export default function EmployerDashboard() {
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => navigate("/create-shift")}
               type="button"
             >
               <IconPlus className="ss-plus" /> Create Shift
@@ -683,7 +681,11 @@ export default function EmployerDashboard() {
 
       {selectedIncident && (
         <div className="create-shift-modal-backdrop" onClick={() => setSelectedIncident(null)}>
-          <div className="create-shift-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
+          <div
+            className="create-shift-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "700px" }}
+          >
             <div className="create-shift-header">
               <div>
                 <h1>
@@ -792,8 +794,6 @@ export default function EmployerDashboard() {
           </div>
         </div>
       )}
-
-      {showCreateModal && <CreateShift isModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }

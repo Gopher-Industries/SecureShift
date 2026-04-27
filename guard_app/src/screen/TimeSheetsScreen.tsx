@@ -2,6 +2,7 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { AxiosError } from 'axios';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -13,7 +14,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import { getMyAttendance, type Attendance } from '../api/attendance';
+import { getUserAttendance, type Attendance } from '../api/attendance';
+import http from '../lib/http';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
@@ -46,6 +48,7 @@ export default function TimesheetsScreen() {
   const navigation = useNavigation<any>();
   const { colors } = useAppTheme();
   const s = getStyles(colors);
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,12 +56,21 @@ export default function TimesheetsScreen() {
 
   const load = async () => {
     try {
-      const rows = await getMyAttendance();
+      const { data: me } = await http.get('/users/me');
+      const userId = me?._id;
+
+      if (!userId) {
+        throw new Error('Unable to find logged-in user');
+      }
+
+      const rows = await getUserAttendance(userId);
       setItems(rows);
     } catch (e: unknown) {
       if (e instanceof AxiosError) {
         const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
         Alert.alert('Error', msg);
+      } else if (e instanceof Error) {
+        Alert.alert('Error', e.message);
       } else {
         Alert.alert('Error', 'Failed to load timesheets');
       }
@@ -88,42 +100,52 @@ export default function TimesheetsScreen() {
         ? (
             (new Date(item.checkOutTime).getTime() - new Date(item.checkInTime).getTime()) /
             (1000 * 60 * 60)
-          ).toFixed(1) + ' hrs'
+          ).toFixed(1) +
+          ' ' +
+          t('timesheet.hrs')
         : '—';
 
     return (
       <TouchableOpacity
         style={s.card}
-        onPress={() => navigation.navigate('ShiftDetails', { shiftId: item.shiftId })}
+        onPress={() =>
+          navigation.navigate('ShiftDetails', {
+            shiftId: typeof item.shiftId === 'object' ? item.shiftId?._id : item.shiftId,
+          })
+        }
       >
         <Text style={s.title}>{fmtShiftLabel(item)}</Text>
 
         <View style={s.row}>
-          <Text style={s.label}>Check In:</Text>
+          <Text style={s.label}>{t('timesheet.checkIn')}</Text>
           <Text style={s.value}>{fmtDateTime(item.checkInTime)}</Text>
         </View>
 
         <View style={s.row}>
-          <Text style={s.label}>Check Out:</Text>
+          <Text style={s.label}>{t('timesheet.checkOut')}</Text>
           <Text style={s.value}>{fmtDateTime(item.checkOutTime)}</Text>
         </View>
 
         <View style={s.row}>
-          <Text style={s.label}>Hours:</Text>
+          <Text style={s.label}>{t('timesheet.hours')}</Text>
           <Text style={s.value}>{hours}</Text>
         </View>
 
         <View style={s.rowBetween}>
           <Text style={s.meta}>
-            Status:{' '}
+            {t('timesheet.status')}{' '}
             <Text style={checkedIn ? s.ok : s.muted}>
-              {checkedOut ? 'Completed' : checkedIn ? 'In progress' : 'Not started'}
+              {checkedOut
+                ? t('timesheet.completed')
+                : checkedIn
+                  ? t('timesheet.inProgress')
+                  : t('timesheet.notStarted')}
             </Text>
           </Text>
 
           <View style={[s.badge, item.locationVerified ? s.badgeOk : s.badgeWarn]}>
             <Text style={[s.badgeText, item.locationVerified ? s.badgeTextOk : s.badgeTextWarn]}>
-              {item.locationVerified ? 'Verified' : 'Not verified'}
+              {item.locationVerified ? t('timesheet.verified') : t('timesheet.notVerified')}
             </Text>
           </View>
         </View>
@@ -135,7 +157,7 @@ export default function TimesheetsScreen() {
     return (
       <View style={s.center}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={s.loadingText}>Loading timesheets...</Text>
+        <Text style={s.loadingText}>{t('timesheet.loading')}</Text>
       </View>
     );
   }
@@ -146,9 +168,9 @@ export default function TimesheetsScreen() {
         data={items}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={s.listContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListEmptyComponent={<Text style={s.empty}>No timesheet records yet.</Text>}
+        ListEmptyComponent={<Text style={s.empty}>{t('timesheet.empty')}</Text>}
       />
     </View>
   );
@@ -258,5 +280,9 @@ const getStyles = (colors: AppColors) =>
 
     badgeTextWarn: {
       color: colors.link,
+    },
+
+    listContainer: {
+      padding: 16,
     },
   });

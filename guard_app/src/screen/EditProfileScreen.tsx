@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -35,6 +36,7 @@ interface EditProfileScreenProps {
 export default function EditProfileScreen({ navigation, route }: EditProfileScreenProps) {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -158,13 +160,17 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
       }
 
       await updateUserProfile(updatePayload);
-      Alert.alert('Success', 'Profile updated successfully!', [
-        {
-          text: 'OK',
-          onPress: () =>
-            navigation.navigate('AppTabs', { screen: 'Profile', params: { refresh: true } }),
-        },
-      ]);
+      Alert.alert(
+        t('signup.success') || 'Success',
+        t('editProfile.success') || 'Profile updated successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () =>
+              navigation.navigate('AppTabs', { screen: 'Profile', params: { refresh: true } }),
+          },
+        ],
+      );
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message || 'Failed to update profile. Please try again.';
@@ -175,10 +181,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
   };
 
   const handleCancel = () => {
-    Alert.alert('Discard Changes', 'Are you sure you want to discard your changes?', [
-      { text: 'Keep Editing' },
-      { text: 'Discard', style: 'destructive', onPress: () => navigation.goBack() },
-    ]);
+    navigation.goBack();
   };
 
   return (
@@ -191,19 +194,21 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
           <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
             <Ionicons name="close" size={24} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <Text style={styles.headerTitle}>{t('editProfile.title')}</Text>
           <TouchableOpacity
             onPress={handleSave}
             style={[styles.headerButton, styles.saveButton]}
             disabled={loading}
           >
-            <Text style={styles.saveButtonText}>{loading ? 'Saving...' : 'Save'}</Text>
+            <Text style={styles.saveButtonText}>
+              {loading ? t('editProfile.saving') : t('editProfile.save')}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Profile Picture</Text>
+            <Text style={styles.sectionTitle}>{t('editProfile.changeImage')}</Text>
             <View style={styles.avatarContainer}>
               <TouchableOpacity onPress={handleImagePicker}>
                 {profileImage ? (
@@ -217,20 +222,20 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
                   <Ionicons name="camera" size={20} color={colors.white} />
                 </View>
               </TouchableOpacity>
-              <Text style={styles.avatarHint}>Tap to change profile picture</Text>
+              <Text style={styles.avatarHint}>{t('editProfile.uploadNew')}</Text>
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <Text style={styles.sectionTitle}>{t('editProfile.personalInfo')}</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Full Name *</Text>
+              <Text style={styles.label}>{t('editProfile.name')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.name}
                 onChangeText={(value) => handleInputChange('name', value)}
-                placeholder="Enter your full name"
+                placeholder=""
                 placeholderTextColor={colors.muted}
                 autoCapitalize="words"
                 autoCorrect={false}
@@ -238,12 +243,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email Address *</Text>
+              <Text style={styles.label}>{t('editProfile.email')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.email}
                 onChangeText={(value) => handleInputChange('email', value)}
-                placeholder="Enter your email"
+                placeholder=""
                 placeholderTextColor={colors.muted}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -252,12 +257,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={styles.label}>{t('editProfile.phone')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.phone}
                 onChangeText={(value) => handleInputChange('phone', value)}
-                placeholder="Enter your phone number"
+                placeholder=""
                 placeholderTextColor={colors.muted}
                 keyboardType="phone-pad"
                 autoCorrect={false}
@@ -266,15 +271,15 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Address Information</Text>
+            <Text style={styles.sectionTitle}>{t('editProfile.address')}</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Street Address</Text>
+              <Text style={styles.label}>{t('editProfile.street')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.street}
                 onChangeText={(value) => handleInputChange('street', value)}
-                placeholder="Enter street address"
+                placeholder=""
                 placeholderTextColor={colors.muted}
                 autoCapitalize="words"
                 autoCorrect={false}
@@ -283,12 +288,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
 
             <View style={styles.row}>
               <View style={[styles.inputGroup, styles.halfWidth]}>
-                <Text style={styles.label}>Suburb</Text>
+                <Text style={styles.label}>{t('editProfile.suburb')}</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.suburb}
                   onChangeText={(value) => handleInputChange('suburb', value)}
-                  placeholder="Suburb"
+                  placeholder=""
                   placeholderTextColor={colors.muted}
                   autoCapitalize="words"
                   autoCorrect={false}
@@ -296,12 +301,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
               </View>
 
               <View style={[styles.inputGroup, styles.halfWidth]}>
-                <Text style={styles.label}>State</Text>
+                <Text style={styles.label}>{t('editProfile.state')}</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.state}
                   onChangeText={(value) => handleInputChange('state', value)}
-                  placeholder="State"
+                  placeholder=""
                   placeholderTextColor={colors.muted}
                   autoCapitalize="characters"
                   autoCorrect={false}
@@ -310,12 +315,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Postcode</Text>
+              <Text style={styles.label}>{t('editProfile.postcode')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.postcode}
                 onChangeText={(value) => handleInputChange('postcode', value)}
-                placeholder="Enter 4-digit postcode"
+                placeholder=""
                 placeholderTextColor={colors.muted}
                 keyboardType="numeric"
                 maxLength={4}
@@ -326,7 +331,7 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
 
           {licenseImage && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>License Information</Text>
+              <Text style={styles.sectionTitle}>{t('editProfile.licenseInfo')}</Text>
               <Image source={{ uri: licenseImage }} style={styles.imagePreview} />
             </View>
           )}

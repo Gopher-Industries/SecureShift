@@ -1,4 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import AppTabs from './AppTabs';
 import CertificatesScreen from '../screen/CertificatesScreen';
@@ -12,6 +13,7 @@ import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
+import TermsScreen from '../screen/TermsScreen';
 import { useAppTheme } from '../theme';
 
 export type RootStackParamList = {
@@ -35,13 +37,15 @@ export type RootStackParamList = {
     | undefined;
   Notifications: undefined;
   Certificates: undefined;
-  ShiftDetails: { shift: any; refresh?: () => void };
+  ShiftDetails: { shift: any };
+  Terms: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <Stack.Navigator
@@ -55,29 +59,33 @@ export default function AppNavigator() {
       }}
     >
       <Stack.Screen name="AppTabs" component={AppTabs} />
-      <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
-      <Stack.Screen name="Documents" component={DocumentsScreen} />
+      <Stack.Screen
+        name="Documents"
+        component={DocumentsScreen}
+        options={{ headerShown: true, title: t('tabs.documents') }}
+      />
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ headerShown: true, title: 'Settings' }}
+        options={{ headerShown: true, title: t('nav.settings') }}
       />
       <Stack.Screen
         name="PrivacyPolicy"
         component={PrivacyPolicyScreen}
-        options={{ headerShown: true, title: 'Privacy Policy' }}
+        options={{ headerShown: true, title: t('nav.privacyPolicy') }}
       />
       <Stack.Screen
         name="Messages"
         component={MessagesScreen}
-        options={{ headerShown: true, title: 'Messages' }}
+        options={{ headerShown: true, title: t('nav.messages') }}
       />
       <Stack.Screen
         name="Notifications"
         component={NotificationsScreen}
-        options={{ headerShown: true, title: 'Notifications' }}
+        options={{ headerShown: true, title: t('nav.notifications') }}
       />
       <Stack.Screen
         name="EditProfile"
@@ -87,12 +95,17 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Certificates"
         component={CertificatesScreen}
-        options={{ headerShown: true, title: 'Certificates' }}
+        options={{ headerShown: true, title: t('nav.certificates') }}
       />
       <Stack.Screen
         name="ShiftDetails"
         component={ShiftDetailsScreen}
-        options={{ headerShown: true, title: 'Shift Details' }}
+        options={{ headerShown: true, title: t('nav.shiftDetails') }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ headerShown: true, title: 'Terms of Service' }}
       />
     </Stack.Navigator>
   );

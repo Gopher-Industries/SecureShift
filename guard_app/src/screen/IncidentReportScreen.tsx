@@ -1,23 +1,30 @@
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  Alert,
-  ScrollView,
-  Image,
-  ActivityIndicator,
+  View,
 } from 'react-native';
 
+import ErrorMessageBox from '../components/ErrorMessageBox';
 import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
+
+import type { AppColors } from '../theme/colors';
 
 type Severity = 'Low' | 'Medium' | 'High';
 
 const getNowDateTime = () => new Date().toISOString().slice(0, 16).replace('T', ' ');
+
+type ErrorState = {
+  title: string;
+  message: string;
+} | null;
 
 export default function IncidentReportScreen() {
   const { colors } = useAppTheme();
@@ -28,6 +35,7 @@ export default function IncidentReportScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [dateTime] = useState(getNowDateTime());
+  const [errorState, setErrorState] = useState<ErrorState>(null);
 
   const pickImage = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -41,9 +49,17 @@ export default function IncidentReportScreen() {
     }
   };
 
+  const closeErrorBox = () => {
+    setErrorState(null);
+  };
+
   const submitReport = async () => {
     if (!description.trim() || !severity) {
-      Alert.alert('Missing fields', 'Please fill all required fields.');
+      setErrorState({
+        title: 'Missing required fields',
+        message:
+          'Please complete the incident description and select a severity before submitting the report.',
+      });
       return;
     }
 
@@ -59,58 +75,67 @@ export default function IncidentReportScreen() {
   };
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={s.title}>Incident Report</Text>
+    <>
+      <ScrollView style={s.screen} contentContainerStyle={s.contentContainer}>
+        <Text style={s.title}>Incident Report</Text>
 
-      <Text style={s.label}>Incident Description *</Text>
-      <TextInput
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Describe what happened..."
-        placeholderTextColor={colors.muted}
-        multiline
-        style={s.textArea}
-      />
+        <Text style={s.label}>Incident Description *</Text>
+        <TextInput
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Describe what happened..."
+          placeholderTextColor={colors.muted}
+          multiline
+          style={s.textArea}
+        />
 
-      <Text style={s.label}>Date &amp; Time *</Text>
-      <Text style={s.readOnly}>{dateTime}</Text>
+        <Text style={s.label}>Date &amp; Time *</Text>
+        <Text style={s.readOnly}>{dateTime}</Text>
 
-      <Text style={s.label}>Severity *</Text>
-      <View style={s.row}>
-        {(['Low', 'Medium', 'High'] as Severity[]).map((lvl) => (
-          <TouchableOpacity
-            key={lvl}
-            style={[s.severityBtn, severity === lvl && s.severitySelected]}
-            onPress={() => setSeverity(lvl)}
-          >
-            <Text
-              style={[s.severityText, { color: severity === lvl ? colors.white : colors.text }]}
+        <Text style={s.label}>Severity *</Text>
+        <View style={s.row}>
+          {(['Low', 'Medium', 'High'] as Severity[]).map((lvl) => (
+            <TouchableOpacity
+              key={lvl}
+              style={[s.severityBtn, severity === lvl && s.severitySelected]}
+              onPress={() => setSeverity(lvl)}
             >
-              {lvl}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[s.severityText, { color: severity === lvl ? colors.white : colors.text }]}
+              >
+                {lvl}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <Text style={s.label}>Photos (optional)</Text>
-      <TouchableOpacity style={s.photoBtn} onPress={pickImage}>
-        <Text style={s.photoBtnText}>Add Photos</Text>
-      </TouchableOpacity>
+        <Text style={s.label}>Photos (optional)</Text>
+        <TouchableOpacity style={s.photoBtn} onPress={pickImage}>
+          <Text style={s.photoBtnText}>Add Photos</Text>
+        </TouchableOpacity>
 
-      <ScrollView horizontal style={{ marginTop: 10 }} showsHorizontalScrollIndicator={false}>
-        {images.map((uri) => (
-          <Image key={uri} source={{ uri }} style={s.preview} />
-        ))}
+        <ScrollView horizontal style={s.previewRow} showsHorizontalScrollIndicator={false}>
+          {images.map((uri) => (
+            <Image key={uri} source={{ uri }} style={s.preview} />
+          ))}
+        </ScrollView>
+
+        <TouchableOpacity style={s.submitBtn} onPress={submitReport} disabled={submitting}>
+          {submitting ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <Text style={s.submitText}>Submit Report</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
 
-      <TouchableOpacity style={s.submitBtn} onPress={submitReport} disabled={submitting}>
-        {submitting ? (
-          <ActivityIndicator color={colors.white} />
-        ) : (
-          <Text style={s.submitText}>Submit Report</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+      <ErrorMessageBox
+        visible={Boolean(errorState)}
+        title={errorState?.title}
+        message={errorState?.message}
+        onClose={closeErrorBox}
+      />
+    </>
   );
 }
 
@@ -120,6 +145,9 @@ const getStyles = (colors: AppColors) =>
       flex: 1,
       backgroundColor: colors.bg,
       padding: 16,
+    },
+    contentContainer: {
+      paddingBottom: 32,
     },
     title: {
       fontSize: 22,
@@ -189,6 +217,9 @@ const getStyles = (colors: AppColors) =>
     photoBtnText: {
       color: colors.white,
       fontWeight: '600',
+    },
+    previewRow: {
+      marginTop: 10,
     },
     preview: {
       width: 70,
