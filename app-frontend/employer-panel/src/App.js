@@ -24,6 +24,7 @@ import PageTitleHandler from './components/PageTitleHandler';
 import ProtectedRoute from './routes/ProtectedRoute';
 
 import Timesheet from "./pages/Timesheet";
+import Payroll from './pages/Payroll';
 
 /**
  * PUBLIC ROUTE: Task Detail (no layout)
@@ -79,6 +80,7 @@ function AppRoutes() {
         <Route path="/guard-profiles/:guardId" element={<ProtectedLayout><GuardProfilePage /></ProtectedLayout>} />
         <Route path="/company-profile" element={<ProtectedLayout><CompanyProfile /></ProtectedLayout>} />
         <Route path="/email-settings" element={<ProtectedLayout><EmailSettings /></ProtectedLayout>} />
+        <Route path="/payroll" element={<ProtectedLayout><Payroll /></ProtectedLayout>} />
       </Routes>
     </>
   );
