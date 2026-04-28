@@ -3,10 +3,8 @@
 import { Ionicons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ExpoConstants from 'expo-constants';
-import React, { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useState } from 'react';
 import {
   Alert,
   Linking,
@@ -18,19 +16,14 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Modal,
 } from 'react-native';
-
-import { LocalStorage } from '../lib/localStorage';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
-
-type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 // Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';
-const NOTIFICATIONS_STORAGE_KEY = '@guard_notifications_enabled';
+
+const NAVY = '#274b93';
+const BORDER = '#E7EBF2';
+const MUTED = '#5C667A';
 const CANVAS_PADDING = 20;
 
 function Row({
@@ -40,7 +33,6 @@ function Row({
   onPress,
   accessibilityLabel,
   testID,
-  colors,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -48,10 +40,7 @@ function Row({
   onPress?: () => void;
   accessibilityLabel?: string;
   testID?: string;
-  colors: AppColors;
 }) {
-  const styles = getStyles(colors);
-
   const content = (
     <View style={styles.rowInner}>
       <View style={styles.rowLeft}>
@@ -60,7 +49,7 @@ function Row({
       </View>
       <View style={styles.rowRight}>
         {right}
-        {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.muted} /> : null}
+        {onPress ? <Ionicons name="chevron-forward" size={18} color={MUTED} /> : null}
       </View>
     </View>
   );
@@ -88,46 +77,10 @@ function Row({
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
-  const navigation2 = useNavigation<Nav>();
-  const { colors, themeMode, setThemeMode } = useAppTheme();
-  const styles = getStyles(colors);
-  const { t, i18n } = useTranslation();
 
+  // Local-only toggles (no backend yet)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [langModalVisible, setLangModalVisible] = useState(false);
-
-  useEffect(() => {
-    const loadNotificationPreference = async () => {
-      try {
-        const savedValue = await AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-
-        if (savedValue !== null) {
-          setNotificationsEnabled(savedValue === 'true');
-        }
-      } catch (error) {
-        console.error('Failed to load notification preference:', error);
-      }
-    };
-
-    void loadNotificationPreference();
-  }, []);
-
-  const handleToggleNotifications = async (value: boolean) => {
-    try {
-      setNotificationsEnabled(value);
-      await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, String(value));
-
-      Alert.alert(
-        'Notifications',
-        value ? 'Notifications have been enabled.' : 'Notifications have been disabled.',
-      );
-    } catch (error) {
-      console.error('Failed to save notification preference:', error);
-      Alert.alert('Error', 'Unable to update notification preference.');
-    }
-  };
-
-  const darkMode = themeMode === 'dark';
+  const [darkMode, setDarkMode] = useState(false);
 
   const appName =
     (ExpoConstants?.expoConfig as unknown as { name?: string })?.name ||
@@ -139,19 +92,11 @@ export default function SettingsScreen() {
     (ExpoConstants as unknown as { manifest?: { version?: string } })?.manifest?.version ||
     '1.0.0';
 
-  const handleLogout = async () => {
-    try {
-      await LocalStorage.removeToken();
-      await LocalStorage.removePushToken();
-      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' as never }],
-      });
-    } catch (error) {
-      console.error('Error during logout:', error);
-      Alert.alert('Logout Failed', 'An error occurred while logging out. Please try again.');
-    }
+  const handleLogout = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' as never }],
+    });
   };
 
   const openMail = () =>
@@ -169,18 +114,19 @@ export default function SettingsScreen() {
 
   const clearLocalData = () => {
     Alert.alert(
-      t('settings.clearLocalData'),
-      'This will remove locally stored profile data. Continue?',
+      'Clear Local Data',
+      'This will remove locally stored profile data (e.g., contact/certifications). Continue?',
       [
-        { text: t('lang.cancel'), style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear',
           style: 'destructive',
           onPress: async () => {
             try {
               await AsyncStorage.removeItem(PROFILE_STORAGE_KEY);
+              Alert.alert('Done', 'Local profile data cleared.');
             } catch {
-              // Ignore
+              Alert.alert('Error', 'Could not clear local data.');
             }
           },
         },
@@ -188,272 +134,166 @@ export default function SettingsScreen() {
     );
   };
 
-  const currentLangLabel =
-    i18n.language === 'zh-CN'
-      ? '简体中文'
-      : i18n.language === 'zh-TW'
-        ? '繁體中文'
-        : i18n.language === 'hi'
-          ? 'हिन्दी'
-          : 'English';
-
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        {/* About */}
         <View style={styles.card} testID="about-card">
-          <Text style={styles.cardTitle}>{t('settings.about')}</Text>
+          <Text style={styles.cardTitle}>About</Text>
           <Row
-            icon={<Ionicons name="information-circle-outline" size={18} color={colors.primary} />}
+            icon={<Ionicons name="information-circle-outline" size={18} color={NAVY} />}
             label={appName}
             right={<Text style={styles.meta}>v{appVersion}</Text>}
-            colors={colors}
           />
           <Row
-            icon={<Feather name="file-text" size={18} color={colors.primary} />}
-            label={t('settings.releaseNotes')}
-            colors={colors}
+            icon={<Feather name="file-text" size={18} color={NAVY} />}
+            label="Release Notes"
+            onPress={() => navigation.navigate('ReleaseNotes' as never)}
           />
         </View>
 
+        {/* Contact Us */}
         <View style={styles.card} testID="contact-card">
-          <Text style={styles.cardTitle}>{t('settings.contactUs')}</Text>
+          <Text style={styles.cardTitle}>Contact Us</Text>
           <Row
-            icon={<Ionicons name="mail-outline" size={18} color={colors.primary} />}
-            label={t('settings.emailSupport')}
+            icon={<Ionicons name="mail-outline" size={18} color={NAVY} />}
+            label="Email Support"
             onPress={openMail}
-            colors={colors}
           />
           <Row
-            icon={<Ionicons name="call-outline" size={18} color={colors.primary} />}
-            label={t('settings.callSupport')}
+            icon={<Ionicons name="call-outline" size={18} color={NAVY} />}
+            label="Call Support"
             onPress={callSupport}
-            colors={colors}
           />
           <Row
-            icon={<Ionicons name="globe-outline" size={18} color={colors.primary} />}
-            label={t('settings.visitWebsite')}
+            icon={<Ionicons name="globe-outline" size={18} color={NAVY} />}
+            label="Visit Website"
             onPress={openWebsite}
-            colors={colors}
           />
         </View>
 
+        {/* Preferences (local only) */}
         <View style={styles.card} testID="prefs-card">
-          <Text style={styles.cardTitle}>{t('settings.preferences')}</Text>
+          <Text style={styles.cardTitle}>Preferences</Text>
           <Row
-            icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />}
-            label={t('settings.notifications')}
+            icon={<Ionicons name="notifications-outline" size={18} color={NAVY} />}
+            label="Notifications"
             right={
               <Switch
                 value={notificationsEnabled}
-                onValueChange={(value) => void handleToggleNotifications(value)}
-                thumbColor={Platform.OS === 'android' ? colors.white : undefined}
-                trackColor={{ false: colors.border, true: colors.primary }}
+                onValueChange={setNotificationsEnabled}
+                thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+                trackColor={{ false: '#d1d5db', true: NAVY }}
               />
             }
-            colors={colors}
+            accessibilityLabel="Toggle notifications"
           />
           <Row
-            icon={<Ionicons name="language-outline" size={18} color={colors.primary} />}
-            label={t('settings.language')}
-            right={<Text style={styles.meta}>{currentLangLabel}</Text>}
-            onPress={() => setLangModalVisible(true)}
-            colors={colors}
-          />
-          <Row
-            icon={<Ionicons name="moon-outline" size={18} color={colors.primary} />}
-            label={t('settings.darkMode')}
+            icon={<Ionicons name="moon-outline" size={18} color={NAVY} />}
+            label="Dark Mode"
             right={
               <Switch
                 value={darkMode}
-                onValueChange={(value) => void setThemeMode(value ? 'dark' : 'light')}
-                thumbColor={Platform.OS === 'android' ? colors.white : undefined}
-                trackColor={{ false: colors.border, true: colors.primary }}
+                onValueChange={setDarkMode}
+                thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
+                trackColor={{ false: '#d1d5db', true: NAVY }}
               />
             }
-            colors={colors}
+            accessibilityLabel="Toggle dark mode"
           />
         </View>
 
+        {/* Data & Privacy */}
         <View style={styles.card} testID="privacy-card">
-          <Text style={styles.cardTitle}>{t('settings.dataPrivacy')}</Text>
+          <Text style={styles.cardTitle}>Data & Privacy</Text>
           <Row
-            icon={<Ionicons name="trash-outline" size={18} color={colors.status.rejected} />}
-            label={t('settings.clearLocalData')}
+            icon={<Ionicons name="trash-outline" size={18} color="#B91C1C" />}
+            label="Clear Local Data"
             onPress={clearLocalData}
-            colors={colors}
           />
           <Row
-            icon={<Ionicons name="document-text-outline" size={18} color={colors.primary} />}
-            label={t('settings.privacyPolicy')}
-            onPress={() => navigation2.navigate('PrivacyPolicy')}
-            colors={colors}
+            icon={<Ionicons name="document-text-outline" size={18} color={NAVY} />}
+            label="Privacy Policy"
+            onPress={() => Alert.alert('Privacy Policy', 'Coming soon')}
           />
           <Row
-            icon={<Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />}
-            label={t('settings.tos')}
-            onPress={() => navigation2.navigate('Terms')}
-            colors={colors}
+            icon={<Ionicons name="shield-checkmark-outline" size={18} color={NAVY} />}
+            label="Terms of Service"
+            onPress={() => Alert.alert('Terms of Service', 'Coming soon')}
           />
         </View>
 
+        {/* Logout */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.logoutBtn}
             onPress={handleLogout}
-            accessibilityLabel={t('settings.logout')}
+            accessibilityLabel="Log out"
           >
-            <Text style={styles.logoutText}>{t('settings.logout')}</Text>
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.spacer} />
       </ScrollView>
-
-      <Modal
-        visible={langModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setLangModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBg}
-          activeOpacity={1}
-          onPress={() => setLangModalVisible(false)}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t('lang.select')}</Text>
-            {[
-              { code: 'en', label: 'English' },
-              { code: 'zh-CN', label: '简体中文' },
-              { code: 'zh-TW', label: '繁體中文' },
-              { code: 'hi', label: 'हिन्दी' },
-            ].map((lng) => (
-              <TouchableOpacity
-                key={lng.code}
-                style={styles.langOpt}
-                onPress={() => {
-                  i18n.changeLanguage(lng.code);
-                  setLangModalVisible(false);
-                }}
-              >
-                <Text style={styles.langOptText}>{lng.label}</Text>
-                {i18n.language === lng.code && (
-                  <Ionicons name="checkmark" size={20} color={colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setLangModalVisible(false)}>
-              <Text style={styles.cancelBtnText}>{t('lang.cancel')}</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </SafeAreaView>
   );
 }
 
-const getStyles = (colors: AppColors) =>
-  StyleSheet.create({
-    card: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: 24,
-      borderWidth: 1,
-      elevation: 6,
-      marginBottom: 16,
-      padding: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-    },
-    cardTitle: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '800',
-      marginBottom: 8,
-    },
-    footer: { alignItems: 'center', marginTop: 8 },
-    logoutBtn: {
-      alignItems: 'center',
-      backgroundColor: colors.primary,
-      borderRadius: 9999,
-      elevation: 3,
-      minWidth: 180,
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    logoutText: {
-      color: colors.white,
-      fontSize: 16,
-      fontWeight: '600',
-      letterSpacing: 0.5,
-    },
-    meta: { color: colors.muted, fontSize: 12 },
-    row: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      borderRadius: 16,
-      borderWidth: 1,
-      marginTop: 10,
-      padding: 12,
-    },
-    rowIcon: {
-      alignItems: 'center',
-      backgroundColor: colors.primarySoft,
-      borderRadius: 12,
-      height: 36,
-      justifyContent: 'center',
-      marginRight: 10,
-      width: 36,
-    },
-    rowInner: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-    rowLabel: { color: colors.text, flexShrink: 1, fontSize: 14, fontWeight: '600' },
-    rowLeft: { alignItems: 'center', flexDirection: 'row', flexShrink: 1 },
-    rowRight: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-    safe: { backgroundColor: colors.bg, flex: 1 },
-    scroll: { padding: CANVAS_PADDING },
-    spacer: { height: 20 },
-    modalBg: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      justifyContent: 'center',
-      padding: 30,
-    },
-    modalContent: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 20,
-    },
-    modalTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 16,
-      textAlign: 'center',
-    },
-    langOpt: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingVertical: 14,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    langOptText: {
-      fontSize: 16,
-      color: colors.text,
-    },
-    cancelBtn: {
-      marginTop: 20,
-      alignItems: 'center',
-      paddingVertical: 12,
-    },
-    cancelBtnText: {
-      color: colors.status.rejected,
-      fontWeight: 'bold',
-    },
-  });
+const styles = StyleSheet.create({
+  // keep class names alphabetized
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderColor: BORDER,
+    borderRadius: 24,
+    borderWidth: 1,
+    elevation: 6,
+    marginBottom: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+  },
+  cardTitle: { color: '#0F172A', fontSize: 16, fontWeight: '800', marginBottom: 8 },
+  footer: { alignItems: 'center', marginTop: 8 },
+  logoutBtn: {
+    alignItems: 'center',
+    backgroundColor: NAVY,
+    borderRadius: 9999,
+    elevation: 3,
+    minWidth: 180,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  logoutText: { color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.5 },
+  meta: { color: MUTED, fontSize: 12 },
+  row: {
+    backgroundColor: '#FFFFFF',
+    borderColor: BORDER,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 12,
+  },
+  rowIcon: {
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    height: 36,
+    justifyContent: 'center',
+    marginRight: 10,
+    width: 36,
+  },
+  rowInner: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  rowLabel: { color: '#111827', flexShrink: 1, fontSize: 14, fontWeight: '600' },
+  rowLeft: { alignItems: 'center', flexDirection: 'row', flexShrink: 1 },
+  rowRight: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  safe: { backgroundColor: '#F9FAFB', flex: 1 },
+  scroll: { padding: CANVAS_PADDING },
+  spacer: { height: 20 },
+});
