@@ -347,7 +347,7 @@ export const updateShift = async (req, res) => {
     }
 
     const updates = {};
-    const { title, date, startTime, endTime, payRate, urgency, field, location, description, requirements } = req.body;
+    const { title, date, startTime, endTime, payRate, urgency, field, location, description, requirements, status } = req.body;
 
     if (title !== undefined) {
       if (typeof title !== 'string' || title.trim().length < 3) {
@@ -433,11 +433,11 @@ export const updateShift = async (req, res) => {
       updates.location = loc;
     }
     if (status !== undefined) {
-      const allowedStatuses = ['draft', 'open'];
+      const allowedStatuses = ['draft', 'open', 'applied', 'assigned', 'completed'];
 
       if (!allowedStatuses.includes(status)) {
         return res.status(400).json({
-          message: 'Invalid status. Allowed: draft, open'
+          message: 'Invalid status. Allowed: draft, open, applied, assigned, completed'
         });
       }
 
@@ -451,7 +451,10 @@ export const updateShift = async (req, res) => {
         // allowed transitions
         const allowedTransitions = {
           draft: ['open'],
-          open: ['draft'],
+          open: ['draft', 'applied', 'assigned'],
+          applied: ['open', 'assigned'],
+          assigned: ['completed', 'open'],
+          completed: [],
         };
 
         if (!allowedTransitions[current]?.includes(status)) {
