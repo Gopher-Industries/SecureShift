@@ -6,107 +6,24 @@ import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { getMe } from '../api/auth';
+import { getPayroll, type PayrollResponse, PayrollPeriodType } from '../api/payroll';
 import PayrollFilterModal from '../components/PayrollFilterModal';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
-
-interface Payroll {
-  startDate: Date;
-  endDate: Date;
-  periodType: 'daily' | 'weekly' | 'monthly';
-  guardId?: string;
-  site?: string;
-  department?: string;
-}
 
 export default function PayrollScreen() {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
   const { t } = useTranslation();
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [rows, setRows] = useState<Payroll[]>([]);
+  const [rows, setRows] = useState<PayrollResponse>();
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
-      const me = await getMe();
-      const myUid = me?._id ?? me?.id ?? '';
-
-      //const resp = await getPayrollData();
-      //const mapped = mapPayroll(resp.items);
-      // THE FOLLOWING IS DUMMY DATA
-      const pay1: Payroll = { startDate: new Date(), endDate: new Date(), periodType: 'daily' };
-      const pay2: Payroll = {
-        startDate: new Date(),
-        endDate: new Date(),
-        periodType: 'weekly',
-        guardId: '123',
-        site: 'Home',
-        department: 'Accounting',
-      };
-      const pay11: Payroll = { startDate: new Date(), endDate: new Date(), periodType: 'daily' };
-      const pay21: Payroll = {
-        startDate: new Date(),
-        endDate: new Date(),
-        periodType: 'weekly',
-        guardId: '456',
-        site: 'Home',
-        department: 'Accounting',
-      };
-      const pay111: Payroll = { startDate: new Date(), endDate: new Date(), periodType: 'daily' };
-      const pay211: Payroll = {
-        startDate: new Date(),
-        endDate: new Date(),
-        periodType: 'weekly',
-        guardId: '129042',
-        site: 'Place',
-        department: 'Firm',
-      };
-      const pay122: Payroll = { startDate: new Date(), endDate: new Date(), periodType: 'daily' };
-      const pay222: Payroll = {
-        startDate: new Date(),
-        endDate: new Date(),
-        periodType: 'monthly',
-        guardId: '98415',
-        site: 'Home',
-        department: 'Accounting',
-      };
-      const pay12: Payroll = { startDate: new Date(), endDate: new Date(), periodType: 'daily' };
-      const pay22: Payroll = {
-        startDate: new Date('2025-12-12'),
-        endDate: new Date(),
-        periodType: 'weekly',
-        guardId: '129042',
-        site: 'Home',
-        department: 'Accounting',
-      };
-      const pay223: Payroll = {
-        startDate: new Date('2025-12-12'),
-        endDate: new Date('2025-12-12'),
-        periodType: 'weekly',
-        guardId: '129042',
-        site: 'Home',
-        department: 'Accounting',
-      };
-
-      const mapped = [
-        pay1,
-        pay2,
-        pay11,
-        pay111,
-        pay12,
-        pay122,
-        pay21,
-        pay211,
-        pay22,
-        pay222,
-        pay223,
-      ];
-      setRows(mapped);
+      setModalVisible(true);
       setError('');
     } catch (e) {
       console.error(e);
@@ -118,106 +35,31 @@ export default function PayrollScreen() {
 
   useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
 
-  const handleAddFilter = (
+  const handleAddFilter = async (
     start: Date,
     end: Date,
-    period: string,
+    period: PayrollPeriodType,
     id?: string,
-    site?: string,
     department?: string,
   ) => {
-    let mapped = rows;
-
-    //Frustratingly the least intensive way I can manage to make this work
-    if (id != null && id != '') {
-      if (site != null && site != '') {
-        if (department != null && department != '') {
-          mapped = rows.filter(function (row) {
-            return (
-              row.periodType === period &&
-              row.startDate.toDateString() === start.toDateString() &&
-              row.endDate.toDateString() === end.toDateString() &&
-              row.guardId === id &&
-              row.site === site &&
-              row.department === department
-            );
-          });
-        } else {
-          mapped = rows.filter(function (row) {
-            return (
-              row.periodType === period &&
-              row.startDate.toDateString() === start.toDateString() &&
-              row.endDate.toDateString() === end.toDateString() &&
-              row.guardId === id
-            );
-          });
-        }
-      } else {
-        if (department != null && department != '') {
-          mapped = rows.filter(function (row) {
-            return (
-              row.periodType === period &&
-              row.startDate.toDateString() === start.toDateString() &&
-              row.endDate.toDateString() === end.toDateString() &&
-              row.guardId === id &&
-              row.department === department
-            );
-          });
-        } else {
-          mapped = rows.filter(function (row) {
-            return (
-              row.periodType === period &&
-              row.startDate.toDateString() === start.toDateString() &&
-              row.endDate.toDateString() === end.toDateString() &&
-              row.guardId === id
-            );
-          });
-        }
-      }
-    } else {
-      if (site != null && site != '') {
-        if (department != null && department != '') {
-          mapped = rows.filter(function (row) {
-            return (
-              row.periodType === period &&
-              row.startDate.toDateString() === start.toDateString() &&
-              row.endDate.toDateString() === end.toDateString() &&
-              row.site === site &&
-              row.department === department
-            );
-          });
-        } else {
-          mapped = rows.filter(function (row) {
-            return (
-              row.periodType === period &&
-              row.startDate.toDateString() === start.toDateString() &&
-              row.endDate.toDateString() === end.toDateString()
-            );
-          });
-        }
-      } else {
-        if (department != null && department != '') {
-          mapped = rows.filter(function (row) {
-            return (
-              row.periodType === period &&
-              row.startDate.toDateString() === start.toDateString() &&
-              row.endDate.toDateString() === end.toDateString() &&
-              row.department === department
-            );
-          });
-        } else {
-          mapped = rows.filter(function (row) {
-            return (
-              row.periodType === period &&
-              row.startDate.toDateString() === start.toDateString() &&
-              row.endDate.toDateString() === end.toDateString()
-            );
-          });
-        }
-      }
+    console.log(start);
+    setLoading(true);
+    try {
+      const mapped = await getPayroll({
+        startDate: start.toDateString(),
+        endDate: end.toDateString(),
+        periodType: period,
+        guardId: id,
+        department: department,
+      });
+      setRows(mapped);
+      setError('');
+    } catch (e) {
+      console.log(e);
+      setError(t('payroll.error'));
+    } finally {
+      setLoading(false);
     }
-
-    setRows(mapped);
   };
 
   return (
@@ -236,29 +78,20 @@ export default function PayrollScreen() {
       {!error && !loading && (
         <View style={styles.mainView}>
           <FlatList
-            data={rows}
+            data={rows?.records}
             contentContainerStyle={styles.payList}
             renderItem={({ item }) => (
               <View style={styles.payCard}>
-                <Text style={{ fontSize: 18 }}>
-                  {item.startDate.toDateString()} - {item.endDate.toDateString()}
+                <Text style={styles.periodCard}>
+                  {item.period.endDate} - {item.period.endDate}
                 </Text>
                 <View style={styles.payRow}>
                   <Text style={styles.payMeta}>
-                    {t('payroll.period')} {item.periodType}
+                    {t('payroll.period')} {item.period.type}
                   </Text>
                   <Text style={styles.payMetaDot}>•</Text>
                   <Text style={styles.payMeta}>
-                    {t('payroll.guardID')} {item.guardId ?? 'Not found'}
-                  </Text>
-                </View>
-                <View style={styles.payRow}>
-                  <Text style={styles.payMeta}>
-                    {t('payroll.site')} {item.site ?? 'Not found'}
-                  </Text>
-                  <Text style={styles.payMetaDot}>•</Text>
-                  <Text style={styles.payMeta}>
-                    {t('payroll.department')} {item.department ?? 'Not found'}
+                    {t('payroll.guardID')} {item.guard ?? 'Not found'}
                   </Text>
                 </View>
               </View>
@@ -313,6 +146,9 @@ const getStyles = (colors: AppColors) =>
       shadowOpacity: 0.05,
       shadowRadius: 4,
       elevation: 2,
+    },
+    periodCard: {
+      fontSize: 18,
     },
     payRow: {
       flexDirection: 'row',

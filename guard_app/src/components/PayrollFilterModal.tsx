@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 
+import { type PayrollPeriodType } from '../api/payroll';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
@@ -23,9 +24,8 @@ export interface FilterPayrollProps {
   onFilter: (
     start: Date,
     end: Date,
-    period: string,
+    period: PayrollPeriodType,
     guardId?: string,
-    site?: string,
     department?: string,
   ) => void;
 }
@@ -52,8 +52,7 @@ export default function PayRollFilterModal({ visible, onClose, onFilter }: Filte
   const [department, setDepartment] = useState<string>('');
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [guardID, setGuardID] = useState<string>('');
-  const [selectedPeriodType, setSelectedPeriodType] = useState<string>('');
-  const [site, setSite] = useState<string>('');
+  const [selectedPeriodType, setSelectedPeriodType] = useState<PayrollPeriodType>('daily');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showOptional, setShowOptional] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -69,7 +68,7 @@ export default function PayRollFilterModal({ visible, onClose, onFilter }: Filte
   };
 
   const handleFilter = () => {
-    if (!startDate || !endDate || selectedPeriodType == '') {
+    if (!startDate || !endDate) {
       Alert.alert(t('payroll.missingAlertHead'), t('payroll.missingAlertMsg'));
       return;
     }
@@ -79,7 +78,7 @@ export default function PayRollFilterModal({ visible, onClose, onFilter }: Filte
       return;
     }
 
-    onFilter(startDate, endDate, selectedPeriodType, guardID, site, department);
+    onFilter(startDate, endDate, selectedPeriodType, guardID, department);
     resetState();
     onClose();
   };
@@ -112,7 +111,7 @@ export default function PayRollFilterModal({ visible, onClose, onFilter }: Filte
     setEndDate(null);
     setShowDropdown(false);
     setShowOptional(false);
-    setSelectedPeriodType('');
+    setSelectedPeriodType('daily');
   };
 
   const selectedPeriodTypeLabel = PERIOD_TYPES.find((pd) => pd.id === selectedPeriodType)?.label;
@@ -155,7 +154,9 @@ export default function PayRollFilterModal({ visible, onClose, onFilter }: Filte
                     selectedPeriodType === periodType.id && styles.dropdownItemSelected,
                   ]}
                   onPress={() => {
-                    setSelectedPeriodType(periodType.id);
+                    if (periodType.id == 'daily') setSelectedPeriodType('daily');
+                    else if (periodType.id == 'weekly') setSelectedPeriodType('weekly');
+                    else setSelectedPeriodType('monthly');
                     setShowDropdown(false);
                   }}
                 >
@@ -188,16 +189,6 @@ export default function PayRollFilterModal({ visible, onClose, onFilter }: Filte
               keyboardType="number-pad"
               returnKeyType="done"
               onChangeText={(s) => setGuardID(s)}
-            />
-
-            <Text style={styles.label}>{t('payroll.siteHead')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t('payroll.siteHint')}
-              placeholderTextColor={colors.muted}
-              keyboardType="default"
-              returnKeyType="done"
-              onChangeText={(s) => setSite(s)}
             />
 
             <Text style={styles.label}>{t('payroll.departmentHead')}</Text>
