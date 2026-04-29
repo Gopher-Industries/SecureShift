@@ -8,13 +8,31 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const validStatuses = ["SUBMITTED", "IN_REVIEW", "RESOLVED"];
+
+const allowedTransitions = {
+  SUBMITTED: ["IN_REVIEW"],
+  IN_REVIEW: ["RESOLVED"],
+  RESOLVED: [],
+};
+
+const getMediaType = (mimeType) => {
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith("audio/")) return "audio";
+  if (mimeType === "application/pdf") return "pdf";
+  return "other";
+};
+
 // CREATE INCIDENT
 export const createIncident = async (req, res, next) => {
   try {
-    const { shiftId, severity, description } = req.body;
+    const { shiftId, severity, description, latitude, longitude } = req.body;
 
     if (!shiftId || !severity || !description) {
-      return next(new ErrorResponse("All fields are required", 400));
+      return next(
+        new ErrorResponse("shiftId, severity, and description are required", 400)
+      );
     }
 
     const shift = await Shift.findById(shiftId);
@@ -31,10 +49,18 @@ export const createIncident = async (req, res, next) => {
       guardId: req.user._id,
       severity,
       description,
+      status: "SUBMITTED",
+      recordedAt: new Date(),
+      location: {
+        latitude: latitude !== undefined ? Number(latitude) : undefined,
+        longitude: longitude !== undefined ? Number(longitude) : undefined,
+      },
     });
 
     await req.audit.log(req.user._id, ACTIONS.INCIDENT_CREATED, {
       incidentId: incident._id,
+      recordedAt: incident.recordedAt,
+      location: incident.location,
     });
 
     res.status(201).json({ success: true, data: incident });
@@ -55,15 +81,12 @@ export const updateIncident = async (req, res, next) => {
     let allowedFields = [];
 
     if (req.user.role === "guard") {
-      // guards can only update their own incidents
       if (String(incident.guardId) !== String(req.user._id)) {
         return next(new ErrorResponse("Not authorized", 403));
       }
 
-      // guards should only update limited fields
       allowedFields = ["description"];
     } else if (req.user.role === "employer") {
-      // employers can only update incidents belonging to their own shifts
       const shift = await Shift.findById(incident.shiftId);
 
       if (!shift || String(shift.createdBy) !== String(req.user._id)) {
@@ -75,6 +98,24 @@ export const updateIncident = async (req, res, next) => {
       allowedFields = ["severity", "description", "status"];
     } else {
       return next(new ErrorResponse("Not authorized", 403));
+    }
+
+    if (req.body.status) {
+      if (!validStatuses.includes(req.body.status)) {
+        return next(new ErrorResponse("Invalid status value", 400));
+      }
+
+      const currentStatus = incident.status;
+      const nextStatus = req.body.status;
+
+      if (!allowedTransitions[currentStatus]?.includes(nextStatus)) {
+        return next(
+          new ErrorResponse(
+            `Invalid status transition from ${currentStatus} to ${nextStatus}`,
+            400
+          )
+        );
+      }
     }
 
     allowedFields.forEach((field) => {
@@ -109,7 +150,6 @@ export const getIncident = async (req, res, next) => {
       return next(new ErrorResponse("Incident not found", 404));
     }
 
-    // Guard access
     if (
       req.user.role === "guard" &&
       String(incident.guardId._id) !== String(req.user._id)
@@ -117,7 +157,6 @@ export const getIncident = async (req, res, next) => {
       return next(new ErrorResponse("Not authorized", 403));
     }
 
-    // Employer access
     if (req.user.role === "employer") {
       const shift = await Shift.findById(incident.shiftId._id);
       if (String(shift.createdBy) !== String(req.user._id)) {
@@ -131,7 +170,7 @@ export const getIncident = async (req, res, next) => {
   }
 };
 
-// LIST INCIDENTS (WITH FILTERS)
+// LIST INCIDENTS
 export const getIncidents = async (req, res, next) => {
   try {
     const { shiftId, guardId, severity, status, startDate, endDate } =
@@ -142,23 +181,26 @@ export const getIncidents = async (req, res, next) => {
     if (shiftId) query.shiftId = shiftId;
     if (guardId) query.guardId = guardId;
     if (severity) query.severity = severity;
-    if (status) query.status = status;
 
-    if (startDate || endDate) {
-      query.createdAt = {};
-      if (startDate) query.createdAt.$gte = new Date(startDate);
-      if (endDate) query.createdAt.$lte = new Date(endDate);
+    if (status) {
+      if (!validStatuses.includes(status)) {
+        return next(new ErrorResponse("Invalid status filter", 400));
+      }
+      query.status = status;
     }
 
-    // RBAC filtering
+    if (startDate || endDate) {
+      query.recordedAt = {};
+      if (startDate) query.recordedAt.$gte = new Date(startDate);
+      if (endDate) query.recordedAt.$lte = new Date(endDate);
+    }
+
     if (req.user.role === "guard") {
       query.guardId = req.user._id;
     }
 
     if (req.user.role === "employer") {
-      const shifts = await Shift.find({ createdBy: req.user._id }).select(
-        "_id"
-      );
+      const shifts = await Shift.find({ createdBy: req.user._id }).select("_id");
       query.shiftId = { $in: shifts.map((s) => s._id) };
     }
 
@@ -206,14 +248,12 @@ export const uploadAttachment = async (req, res, next) => {
       return next(new ErrorResponse("Incident not found", 404));
     }
 
-    // guard can upload only to their own incident
     if (req.user.role === "guard") {
       if (String(incident.guardId) !== String(req.user._id)) {
         return next(new ErrorResponse("Not authorized", 403));
       }
     }
 
-    // employer can upload only to incidents on their own shifts
     if (req.user.role === "employer") {
       const shift = await Shift.findById(incident.shiftId);
 
@@ -222,7 +262,6 @@ export const uploadAttachment = async (req, res, next) => {
       }
     }
 
-    // any non-admin role outside the above is not allowed
     if (!["guard", "employer", "admin"].includes(req.user.role)) {
       return next(new ErrorResponse("Not authorized", 403));
     }
@@ -233,7 +272,11 @@ export const uploadAttachment = async (req, res, next) => {
 
     incident.attachments.push({
       fileName: req.file.filename,
+      originalName: req.file.originalname,
       fileUrl: `/uploads/${req.file.filename}`,
+      mimeType: req.file.mimetype,
+      fileSize: req.file.size,
+      mediaType: getMediaType(req.file.mimetype),
     });
 
     await incident.save();
@@ -243,7 +286,6 @@ export const uploadAttachment = async (req, res, next) => {
     next(err);
   }
 };
-
 
 // GET ATTACHMENT
 export const getAttachment = async (req, res, next) => {
