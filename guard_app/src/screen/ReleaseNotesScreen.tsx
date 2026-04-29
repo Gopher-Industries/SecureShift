@@ -10,11 +10,10 @@ const MUTED = '#5C667A';
 const CANVAS_PADDING = 20;
 
 export default function ReleaseNotesScreen() {
-    
-    const appVersion =
-  (ExpoConstants?.expoConfig as any)?.version ||
-  (ExpoConstants as any)?.manifest?.version ||
-  '1.0.0';
+  const appVersion =
+    (ExpoConstants?.expoConfig as any)?.version ||
+    (ExpoConstants as any)?.manifest?.version ||
+    '1.0.0';
 
   return (
     <SafeAreaView style={styles.safe}>
