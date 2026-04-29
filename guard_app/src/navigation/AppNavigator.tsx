@@ -1,111 +1,69 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTranslation } from 'react-i18next';
 
 import AppTabs from './AppTabs';
-import CertificatesScreen from '../screen/CertificatesScreen';
-import DocumentsScreen from '../screen/DocumentsScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
-import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
 import SettingsScreen from '../screen/SettingsScreen';
-import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
-import TermsScreen from '../screen/TermsScreen';
-import { useAppTheme } from '../theme';
+import ReleaseNotesScreen from '../screen/ReleaseNotesScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
   Splash: undefined;
   Login: undefined;
   Signup: undefined;
-  Documents: undefined;
   Settings: undefined;
-  PrivacyPolicy: undefined;
   EditProfile: undefined;
-  Messages:
-    | {
-        context?: 'shift' | 'general';
-        shiftParticipantId?: string;
-        shiftParticipantName?: string;
-        shiftTitle?: string;
-        generalParticipantId?: string;
-        generalParticipantName?: string;
-      }
-    | undefined;
+  Messages: undefined;
   Notifications: undefined;
-  Certificates: undefined;
-  ShiftDetails: { shift: any };
-  Terms: undefined;
+  ReleaseNotes: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const { colors } = useAppTheme();
-  const { t } = useTranslation();
+  // TEMP (Dev Only): bypass auth screens so you can complete UI tasks without backend
+  const DEV_BYPASS_AUTH = __DEV__ && true;
 
   return (
     <Stack.Navigator
-      initialRouteName="Splash"
-      screenOptions={{
-        headerShown: false,
-        headerStyle: { backgroundColor: colors.card },
-        headerTintColor: colors.text,
-        headerTitleStyle: { color: colors.text },
-        contentStyle: { backgroundColor: colors.bg },
-      }}
+      initialRouteName={DEV_BYPASS_AUTH ? 'AppTabs' : 'Splash'}
+      screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="AppTabs" component={AppTabs} />
-      <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
-      <Stack.Screen
-        name="Documents"
-        component={DocumentsScreen}
-        options={{ headerShown: true, title: t('tabs.documents') }}
-      />
+
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ headerShown: true, title: t('nav.settings') }}
+        options={{ headerShown: true, title: 'Settings' }}
       />
+
       <Stack.Screen
-        name="PrivacyPolicy"
-        component={PrivacyPolicyScreen}
-        options={{ headerShown: true, title: t('nav.privacyPolicy') }}
+        name="ReleaseNotes"
+        component={ReleaseNotesScreen}
+        options={{ headerShown: true, title: 'Release Notes' }}
       />
+
       <Stack.Screen
         name="Messages"
         component={MessagesScreen}
-        options={{ headerShown: true, title: t('nav.messages') }}
+        options={{ headerShown: true, title: 'Messages' }}
       />
       <Stack.Screen
         name="Notifications"
         component={NotificationsScreen}
-        options={{ headerShown: true, title: t('nav.notifications') }}
+        options={{ headerShown: true, title: 'Notifications' }}
       />
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="Certificates"
-        component={CertificatesScreen}
-        options={{ headerShown: true, title: t('nav.certificates') }}
-      />
-      <Stack.Screen
-        name="ShiftDetails"
-        component={ShiftDetailsScreen}
-        options={{ headerShown: true, title: t('nav.shiftDetails') }}
-      />
-      <Stack.Screen
-        name="Terms"
-        component={TermsScreen}
-        options={{ headerShown: true, title: 'Terms of Service' }}
+        options={{ headerShown: true, title: 'Edit Profile' }}
       />
     </Stack.Navigator>
   );
