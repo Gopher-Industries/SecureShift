@@ -10,7 +10,6 @@ import {
 } from "../controllers/incident.controller.js";
 
 import auth from "../middleware/auth.js";
-
 import { authorizePermissions } from "../middleware/rbac.js";
 import { upload } from "../config/multer.js";
 
@@ -22,7 +21,6 @@ const router = express.Router();
  *   name: Incidents
  *   description: Incident reporting and management
  */
-
 
 router.use(auth);
 
@@ -50,38 +48,23 @@ router.use(auth);
  *             properties:
  *               shiftId:
  *                 type: string
- *                 example: "65f1c6a3b5e18f9b9a3d52f77"
  *               severity:
  *                 type: string
  *                 enum: [low, medium, high]
- *                 example: "high"
  *               description:
  *                 type: string
- *                 example: "Unauthorized entry detected near the loading dock."
+ *               latitude:
+ *                 type: number
+ *                 example: -37.8136
+ *               longitude:
+ *                 type: number
+ *                 example: 144.9631
  *     responses:
  *       201:
  *         description: Incident created successfully
- *       400:
- *         description: Missing or invalid input
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Shift not found
  *
  *   get:
  *     summary: List incidents
- *     description: |
- *       Retrieve incidents with optional filters:
- *       - shiftId
- *       - guardId
- *       - severity
- *       - status
- *       - startDate
- *       - endDate
- *
- *       Returned data is still subject to role- and ownership-based filtering in the controller.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
@@ -90,52 +73,32 @@ router.use(auth);
  *         name: shiftId
  *         schema:
  *           type: string
- *         required: false
- *         description: Filter by shift ID
  *       - in: query
  *         name: guardId
  *         schema:
  *           type: string
- *         required: false
- *         description: Filter by guard ID
  *       - in: query
  *         name: severity
  *         schema:
  *           type: string
  *           enum: [low, medium, high]
- *         required: false
- *         description: Filter by severity
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
- *           enum: [open, in-progress, resolved]
- *         required: false
- *         description: Filter by incident status
+ *           enum: [SUBMITTED, IN_REVIEW, RESOLVED]
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
- *         required: false
- *         description: Return incidents created on or after this date
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
- *         required: false
- *         description: Return incidents created on or before this date
- *     responses:
- *       200:
- *         description: Incidents retrieved successfully
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
  */
 
-// Create
 router.post("/", authorizePermissions("incident:create"), createIncident);
 router.get("/", authorizePermissions("incident:view"), getIncidents);
 
@@ -144,14 +107,6 @@ router.get("/", authorizePermissions("incident:view"), getIncidents);
  * /api/v1/incidents/{id}:
  *   get:
  *     summary: Retrieve a single incident
- *     description: |
- *       Return full incident details including reporter, shift, severity,
- *       status, timestamps, and attachments.
- *
- *       **Access rules:**
- *       - **Guard**: can view only their own incident
- *       - **Employer**: can view only incidents linked to shifts they created
- *       - **Admin**: can view any incident allowed by permissions
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
@@ -161,38 +116,15 @@ router.get("/", authorizePermissions("incident:view"), getIncidents);
  *         required: true
  *         schema:
  *           type: string
- *         description: Incident ID
  *     responses:
  *       200:
  *         description: Incident retrieved successfully
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden or outside authorized ownership/scope
- *       404:
- *         description: Incident not found
  *
  *   patch:
  *     summary: Update an incident
- *     description: |
- *       Update an existing incident with role- and ownership-based restrictions.
- *
- *       **Update rules:**
- *       - **Guard**: can update only their own incident, and only the `description` field
- *       - **Employer**: can update only incidents linked to shifts they created, and only the `description` and `status` fields
- *       - **Admin**: can update `severity`, `description`, and `status`
- *
- *       Any unauthorized field changes are ignored by the controller.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Incident ID
  *     requestBody:
  *       required: true
  *       content:
@@ -203,50 +135,24 @@ router.get("/", authorizePermissions("incident:view"), getIncidents);
  *               severity:
  *                 type: string
  *                 enum: [low, medium, high]
- *                 example: medium
- *                 description: Admin only
  *               description:
  *                 type: string
- *                 example: Updated after site supervisor review.
- *                 description: Allowed for guard, employer, and admin (subject to ownership/scope)
  *               status:
  *                 type: string
- *                 enum: [open, in-progress, resolved]
- *                 example: in-progress
- *                 description: Employer and admin only
+ *                 enum: [SUBMITTED, IN_REVIEW, RESOLVED]
+ *                 example: IN_REVIEW
  *     responses:
  *       200:
  *         description: Incident updated successfully
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden or outside authorized ownership/scope
- *       404:
- *         description: Incident not found
  *
  *   delete:
  *     summary: Soft-delete an incident
- *     description: |
- *       Admin-only endpoint that soft-deletes an incident while preserving audit logs.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Incident ID
  *     responses:
  *       200:
  *         description: Incident deleted successfully
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Incident not found
  */
 
 router.patch("/:id", authorizePermissions("incident:update"), updateIncident);
@@ -259,14 +165,7 @@ router.delete("/:id", authorizePermissions("incident:delete"), deleteIncident);
  *   post:
  *     summary: Upload an incident attachment
  *     description: |
- *       Upload a supported file (such as an image or PDF) and attach it to an existing incident.
- *
- *       **Access rules:**
- *       - **Guard**: can upload only to their own incident
- *       - **Employer**: can upload only to incidents linked to shifts they created
- *       - **Admin**: can upload to any incident
- *
- *       In addition to route permission checks, the controller validates incident ownership/scope      before saving the attachment.
+ *       Upload a supported file (images, videos, audio, or PDFs) and attach it to an existing incident.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
@@ -276,31 +175,17 @@ router.delete("/:id", authorizePermissions("incident:delete"), deleteIncident);
  *         required: true
  *         schema:
  *           type: string
- *         description: Incident ID
  *     requestBody:
  *       required: true
  *       content:
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required:
- *               - file
  *             properties:
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: Supported image or PDF file
- *     responses:
- *       200:
- *         description: Attachment uploaded successfully
- *       400:
- *         description: No file uploaded
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden or outside authorized ownership/scope
- *       404:
- *         description: Incident not found
+ *                 description: Supported files: images, videos, audio, and PDFs.
  */
 
 router.post(
@@ -315,34 +200,9 @@ router.post(
  * /api/v1/incidents/{id}/attachments/{attachmentId}:
  *   get:
  *     summary: Retrieve/download an incident attachment
- *     description: Download or view a file attached to an incident.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Incident ID
- *       - in: path
- *         name: attachmentId
- *         required: true
- *         schema:
- *           type: string
- *         description: Attachment ID
- *     responses:
- *       200:
- *         description: Attachment returned successfully
- *       400:
- *         description: No file uploaded or invalid file type
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden or outside authorized ownership/scope
- *       404:
- *         description: Incident or attachment not found
  */
 
 router.get(
@@ -350,4 +210,5 @@ router.get(
   authorizePermissions("incident:view"),
   getAttachment
 );
+
 export default router;
