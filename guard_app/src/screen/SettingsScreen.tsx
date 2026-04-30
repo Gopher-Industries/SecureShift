@@ -195,6 +195,8 @@ export default function SettingsScreen() {
         ? '繁體中文'
         : i18n.language === 'hi'
           ? 'हिन्दी'
+        :  i18n.language === 'pa'
+          ? 'Punjabi'
           : 'English';
 
   return (
@@ -327,6 +329,7 @@ export default function SettingsScreen() {
               { code: 'zh-CN', label: '简体中文' },
               { code: 'zh-TW', label: '繁體中文' },
               { code: 'hi', label: 'हिन्दी' },
+              { code: 'pa', label: 'Punjabi' },
             ].map((lng) => (
               <TouchableOpacity
                 key={lng.code}
