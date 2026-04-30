@@ -7,6 +7,7 @@ import en from '../locales/en.json';
 import zhCN from '../locales/zh-CN.json';
 import zhTW from '../locales/zh-TW.json';
 import hi from '../locales/hi.json';
+import pa from '../locales/pa.json';
 
 const STORE_LANGUAGE_KEY = 'settings.lang';
 
@@ -15,10 +16,7 @@ const resources = {
   'zh-CN': { translation: zhCN },
   'zh-TW': { translation: zhTW },
   hi: { translation: hi },
-<<<<<<< HEAD
-=======
   pa: { translation: pa },
->>>>>>> f69305a2 (Fix formatting (prettier))
 };
 
 const languageDetectorPlugin = {
