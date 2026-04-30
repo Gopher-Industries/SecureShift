@@ -15,6 +15,10 @@ const resources = {
   'zh-CN': { translation: zhCN },
   'zh-TW': { translation: zhTW },
   hi: { translation: hi },
+<<<<<<< HEAD
+=======
+  pa: { translation: pa },
+>>>>>>> f69305a2 (Fix formatting (prettier))
 };
 
 const languageDetectorPlugin = {
