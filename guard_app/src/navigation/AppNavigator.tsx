@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 
 import AppTabs from './AppTabs';
+import ActiveSOSScreen from '../screen/ActiveSOSScreen';
 import CertificatesScreen from '../screen/CertificatesScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
@@ -41,6 +42,12 @@ export type RootStackParamList = {
   Certificates: undefined;
   ShiftDetails: { shift: any };
   Terms: undefined;
+  ActiveSOS:
+    | {
+        sosId?: string;
+        emergencyContact?: { name?: string; phone?: string };
+      }
+    | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -113,6 +120,19 @@ export default function AppNavigator() {
         name="Terms"
         component={TermsScreen}
         options={{ headerShown: true, title: 'Terms of Service' }}
+      />
+      <Stack.Screen
+        name="ActiveSOS"
+        component={ActiveSOSScreen}
+        options={{
+          headerShown: true,
+          title: 'Emergency Active',
+          headerStyle: { backgroundColor: '#B00020' },
+          headerTintColor: '#FFFFFF',
+          headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
+          headerBackVisible: false,
+          gestureEnabled: false,
+        }}
       />
     </Stack.Navigator>
   );
