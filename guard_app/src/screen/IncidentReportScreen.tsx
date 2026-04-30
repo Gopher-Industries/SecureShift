@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import ErrorMessageBox from '../components/ErrorMessageBox';
+import http from '../lib/http';
 import { useAppTheme } from '../theme';
 
 import type { AppColors } from '../theme/colors';
@@ -65,13 +66,36 @@ export default function IncidentReportScreen() {
 
     setSubmitting(true);
 
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const formData = new FormData();
+      formData.append('description', description.trim());
+      formData.append('severity', severity);
+      formData.append('dateTime', new Date().toISOString());
+
+      images.forEach((uri, index) => {
+        const filename = uri.split('/').pop() ?? `photo_${index}.jpg`;
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        formData.append('images', { uri, name: filename, type } as unknown as Blob);
+      });
+
+      await http.post('/incidents', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
       Alert.alert('Success', 'Incident report submitted successfully.');
       setDescription('');
       setSeverity(null);
       setImages([]);
-    }, 1200);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Could not submit the incident report. Please try again.';
+      setErrorState({ title: 'Submission Failed', message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
