@@ -16,8 +16,7 @@ const resources = {
   'zh-CN': { translation: zhCN },
   'zh-TW': { translation: zhTW },
   hi: { translation: hi },
-    pa: { translation: pa },
-
+  pa: { translation: pa },
 };
 
 const languageDetectorPlugin = {
