@@ -30,8 +30,11 @@ export default function FloatingSOSButton({
 
   const [holding, setHolding] = useState(false);
 
-  const progress = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(1)).current;
+  // Animated values are created lazily once and remain stable across renders.
+  // Using useState (rather than useRef + .current) keeps the new
+  // react-hooks/refs lint rule happy.
+  const [progress] = useState(() => new Animated.Value(0));
+  const [scale] = useState(() => new Animated.Value(1));
   const triggeredRef = useRef(false);
 
   const reset = useCallback(() => {
@@ -101,7 +104,10 @@ export default function FloatingSOSButton({
   });
 
   return (
-    <View style={[styles.wrapper, { bottom: bottomOffset, right: rightOffset }]} pointerEvents="box-none">
+    <View
+      style={[styles.wrapper, { bottom: bottomOffset, right: rightOffset }]}
+      pointerEvents="box-none"
+    >
       {holding ? <Text style={styles.hint}>Hold to send SOS</Text> : null}
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable

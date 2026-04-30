@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import FloatingSOSButton from '../components/FloatingSOSButton';
 import AvailabilityScreen from '../screen/AvailabilityScreen';
@@ -29,7 +29,7 @@ export default function AppTabs() {
   const { t } = useTranslation();
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.root}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: true,
@@ -99,3 +99,9 @@ export default function AppTabs() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
