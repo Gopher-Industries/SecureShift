@@ -25,7 +25,7 @@ async function extract() {
     //fullT = fullT.replace(/\s+/g,"").toLowerCase();
 
     //extract all dates
-      const dateReg = /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})\b/g;
+      const dateReg = /\b(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2})\b/g;
       let dates = fullT.match(dateReg) || []; //creating an array of dates
       dates = [...new Set(dates)]; // creating a set where duplicates are removed
       
@@ -33,16 +33,9 @@ async function extract() {
       const latest = dates.map(d => new Date(d.replace(/(\d{2})\/(\d{2})\/(\d{4})/,"$2/$1/$3")))
                      .sort((a, b) => b - a)[0]; //for finding the latest date to pinpoint the expiry date
 
-    //helper function to get our desired text from the full text             
-      function getValueAndDate(text,value){
-        const regex = new RegExp(`${value}\\s*:?\\s*([\\w\\-/]+)`, "i");
-        const match = text.match(regex);
-        return match ? match[1].trim() : null;
-      }
-
     //console.log(fullT);
-    const startDate = getValueAndDate(fullT,"cover start date");
-    const endtDate = getValueAndDate(fullT,"cover end date")
+    // const startDate = getValueAndDate(fullT,"cover start date");
+    // const endtDate = getValueAndDate(fullT,"cover end date")
     //console.log("dates in document:", dates);
     //console.log("cover start date:", startDate );
     console.log("cover end date:" ,latest?.toLocaleDateString("en-AU"));

@@ -3,7 +3,7 @@
  * Catches any errors passed via next(err)
  * and returns a JSON response.
  */
-export default function errorHandler(err, req, res, next) {
+export default function errorHandler(err, req, res, _next) {
   // Log full error for diagnostics
   console.error(err);
 

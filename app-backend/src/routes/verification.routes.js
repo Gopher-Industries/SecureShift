@@ -1,7 +1,6 @@
 // src/routes/verification.routes.js
 import { Router } from 'express';
 import auth from '../middleware/auth.js';
-import { adminOnly } from '../middleware/role.js';
 import {
   startVerification,
   getStatus,

@@ -6,7 +6,6 @@ import { sendEmployerCredentials } from '../utils/sendEmail.js';
 import { sendOTP } from '../utils/sendEmail.js';
 import { ACTIONS } from "../middleware/logger.js";
 import EOI from '../models/eoi.js';
-import { GridFSBucket } from 'mongodb';
 
 import Guard from '../models/Guard.js'; // use the discriminator so license fields persist
 
