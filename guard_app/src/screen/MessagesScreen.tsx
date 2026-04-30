@@ -296,9 +296,8 @@ export default function MessagesScreen() {
       Alert.alert('Error', 'Failed to send message');
     }
   };
-
   const renderMessage = ({ item }: { item: Message }) => (
-    <View style={styles.messageRow}>
+    <View style={[styles.messageRow, item.from === 'guard' ? styles.rowRight : styles.rowLeft]}>
       <View
         style={[styles.bubble, item.from === 'guard' ? styles.bubbleGuard : styles.bubbleEmployer]}
       >
@@ -645,7 +644,18 @@ const getStyles = (colors: AppColors) =>
     },
     newConversationBtnText: { color: colors.white, fontWeight: '700', fontSize: 13 },
 
-    messageRow: { marginBottom: 10 },
+    messageRow: {
+      marginBottom: 10,
+      flexDirection: 'row',
+    },
+
+    rowRight: {
+      justifyContent: 'flex-end',
+    },
+
+    rowLeft: {
+      justifyContent: 'flex-start',
+    },
     bubble: {
       maxWidth: '75%',
       padding: 12,
