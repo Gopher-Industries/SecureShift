@@ -8,6 +8,7 @@ import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
+import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
@@ -23,6 +24,7 @@ export type RootStackParamList = {
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
+  Payroll: undefined;
   PrivacyPolicy: undefined;
   EditProfile: undefined;
   Messages:
@@ -86,6 +88,11 @@ export default function AppNavigator() {
         name="Notifications"
         component={NotificationsScreen}
         options={{ headerShown: true, title: t('nav.notifications') }}
+      />
+      <Stack.Screen
+        name="Payroll"
+        component={PayrollScreen}
+        options={{ headerShown: true, title: 'Payroll' }}
       />
       <Stack.Screen
         name="EditProfile"

@@ -286,5 +286,36 @@
     "testNotif": "Test Notification",
     "notifTitle": "Shift Assigned",
     "notifBody": "You have been assigned to Hospital Complex shift."
+  },
+  "payroll": {
+    "period": "Period:",
+    "guardID": "GuardID:",
+    "site": "Site:",
+    "department": "Department:",
+    "notFound": "No payroll found",
+    "error": "Failed to load payroll history",
+    "types": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "filter": "Filter",
+    "startDateHead": "Start Date*",
+    "selectStart": "Select start date",
+    "endDateHead": "End Date*",
+    "selectEnd": "Select end date",
+    "periodHead": "Period Type*",
+    "selectPeriod": "Select period",
+    "optional": "Optional",
+    "ID": "ID",
+    "siteHead": "Site",
+    "siteHint": "Site name",
+    "departmentHead": "Department",
+    "departmentHint": "Department name",
+    "missingAlertHead": "Missing info",
+    "missingAlertMsg": "Please select a start and end date as well as a period type.",
+    "invalidAlertHead": "Invalid info",
+    "invalidAlertMsg": "Start date must be before end date.",
+    "cancel": "Cancel"
   }
 }
