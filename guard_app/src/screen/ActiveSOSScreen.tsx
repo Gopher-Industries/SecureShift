@@ -161,39 +161,36 @@ export default function ActiveSOSScreen() {
    * Start watching position and push updates to the backend at most every
    * LOCATION_PUSH_INTERVAL_MS or every LOCATION_DISTANCE_INTERVAL_M metres.
    */
-  const startLocationWatcher = useCallback(
-    async (activeSosId: string) => {
-      if (watcherRef.current) return;
-      try {
-        const sub = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.High,
-            timeInterval: LOCATION_PUSH_INTERVAL_MS,
-            distanceInterval: LOCATION_DISTANCE_INTERVAL_M,
-          },
-          (loc) => {
-            const next: Coords = {
-              latitude: loc.coords.latitude,
-              longitude: loc.coords.longitude,
-              timestamp: loc.timestamp,
-            };
-            setCoords(next);
-            const now = Date.now();
-            if (now - lastPushedAtRef.current >= LOCATION_PUSH_INTERVAL_MS) {
-              lastPushedAtRef.current = now;
-              updateSOSLocation(activeSosId, next).catch(() => {
-                // best-effort; ignore individual push failures
-              });
-            }
-          },
-        );
-        watcherRef.current = sub;
-      } catch {
-        // location watcher is best effort
-      }
-    },
-    [],
-  );
+  const startLocationWatcher = useCallback(async (activeSosId: string) => {
+    if (watcherRef.current) return;
+    try {
+      const sub = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: LOCATION_PUSH_INTERVAL_MS,
+          distanceInterval: LOCATION_DISTANCE_INTERVAL_M,
+        },
+        (loc) => {
+          const next: Coords = {
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+            timestamp: loc.timestamp,
+          };
+          setCoords(next);
+          const now = Date.now();
+          if (now - lastPushedAtRef.current >= LOCATION_PUSH_INTERVAL_MS) {
+            lastPushedAtRef.current = now;
+            updateSOSLocation(activeSosId, next).catch(() => {
+              // best-effort; ignore individual push failures
+            });
+          }
+        },
+      );
+      watcherRef.current = sub;
+    } catch {
+      // location watcher is best effort
+    }
+  }, []);
 
   const stopLocationWatcher = useCallback(() => {
     if (watcherRef.current) {
@@ -258,8 +255,7 @@ export default function ActiveSOSScreen() {
           setStatus(existing.status);
           setTriggeredAt(existing.triggeredAt);
           setCoords(existing.location);
-          cancelDeadlineRef.current =
-            new Date(existing.triggeredAt).getTime() + CANCEL_GRACE_MS;
+          cancelDeadlineRef.current = new Date(existing.triggeredAt).getTime() + CANCEL_GRACE_MS;
           setBootstrapping(false);
           startPolling(initialSosId);
           startLocationWatcher(initialSosId);
@@ -278,8 +274,7 @@ export default function ActiveSOSScreen() {
           setSosId(created._id);
           setStatus(created.status);
           setTriggeredAt(created.triggeredAt);
-          cancelDeadlineRef.current =
-            new Date(created.triggeredAt).getTime() + CANCEL_GRACE_MS;
+          cancelDeadlineRef.current = new Date(created.triggeredAt).getTime() + CANCEL_GRACE_MS;
           setBootstrapping(false);
           startPolling(created._id);
           startLocationWatcher(created._id);
@@ -316,7 +311,9 @@ export default function ActiveSOSScreen() {
     return () => stopCancelTimer();
   }, [stopCancelTimer]);
 
-  const canQuickCancel = cancelRemainingMs > 0 && (status === 'pending' || status === 'notifying' || status === 'notified');
+  const canQuickCancel =
+    cancelRemainingMs > 0 &&
+    (status === 'pending' || status === 'notifying' || status === 'notified');
   const canConfirmCancel = !canQuickCancel && status !== 'cancelled' && status !== 'resolved';
 
   const performCancel = useCallback(async () => {
@@ -391,10 +388,8 @@ export default function ActiveSOSScreen() {
 
   const cancelSecondsRemaining = Math.ceil(cancelRemainingMs / 1000);
 
-  const contactLabel =
-    alert?.emergencyContact?.name ?? initialContactName ?? 'Emergency Contact';
-  const contactPhone =
-    alert?.emergencyContact?.phone ?? initialContactPhone ?? '000';
+  const contactLabel = alert?.emergencyContact?.name ?? initialContactName ?? 'Emergency Contact';
+  const contactPhone = alert?.emergencyContact?.phone ?? initialContactPhone ?? '000';
 
   return (
     <View style={s.screen}>
@@ -455,15 +450,13 @@ export default function ActiveSOSScreen() {
             <Text style={s.btnText}>{alert?.note ? 'Update Note' : 'Add Note'}</Text>
           </TouchableOpacity>
 
-          {(canQuickCancel || canConfirmCancel) ? (
+          {canQuickCancel || canConfirmCancel ? (
             <TouchableOpacity
               style={[s.btn, canQuickCancel ? s.cancelQuickBtn : s.cancelConfirmBtn]}
               onPress={handleCancelPress}
             >
               <Text style={s.btnText}>
-                {canQuickCancel
-                  ? `Cancel SOS (${cancelSecondsRemaining}s)`
-                  : 'Cancel SOS'}
+                {canQuickCancel ? `Cancel SOS (${cancelSecondsRemaining}s)` : 'Cancel SOS'}
               </Text>
             </TouchableOpacity>
           ) : null}
