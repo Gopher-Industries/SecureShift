@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useState } from 'react';
 import {
@@ -11,8 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
-import { useFocusEffect } from '@react-navigation/native';
 
 import ErrorMessageBox from '../components/ErrorMessageBox';
 import http from '../lib/http';
@@ -29,6 +28,8 @@ type Incident = {
   status?: string;
   createdAt?: string;
 };
+
+type ApiResponse = Incident[] | { incidents?: Incident[]; data?: Incident[] };
 
 const getNowDateTime = () => new Date().toISOString().slice(0, 16).replace('T', ' ');
 
@@ -55,10 +56,14 @@ export default function IncidentReportScreen() {
   const fetchIncidents = async () => {
     try {
       setLoadingList(true);
-      const { data } = await http.get<any>('/incidents');
-      const list = Array.isArray(data) ? data : data.incidents ?? data.data ?? [];
+      const { data } = await http.get<ApiResponse>('/incidents');
+      const list = Array.isArray(data)
+        ? data
+        : ((data as { incidents?: Incident[]; data?: Incident[] }).incidents ??
+          (data as { incidents?: Incident[]; data?: Incident[] }).data ??
+          []);
       setIncidents(list);
-    } catch (_err) {
+    } catch {
       // show empty state silently
     } finally {
       setLoadingList(false);
@@ -125,7 +130,7 @@ export default function IncidentReportScreen() {
 
   return (
     <>
-      <ScrollView style={s.screen} contentContainerStyle={s.contentContainer}>
+      <ScrollView contentContainerStyle={s.contentContainer} style={s.container}>
         {/* Incident List */}
         <Text style={s.title}>My Reports</Text>
         {loadingList ? (
@@ -223,7 +228,7 @@ export default function IncidentReportScreen() {
 
 const getStyles = (colors: AppColors) =>
   StyleSheet.create({
-    screen: {
+    container: {
       flex: 1,
       backgroundColor: colors.bg,
       padding: 16,
