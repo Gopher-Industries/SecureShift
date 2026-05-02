@@ -502,4 +502,3 @@ const getStyles = (colors: AppColors) =>
       color: colors.primary,
     },
   });
-  
