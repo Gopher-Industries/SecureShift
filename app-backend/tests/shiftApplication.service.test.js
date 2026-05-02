@@ -92,9 +92,8 @@ describe('applyForShiftService', () => {
       ).rejects.toMatchObject({ statusCode: 401 });
     });
   });
-});
 
-describe('shift lookup', () => {
+  describe('shift lookup', () => {
   it('throws 404 when shift not found', async () => {
     mockShiftFindById.mockResolvedValue(null);
 
@@ -196,6 +195,7 @@ describe('success', () => {
 
     expect(result.message).toBe('Application submitted');
   });
+});
 });
 
 describe('approveShiftService', () => {
