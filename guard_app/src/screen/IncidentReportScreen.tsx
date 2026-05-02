@@ -26,6 +26,7 @@ type Shift = {
   _id: string;
   title: string;
   date: string;
+  status?: string;
 };
 
 type Incident = {
@@ -73,8 +74,11 @@ export default function IncidentReportScreen() {
           (data as { incidents?: Incident[]; data?: Incident[] }).data ??
           []);
       setIncidents(list);
-    } catch {
-      // show empty state silently
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        (err instanceof Error ? err.message : 'Failed to load incidents. Please try again.');
+      setErrorState({ title: 'Failed to Load', message });
     } finally {
       setLoadingList(false);
     }
@@ -82,10 +86,14 @@ export default function IncidentReportScreen() {
 
   const fetchShifts = async () => {
     try {
-      const { data } = await http.get<Shift[]>('/shifts/myshifts?status=assigned');
-      setShifts(Array.isArray(data) ? data : []);
-    } catch {
-      // silently fail
+      const { data } = await http.get<Shift[]>('/shifts/myshifts');
+      const list = Array.isArray(data) ? data : [];
+      setShifts(list.filter((s) => s.status === 'assigned'));
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        (err instanceof Error ? err.message : 'Failed to load shifts. Please try again.');
+      setErrorState({ title: 'Failed to Load Shifts', message });
     }
   };
 
@@ -112,7 +120,8 @@ export default function IncidentReportScreen() {
     setErrorState(null);
   };
 
-  const uploadAttachments = async (incidentId: string) => {
+  const uploadAttachments = async (incidentId: string): Promise<number> => {
+    let failedCount = 0;
     for (const uri of images) {
       const filename = uri.split('/').pop() ?? 'photo.jpg';
       const match = /\.(\w+)$/.exec(filename);
@@ -125,9 +134,10 @@ export default function IncidentReportScreen() {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } catch {
-        // continue uploading remaining files
+        failedCount += 1;
       }
     }
+    return failedCount;
   };
 
   const submitReport = async () => {
@@ -152,11 +162,17 @@ export default function IncidentReportScreen() {
         },
       );
 
+      let failedUploads = 0;
       if (images.length > 0 && response.data?._id) {
-        await uploadAttachments(response.data._id);
+        failedUploads = await uploadAttachments(response.data._id);
       }
 
-      Alert.alert('Success', 'Incident report submitted successfully.');
+      const successMessage =
+        failedUploads > 0
+          ? `Incident report submitted successfully, but ${failedUploads} photo(s) failed to upload.`
+          : 'Incident report submitted successfully.';
+
+      Alert.alert('Success', successMessage);
       setSelectedShift(null);
       setDescription('');
       setSeverity(null);
@@ -164,9 +180,8 @@ export default function IncidentReportScreen() {
       fetchIncidents();
     } catch (err: unknown) {
       const message =
-        err instanceof Error
-          ? err.message
-          : 'Could not submit the incident report. Please try again.';
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        (err instanceof Error ? err.message : 'Could not submit the incident report. Please try again.');
       setErrorState({ title: 'Submission Failed', message });
     } finally {
       setSubmitting(false);
