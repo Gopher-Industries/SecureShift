@@ -82,7 +82,7 @@ export default function IncidentReportScreen() {
 
   const fetchShifts = async () => {
     try {
-      const { data } = await http.get<Shift[]>('/shifts/myshifts');
+      const { data } = await http.get<Shift[]>('/shifts/myshifts?status=assigned');
       setShifts(Array.isArray(data) ? data : []);
     } catch {
       // silently fail
