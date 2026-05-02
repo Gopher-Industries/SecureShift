@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +21,12 @@ import { useAppTheme } from '../theme';
 import type { AppColors } from '../theme/colors';
 
 type Severity = 'Low' | 'Medium' | 'High';
+
+type Shift = {
+  _id: string;
+  title: string;
+  date: string;
+};
 
 type Incident = {
   _id: string;
@@ -45,7 +52,10 @@ export default function IncidentReportScreen() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loadingList, setLoadingList] = useState(false);
 
-  const [shiftId, setShiftId] = useState('');
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [showShiftPicker, setShowShiftPicker] = useState(false);
+
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<Severity | null>(null);
   const [images, setImages] = useState<string[]>([]);
@@ -70,9 +80,19 @@ export default function IncidentReportScreen() {
     }
   };
 
+  const fetchShifts = async () => {
+    try {
+      const { data } = await http.get<Shift[]>('/shifts/myshifts');
+      setShifts(Array.isArray(data) ? data : []);
+    } catch {
+      // silently fail
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchIncidents();
+      fetchShifts();
     }, []),
   );
 
@@ -92,12 +112,29 @@ export default function IncidentReportScreen() {
     setErrorState(null);
   };
 
+  const uploadAttachments = async (incidentId: string) => {
+    for (const uri of images) {
+      const filename = uri.split('/').pop() ?? 'photo.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      const formData = new FormData();
+      formData.append('file', { uri, name: filename, type } as unknown as Blob);
+      try {
+        await http.post(`/incidents/${incidentId}/attachments`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } catch {
+        // continue uploading remaining files
+      }
+    }
+  };
+
   const submitReport = async () => {
-    if (!shiftId.trim() || !description.trim() || !severity) {
+    if (!selectedShift || !description.trim() || !severity) {
       setErrorState({
         title: 'Missing required fields',
         message:
-          'Please complete the shift ID, incident description and select a severity before submitting the report.',
+          'Please select a shift, complete the incident description and select a severity before submitting the report.',
       });
       return;
     }
@@ -105,14 +142,18 @@ export default function IncidentReportScreen() {
     setSubmitting(true);
 
     try {
-      await http.post('/incidents', {
-        shiftId: shiftId.trim(),
+      const { data: incident } = await http.post<Incident>('/incidents', {
+        shiftId: selectedShift._id,
         severity: severity.toLowerCase(),
         description: description.trim(),
       });
 
+      if (images.length > 0 && incident._id) {
+        await uploadAttachments(incident._id);
+      }
+
       Alert.alert('Success', 'Incident report submitted successfully.');
-      setShiftId('');
+      setSelectedShift(null);
       setDescription('');
       setSeverity(null);
       setImages([]);
@@ -157,14 +198,14 @@ export default function IncidentReportScreen() {
         {/* Submit Form */}
         <Text style={[s.title, s.formTitle]}>Incident Report</Text>
 
-        <Text style={s.label}>Shift ID *</Text>
-        <TextInput
-          value={shiftId}
-          onChangeText={setShiftId}
-          placeholder="Enter shift ID..."
-          placeholderTextColor={colors.muted}
-          style={s.input}
-        />
+        <Text style={s.label}>Shift *</Text>
+        <TouchableOpacity style={s.dropdown} onPress={() => setShowShiftPicker(true)}>
+          <Text style={selectedShift ? s.dropdownSelected : s.dropdownPlaceholder}>
+            {selectedShift
+              ? `${selectedShift.title} — ${new Date(selectedShift.date).toLocaleDateString()}`
+              : 'Select a shift...'}
+          </Text>
+        </TouchableOpacity>
 
         <Text style={s.label}>Incident Description *</Text>
         <TextInput
@@ -215,6 +256,37 @@ export default function IncidentReportScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Shift Picker Modal */}
+      <Modal visible={showShiftPicker} transparent animationType="slide">
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitle}>Select Shift</Text>
+            <ScrollView>
+              {shifts.length === 0 ? (
+                <Text style={s.emptyText}>No assigned shifts found.</Text>
+              ) : (
+                shifts.map((shift) => (
+                  <TouchableOpacity
+                    key={shift._id}
+                    style={s.shiftItem}
+                    onPress={() => {
+                      setSelectedShift(shift);
+                      setShowShiftPicker(false);
+                    }}
+                  >
+                    <Text style={s.shiftTitle}>{shift.title}</Text>
+                    <Text style={s.shiftDate}>{new Date(shift.date).toLocaleDateString()}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+            <TouchableOpacity style={s.modalClose} onPress={() => setShowShiftPicker(false)}>
+              <Text style={s.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <ErrorMessageBox
         visible={Boolean(errorState)}
@@ -296,6 +368,21 @@ const getStyles = (colors: AppColors) =>
       marginBottom: 6,
       color: colors.text,
     },
+    dropdown: {
+      backgroundColor: colors.card,
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    dropdownSelected: {
+      color: colors.text,
+      fontSize: 14,
+    },
+    dropdownPlaceholder: {
+      color: colors.muted,
+      fontSize: 14,
+    },
     textArea: {
       height: 140,
       backgroundColor: colors.card,
@@ -304,14 +391,6 @@ const getStyles = (colors: AppColors) =>
       borderColor: colors.border,
       padding: 12,
       textAlignVertical: 'top',
-      color: colors.text,
-    },
-    input: {
-      backgroundColor: colors.card,
-      padding: 12,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
       color: colors.text,
     },
     readOnly: {
@@ -374,5 +453,48 @@ const getStyles = (colors: AppColors) =>
       color: colors.white,
       fontWeight: '700',
       fontSize: 16,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: colors.card,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 20,
+      maxHeight: '60%',
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: colors.text,
+      marginBottom: 16,
+    },
+    shiftItem: {
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    shiftTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    shiftDate: {
+      fontSize: 12,
+      color: colors.muted,
+      marginTop: 2,
+    },
+    modalClose: {
+      marginTop: 16,
+      alignItems: 'center',
+      paddingVertical: 12,
+    },
+    modalCloseText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.primary,
     },
   });
