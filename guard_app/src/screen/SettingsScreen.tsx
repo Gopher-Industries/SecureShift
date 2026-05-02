@@ -195,8 +195,9 @@ export default function SettingsScreen() {
         ? '繁體中文'
         : i18n.language === 'hi'
           ? 'हिन्दी'
-          : 'English';
-
+          : i18n.language === 'pa'
+            ? 'Punjabi'
+            : 'English';
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
