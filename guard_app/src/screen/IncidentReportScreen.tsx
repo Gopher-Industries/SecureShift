@@ -116,7 +116,8 @@ export default function IncidentReportScreen() {
     for (const uri of images) {
       const filename = uri.split('/').pop() ?? 'photo.jpg';
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      const ext = match ? match[1].toLowerCase() : 'jpeg';
+      const type = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
       const formData = new FormData();
       formData.append('file', { uri, name: filename, type } as unknown as Blob);
       try {
@@ -142,14 +143,17 @@ export default function IncidentReportScreen() {
     setSubmitting(true);
 
     try {
-      const { data: incident } = await http.post<Incident>('/incidents', {
-        shiftId: selectedShift._id,
-        severity: severity.toLowerCase(),
-        description: description.trim(),
-      });
+      const { data: response } = await http.post<{ success: boolean; data: Incident }>(
+        '/incidents',
+        {
+          shiftId: selectedShift._id,
+          severity: severity.toLowerCase(),
+          description: description.trim(),
+        },
+      );
 
-      if (images.length > 0 && incident._id) {
-        await uploadAttachments(incident._id);
+      if (images.length > 0 && response.data?._id) {
+        await uploadAttachments(response.data._id);
       }
 
       Alert.alert('Success', 'Incident report submitted successfully.');
@@ -498,3 +502,4 @@ const getStyles = (colors: AppColors) =>
       color: colors.primary,
     },
   });
+  
