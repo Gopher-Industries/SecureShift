@@ -181,7 +181,9 @@ export default function IncidentReportScreen() {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        (err instanceof Error ? err.message : 'Could not submit the incident report. Please try again.');
+        (err instanceof Error
+          ? err.message
+          : 'Could not submit the incident report. Please try again.');
       setErrorState({ title: 'Submission Failed', message });
     } finally {
       setSubmitting(false);
