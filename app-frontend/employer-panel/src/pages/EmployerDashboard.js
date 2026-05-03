@@ -122,6 +122,42 @@ const parseIncidentDateTime = (incident) => {
   return baseDate.getTime();
 };
 
+const formatLocation = (locationOrVenue) => {
+  if (!locationOrVenue) return "N/A";
+  if (typeof locationOrVenue === "string") return locationOrVenue;
+
+  if (typeof locationOrVenue === "object") {
+    return [
+      locationOrVenue.street,
+      locationOrVenue.suburb,
+      locationOrVenue.state,
+      locationOrVenue.postcode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return String(locationOrVenue);
+};
+
+const formatDateValue = (value) => {
+  if (!value) return "N/A";
+  if (typeof value !== "string") return String(value);
+
+  if (/^\d{2}-\d{2}-\d{4}$/.test(value)) return value;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return parsed.toLocaleDateString("en-GB");
+};
+
+const formatTimeRange = (shift) => {
+  if (shift.time) return shift.time;
+  if (shift.startTime && shift.endTime) return `${shift.startTime} - ${shift.endTime}`;
+  return "N/A";
+};
+
 export default function EmployerDashboard() {
   const [view, setView] = useState("list");
   const overviewScroller = useRef(null);
@@ -201,21 +237,44 @@ export default function EmployerDashboard() {
           throw new Error(data.message || "Failed to load shifts.");
         }
 
-        const fetchedShifts = Array.isArray(data.items) ? data.items : [];
+        const rawItems = Array.isArray(data.items)
+          ? data.items
+          : Array.isArray(data.data)
+            ? data.data
+            : Array.isArray(data)
+              ? data
+              : [];
 
-        const mappedShifts = fetchedShifts.map((shift, index) => ({
-          id: shift.id || index,
-          role: shift.role || shift.title || "Shift",
-          company: shift.company || shift.companyName || "SecureShift",
-          venue: shift.venue || shift.location || "N/A",
-          rate: shift.rate || shift.hourlyRate || 0,
-          date: shift.date || shift.shiftDate || "N/A",
-          time: shift.time || shift.shiftTime || "N/A",
-          status: shift.status || { text: "Pending", tone: "pending" },
-          priority:
-            shift.priority || (index % 3 === 0 ? "High" : index % 3 === 1 ? "Medium" : "Low"),
-          assignedGuards: shift.assignedGuards ?? shift.guardsAssigned ?? 0,
-        }));
+        const mappedShifts = rawItems.map((shift, index) => {
+          const rawStatus = shift.status;
+          const statusObject =
+            typeof rawStatus === "object" && rawStatus !== null
+              ? rawStatus
+              : {
+                  text: rawStatus || "Pending",
+                  tone: String(rawStatus || "pending").toLowerCase().includes("confirm")
+                    ? "confirmed"
+                    : String(rawStatus || "pending").toLowerCase().includes("complete")
+                      ? "completed"
+                      : String(rawStatus || "pending").toLowerCase().includes("reject")
+                        ? "rejected"
+                        : "pending",
+                };
+
+          return {
+            id: shift._id || shift.id || index,
+            role: shift.role || shift.title || "Shift",
+            company: shift.company || shift.companyName || "SecureShift",
+            venue: formatLocation(shift.venue || shift.location),
+            rate: shift.rate || shift.hourlyRate || shift.payRate || 0,
+            date: formatDateValue(shift.date || shift.shiftDate),
+            time: formatTimeRange(shift),
+            status: statusObject,
+            priority:
+              shift.priority || (index % 3 === 0 ? "High" : index % 3 === 1 ? "Medium" : "Low"),
+            assignedGuards: shift.assignedGuards ?? shift.guardsAssigned ?? 0,
+          };
+        });
 
         setShifts(mappedShifts);
       } catch (err) {
@@ -355,18 +414,11 @@ export default function EmployerDashboard() {
         return matchesQuery && matchesStatus && matchesSeverity;
       })
       .sort((a, b) => {
-        if (incidentSort === "Newest") {
-          return parseIncidentDateTime(b) - parseIncidentDateTime(a);
-        }
-
-        if (incidentSort === "Oldest") {
-          return parseIncidentDateTime(a) - parseIncidentDateTime(b);
-        }
-
+        if (incidentSort === "Newest") return parseIncidentDateTime(b) - parseIncidentDateTime(a);
+        if (incidentSort === "Oldest") return parseIncidentDateTime(a) - parseIncidentDateTime(b);
         if (incidentSort === "Severity") {
           return (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
         }
-
         return 0;
       });
   }, [incidents, incidentQuery, incidentSeverityFilter, incidentSort, incidentStatusFilter]);
