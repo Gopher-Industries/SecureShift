@@ -1,53 +1,59 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import "./EmployerDashboard.css";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2"/>
-    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
-    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2"/>
-    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2"/>
+    <rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" />
+    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" />
+    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" />
   </svg>
 );
+
 const IconClock = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2"/>
-    <line x1="12" y1="6" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <line x1="12" y1="12" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
+    <line x1="12" y1="6" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line x1="12" y1="12" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
+
 const IconPlus = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
+
 const IconGrid = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="3" width="7" height="7" rx="1"/>
-    <rect x="14" y="3" width="7" height="7" rx="1"/>
-    <rect x="3" y="14" width="7" height="7" rx="1"/>
-    <rect x="14" y="14" width="7" height="7" rx="1"/>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
   </svg>
 );
+
 const IconList = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="4" width="18" height="3" rx="1"/>
-    <rect x="3" y="10.5" width="18" height="3" rx="1"/>
-    <rect x="3" y="17" width="18" height="3" rx="1"/>
+    <rect x="3" y="4" width="18" height="3" rx="1" />
+    <rect x="3" y="10.5" width="18" height="3" rx="1" />
+    <rect x="3" y="17" width="18" height="3" rx="1" />
   </svg>
 );
+
 const IconUser = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <circle cx="12" cy="8" r="4" fill="currentColor"/>
-    <path d="M4 20c0-4.4183 3.5817-8 8-8s8 3.5817 8 8" fill="currentColor"/>
+    <circle cx="12" cy="8" r="4" fill="currentColor" />
+    <path d="M4 20c0-4.4183 3.5817-8 8-8s8 3.5817 8 8" fill="currentColor" />
   </svg>
 );
+
 const Star = ({ filled }) => (
   <svg viewBox="0 0 24 24" className={`star ${filled ? "filled" : ""}`}>
-    <path d="M12 2l3.09 6.28 6.93 1-5 4.86L18.18 22 12 18.56 5.82 22l1.16-7.86-5-4.86 6.93-1L12 2z"/>
+    <path d="M12 2l3.09 6.28 6.93 1-5 4.86L18.18 22 12 18.56 5.82 22l1.16-7.86-5-4.86 6.93-1L12 2z" />
   </svg>
 );
 
@@ -55,6 +61,25 @@ const severityRank = {
   High: 3,
   Medium: 2,
   Low: 1,
+};
+
+const formatLocation = (location) => {
+  if (!location) return "No location";
+  if (typeof location === "string") return location;
+
+  return [location.street, location.suburb, location.state, location.postcode]
+    .filter(Boolean)
+    .join(", ");
+};
+
+const formatShiftDate = (value) => {
+  if (!value) return "--";
+  if (typeof value !== "string") return String(value);
+
+  if (/^\d{2}-\d{2}-\d{4}$/.test(value)) return value;
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString("en-GB");
 };
 
 const parseIncidentDateTime = (incident) => {
@@ -76,35 +101,76 @@ const parseIncidentDateTime = (incident) => {
 };
 
 export default function EmployerDashboard() {
-  const [view, setView] = useState("list"); // default list view
+  const [view, setView] = useState("list");
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
-  const navigate = useNavigate();   
+  const navigate = useNavigate();
+
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // States for Incident Management
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [incidentDraft, setIncidentDraft] = useState({ severity: "Medium", comments: "" });
   const [incidentQuery, setIncidentQuery] = useState("");
   const [incidentStatusFilter, setIncidentStatusFilter] = useState("All");
   const [incidentSeverityFilter, setIncidentSeverityFilter] = useState("All");
   const [incidentSort, setIncidentSort] = useState("Newest");
-  const [incidents, setIncidents] = useState([
-    { 
-      id: "INC-9921", 
-      guard: "John Doe", 
-      shift: "Crowd Control - Marvel", 
-      date: "09-08-2025", 
-      time: "10:45 PM", 
-      status: "Pending", 
-      severity: "High",
-      description: "A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.",
 
-      // Demo Image
-      photos: ["https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80"], 
-      comments: ""
+  const [requests, setRequests] = useState([
+    {
+      id: "REQ-1001",
+      type: "Shift Swap",
+      employee: "John Doe",
+      shift: "Crowd Control - Marvel Stadium",
+      requestDate: "28-04-2026",
+      reason: "Requested shift swap due to university exam.",
+      status: "Pending",
+    },
+    {
+      id: "REQ-1002",
+      type: "Leave",
+      employee: "Amy Huggins",
+      shift: "Shopping Centre Security - Chadstone",
+      requestDate: "29-04-2026",
+      reason: "Medical appointment.",
+      status: "Pending",
+    },
+    {
+      id: "REQ-1003",
+      type: "Shift Swap",
+      employee: "Andrew Goddard",
+      shift: "Event Security - Rod Laver Arena",
+      requestDate: "30-04-2026",
+      reason: "Requested swap with another available guard.",
+      status: "Approved",
+    },
+    {
+      id: "REQ-1004",
+      type: "Leave",
+      employee: "Amy Huggins",
+      shift: "Shopping Centre Security - Chadstone",
+      requestDate: "01-05-2026",
+      reason: "Family commitment.",
+      status: "Rejected",
+    },
+  ]);
+
+  const [incidents, setIncidents] = useState([
+    {
+      id: "INC-9921",
+      guard: "John Doe",
+      shift: "Crowd Control - Marvel",
+      date: "09-08-2025",
+      time: "10:45 PM",
+      status: "Pending",
+      severity: "High",
+      description:
+        "A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.",
+      photos: [
+        "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80",
+      ],
+      comments: "",
     },
     {
       id: "INC-9920",
@@ -114,9 +180,10 @@ export default function EmployerDashboard() {
       time: "08:15 PM",
       status: "Resolved",
       severity: "Medium",
-      description: "A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.",
+      description:
+        "A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.",
       photos: [],
-      comments: "Resolved on site, no further action required."
+      comments: "Resolved on site, no further action required.",
     },
     {
       id: "INC-9919",
@@ -126,73 +193,159 @@ export default function EmployerDashboard() {
       time: "03:05 PM",
       status: "Pending",
       severity: "Low",
-      description: "Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.",
-      photos: ["https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80"],
-      comments: ""
-    }
+      description:
+        "Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.",
+      photos: [
+        "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80",
+      ],
+      comments: "",
+    },
   ]);
 
-  // Fetch shifts for the logged-in employer 
-useEffect(() => {
-  const fetchShifts = async () => {
-    try {
-      const token = localStorage.getItem("token");
+  useEffect(() => {
+    const fetchShifts = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      console.log("fetch url:", `${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`);
-      console.log("response status:", response.status);
-      console.log("content-type:", response.headers.get("content-type"));
-      console.log("response url:", response.url);
+        const data = await response.json();
 
-      const data = await response.json();
-      console.log("shift response:", data);
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to load shifts.");
+        }
 
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to load shifts.");
+        const rawShifts = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+
+        const normalizedShifts = rawShifts.map((shift, idx) => {
+          const rawStatus = shift.status;
+          const normalizedStatus =
+            typeof rawStatus === "object" && rawStatus !== null
+              ? {
+                  text: rawStatus.text || "Pending",
+                  tone: rawStatus.tone || "pending",
+                }
+              : {
+                  text: rawStatus || "Pending",
+                  tone:
+                    String(rawStatus || "pending").toLowerCase().includes("confirm")
+                      ? "confirmed"
+                      : String(rawStatus || "pending").toLowerCase().includes("complete")
+                        ? "completed"
+                        : String(rawStatus || "pending").toLowerCase().includes("reject")
+                          ? "rejected"
+                          : "pending",
+                };
+
+          return {
+            id: shift._id || shift.id || idx,
+            title: shift.title || shift.role || "Shift",
+            location: formatLocation(shift.location || shift.venue),
+            date: formatShiftDate(shift.date || shift.shiftDate),
+            time:
+              shift.startTime && shift.endTime
+                ? `${shift.startTime} - ${shift.endTime}`
+                : shift.time || "--",
+            status: normalizedStatus,
+            payRate: shift.payRate ?? shift.rate ?? shift.hourlyRate ?? 0,
+            priority:
+              shift.priority || (idx % 3 === 0 ? "High" : idx % 3 === 1 ? "Medium" : "Low"),
+            assignedGuards: shift.assignedGuards ?? shift.guardsAssigned ?? 0,
+          };
+        });
+
+        setShifts(normalizedShifts);
+      } catch (err) {
+        setError(err.message || "Failed to load shifts.");
+
+        setShifts([
+          {
+            id: 1,
+            title: "Crowd Control",
+            location: "Marvel Stadium",
+            date: "22-03-2026",
+            time: "5:00 pm - 1:00 am",
+            status: { text: "Confirmed", tone: "confirmed" },
+            payRate: 55,
+            priority: "High",
+            assignedGuards: 2,
+          },
+          {
+            id: 2,
+            title: "Shopping Centre Security",
+            location: "Chadstone Shopping Centre",
+            date: "24-03-2026",
+            time: "1:00 pm - 9:00 pm",
+            status: { text: "Pending", tone: "pending" },
+            payRate: 75,
+            priority: "Medium",
+            assignedGuards: 1,
+          },
+          {
+            id: 3,
+            title: "Event Security",
+            location: "Rod Laver Arena",
+            date: "26-03-2026",
+            time: "2:00 pm - 10:00 pm",
+            status: { text: "Confirmed", tone: "confirmed" },
+            payRate: 65,
+            priority: "High",
+            assignedGuards: 3,
+          },
+          {
+            id: 4,
+            title: "Static Guarding",
+            location: "Corporate Office",
+            date: "27-03-2026",
+            time: "8:00 am - 4:00 pm",
+            status: { text: "Completed (Rated)", tone: "completed" },
+            payRate: 50,
+            priority: "Low",
+            assignedGuards: 1,
+          },
+        ]);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setShifts(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []);
-    } catch (err) {
-      setError(err.message || "Failed to load shifts.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchShifts();
+  }, []);
 
-  fetchShifts();
-}, []);
+  const reviews = useMemo(
+    () => [
+      { name: "John Smith", role: "Crowd Control", stars: 5 },
+      { name: "Andrew Goddard", role: "Crowd Control", stars: 4 },
+      { name: "Amy Huggins", role: "Crowd Control", stars: 4 },
+    ],
+    []
+  );
 
-  const reviews = useMemo(() => [
-    { name: "John Smith", role: "Crowd Control", stars: 5 },
-    { name: "Andrew Goddard", role: "Crowd Control", stars: 4 },
-    { name: "Amy Huggins", role: "Crowd Control", stars: 4 },
-  ], []);
+  const priorityOrder = { High: 0, Medium: 1, Low: 2 };
 
-  const scrollByAmount = (ref, amt) => {
-    if (!ref.current) return;
-    ref.current.scrollBy({ left: amt, behavior: "smooth" });
-  };
-
-  const updateIncident = (id, newStatus, newSeverity, newComments) => {
-    setIncidents(prev => prev.map(inc => 
-      inc.id === id ? { ...inc, status: newStatus, severity: newSeverity, comments: newComments } : inc
-    ));
-    setSelectedIncident(null);
-  };
-
-  const openIncidentModal = (incident) => {
-    setSelectedIncident(incident);
-    setIncidentDraft({
-      severity: incident.severity,
-      comments: incident.comments || "",
+  const priorityShifts = useMemo(() => {
+    return [...shifts].sort((a, b) => {
+      const aPriority = priorityOrder[a.priority] ?? 99;
+      const bPriority = priorityOrder[b.priority] ?? 99;
+      return aPriority - bPriority;
     });
-  };
+  }, [shifts]);
+
+  const highPriorityCount = useMemo(
+    () => shifts.filter((shift) => shift.priority === "High").length,
+    [shifts]
+  );
+
+  const totalAssignedGuards = useMemo(
+    () => shifts.reduce((total, shift) => total + (shift.assignedGuards || 0), 0),
+    [shifts]
+  );
+
+  const upcomingShiftCount = shifts.length;
 
   const filteredIncidents = useMemo(() => {
     const normalizedQuery = incidentQuery.trim().toLowerCase();
@@ -218,15 +371,12 @@ useEffect(() => {
         if (incidentSort === "Newest") {
           return parseIncidentDateTime(b) - parseIncidentDateTime(a);
         }
-
         if (incidentSort === "Oldest") {
           return parseIncidentDateTime(a) - parseIncidentDateTime(b);
         }
-
         if (incidentSort === "Severity") {
           return (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
         }
-
         return 0;
       });
   }, [incidents, incidentQuery, incidentSeverityFilter, incidentSort, incidentStatusFilter]);
@@ -243,136 +393,222 @@ useEffect(() => {
     );
   }, [incidents]);
 
+  const scrollByAmount = (ref, amt) => {
+    if (!ref.current) return;
+    ref.current.scrollBy({ left: amt, behavior: "smooth" });
+  };
+
+  const updateIncident = (id, newStatus, newSeverity, newComments) => {
+    setIncidents((prev) =>
+      prev.map((inc) =>
+        inc.id === id ? { ...inc, status: newStatus, severity: newSeverity, comments: newComments } : inc
+      )
+    );
+    setSelectedIncident(null);
+  };
+
+  const openIncidentModal = (incident) => {
+    setSelectedIncident(incident);
+    setIncidentDraft({
+      severity: incident.severity,
+      comments: incident.comments || "",
+    });
+  };
+
+  const updateRequestStatus = (id, newStatus) => {
+    setRequests((prev) =>
+      prev.map((req) => (req.id === id ? { ...req, status: newStatus } : req))
+    );
+  };
+
   return (
     <div className="ss-page">
-  
-      {/* -------- Overview -------- */}
       <main className="ss-main">
         <h2 className="ss-h1">Overview</h2>
-  
-        {/* Controls ABOVE grey grid */}
+
         <div className="ss-controls">
           <div className="ss-controls-right">
-            <button
-              className="ss-primary ss-primary--wide"
-              onClick={() => navigate("/create-shift")}
-            >
+            <button className="ss-primary ss-primary--wide" onClick={() => navigate("/create-shift")}>
               <IconPlus className="ss-plus" /> Create Shift
             </button>
             <div className="ss-viewtoggle">
               <button
                 className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
                 onClick={() => setView("grid")}
+                type="button"
               >
                 <IconGrid />
               </button>
               <button
                 className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`}
                 onClick={() => setView("list")}
+                type="button"
               >
                 <IconList />
               </button>
             </div>
           </div>
         </div>
-  
-        {/* Grey Grid */}
+
         <div className="ss-overview">
-          <button
-            className="ss-arrow ss-arrow--left"
-            onClick={() => scrollByAmount(overviewScroller, -320)}
-          >
+          <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(overviewScroller, -320)}>
             ‹
           </button>
-  
+
           <div className="ss-panel">
             <div
               ref={overviewScroller}
               className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}
             >
-  
-              
-  
               {loading && <div>Loading shifts...</div>}
               {error && <div style={{ color: "red" }}>{error}</div>}
               {!loading && !error && shifts.length === 0 && <div>No shifts yet. Create your first shift.</div>}
-  
-              {shifts.map((s, idx) => {
-                const displayLocation =
-                  typeof s.location === "string"
-                    ? s.location
-                    : s.location
-                      ? [s.location.street, s.location.suburb, s.location.state]
-                          .filter(Boolean)
-                          .join(", ")
-                      : "No location";
-  
-                const displayDate = s.date
-                  ? new Date(s.date).toLocaleDateString()
-                  : "--";
-  
-                const displayTime =
-                  s.startTime && s.endTime
-                    ? `${s.startTime} - ${s.endTime}`
-                    : s.time || "--";
-  
-                const displayStatus = s.status || "open";
-                const displayRate = s.payRate ?? s.rate ?? 0;
-                const displayTitle = s.title || s.role || "Shift";
-  
-                return view === "grid" ? (
-                  <div className="ss-card" key={s._id || s.id || idx}>
+
+              {shifts.map((s, idx) =>
+                view === "grid" ? (
+                  <div className="ss-card" key={s.id || idx}>
                     <div className="ss-card__head">
-                      <div className="ss-role">{displayTitle}</div>
-                      <div className="ss-rate">${displayRate} p/h</div>
+                      <div className="ss-role">{s.title}</div>
+                      <div className="ss-rate">${s.payRate} p/h</div>
                     </div>
-  
-                    <div className="ss-meta">{displayLocation}</div>
-  
-                    <div className={`ss-status ss-status--${String(displayStatus).toLowerCase()}`}>
-                      Status: {displayStatus}
+
+                    <div className="ss-meta">{s.location}</div>
+
+                    <div className={`ss-status ss-status--${String(s.status.tone).toLowerCase()}`}>
+                      Status: {s.status.text}
                     </div>
-  
+
                     <div className="ss-when">
                       <span className="ss-when__item">
                         <IconCalendar className="ss-ico" />
-                        {displayDate}
+                        {s.date}
                       </span>
                       <span className="ss-when__item">
                         <IconClock className="ss-ico" />
-                        {displayTime}
+                        {s.time}
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="ss-row" key={s._id || s.id || idx}>
-                    <div className="ss-col ss-role">{displayTitle}</div>
-                    <div className="ss-col ss-company">{displayLocation}</div>
-                    <div className="ss-col ss-rate">${displayRate} p/h</div>
+                  <div className="ss-row" key={s.id || idx}>
+                    <div className="ss-col ss-role">{s.title}</div>
+                    <div className="ss-col ss-company">{s.location}</div>
+                    <div className="ss-col ss-rate">${s.payRate} p/h</div>
                     <div className="ss-col ss-date">
-                      <IconCalendar className="ss-ico" /> {displayDate}
+                      <IconCalendar className="ss-ico" /> {s.date}
                     </div>
                     <div className="ss-col ss-time">
-                      <IconClock className="ss-ico" /> {displayTime}
+                      <IconClock className="ss-ico" /> {s.time}
                     </div>
-                    <div className={`ss-col ss-status ss-status--${String(displayStatus).toLowerCase()}`}>
-                      Status: {displayStatus}
+                    <div className={`ss-col ss-status ss-status--${String(s.status.tone).toLowerCase()}`}>
+                      Status: {s.status.text}
                     </div>
                   </div>
-                );
-              })}
+                )
+              )}
             </div>
           </div>
-  
-          <button
-            className="ss-arrow ss-arrow--right"
-            onClick={() => scrollByAmount(overviewScroller, 320)}
-          >
+
+          <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(overviewScroller, 320)}>
             ›
           </button>
         </div>
 
-        {/* Incident Reports */}
+        <h2 className="ss-h1 ss-h1--spaced">Priority Shifts</h2>
+        <div className="ss-overview">
+          <div className="ss-panel">
+            <div className="ss-priority-topstats">
+              <div className="ss-priority-mini-card">
+                <h3>{upcomingShiftCount}</h3>
+                <p>Upcoming Shifts</p>
+              </div>
+              <div className="ss-priority-mini-card">
+                <h3>{highPriorityCount}</h3>
+                <p>High Priority</p>
+              </div>
+              <div className="ss-priority-mini-card">
+                <h3>{totalAssignedGuards}</h3>
+                <p>Guards Assigned</p>
+              </div>
+            </div>
+
+            <div className="ss-priority-list">
+              {priorityShifts.map((shift, idx) => (
+                <div className="ss-priority-simple-row" key={shift.id || idx}>
+                  <div className="ss-priority-left">
+                    <div className="ss-role">{shift.title}</div>
+                    <div className="ss-meta">{shift.location}</div>
+                  </div>
+
+                  <div className="ss-priority-middle">
+                    <div className="ss-date">
+                      <IconCalendar className="ss-ico" />
+                      {shift.date}
+                    </div>
+                    <div className="ss-time">
+                      <IconClock className="ss-ico" />
+                      {shift.time}
+                    </div>
+                  </div>
+
+                  <div className="ss-priority-right">
+                    <span className={`ss-priority-pill ss-priority-pill--${shift.priority.toLowerCase()}`}>
+                      {shift.priority}
+                    </span>
+                    <div className="ss-priority-guards">{shift.assignedGuards} guards assigned</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <h2 className="ss-h1 ss-h1--spaced">Shift Swap / Leave Requests</h2>
+        <div className="ss-overview">
+          <div className="ss-panel">
+            <div className="ss-requests-list">
+              {requests.map((req) => (
+                <div className="ss-request-row" key={req.id}>
+                  <div className="ss-request-left">
+                    <div className="ss-role">{req.type}</div>
+                    <div className="ss-meta">
+                      {req.employee} — {req.shift}
+                    </div>
+                    <div className="ss-request-reason">{req.reason}</div>
+                  </div>
+
+                  <div className="ss-request-middle">
+                    <div className="ss-date">
+                      <IconCalendar className="ss-ico" />
+                      {req.requestDate}
+                    </div>
+                    <div className={`ss-status ss-status--${req.status.toLowerCase()}`}>{req.status}</div>
+                  </div>
+
+                  <div className="ss-request-actions">
+                    <button
+                      className="ss-secondary ss-secondary--small"
+                      type="button"
+                      onClick={() => updateRequestStatus(req.id, "Approved")}
+                      disabled={req.status === "Approved"}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="ss-secondary ss-secondary--small ss-secondary--danger"
+                      type="button"
+                      onClick={() => updateRequestStatus(req.id, "Rejected")}
+                      disabled={req.status === "Rejected"}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <h2 className="ss-h1 ss-h1--spaced">Incident Reports</h2>
         <div className="ss-incident-toolbar">
           <input
@@ -410,12 +646,14 @@ useEffect(() => {
             Reset
           </button>
         </div>
+
         <div className="ss-incident-summary">
           <span>{incidentSummary.total} Total</span>
           <span>{incidentSummary.pending} Pending</span>
           <span>{incidentSummary.resolved} Resolved</span>
           <span>{filteredIncidents.length} Showing</span>
         </div>
+
         <div className="ss-overview">
           <div style={{ width: "44px" }}></div>
           <div className="ss-panel">
@@ -425,17 +663,23 @@ useEffect(() => {
               )}
               {filteredIncidents.map((inc, i) => (
                 <div className="ss-row" key={i}>
-                  <div className="ss-col ss-role"><b>{inc.guard}</b></div>
+                  <div className="ss-col ss-role">
+                    <b>{inc.guard}</b>
+                  </div>
                   <div className="ss-col ss-company">{inc.shift}</div>
                   <div className="ss-col ss-incident-id">{inc.id}</div>
                   <div className="ss-col ss-date">
                     <IconCalendar className="ss-ico" /> {inc.date}
                   </div>
-                  <div className={`ss-col ss-status ss-status--${inc.status.toLowerCase()}`}>
-                    {inc.status}
-                  </div>
+                  <div className={`ss-col ss-status ss-status--${inc.status.toLowerCase()}`}>{inc.status}</div>
                   <div className="ss-col ss-time" style={{ textAlign: "right" }}>
-                    <button className="ss-secondary" style={{ width: '100px' }} onClick={() => openIncidentModal(inc)}>Review</button>
+                    <button
+                      className="ss-secondary"
+                      style={{ width: "100px" }}
+                      onClick={() => openIncidentModal(inc)}
+                    >
+                      Review
+                    </button>
                   </div>
                 </div>
               ))}
@@ -444,39 +688,47 @@ useEffect(() => {
           <div style={{ width: "44px" }}></div>
         </div>
 
-        {/* Reviews */}
         <h2 className="ss-h1 ss-h1--spaced">Recent Review</h2>
         <div className="ss-reviews">
-          <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(reviewScroller, -300)}>‹</button>
+          <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(reviewScroller, -300)}>
+            ‹
+          </button>
           <div ref={reviewScroller} className="ss-reviews__track">
             {reviews.map((r, i) => (
               <div key={i} className="ss-reviewcard">
                 <div className="ss-reviewcard__top">
-                  <div className="ss-avatar ss-avatar--lg"><IconUser /></div>
+                  <div className="ss-avatar ss-avatar--lg">
+                    <IconUser />
+                  </div>
                   <div>
                     <div className="ss-review__name">{r.name}</div>
                     <div className="ss-review__role">{r.role}</div>
                   </div>
                 </div>
                 <div className="ss-review__stars">
-                  {[0,1,2,3,4].map((k) => <Star key={k} filled={k < r.stars} />)}
+                  {[0, 1, 2, 3, 4].map((k) => (
+                    <Star key={k} filled={k < r.stars} />
+                  ))}
                 </div>
                 <button className="ss-secondary">View Review</button>
               </div>
             ))}
           </div>
-          <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(reviewScroller, 300)}>›</button>
+          <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(reviewScroller, 300)}>
+            ›
+          </button>
         </div>
       </main>
 
-      {/* Incident Detail Modal */}
       {selectedIncident && (
         <div className="create-shift-modal-backdrop" onClick={() => setSelectedIncident(null)}>
-          <div className="create-shift-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+          <div className="create-shift-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
             <div className="create-shift-header">
               <div>
-                <h1>Incident Details (<span className="ss-incident-id">{selectedIncident.id}</span>)</h1>
-                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                <h1>
+                  Incident Details (<span className="ss-incident-id">{selectedIncident.id}</span>)
+                </h1>
+                <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>
                   Recorded on: {selectedIncident.date} at {selectedIncident.time}
                 </p>
               </div>
@@ -485,17 +737,19 @@ useEffect(() => {
               </span>
             </div>
 
-            <div className="form-grid" style={{ marginBottom: '20px' }}>
+            <div className="form-grid" style={{ marginBottom: "20px" }}>
               <div className="form-group">
                 <label>Reported By</label>
-                <div className="ss-input-static" style={{ padding: '10px', borderRadius: '4px' }}>{selectedIncident.guard}</div>
+                <div className="ss-input-static" style={{ padding: "10px", borderRadius: "4px" }}>
+                  {selectedIncident.guard}
+                </div>
               </div>
               <div className="form-group">
                 <label>Assign Severity Level</label>
                 <select
                   value={incidentDraft.severity}
                   onChange={(e) => setIncidentDraft((prev) => ({ ...prev, severity: e.target.value }))}
-                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }}
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -504,19 +758,19 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label>Guard's Description</label>
+            <div className="form-group" style={{ marginBottom: "20px" }}>
+              <label>Guard&apos;s Description</label>
               <div className="ss-incident-description">{selectedIncident.description}</div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '20px' }}>
+            <div className="form-group" style={{ marginBottom: "20px" }}>
               <label>Evidence Photos</label>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 {(selectedIncident.photos || []).map((url, idx) => (
                   <img key={idx} src={url} alt="incident evidence" className="ss-evidence-img" />
                 ))}
                 {(!selectedIncident.photos || selectedIncident.photos.length === 0) && (
-                  <p style={{ margin: 0, color: '#666' }}>No evidence photos attached.</p>
+                  <p style={{ margin: 0, color: "#666" }}>No evidence photos attached.</p>
                 )}
               </div>
             </div>
@@ -527,31 +781,45 @@ useEffect(() => {
                 placeholder="Add internal notes..."
                 value={incidentDraft.comments}
                 onChange={(e) => setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))}
-                style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }}
+                style={{ border: "1px solid #ddd", borderRadius: "4px", padding: "10px" }}
                 rows={4}
               />
             </div>
 
-            <div className="actions" style={{ marginTop: '30px' }}>
+            <div className="actions" style={{ marginTop: "30px" }}>
               <button
                 className="primary"
-                onClick={() => updateIncident(selectedIncident.id, "Resolved", incidentDraft.severity, incidentDraft.comments)}
+                onClick={() =>
+                  updateIncident(
+                    selectedIncident.id,
+                    "Resolved",
+                    incidentDraft.severity,
+                    incidentDraft.comments
+                  )
+                }
               >
                 Mark as Resolved
               </button>
               <button
                 className="secondary"
-                onClick={() => updateIncident(selectedIncident.id, "Pending", incidentDraft.severity, incidentDraft.comments)}
+                onClick={() =>
+                  updateIncident(
+                    selectedIncident.id,
+                    "Pending",
+                    incidentDraft.severity,
+                    incidentDraft.comments
+                  )
+                }
               >
                 Save as Pending
               </button>
-              <button className="secondary" style={{ color: '#666' }} onClick={() => setSelectedIncident(null)}>Close</button>
+              <button className="secondary" style={{ color: "#666" }} onClick={() => setSelectedIncident(null)}>
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
-
-
     </div>
   );
 }
