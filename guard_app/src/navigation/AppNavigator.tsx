@@ -6,6 +6,7 @@ import ActiveSOSScreen from '../screen/ActiveSOSScreen';
 import CertificatesScreen from '../screen/CertificatesScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
+import IncidentReportScreen from '../screen/IncidentReportScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
@@ -42,6 +43,7 @@ export type RootStackParamList = {
   Certificates: undefined;
   ShiftDetails: { shift: any };
   Terms: undefined;
+  IncidentReports: undefined;
   ActiveSOS:
     | {
         sosId?: string;
@@ -120,6 +122,11 @@ export default function AppNavigator() {
         name="Terms"
         component={TermsScreen}
         options={{ headerShown: true, title: 'Terms of Service' }}
+      />
+      <Stack.Screen
+        name="IncidentReports"
+        component={IncidentReportScreen}
+        options={{ headerShown: true, title: 'Incident Reports' }}
       />
       <Stack.Screen
         name="ActiveSOS"
