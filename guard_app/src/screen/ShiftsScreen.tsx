@@ -16,13 +16,13 @@ import {
 
 import { getMe } from '../api/auth';
 import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
-import ShiftCard from '../components/card/ShiftCard';
 import CalendarView from '../components/calendar/CalendarView';
+import ShiftCard from '../components/card/ShiftCard';
 import ShiftDetailsModal from '../components/modal/ShiftDetailsModal';
 import ViewToggle from '../components/toggle/ViewToggle';
 import { useAppTheme } from '../theme';
-import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 
+import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
 
 const { width } = Dimensions.get('window');

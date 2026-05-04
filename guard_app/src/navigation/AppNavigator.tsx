@@ -12,6 +12,8 @@ import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
 import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
+import QRScannerScreen from '../screen/QRScannerScreen';
+import ScanResultScreen from '../screen/ScanResultScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
@@ -44,6 +46,8 @@ export type RootStackParamList = {
   ShiftDetails: { shift: any };
   Terms: undefined;
   IncidentReports: undefined;
+  QRScanner: undefined;
+  ScanResult: { data: string };
   ActiveSOS:
     | {
         sosId?: string;
@@ -127,6 +131,16 @@ export default function AppNavigator() {
         name="IncidentReports"
         component={IncidentReportScreen}
         options={{ headerShown: true, title: 'Incident Reports' }}
+      />
+      <Stack.Screen
+        name="QRScanner"
+        component={QRScannerScreen}
+        options={{ headerShown: true, title: 'QR Scanner' }}
+      />
+      <Stack.Screen
+        name="ScanResult"
+        component={ScanResultScreen}
+        options={{ headerShown: true, title: 'Scan Result' }}
       />
       <Stack.Screen
         name="ActiveSOS"

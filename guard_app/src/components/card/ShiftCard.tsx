@@ -1,11 +1,12 @@
 // component/card/ShiftCard.tsx
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useAppTheme } from '../../theme';
-import type { AppColors } from '../../theme/colors';
+
 import type { ShiftCardItem } from '../../models/Shifts';
+import type { AppColors } from '../../theme/colors';
 
 type Props = {
   shift: ShiftCardItem;
