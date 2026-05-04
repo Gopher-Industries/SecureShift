@@ -52,15 +52,14 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
                 </Text>
               </View>
 
-              {status === 'Confirmed' ||
-                (status === 'Pending' && (
-                  <TouchableOpacity
-                    style={[s.statusBadge, { backgroundColor: colors.link }]}
-                    onPress={() => setRequestVisible(true)}
-                  >
-                    <Text style={s.statusBadgeText}>{t('shifts.change')}</Text>
-                  </TouchableOpacity>
-                ))}
+              {status === 'Confirmed' && (
+                <TouchableOpacity
+                  style={[s.statusBadge, { backgroundColor: colors.link }]}
+                  onPress={() => setRequestVisible(true)}
+                >
+                  <Text style={s.statusBadgeText}>{t('shifts.change')}</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <View style={s.modalDetail}>

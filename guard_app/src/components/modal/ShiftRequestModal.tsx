@@ -145,7 +145,7 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
             {requestType === REQUEST_TYPES[0].label && (
               <View>
                 <View style={s.modalHeaderRow}>
-                  <Text style={s.modalShiftHeader}>Reason</Text>
+                  <Text style={s.modalShiftHeader}>{t('shifts.requestedTime')}</Text>
                 </View>
                 <View style={s.modalHeaderRow}>
                   <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('date')}>
