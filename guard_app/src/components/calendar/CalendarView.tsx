@@ -1,7 +1,7 @@
 // components/calender/CalendarView.tsx
 import React, { useMemo, useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import type { AppColors } from '../../theme/colors';
 

@@ -274,6 +274,15 @@ export default function SettingsScreen() {
             colors={colors}
           />
         </View>
+        <View style={styles.card} testID="beta-card">
+          <Text style={styles.cardTitle}>Beta</Text>
+          <Row
+            icon={<Ionicons name="qr-code-outline" size={18} color={colors.primary} />}
+            label="QR Code Scanner"
+            onPress={() => navigation2.navigate('QRScanner')}
+            colors={colors}
+          />
+        </View>
 
         <View style={styles.card} testID="privacy-card">
           <Text style={styles.cardTitle}>{t('settings.dataPrivacy')}</Text>

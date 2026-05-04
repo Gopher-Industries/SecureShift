@@ -1,10 +1,10 @@
 // components/modal/ShiftDetailsModal.tsx
 import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import type { AppColors } from '../../theme/colors';
 import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
+import type { AppColors } from '../../theme/colors';
 
 type Props = {
   shift: AppliedShift | CompletedShift | AllShift | null;
