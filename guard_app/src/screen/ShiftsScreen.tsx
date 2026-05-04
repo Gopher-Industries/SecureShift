@@ -30,7 +30,7 @@ const { width } = Dimensions.get('window');
 
 type Props = {
   navigation: any;
-}
+};
 
 function mapMineShifts(shifts: ShiftDto[], myUid: string): AppliedShift[] {
   return shifts
@@ -106,7 +106,7 @@ function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
     });
 }
 
-function AllTab({navigation}: Props) {
+function AllTab({ navigation }: Props) {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
   const { t } = useTranslation();
@@ -158,7 +158,6 @@ function AllTab({navigation}: Props) {
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
-  
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
   };
@@ -216,7 +215,7 @@ function AllTab({navigation}: Props) {
   );
 }
 
-function AppliedTab({navigation}: Props) {
+function AppliedTab({ navigation }: Props) {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
   const { t } = useTranslation();
@@ -306,7 +305,7 @@ function AppliedTab({navigation}: Props) {
   );
 }
 
-function CompletedTab({navigation}: Props) {
+function CompletedTab({ navigation }: Props) {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
   const { t } = useTranslation();
@@ -488,12 +487,12 @@ const getStyles = (colors: AppColors) =>
       paddingHorizontal: 6,
       paddingVertical: 5,
       marginBottom: 12,
-      alignSelf: 'center'
+      alignSelf: 'center',
     },
     requestsText: {
       color: colors.white,
       fontSize: 14,
       margin: 8,
-      alignSelf: 'center'
-    }
+      alignSelf: 'center',
+    },
   });

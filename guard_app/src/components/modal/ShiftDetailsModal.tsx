@@ -1,11 +1,12 @@
 // components/modal/ShiftDetailsModal.tsx
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import type { AppColors } from '../../theme/colors';
-import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
 import ShiftRequestModal from './ShiftRequestModal';
+
+import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
+import type { AppColors } from '../../theme/colors';
 
 type Props = {
   shift: AppliedShift | CompletedShift | AllShift | null;
@@ -51,13 +52,15 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
                 </Text>
               </View>
 
-              {status === 'Confirmed' || status === 'Pending' &&
-                  <TouchableOpacity style={[s.statusBadge, { backgroundColor: colors.link }]} onPress={() => setRequestVisible(true)}>
-                    <Text style={s.statusBadgeText}>
-                      {t('shifts.change')}
-                    </Text>
+              {status === 'Confirmed' ||
+                (status === 'Pending' && (
+                  <TouchableOpacity
+                    style={[s.statusBadge, { backgroundColor: colors.link }]}
+                    onPress={() => setRequestVisible(true)}
+                  >
+                    <Text style={s.statusBadgeText}>{t('shifts.change')}</Text>
                   </TouchableOpacity>
-                }
+                ))}
             </View>
 
             <View style={s.modalDetail}>
@@ -102,10 +105,11 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
         </Pressable>
       </Pressable>
 
-      <ShiftRequestModal 
+      <ShiftRequestModal
         visible={requestVisible}
         onClose={() => setRequestVisible(false)}
-        colors={colors}/>
+        colors={colors}
+      />
     </Modal>
   );
 }
