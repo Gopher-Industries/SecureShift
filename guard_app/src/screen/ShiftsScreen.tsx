@@ -11,21 +11,26 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
 import { getMe } from '../api/auth';
 import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
-import ShiftCard from '../components/card/ShiftCard';
 import CalendarView from '../components/calendar/CalendarView';
+import ShiftCard from '../components/card/ShiftCard';
 import ShiftDetailsModal from '../components/modal/ShiftDetailsModal';
 import ViewToggle from '../components/toggle/ViewToggle';
 import { useAppTheme } from '../theme';
-import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 
+import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
 
 const { width } = Dimensions.get('window');
+
+type Props = {
+  navigation: any;
+}
 
 function mapMineShifts(shifts: ShiftDto[], myUid: string): AppliedShift[] {
   return shifts
@@ -100,7 +105,8 @@ function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
       };
     });
 }
-function AllTab() {
+
+function AllTab({navigation}: Props) {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
   const { t } = useTranslation();
@@ -152,8 +158,16 @@ function AllTab() {
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
+  
+  const handleViewRequests = () => {
+    navigation.navigate('ShiftRequests');
+  };
+
   return (
     <View style={s.screen}>
+      <TouchableOpacity style={s.requestsButton} onPress={handleViewRequests}>
+        <Text style={s.requestsText}>{t('shifts.viewRequests')}</Text>
+      </TouchableOpacity>
       <View style={s.searchRow}>
         <View style={s.searchContainer}>
           <Text style={s.searchIcon}>🔍</Text>
@@ -202,7 +216,7 @@ function AllTab() {
   );
 }
 
-function AppliedTab() {
+function AppliedTab({navigation}: Props) {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
   const { t } = useTranslation();
@@ -242,8 +256,15 @@ function AppliedTab() {
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
+  const handleViewRequests = () => {
+    navigation.navigate('ShiftRequests');
+  };
+
   return (
     <View style={s.screen}>
+      <TouchableOpacity style={s.requestsButton} onPress={handleViewRequests}>
+        <Text style={s.requestsText}>{t('shifts.viewRequests')}</Text>
+      </TouchableOpacity>
       <View style={s.searchRow}>
         <View style={s.searchContainer}>
           <Text style={s.searchIcon}>🔍</Text>
@@ -285,7 +306,7 @@ function AppliedTab() {
   );
 }
 
-function CompletedTab() {
+function CompletedTab({navigation}: Props) {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
   const { t } = useTranslation();
@@ -319,8 +340,15 @@ function CompletedTab() {
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
+  const handleViewRequests = () => {
+    navigation.navigate('ShiftRequests');
+  };
+
   return (
     <View style={s.screen}>
+      <TouchableOpacity style={s.requestsButton} onPress={handleViewRequests}>
+        <Text style={s.requestsText}>{t('shifts.viewRequests')}</Text>
+      </TouchableOpacity>
       <View style={s.searchRow}>
         <View style={s.searchContainer}>
           <Text style={s.searchIcon}>🔍</Text>
@@ -368,7 +396,7 @@ function CompletedTab() {
 
 const Top = createMaterialTopTabNavigator();
 
-export default function ShiftsScreen() {
+export default function ShiftsScreen({ navigation }: any) {
   const { colors } = useAppTheme();
   const { t } = useTranslation();
 
@@ -453,4 +481,19 @@ const getStyles = (colors: AppColors) =>
       marginTop: 40,
       fontSize: 14,
     },
+
+    requestsButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 6,
+      paddingVertical: 5,
+      marginBottom: 12,
+      alignSelf: 'center'
+    },
+    requestsText: {
+      color: colors.white,
+      fontSize: 14,
+      margin: 8,
+      alignSelf: 'center'
+    }
   });

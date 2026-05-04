@@ -1,10 +1,11 @@
 // components/modal/ShiftDetailsModal.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import type { AppColors } from '../../theme/colors';
 import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
+import ShiftRequestModal from './ShiftRequestModal';
 
 type Props = {
   shift: AppliedShift | CompletedShift | AllShift | null;
@@ -16,6 +17,7 @@ type Props = {
 function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
   const s = getStyles(colors);
   const { t } = useTranslation();
+  const [requestVisible, setRequestVisible] = useState<boolean>(false);
 
   if (!shift) return null;
 
@@ -48,6 +50,14 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
                   {status ? t(`shifts.${status.toLowerCase()}`, status) : t('shifts.available')}
                 </Text>
               </View>
+
+              {status === 'Confirmed' || status === 'Pending' &&
+                  <TouchableOpacity style={[s.statusBadge, { backgroundColor: colors.link }]} onPress={() => setRequestVisible(true)}>
+                    <Text style={s.statusBadgeText}>
+                      {t('shifts.change')}
+                    </Text>
+                  </TouchableOpacity>
+                }
             </View>
 
             <View style={s.modalDetail}>
@@ -91,6 +101,11 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
           </View>
         </Pressable>
       </Pressable>
+
+      <ShiftRequestModal 
+        visible={requestVisible}
+        onClose={() => setRequestVisible(false)}
+        colors={colors}/>
     </Modal>
   );
 }
@@ -153,7 +168,7 @@ const getStyles = (colors: AppColors) =>
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 12,
-      marginLeft: 12,
+      marginLeft: 6,
     },
     statusBadgeText: {
       fontSize: 12,
