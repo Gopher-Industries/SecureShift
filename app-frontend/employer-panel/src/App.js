@@ -26,6 +26,9 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import Timesheet from "./pages/Timesheet";
 import DailyMonitoring from './pages/DailyMonitoring';
 
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
+
 /**
  * PUBLIC ROUTE: Task Detail (no layout)
  */
@@ -70,6 +73,8 @@ function AppRoutes() {
         <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
         <Route path="/submission" element={<SubmissionConfirmation />} />
         <Route path="/task-detail" element={<TaskRoute />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-and-condition" element={<TermsAndConditions />} />
 
         {/* PROTECTED ROUTES */}
         <Route path="/employer-dashboard" element={<ProtectedLayout><EmployerDashboard /></ProtectedLayout>} />
