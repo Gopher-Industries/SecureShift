@@ -5,10 +5,10 @@ import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
+import ReleaseNotesScreen from '../screen/ReleaseNotesScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
-import ReleaseNotesScreen from '../screen/ReleaseNotesScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -25,7 +25,6 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  // TEMP (Dev Only): bypass auth screens so you can complete UI tasks without backend
   const DEV_BYPASS_AUTH = __DEV__ && true;
 
   return (
@@ -55,11 +54,13 @@ export default function AppNavigator() {
         component={MessagesScreen}
         options={{ headerShown: true, title: 'Messages' }}
       />
+
       <Stack.Screen
         name="Notifications"
         component={NotificationsScreen}
         options={{ headerShown: true, title: 'Notifications' }}
       />
+
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
