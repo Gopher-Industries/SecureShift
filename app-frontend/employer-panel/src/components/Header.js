@@ -69,6 +69,10 @@ export default function Header() {
           Timesheet
         </Link>
 
+        <Link to="/daily-monitoring" style={navButtonStyle}>
+          Activity
+        </Link>
+
         {localStorage.getItem('userRole') === 'admin' && (
           <Link to="/email-settings" style={navButtonStyle}>
             Email
