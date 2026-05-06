@@ -12,7 +12,7 @@
     "enterOtp": "Enter OTP*",
     "verifyOtp": "Verify OTP",
     "verifying": "Verifying...",
-    "noAccount": "Don’t have an account?",
+    "noAccount": "Don't have an account?",
     "signupLink": "Sign Up",
     "invalidInput": "Invalid input",
     "loginFailed": "Login failed",
@@ -57,12 +57,12 @@
   "home": {
     "welcome": "Welcome back, {{name}}!",
     "welcomeFallback": "Welcome back, Guard!",
-    "dashboard": "Here’s your dashboard",
+    "dashboard": "Here's your dashboard",
     "confirmedShifts": "Confirmed shifts",
     "pendingApps": "Pending Applications",
-    "todayEarning": "Today’s Earning",
+    "todayEarning": "Today's Earning",
     "currentRating": "Current Rating",
-    "todaySchedule": "Today’s Schedule",
+    "todaySchedule": "Today's Schedule",
     "noShiftsToday": "No shifts scheduled for today",
     "upcomingShifts": "Upcoming Shifts",
     "viewAll": "View All ›",
@@ -316,6 +316,37 @@
     "missingAlertMsg": "Please select a start and end date as well as a period type.",
     "invalidAlertHead": "Invalid info",
     "invalidAlertMsg": "Start date must be before end date.",
+    "cancel": "Cancel"
+  },
+  "incidentReport": {
+    "title": "Incident Report",
+    "newReport": "New Report",
+    "reportId": "Report ID:",
+    "date": "Date:",
+    "time": "Time:",
+    "location": "Location:",
+    "description": "Description:",
+    "reportedBy": "Reported By:",
+    "severity": "Severity:",
+    "status": "Status:",
+    "types": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "statusTypes": {
+      "open": "Open",
+      "inProgress": "In Progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "noReports": "No incident reports found",
+    "error": "Failed to load incident reports",
+    "submit": "Submit Report",
+    "submitting": "Submitting...",
+    "submitSuccess": "Incident report submitted successfully",
+    "submitFailed": "Failed to submit incident report",
     "cancel": "Cancel"
   }
 }
