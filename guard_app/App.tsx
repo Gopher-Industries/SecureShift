@@ -66,7 +66,7 @@ function AppContent() {
   };
 
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer theme={navigationTheme} ref={navigationRef}>
       <AppNavigator />
     </NavigationContainer>
   );

@@ -2,13 +2,18 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 
 import AppTabs from './AppTabs';
+import ActiveSOSScreen from '../screen/ActiveSOSScreen';
 import CertificatesScreen from '../screen/CertificatesScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
+import IncidentReportScreen from '../screen/IncidentReportScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
+import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
+import QRScannerScreen from '../screen/QRScannerScreen';
+import ScanResultScreen from '../screen/ScanResultScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import SignupScreen from '../screen/signupscreen';
@@ -23,6 +28,7 @@ export type RootStackParamList = {
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
+  Payroll: undefined;
   PrivacyPolicy: undefined;
   EditProfile: undefined;
   Messages:
@@ -39,6 +45,15 @@ export type RootStackParamList = {
   Certificates: undefined;
   ShiftDetails: { shift: any };
   Terms: undefined;
+  IncidentReports: undefined;
+  QRScanner: undefined;
+  ScanResult: { data: string };
+  ActiveSOS:
+    | {
+        sosId?: string;
+        emergencyContact?: { name?: string; phone?: string };
+      }
+    | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -88,6 +103,11 @@ export default function AppNavigator() {
         options={{ headerShown: true, title: t('nav.notifications') }}
       />
       <Stack.Screen
+        name="Payroll"
+        component={PayrollScreen}
+        options={{ headerShown: true, title: 'Payroll' }}
+      />
+      <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
         options={{ headerShown: false }}
@@ -106,6 +126,34 @@ export default function AppNavigator() {
         name="Terms"
         component={TermsScreen}
         options={{ headerShown: true, title: 'Terms of Service' }}
+      />
+      <Stack.Screen
+        name="IncidentReports"
+        component={IncidentReportScreen}
+        options={{ headerShown: true, title: 'Incident Reports' }}
+      />
+      <Stack.Screen
+        name="QRScanner"
+        component={QRScannerScreen}
+        options={{ headerShown: true, title: 'QR Scanner' }}
+      />
+      <Stack.Screen
+        name="ScanResult"
+        component={ScanResultScreen}
+        options={{ headerShown: true, title: 'Scan Result' }}
+      />
+      <Stack.Screen
+        name="ActiveSOS"
+        component={ActiveSOSScreen}
+        options={{
+          headerShown: true,
+          title: 'Emergency Active',
+          headerStyle: { backgroundColor: '#B00020' },
+          headerTintColor: '#FFFFFF',
+          headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
+          headerBackVisible: false,
+          gestureEnabled: false,
+        }}
       />
     </Stack.Navigator>
   );
