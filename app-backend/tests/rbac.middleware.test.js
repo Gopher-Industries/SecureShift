@@ -4,13 +4,13 @@ import {
   requireSameBranchAsTargetUser,
   requireSelfOrRoles,
   ROLES
-} from "../middleware/rbac.js";
+} from "../src/middleware/rbac.js";
 
-import Role from "../models/Role.js";
-import User from "../models/User.js";
+import Role from "../src/models/Role.js";
+import User from "../src/models/User.js";
 
-jest.mock("../models/Role.js");
-jest.mock("../models/User.js");
+jest.mock("../src/models/Role.js");
+jest.mock("../src/models/User.js");
 
 describe("RBAC Middleware", () => {
   let req, res, next;
