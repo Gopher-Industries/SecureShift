@@ -1,11 +1,11 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import app from "../app.js";
+import app from "../src/app.js";
 
-import Shift from "../models/Shift.js";
-import User from "../models/User.js";
-import ShiftAttendance from "../models/ShiftAttendance.js";
-import Branch from "../models/Branch.js";
+import Shift from "../src/models/Shift.js";
+import User from "../src/models/User.js";
+import ShiftAttendance from "../src/models/ShiftAttendance.js";
+import Branch from "../src/models/Branch.js";
 
 describe("Shift Attendance Controller", () => {
   let guard;

@@ -1,8 +1,8 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import app from "../app.js";
+import app from "../src/app.js";
 
-import User from "../models/User.js";
+import User from "../src/models/User.js";
 
 describe("User Controller API Tests", () => {
   let admin;

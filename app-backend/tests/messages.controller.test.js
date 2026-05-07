@@ -5,14 +5,14 @@ import {
   getConversation,
   markMessageAsRead,
   getMessageStats
-} from "../controllers/message.controller.js";
+} from "../src/controllers/message.controller.js";
 
-import User from "../models/User.js";
-import Message from "../models/Message.js";
+import User from "../src/models/User.js";
+import Message from "../src/models/Message.js";
 
 // mock models
-jest.mock("../models/User.js");
-jest.mock("../models/Message.js");
+jest.mock("../src/models/User.js");
+jest.mock("../src/models/Message.js");
 
 describe("Message Controller", () => {
   let req, res, next;

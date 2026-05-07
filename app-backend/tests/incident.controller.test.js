@@ -9,14 +9,14 @@ import {
   deleteIncident,
   uploadAttachment,
   getAttachment,
-} from "../controllers/incident.controller.js";
+} from "../src/controllers/incident.controller.js";
 
-import Incident from "../models/Incident.js";
-import Shift from "../models/Shift.js";
+import Incident from "../src/models/Incident.js";
+import Shift from "../src/models/Shift.js";
 
 // ---------------- MOCKS ----------------
-jest.mock("../models/Incident.js");
-jest.mock("../models/Shift.js");
+jest.mock("../src/models/Incident.js");
+jest.mock("../src/models/Shift.js");
 
 // mock audit middleware
 const mockAudit = {
