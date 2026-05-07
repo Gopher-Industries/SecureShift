@@ -1,7 +1,15 @@
 module.exports = {
   testEnvironment: 'node',
+
   transform: {
     '^.+\\.js$': 'babel-jest',
   },
-  moduleFileExtensions: ['js', 'json', 'node'],
+
+  extensionsToTreatAsEsm: ['.js'],
+
+  transformIgnorePatterns: [
+    '/node_modules/'
+  ],
+
+  moduleFileExtensions: ['js', 'json', 'node']
 };
