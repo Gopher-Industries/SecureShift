@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import http from "../lib/http";
 import "./Timesheet.css";
+import translations from "../i18n/translations";
 
 const LATE_GRACE_MINUTES = 5;
 const PAGE_SIZE = 10;
@@ -90,7 +91,8 @@ function buildRows(shifts, attendanceLists) {
   });
 }
 
-export default function Timesheet() {
+export default function Timesheet({ language }) {
+  const t = translations[language || "en"] || translations.en;
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +185,7 @@ export default function Timesheet() {
   return (
     <div className="timesheet-page">
       <div className="timesheet-container">
-        <h1 className="timesheet-title">Timesheets</h1>
+        <h1 className="timesheet-title">{t.timesheets}</h1>
 
         <div className="summary-cards">
           {summary.map((card) => (
