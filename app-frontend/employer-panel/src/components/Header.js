@@ -65,12 +65,12 @@ export default function Header() {
           Guard
         </Link>
 
-        <Link to="/timesheet" style={navButtonStyle}>
-          Timesheet
-        </Link>
-
         <Link to="/daily-monitoring" style={navButtonStyle}>
           Activity
+        </Link>
+
+        <Link to="/timesheet" style={navButtonStyle}>
+          Timesheet
         </Link>
 
         {localStorage.getItem('userRole') === 'admin' && (
