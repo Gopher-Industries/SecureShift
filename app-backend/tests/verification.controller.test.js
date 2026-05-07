@@ -3,14 +3,14 @@ import mongoose from "mongoose";
 import app from "../app.js";
 
 import Guard from "../models/Guard.js";
-import GuardVerification from "../models/GuardVerification.js";
-import ManualVerification from "../models/ManualVerification.js";
+import GuardVerification from "../src/models/GuardVerification.js";
+import ManualVerification from "../src/models/ManualVerification.js";
 
-jest.mock("../adapters/verification/nswAdapter.js", () => ({
+jest.mock("../src/adapters/verification/nswAdapter.js", () => ({
   verifyNSW: jest.fn(),
 }));
 
-import { verifyNSW } from "../adapters/verification/nswAdapter.js";
+import { verifyNSW } from "../src/adapters/verification/nswAdapter.js";
 
 describe("Verification Controller", () => {
   let guard;

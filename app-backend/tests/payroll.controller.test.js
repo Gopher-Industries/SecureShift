@@ -1,7 +1,7 @@
-import { getPayrollSummary } from "../controllers/payroll.controller.js";
-import { buildPayrollSummary } from "../services/payroll.service.js";
+import { getPayrollSummary } from "../src/controllers/payroll.controller.js";
+import { buildPayrollSummary } from "../src/services/payroll.service.js";
 
-jest.mock("../services/payroll.service.js");
+jest.mock("../src/services/payroll.service.js");
 
 describe("Payroll Controller - getPayrollSummary", () => {
   let req, res;

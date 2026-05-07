@@ -5,11 +5,11 @@ import {
   markAsRead,
   markAllAsRead,
   getUnreadCount
-} from "../controllers/notification.controller.js";
+} from "../src/controllers/notification.controller.js";
 
-import Notification from "../models/Notification.js";
+import Notification from "../src/models/Notification.js";
 
-jest.mock("../models/Notification.js");
+jest.mock("../src/models/Notification.js");
 
 describe("Notification Controller", () => {
   let req, res;

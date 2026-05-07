@@ -1,12 +1,12 @@
 import request from "supertest";
-import app from "../app.js"; // your Express app
+import app from "../src/app.js"; // your Express app
 import mongoose from "mongoose";
-import Shift from "../models/Shift.js";
-import User from "../models/User.js";
-import Branch from "../models/Branch.js";
+import Shift from "../src/models/Shift.js";
+import User from "../src/models/User.js";
+import Branch from "../src/models/Branch.js";
 
 // Mock audit logger middleware (if needed globally)
-jest.mock("../middleware/logger.js", () => ({
+jest.mock("../src/middleware/logger.js", () => ({
   ACTIONS: {
     SHIFT_CREATED: "SHIFT_CREATED",
     SHIFT_UPDATED: "SHIFT_UPDATED",
