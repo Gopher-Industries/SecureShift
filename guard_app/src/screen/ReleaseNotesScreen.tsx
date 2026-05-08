@@ -1,8 +1,8 @@
-import React from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ExpoConstants from 'expo-constants';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const NAVY = '#274b93';
 const BORDER = '#E7EBF2';
