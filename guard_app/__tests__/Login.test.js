@@ -1,33 +1,90 @@
 /* eslint-env jest */
 
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import React from 'react';
+import { Alert } from 'react-native';
 
 import LoginScreen from '../src/screen/loginscreen';
+import { ThemeProvider } from '../src/theme/ThemeProvider';
 
 describe('Login Screen', () => {
-  const navigation = {
-    navigate: jest.fn(),
-    reset: jest.fn(),
+  const renderLoginScreen = () => {
+    const navigation = {
+      navigate: jest.fn(),
+      reset: jest.fn(),
+    };
+
+    return {
+      ...render(
+        <ThemeProvider>
+          <LoginScreen navigation={navigation} />
+        </ThemeProvider>,
+      ),
+      navigation,
+    };
   };
 
-  it('renders the login form correctly', () => {
-    const { getByPlaceholderText, getByText } = render(<LoginScreen navigation={navigation} />);
-
-    expect(getByText('Login with your email and password')).toBeTruthy();
-    expect(getByPlaceholderText('Enter your email')).toBeTruthy();
-    expect(getByPlaceholderText('Enter your password')).toBeTruthy();
-    expect(getByText('Login')).toBeTruthy();
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
 
-  it('shows validation error when fields are empty', () => {
-    const { getByText } = render(<LoginScreen navigation={navigation} />);
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
-    const loginButton = getByText('Login');
+  it('renders the login form correctly', async () => {
+    const { findByPlaceholderText, findByText } = renderLoginScreen();
 
-    fireEvent.press(loginButton);
+    expect(await findByText(/Login with your email and password/i)).toBeTruthy();
+    expect(await findByPlaceholderText('Enter your email')).toBeTruthy();
+    expect(await findByPlaceholderText('Enter your password')).toBeTruthy();
+    expect(await findByText('Login')).toBeTruthy();
+    expect(await findByText('Sign Up')).toBeTruthy();
+  });
 
-    // We expect validation to trigger
-    expect(getByText('Login')).toBeTruthy(); // button still there
+  it('shows validation error when fields are empty', async () => {
+    const { findByText } = renderLoginScreen();
+
+    fireEvent.press(await findByText('Login'));
+
+    expect(await findByText('Please enter a valid email address.')).toBeTruthy();
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Invalid input',
+      'Please enter a valid email address.',
+    );
+  });
+
+  it('shows validation error when password is too short', async () => {
+    const { findByPlaceholderText, findByText } = renderLoginScreen();
+
+    fireEvent.changeText(await findByPlaceholderText('Enter your email'), 'guard@test.com');
+    fireEvent.changeText(await findByPlaceholderText('Enter your password'), '123');
+
+    fireEvent.press(await findByText('Login'));
+
+    expect(await findByText('Password must be at least 6 characters.')).toBeTruthy();
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Invalid input',
+      'Password must be at least 6 characters.',
+    );
+  });
+
+  it('does not navigate when inputs are invalid', async () => {
+    const { findByText, navigation } = renderLoginScreen();
+
+    fireEvent.press(await findByText('Login'));
+
+    expect(navigation.navigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to signup screen when Sign Up is pressed', async () => {
+    const { findByText, navigation } = renderLoginScreen();
+
+    fireEvent.press(await findByText('Sign Up'));
+
+    await waitFor(() => {
+      expect(navigation.navigate).toHaveBeenCalledWith('Signup');
+    });
   });
 });
