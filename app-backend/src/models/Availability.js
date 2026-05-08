@@ -3,9 +3,11 @@
  *
  * Availability schema:
  * - user (unique per user)
- * - days: array of weekday strings (at least one required)
+ * - days: array of weekday strings
  * - timeSlots: array of strings in format "HH:MM-HH:MM"
- * - updatedAt: automatic timestamp (kept for compatibility)
+ * - status: real-time availability status
+ * - lastStatusUpdatedAt: tracks latest live status update
+ * - timestamps enabled
  */
 
 import mongoose from 'mongoose';
@@ -14,6 +16,22 @@ const { Schema } = mongoose;
 
 const timeSlotRegex = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
 
+const VALID_DAYS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+
+const VALID_STATUSES = [
+  'AVAILABLE',
+  'BUSY',
+  'OFF_DUTY',
+];
+
 const AvailabilitySchema = new Schema(
   {
     user: {
@@ -21,56 +39,106 @@ const AvailabilitySchema = new Schema(
       ref: 'User',
       unique: true,
       required: true,
+      index: true,
     },
+
     days: {
       type: [String],
+      required: true,
       validate: {
         validator: function (v) {
-          return Array.isArray(v) && v.length > 0;
-        },
-        message: 'At least one day must be selected.',
-      },
-      required: true,
-    },
-    timeSlots: {
-      type: [String],
-      validate: {
-        validator: function (arr) {
-          if (!Array.isArray(arr)) return false;
-          // allow empty array? spec suggests timeSlots must be validated but doesn't force >=1
-          // We'll require at least one timeslot; change if you want optional times.
-          if (arr.length === 0) return false;
-          return arr.every((ts) => timeSlotRegex.test(ts));
+          return (
+            Array.isArray(v) &&
+            v.length > 0 &&
+            v.every((day) => VALID_DAYS.includes(day))
+          );
         },
         message:
-          'timeSlots must be an array of strings in the format "HH:MM-HH:MM" (e.g., "09:00-12:00").',
+          'Days must contain valid weekday values.',
       },
+    },
+
+    timeSlots: {
+      type: [String],
+      required: true,
+      validate: {
+        validator: function (arr) {
+          if (!Array.isArray(arr) || arr.length === 0) {
+            return false;
+          }
+
+          return arr.every((ts) => {
+            if (!timeSlotRegex.test(ts)) {
+              return false;
+            }
+
+            const [start, end] = ts.split('-');
+
+            const toMinutes = (time) => {
+              const [hh, mm] = time.split(':').map(Number);
+              return hh * 60 + mm;
+            };
+
+            return toMinutes(start) < toMinutes(end);
+          });
+        },
+
+        message:
+          'timeSlots must follow "HH:MM-HH:MM" format with valid chronological order.',
+      },
+    },
+
+    /**
+     * Real-time operational status
+     */
+    status: {
+      type: String,
+      enum: VALID_STATUSES,
+      default: 'OFF_DUTY',
       required: true,
     },
-    updatedAt: {
+
+    /**
+     * Tracks latest status update
+     */
+    lastStatusUpdatedAt: {
       type: Date,
       default: Date.now,
     },
   },
   {
-    // Use timestamps so Mongoose keeps track of updatedAt automatically (keeps consistency)
     timestamps: true,
   }
 );
 
-// Ensure updatedAt updates on save/update
-AvailabilitySchema.pre('save', function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-// When using findOneAndUpdate with {new:true}, updatedAt is not automatically set by pre('save').
-// Add a middleware to set updatedAt on findOneAndUpdate
+/**
+ * Automatically update status timestamp
+ * whenever status changes
+ */
 AvailabilitySchema.pre('findOneAndUpdate', function (next) {
-  this.set({ updatedAt: Date.now() });
+  const update = this.getUpdate();
+
+  if (update.status) {
+    update.lastStatusUpdatedAt = Date.now();
+  }
+
   next();
 });
 
-const Availability = mongoose.model('Availability', AvailabilitySchema);
+/**
+ * Ensure lastStatusUpdatedAt updates on save
+ */
+AvailabilitySchema.pre('save', function (next) {
+  if (this.isModified('status')) {
+    this.lastStatusUpdatedAt = Date.now();
+  }
+
+  next();
+});
+
+const Availability = mongoose.model(
+  'Availability',
+  AvailabilitySchema
+);
 
 export default Availability;
