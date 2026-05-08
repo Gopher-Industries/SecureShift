@@ -212,6 +212,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Feather name="file-text" size={18} color={colors.primary} />}
             label={t('settings.releaseNotes')}
+            onPress={() => navigation2.navigate('ReleaseNotes')}
             colors={colors}
           />
         </View>

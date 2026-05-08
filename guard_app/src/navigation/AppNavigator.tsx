@@ -13,6 +13,7 @@ import NotificationsScreen from '../screen/notifications';
 import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
 import QRScannerScreen from '../screen/QRScannerScreen';
+import ReleaseNotesScreen from '../screen/ReleaseNotesScreen';
 import ScanResultScreen from '../screen/ScanResultScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
@@ -28,6 +29,7 @@ export type RootStackParamList = {
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
+  ReleaseNotes: undefined;
   Payroll: undefined;
   PrivacyPolicy: undefined;
   EditProfile: undefined;
@@ -86,6 +88,11 @@ export default function AppNavigator() {
         name="Settings"
         component={SettingsScreen}
         options={{ headerShown: true, title: t('nav.settings') }}
+      />
+      <Stack.Screen
+        name="ReleaseNotes"
+        component={ReleaseNotesScreen}
+        options={{ headerShown: true, title: 'Release Notes' }}
       />
       <Stack.Screen
         name="PrivacyPolicy"
