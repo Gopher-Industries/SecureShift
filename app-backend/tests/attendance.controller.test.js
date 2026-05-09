@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, test } from "@jest/globals";
 import request from "supertest";
 import mongoose from "mongoose";
 import app from "../src/app.js";
@@ -11,11 +12,8 @@ describe("Shift Attendance Controller", () => {
   let guard;
   let employer;
   let shift;
-  let attendanceId;
 
   const guardToken = "Bearer guard-token";
-  const employerToken = "Bearer employer-token";
-
   beforeAll(async () => {
     await mongoose.connect(process.env.MONGO_URI);
 
@@ -39,8 +37,11 @@ describe("Shift Attendance Controller", () => {
       employerId: employer._id,
       isActive: true,
       location: {
-        latitude: -37.8136,
-        longitude: 144.9631,
+        line1: "Main",
+        city: "Melbourne",
+        state: "VIC",
+        postcode: "3000",
+        country: "Australia",
       },
     });
 
@@ -50,13 +51,15 @@ describe("Shift Attendance Controller", () => {
       startTime: "09:00",
       endTime: "17:00",
       createdBy: employer._id,
-      assignedGuard: guard._id,
+      acceptedBy: guard._id,
       siteId: branch._id,
       location: {
         street: "Main",
         suburb: "CBD",
         state: "VIC",
         postcode: "3000",
+        latitude: -37.8136,
+        longitude: 144.9631,
       },
       payRate: 25,
       shiftType: "Day",
@@ -85,8 +88,6 @@ describe("Shift Attendance Controller", () => {
 
     expect(res.statusCode).toBe(201);
     expect(res.body.message).toBe("Check-in recorded");
-
-    attendanceId = res.body.attendance._id;
   });
 
   test("Reject duplicate check-in", async () => {
@@ -102,7 +103,7 @@ describe("Shift Attendance Controller", () => {
   });
 
   test("Reject check-in when not assigned guard", async () => {
-    const otherGuard = await User.create({
+    await User.create({
       name: "Other",
       email: "other@test.com",
       role: "guard",
@@ -124,7 +125,7 @@ describe("Shift Attendance Controller", () => {
     const newShift = await Shift.create({
       ...shift.toObject(),
       _id: undefined,
-      assignedGuard: guard._id,
+      acceptedBy: guard._id,
     });
 
     const res = await request(app)
