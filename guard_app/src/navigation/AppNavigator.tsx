@@ -17,6 +17,7 @@ import ReleaseNotesScreen from '../screen/ReleaseNotesScreen';
 import ScanResultScreen from '../screen/ScanResultScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
+import ShiftRequestScreen from '../screen/ShiftRequestScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
 import TermsScreen from '../screen/TermsScreen';
@@ -46,6 +47,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   Certificates: undefined;
   ShiftDetails: { shift: any };
+  ShiftRequests: undefined;
   Terms: undefined;
   IncidentReports: undefined;
   QRScanner: undefined;
@@ -128,6 +130,11 @@ export default function AppNavigator() {
         name="ShiftDetails"
         component={ShiftDetailsScreen}
         options={{ headerShown: true, title: t('nav.shiftDetails') }}
+      />
+      <Stack.Screen
+        name="ShiftRequests"
+        component={ShiftRequestScreen}
+        options={{ headerShown: true, title: t('nav.shiftRequests') }}
       />
       <Stack.Screen
         name="Terms"
