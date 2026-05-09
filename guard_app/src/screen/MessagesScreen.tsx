@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -242,6 +242,88 @@ export default function MessagesScreen() {
     };
 
     void loadConversation();
+  }, [activeContext, generalParticipant?.id, shiftParticipant?.id, currentUser?.id]);
+
+  // Polling: every 2 seconds, refetch the active conversation so new messages
+  // appear without a manual refresh. Polled messages are merged into local
+  // state with id-based dedup, so the same message never renders twice.
+  // Optimistic messages still in 'sending' status are preserved until their
+  // server acknowledgment arrives via the existing sendMessage flow.
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isPollingRef = useRef(false);
+
+  useEffect(() => {
+    // Always tear down a previous interval before starting a new one so we
+    // never end up with multiple timers polling at once.
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+
+    const participant = activeContext === 'shift' ? shiftParticipant : generalParticipant;
+    if (!participant?.id || !currentUser?.id) return;
+
+    const participantId = participant.id;
+    const contextForPoll = activeContext;
+
+    const pollLatestMessages = async () => {
+      // Skip overlapping requests if a previous tick is still in flight (slow
+      // network shouldn't cause a queue of pending fetches).
+      if (isPollingRef.current) return;
+      isPollingRef.current = true;
+      try {
+        const conversation = await getConversation(participantId);
+        const polled = (conversation?.messages ?? []).map((msg) =>
+          mapDtoToMessage(msg, contextForPoll),
+        );
+
+        setMessagesByContext((prev) => {
+          const current = prev[contextForPoll];
+          // Keep optimistic messages that haven't been acknowledged yet so
+          // they don't briefly disappear between a send and the next poll.
+          const pendingLocal = current.filter((m) => m.status === 'sending');
+
+          // Dedup by id. Server messages take precedence over older local
+          // copies; pending local messages are added only if they aren't
+          // already represented by a server message with the same id.
+          const byId = new Map<string, Message>();
+          polled.forEach((m) => byId.set(m.id, m));
+          pendingLocal.forEach((m) => {
+            if (!byId.has(m.id)) byId.set(m.id, m);
+          });
+
+          const merged = Array.from(byId.values()).sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+          );
+
+          // Bail out of the state update when the merged list is identical
+          // to the current one — prevents wasteful re-renders every 2s when
+          // there are no new messages.
+          if (
+            merged.length === current.length &&
+            merged.every((m, i) => m.id === current[i].id && m.status === current[i].status)
+          ) {
+            return prev;
+          }
+          return { ...prev, [contextForPoll]: merged };
+        });
+      } catch (e) {
+        // Background poll: log and move on. Don't surface a UI error so
+        // transient network blips don't disrupt the chat.
+        console.warn('[MessagesScreen] poll failed', e);
+      } finally {
+        isPollingRef.current = false;
+      }
+    };
+
+    pollIntervalRef.current = setInterval(pollLatestMessages, 2000);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
   }, [activeContext, generalParticipant?.id, shiftParticipant?.id, currentUser?.id]);
 
   const formatTime = (iso: string) =>
