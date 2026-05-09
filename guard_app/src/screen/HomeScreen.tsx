@@ -134,6 +134,12 @@ export default function HomeScreen() {
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
+            onPress={() => navigation.navigate('IncidentReports')}
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Ionicons name="alert-circle-outline" size={22} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => navigation.navigate('Payroll')}
             style={{ paddingHorizontal: 8 }}
           >

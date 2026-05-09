@@ -6,11 +6,15 @@ import ActiveSOSScreen from '../screen/ActiveSOSScreen';
 import CertificatesScreen from '../screen/CertificatesScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
+import IncidentReportScreen from '../screen/IncidentReportScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
 import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
+import QRScannerScreen from '../screen/QRScannerScreen';
+import ReleaseNotesScreen from '../screen/ReleaseNotesScreen';
+import ScanResultScreen from '../screen/ScanResultScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
 import ShiftRequestScreen from '../screen/ShiftRequestScreen';
@@ -26,6 +30,7 @@ export type RootStackParamList = {
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
+  ReleaseNotes: undefined;
   Payroll: undefined;
   PrivacyPolicy: undefined;
   EditProfile: undefined;
@@ -44,6 +49,9 @@ export type RootStackParamList = {
   ShiftDetails: { shift: any };
   ShiftRequests: undefined;
   Terms: undefined;
+  IncidentReports: undefined;
+  QRScanner: undefined;
+  ScanResult: { data: string };
   ActiveSOS:
     | {
         sosId?: string;
@@ -82,6 +90,11 @@ export default function AppNavigator() {
         name="Settings"
         component={SettingsScreen}
         options={{ headerShown: true, title: t('nav.settings') }}
+      />
+      <Stack.Screen
+        name="ReleaseNotes"
+        component={ReleaseNotesScreen}
+        options={{ headerShown: true, title: 'Release Notes' }}
       />
       <Stack.Screen
         name="PrivacyPolicy"
@@ -127,6 +140,21 @@ export default function AppNavigator() {
         name="Terms"
         component={TermsScreen}
         options={{ headerShown: true, title: 'Terms of Service' }}
+      />
+      <Stack.Screen
+        name="IncidentReports"
+        component={IncidentReportScreen}
+        options={{ headerShown: true, title: 'Incident Reports' }}
+      />
+      <Stack.Screen
+        name="QRScanner"
+        component={QRScannerScreen}
+        options={{ headerShown: true, title: 'QR Scanner' }}
+      />
+      <Stack.Screen
+        name="ScanResult"
+        component={ScanResultScreen}
+        options={{ headerShown: true, title: 'Scan Result' }}
       />
       <Stack.Screen
         name="ActiveSOS"

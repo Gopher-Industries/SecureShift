@@ -212,6 +212,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Feather name="file-text" size={18} color={colors.primary} />}
             label={t('settings.releaseNotes')}
+            onPress={() => navigation2.navigate('ReleaseNotes')}
             colors={colors}
           />
         </View>
@@ -271,6 +272,15 @@ export default function SettingsScreen() {
                 trackColor={{ false: colors.border, true: colors.primary }}
               />
             }
+            colors={colors}
+          />
+        </View>
+        <View style={styles.card} testID="beta-card">
+          <Text style={styles.cardTitle}>Beta</Text>
+          <Row
+            icon={<Ionicons name="qr-code-outline" size={18} color={colors.primary} />}
+            label="QR Code Scanner"
+            onPress={() => navigation2.navigate('QRScanner')}
             colors={colors}
           />
         </View>
