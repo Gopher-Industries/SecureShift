@@ -80,9 +80,6 @@ export default function Header({ language, setLanguage }) {
         {t.dailyMonitoring}
         </Link>
 
-        <Link to="/timesheet" style={navButtonStyle}>
-          Timesheet
-        </Link>
 
         {localStorage.getItem('userRole') === 'admin' && (
           <Link to="/email-settings" style={navButtonStyle}>
