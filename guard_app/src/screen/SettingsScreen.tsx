@@ -286,10 +286,10 @@ export default function SettingsScreen() {
           />
           <Row
             icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />}
-            label={t("homeExtras.testNotif")}
+            label={t('homeExtras.testNotif')}
             onPress={async () => {
-                            await showLocalNotification(t('homeExtras.notifTitle'), t('homeExtras.notifBody'));
-                          }}
+              await showLocalNotification(t('homeExtras.notifTitle'), t('homeExtras.notifBody'));
+            }}
             colors={colors}
           />
         </View>
