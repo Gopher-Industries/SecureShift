@@ -1,4 +1,5 @@
 import ShiftAttendance from "../models/ShiftAttendance.js";
+import Shift from "../models/Shift.js";
 
 // Utility: calculate distance using the Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -8,8 +9,8 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // distance in km
 }
@@ -19,69 +20,65 @@ export const checkIn = async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
     const { shiftId } = req.params;
-    const guardId = req.user.id;
+    const guardId = req.user?._id || req.user?.id;
 
-    // ✅ Validate inputs
-    if (
-      latitude === undefined ||
-      longitude === undefined ||
-      isNaN(latitude) ||
-      isNaN(longitude)
-    ) {
+    if (latitude === undefined || longitude === undefined) {
       return res.status(400).json({ message: "Invalid location coordinates" });
     }
 
-    // ✅ Validate shift
-    const shift = await Shift.findById(shiftId).populate("siteId");
+    const latNum = Number(latitude);
+    const lngNum = Number(longitude);
+
+    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+      return res.status(400).json({ message: "Invalid location coordinates" });
+    }
+
+    const shift = await Shift.findById(shiftId);
     if (!shift) {
       return res.status(404).json({ message: "Shift not found" });
     }
 
-    // ✅ Check guard is assigned
+    const siteLatitude = shift.location?.latitude;
+    const siteLongitude = shift.location?.longitude;
+
+    if (!Number.isFinite(siteLatitude) || !Number.isFinite(siteLongitude)) {
+      return res.status(400).json({ message: "Shift location not configured" });
+    }
+
     if (String(shift.assignedGuard) !== String(guardId)) {
       return res.status(403).json({ message: "Not assigned to this shift" });
     }
 
-    // ✅ Prevent duplicate check-in
-    const existing = await ShiftAttendance.findOne({ guardId, shiftId });
+    const existing = await ShiftAttendance.findOne({ guard: guardId, shift: shiftId });
     if (existing) {
       return res.status(400).json({ message: "Already checked in" });
     }
 
-    // ✅ Get real site location
-    const siteLocation = shift.siteId?.location;
-    if (!siteLocation?.latitude || !siteLocation?.longitude) {
-      return res.status(400).json({ message: "Site location not configured" });
-    }
-
-    const distance = calculateDistance(
-      latitude,
-      longitude,
-      siteLocation.latitude,
-      siteLocation.longitude
-    );
-
-    // ✅ Radius check (100m)
+    const distance = calculateDistance(latNum, lngNum, siteLatitude, siteLongitude);
     if (distance > 0.1) {
-      return res.status(400).json({
-        message: "Not within shift radius (100m)",
-      });
+      return res.status(400).json({ message: "Not within shift radius (100m)" });
     }
 
-    // ✅ Save attendance
+    const [startHour, startMinute] = String(shift.startTime).split(":").map(Number);
+    const [endHour, endMinute] = String(shift.endTime).split(":").map(Number);
+
+    const scheduledStart = new Date(shift.date);
+    scheduledStart.setHours(startHour, startMinute, 0, 0);
+
+    const scheduledEnd = new Date(shift.date);
+    scheduledEnd.setHours(endHour, endMinute, 0, 0);
+
+    if (scheduledEnd <= scheduledStart) {
+      scheduledEnd.setDate(scheduledEnd.getDate() + 1);
+    }
+
     const attendance = new ShiftAttendance({
-      guardId,
-      shiftId,
-      checkInTime: new Date(),
-      siteLocation: {
-        type: "Point",
-        coordinates: [siteLocation.longitude, siteLocation.latitude],
-      },
-      checkInLocation: {
-        type: "Point",
-        coordinates: [longitude, latitude],
-      },
-      locationVerified: true,
+      shift: shiftId,
+      guard: guardId,
+      clockIn: new Date(),
+      scheduledStart,
+      scheduledEnd,
+      recordedBy: guardId,
     });
 
     await attendance.save();
@@ -90,7 +87,6 @@ export const checkIn = async (req, res) => {
       message: "Check-in recorded",
       attendance,
     });
-
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -99,23 +95,47 @@ export const checkIn = async (req, res) => {
 // POST /api/v1/attendance/checkout/:shiftId
 export const checkOut = async (req, res) => {
   try {
-    console.log("Incoming check-in request:", req.params, req.body);
-
     const { latitude, longitude } = req.body;
     const { shiftId } = req.params;
-    const guardId = req.user.id;
+    const guardId = req.user?._id || req.user?.id;
 
-    const attendance = await ShiftAttendance.findOne({ guardId, shiftId });
-    if (!attendance)
+    if (latitude === undefined || longitude === undefined) {
+      return res.status(400).json({ message: "Invalid location coordinates" });
+    }
+
+    const latNum = Number(latitude);
+    const lngNum = Number(longitude);
+
+    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+      return res.status(400).json({ message: "Invalid location coordinates" });
+    }
+
+    const shift = await Shift.findById(shiftId);
+    if (!shift) {
+      return res.status(404).json({ message: "Shift not found" });
+    }
+
+    if (String(shift.assignedGuard) !== String(guardId)) {
+      return res.status(403).json({ message: "Not assigned to this shift" });
+    }
+
+    const attendance = await ShiftAttendance.findOne({ guard: guardId, shift: shiftId });
+    if (!attendance) {
       return res.status(404).json({ message: "No check-in record found" });
+    }
 
-    attendance.checkOutTime = new Date();
-    attendance.checkOutLocation = { type: "Point", coordinates: [longitude, latitude] };
+    if (attendance.clockOut) {
+      return res.status(400).json({ message: "Already checked out" });
+    }
+
+    attendance.clockOut = new Date();
+    attendance.recordedBy = guardId;
+
     await attendance.save();
 
-    res.status(200).json({ message: "Check-out recorded", attendance });
+    return res.status(200).json({ message: "Check-out recorded", attendance });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 // GET /api/v1/attendance/:userId
@@ -123,8 +143,8 @@ export const getAttendanceByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const attendanceRecords = await ShiftAttendance.find({ guardId: userId })
-      .sort({ checkInTime: -1 });
+    const attendanceRecords = await ShiftAttendance.find({ guard: userId })
+      .sort({ clockIn: -1 });
 
     if (!attendanceRecords.length) {
       return res.status(404).json({

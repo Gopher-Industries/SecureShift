@@ -12,6 +12,7 @@ import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendances
 import { LocalStorage } from '../lib/localStorage';
 import { useAppTheme } from '../theme';
 import { formatDate } from '../utils/date';
+import { formatAttendanceTime } from '../components/functions/formatAttendanceTime';
 
 import type { ShiftDto } from '../api/shifts';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -23,6 +24,11 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 type AttendanceState = {
   checkInTime?: string;
   checkOutTime?: string;
+};
+
+type AttendanceHistoryItem = {
+  label: string;
+  value: string;
 };
 
 type ErrorState = {
@@ -38,16 +44,6 @@ type Coordinates = {
 function StatusBadge({ status, color }: { status: string; color: string }) {
   return <Text style={[stylesInline.statusBadge, { color }]}>{status.toUpperCase()}</Text>;
 }
-
-const normalizeAttendance = (
-  attendance?: {
-    checkInTime?: string | null;
-    checkOutTime?: string | null;
-  } | null,
-): AttendanceState => ({
-  checkInTime: attendance?.checkInTime ?? undefined,
-  checkOutTime: attendance?.checkOutTime ?? undefined,
-});
 
 function formatLocalDateKey(date: Date) {
   const year = date.getFullYear();
@@ -124,31 +120,38 @@ export default function ShiftDetailsScreen() {
   useEffect(() => {
     (async () => {
       const storedAttendance = await getAttendanceForShift(shift._id);
-      if (storedAttendance?.checkInTime) {
-        setAttendance(normalizeAttendance(storedAttendance));
-        return;
+
+      if (storedAttendance?.checkInTime || storedAttendance?.checkOutTime) {
+        setAttendance(storedAttendance);
       }
 
       try {
         const token = await LocalStorage.getToken();
         if (!token) return;
+
         const payload = JSON.parse(atob(token.split('.')[1]));
         const userId = payload.id ?? payload._id ?? payload.sub;
         if (!userId) return;
 
         const records = await getUserAttendance(userId);
-        const match = records.find(
-          (r) =>
-            String(r.shiftId === 'object' ? (r.shiftId as any)?._id : r.shiftId) ===
-              String(shift._id) || String(r.shiftId) === String(shift._id),
-        );
-        if (match?.checkInTime) {
-          const synced = normalizeAttendance(match);
+
+        const match = records.find((record) => {
+          const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
+
+          return String(recordShiftId) === String(shift._id);
+        });
+
+        if (match?.clockIn || match?.clockOut) {
+          const synced: AttendanceState = {
+            checkInTime: match.clockIn ?? storedAttendance?.checkInTime,
+            checkOutTime: match.clockOut ?? storedAttendance?.checkOutTime,
+          };
+
           setAttendance(synced);
-          setAttendanceForShift(shift._id, synced).catch(() => {});
+          await setAttendanceForShift(shift._id, synced);
         }
-      } catch {
-        // server fetch failed, stay with null
+      } catch (error) {
+        console.log('Failed to load attendance history:', error);
       }
     })();
   }, [shift._id]);
@@ -244,10 +247,10 @@ export default function ShiftDetailsScreen() {
         console.log('➡️ checkIn request for shift:', shift._id);
         const res = await checkIn(shift._id, loc);
 
-        const next: AttendanceState = normalizeAttendance({
-          checkInTime: res.attendance?.checkInTime ?? new Date().toISOString(),
-          checkOutTime: undefined,
-        });
+        const next: AttendanceState = {
+          checkInTime: res.attendance?.clockIn ?? new Date().toISOString(),
+          checkOutTime: res.attendance?.clockOut ?? undefined,
+        };
 
         setAttendance(next);
         setAttendanceForShift(shift._id, next).catch(() => {});
@@ -267,10 +270,10 @@ export default function ShiftDetailsScreen() {
         console.log('➡️ checkOut request for shift:', shift._id);
         const res = await checkOut(shift._id, loc);
 
-        const next: AttendanceState = normalizeAttendance({
-          checkInTime: res.attendance?.checkInTime ?? attendance?.checkInTime,
-          checkOutTime: res.attendance?.checkOutTime ?? new Date().toISOString(),
-        });
+        const next: AttendanceState = {
+          checkInTime: res.attendance?.clockIn ?? attendance?.checkInTime,
+          checkOutTime: res.attendance?.clockOut ?? new Date().toISOString(),
+        };
 
         setAttendance(next);
         setAttendanceForShift(shift._id, next).catch(() => {});
@@ -356,6 +359,17 @@ export default function ShiftDetailsScreen() {
   const showCheckIn = canDoAttendance && !hasCheckedIn;
   const showCheckOut = canDoAttendance && hasCheckedIn && !hasCheckedOut;
 
+  const shouldShowAttendanceHistory = shift.status === 'completed' || hasCheckedIn;
+
+  const attendanceHistory: AttendanceHistoryItem[] = [
+    ...(attendance?.checkInTime
+      ? [{ label: '✅ Checked In', value: formatAttendanceTime(attendance.checkInTime) }]
+      : []),
+    ...(attendance?.checkOutTime
+      ? [{ label: '✅ Checked Out', value: formatAttendanceTime(attendance.checkOutTime) }]
+      : []),
+  ];
+
   const handleMessageEmployer = () => {
     const employerId = shift.createdBy?._id;
 
@@ -414,13 +428,46 @@ export default function ShiftDetailsScreen() {
             <StatusBadge status={shift.status ?? 'open'} color={statusColor} />
           </View>
 
-          {attendance?.checkInTime ? (
-            <Text style={s.metaText}>✅ Checked in: {attendance.checkInTime}</Text>
-          ) : null}
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Location Details</Text>
 
-          {attendance?.checkOutTime ? (
-            <Text style={s.metaText}>✅ Checked out: {attendance.checkOutTime}</Text>
-          ) : null}
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>Street</Text>
+              <Text style={s.infoValue}>{shift.location?.street ?? 'N/A'}</Text>
+            </View>
+
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>Suburb</Text>
+              <Text style={s.infoValue}>{shift.location?.suburb ?? 'N/A'}</Text>
+            </View>
+
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>State</Text>
+              <Text style={s.infoValue}>{shift.location?.state ?? 'N/A'}</Text>
+            </View>
+
+            <View style={s.infoRow}>
+              <Text style={s.infoLabel}>Postcode</Text>
+              <Text style={s.infoValue}>{shift.location?.postcode ?? 'N/A'}</Text>
+            </View>
+          </View>
+
+          {shouldShowAttendanceHistory && (
+            <View style={s.section}>
+              <Text style={s.sectionTitle}>Attendance History</Text>
+
+              {attendanceHistory.length > 0 ? (
+                attendanceHistory.map((item, index) => (
+                  <View key={index} style={s.historyItem}>
+                    <Text style={s.historyLabel}>{item.label}</Text>
+                    <Text style={s.historyValue}>{item.value}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={s.emptyHistory}>No attendance history available</Text>
+              )}
+            </View>
+          )}
         </View>
 
         <View style={s.actions}>
@@ -579,5 +626,53 @@ const getStyles = (colors: AppColors) =>
     },
     hintStrong: {
       fontWeight: '700',
+    },
+    section: {
+      marginTop: 18,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    infoLabel: {
+      fontSize: 14,
+      color: colors.muted,
+    },
+    infoValue: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '500',
+      maxWidth: '65%',
+      textAlign: 'right',
+    },
+    historyItem: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 10,
+    },
+    historyLabel: {
+      fontSize: 13,
+      color: colors.muted,
+      marginBottom: 4,
+    },
+    historyValue: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '700',
+    },
+    emptyHistory: {
+      fontSize: 14,
+      color: colors.muted,
     },
   });
