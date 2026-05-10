@@ -183,9 +183,7 @@ export default function IncidentReportScreen() {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        (err instanceof Error
-          ? err.message
-          : t('incidentReport.submitFailed'));
+        (err instanceof Error ? err.message : t('incidentReport.submitFailed'));
       setErrorState({ title: 'Submission Failed', message });
     } finally {
       setSubmitting(false);
@@ -210,7 +208,11 @@ export default function IncidentReportScreen() {
                 </Text>
                 <Text style={s.incidentSeverity}>{item.severity}</Text>
               </View>
-              {!!item.status && <Text style={s.incidentStatus}>{t('incidentReport.status')} {item.status}</Text>}
+              {!!item.status && (
+                <Text style={s.incidentStatus}>
+                  {t('incidentReport.status')} {item.status}
+                </Text>
+              )}
               {!!item.createdAt && (
                 <Text style={s.incidentDate}>{new Date(item.createdAt).toLocaleString()}</Text>
               )}
@@ -240,7 +242,9 @@ export default function IncidentReportScreen() {
           style={s.textArea}
         />
 
-        <Text style={s.label}>{t('incidentReport.date')} &amp; {t('incidentReport.time')}</Text>
+        <Text style={s.label}>
+          {t('incidentReport.date')} &amp; {t('incidentReport.time')}
+        </Text>
         <Text style={s.readOnly}>{dateTime}</Text>
 
         <Text style={s.label}>{t('incidentReport.severity')}</Text>
