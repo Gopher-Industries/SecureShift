@@ -40,37 +40,21 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
 
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [licenseImage, setLicenseImage] = useState<string | null>(null);
+  const profile = route?.params?.userProfile;
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    street: '',
-    suburb: '',
-    state: '',
-    postcode: '',
+    name: profile?.name || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
+    street: profile?.address?.street || '',
+    suburb: profile?.address?.suburb || '',
+    state: profile?.address?.state || '',
+    postcode: profile?.address?.postcode || '',
   });
 
-  useEffect(() => {
-    if (route?.params?.userProfile) {
-      const profile = route.params.userProfile;
-      setFormData({
-        name: profile.name || '',
-        email: profile.email || '',
-        phone: profile.phone || '',
-        street: profile.address?.street || '',
-        suburb: profile.address?.suburb || '',
-        state: profile.address?.state || '',
-        postcode: profile.address?.postcode || '',
-      });
-
-      if (profile.license?.imageUrl) {
-        setLicenseImage(API_BASE_URL + profile.license.imageUrl);
-      }
-
-      loadProfileImage();
-    }
-  }, [route?.params?.userProfile]);
+  const [licenseImage, setLicenseImage] = useState<string | null>(
+    profile?.license?.imageUrl ? API_BASE_URL + profile.license.imageUrl : null,
+  );
 
   const loadProfileImage = async () => {
     try {
@@ -81,6 +65,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
     }
   };
 
+  useEffect(() => {
+    const init = async () => {
+      await loadProfileImage();
+    };
+    init();
+  }, []);
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
