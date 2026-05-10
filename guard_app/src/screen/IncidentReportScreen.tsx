@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -47,6 +48,7 @@ type ErrorState = {
 } | null;
 
 export default function IncidentReportScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const s = getStyles(colors);
 
@@ -77,7 +79,7 @@ export default function IncidentReportScreen() {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        (err instanceof Error ? err.message : 'Failed to load incidents. Please try again.');
+        (err instanceof Error ? err.message : t('incidentReport.error'));
       setErrorState({ title: 'Failed to Load', message });
     } finally {
       setLoadingList(false);
@@ -169,8 +171,8 @@ export default function IncidentReportScreen() {
 
       const successMessage =
         failedUploads > 0
-          ? `Incident report submitted successfully, but ${failedUploads} photo(s) failed to upload.`
-          : 'Incident report submitted successfully.';
+          ? `${t('incidentReport.submitSuccess')}, but ${failedUploads} photo(s) failed to upload.`
+          : t('incidentReport.submitSuccess');
 
       Alert.alert('Success', successMessage);
       setSelectedShift(null);
@@ -183,7 +185,7 @@ export default function IncidentReportScreen() {
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
         (err instanceof Error
           ? err.message
-          : 'Could not submit the incident report. Please try again.');
+          : t('incidentReport.submitFailed'));
       setErrorState({ title: 'Submission Failed', message });
     } finally {
       setSubmitting(false);
@@ -194,11 +196,11 @@ export default function IncidentReportScreen() {
     <>
       <ScrollView contentContainerStyle={s.contentContainer} style={s.container}>
         {/* Incident List */}
-        <Text style={s.title}>My Reports</Text>
+        <Text style={s.title}>{t('incidentReport.title')}</Text>
         {loadingList ? (
           <ActivityIndicator color={colors.primary} style={s.loader} />
         ) : incidents.length === 0 ? (
-          <Text style={s.emptyText}>No incidents reported yet.</Text>
+          <Text style={s.emptyText}>{t('incidentReport.noReports')}</Text>
         ) : (
           incidents.map((item) => (
             <View key={item._id} style={s.incidentCard}>
@@ -208,7 +210,7 @@ export default function IncidentReportScreen() {
                 </Text>
                 <Text style={s.incidentSeverity}>{item.severity}</Text>
               </View>
-              {!!item.status && <Text style={s.incidentStatus}>Status: {item.status}</Text>}
+              {!!item.status && <Text style={s.incidentStatus}>{t('incidentReport.status')} {item.status}</Text>}
               {!!item.createdAt && (
                 <Text style={s.incidentDate}>{new Date(item.createdAt).toLocaleString()}</Text>
               )}
@@ -217,7 +219,7 @@ export default function IncidentReportScreen() {
         )}
 
         {/* Submit Form */}
-        <Text style={[s.title, s.formTitle]}>Incident Report</Text>
+        <Text style={[s.title, s.formTitle]}>{t('incidentReport.newReport')}</Text>
 
         <Text style={s.label}>Shift *</Text>
         <TouchableOpacity style={s.dropdown} onPress={() => setShowShiftPicker(true)}>
@@ -228,20 +230,20 @@ export default function IncidentReportScreen() {
           </Text>
         </TouchableOpacity>
 
-        <Text style={s.label}>Incident Description *</Text>
+        <Text style={s.label}>{t('incidentReport.description')}</Text>
         <TextInput
           value={description}
           onChangeText={setDescription}
-          placeholder="Describe what happened..."
+          placeholder=""
           placeholderTextColor={colors.muted}
           multiline
           style={s.textArea}
         />
 
-        <Text style={s.label}>Date &amp; Time *</Text>
+        <Text style={s.label}>{t('incidentReport.date')} &amp; {t('incidentReport.time')}</Text>
         <Text style={s.readOnly}>{dateTime}</Text>
 
-        <Text style={s.label}>Severity *</Text>
+        <Text style={s.label}>{t('incidentReport.severity')}</Text>
         <View style={s.row}>
           {(['Low', 'Medium', 'High'] as Severity[]).map((lvl) => (
             <TouchableOpacity
@@ -252,7 +254,7 @@ export default function IncidentReportScreen() {
               <Text
                 style={[s.severityText, { color: severity === lvl ? colors.white : colors.text }]}
               >
-                {lvl}
+                {t(`incidentReport.types.${lvl.toLowerCase()}`)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -273,7 +275,7 @@ export default function IncidentReportScreen() {
           {submitting ? (
             <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={s.submitText}>Submit Report</Text>
+            <Text style={s.submitText}>{t('incidentReport.submit')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -303,7 +305,7 @@ export default function IncidentReportScreen() {
               )}
             </ScrollView>
             <TouchableOpacity style={s.modalClose} onPress={() => setShowShiftPicker(false)}>
-              <Text style={s.modalCloseText}>Cancel</Text>
+              <Text style={s.modalCloseText}>{t('incidentReport.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

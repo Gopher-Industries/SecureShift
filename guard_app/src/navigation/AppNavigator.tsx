@@ -144,7 +144,7 @@ export default function AppNavigator() {
       <Stack.Screen
         name="IncidentReports"
         component={IncidentReportScreen}
-        options={{ headerShown: true, title: 'Incident Reports' }}
+        options={{ headerShown: true, title: t('incidentReport.title') }}
       />
       <Stack.Screen
         name="QRScanner"

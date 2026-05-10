@@ -286,5 +286,67 @@
     "testNotif": "测试通知",
     "notifTitle": "已分配班次",
     "notifBody": "您已被分配到医院综合楼班次。"
+  },
+  "payroll": {
+    "period": "期间:",
+    "guardID": "保安ID:",
+    "site": "地点:",
+    "department": "部门:",
+    "notFound": "未找到工资单",
+    "error": "加载工资单记录失败",
+    "types": {
+      "daily": "每日",
+      "weekly": "每周",
+      "monthly": "每月"
+    },
+    "filter": "筛选",
+    "startDateHead": "开始日期*",
+    "selectStart": "选择开始日期",
+    "endDateHead": "结束日期*",
+    "selectEnd": "选择结束日期",
+    "periodHead": "期间类型*",
+    "selectPeriod": "选择期间",
+    "optional": "可选",
+    "ID": "ID",
+    "siteHead": "地点",
+    "siteHint": "地点名称",
+    "departmentHead": "部门",
+    "departmentHint": "部门名称",
+    "missingAlertHead": "信息缺失",
+    "missingAlertMsg": "请选择开始日期、结束日期以及期间类型。",
+    "invalidAlertHead": "无效信息",
+    "invalidAlertMsg": "开始日期必须早于结束日期。",
+    "cancel": "取消"
+  },
+  "incidentReport": {
+    "title": "事件报告",
+    "newReport": "新建报告",
+    "reportId": "报告ID：",
+    "date": "日期：",
+    "time": "时间：",
+    "location": "地点：",
+    "description": "描述：",
+    "reportedBy": "报告人：",
+    "severity": "严重程度：",
+    "status": "状态：",
+    "types": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "严重"
+    },
+    "statusTypes": {
+      "open": "开启",
+      "inProgress": "处理中",
+      "resolved": "已解决",
+      "closed": "已关闭"
+    },
+    "noReports": "未找到事件报告",
+    "error": "加载事件报告失败",
+    "submit": "提交报告",
+    "submitting": "提交中...",
+    "submitSuccess": "事件报告提交成功",
+    "submitFailed": "提交事件报告失败",
+    "cancel": "取消"
   }
 }
