@@ -324,11 +324,54 @@ router
  *                 type: boolean
  *                 default: false
  *     responses:
- *       200: { description: Guard approved and shift assigned }
- *       400: { description: Guard not in applicants or invalid state }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- *       404: { description: Shift not found }
+ *       200:
+ *         description: Guard approved and shift assigned
+ *       400:
+ *         description: Invalid request, invalid shift state, guard not in applicants, or fatigue rule breach
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Shift approval blocked due to guard fatigue rules
+ *                 fatigueAssessment:
+ *                   type: object
+ *                   description: Returned when approval is blocked by fatigue monitoring rules
+ *                   properties:
+ *                     fatigueScore:
+ *                       type: number
+ *                       example: 100
+ *                     warnings:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example:
+ *                         - Guard exceeds recommended weekly shift limit of 5 shifts
+ *                         - Guard exceeds recommended daily hour limit of 10 hours
+ *                         - Guard exceeds recommended weekly hour limit of 40 hours
+ *                     isFatigued:
+ *                       type: boolean
+ *                       example: true
+ *                     metrics:
+ *                       type: object
+ *                       properties:
+ *                         shiftsThisWeek:
+ *                           type: number
+ *                           example: 6
+ *                         hoursThisDay:
+ *                           type: number
+ *                           example: 12
+ *                         hoursThisWeek:
+ *                           type: number
+ *                           example: 48
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Shift not found
  */
 router
   .route('/:id/approve')
