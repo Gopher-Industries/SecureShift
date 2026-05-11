@@ -132,7 +132,29 @@
     "search": "搜索排班...",
     "noShifts": "未找到排班",
     "noCompleted": "未找到已完成的排班",
-    "accepted": "已接受"
+    "accepted": "已接受",
+    "approved": "已批准",
+    "createRequest": "创建请求",
+    "viewRequests": "换班和请假请求",
+    "change": "更改",
+    "requestType": "请求类型",
+    "requestedDate": "请求日期",
+    "reason": "原因",
+    "swap": "换班",
+    "leave": "请假",
+    "selectRequestType": "选择请求类型",
+    "reasonHint": "抱歉我生病了...",
+    "requestedTime": "请求时间",
+    "selectDate": "选择日期",
+    "selectTime": "选择时间",
+    "notFound": "未找到排班请求",
+    "requestError": "加载请求失败。",
+    "alerts": {
+      "missingTimeHead": "缺少日期或时间",
+      "missingTimeMsg": "输入您想要将排班移动到的日期和时间。",
+      "invalidDateHead": "无效日期",
+      "invalidDateMsg": "选择的日期无效"
+    }
   },
   "timesheet": {
     "checkIn": "签到：",
@@ -162,7 +184,8 @@
     "messages": "消息",
     "notifications": "通知",
     "certificates": "资质认证",
-    "shiftDetails": "排班详情"
+    "shiftDetails": "排班详情",
+    "shiftRequests": "排班更改请求"
   },
   "docs": {
     "title": "文件概览",
