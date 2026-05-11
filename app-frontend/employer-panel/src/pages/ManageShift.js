@@ -1046,7 +1046,39 @@ const ChatIcon = () => (
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </svg>
 );
+const generateAiRecommendation = (applicant, shift) => {
+  let score = 60;
+  const reasons = [];
 
+  if (
+    applicant.licenseType &&
+    shift.field &&
+    applicant.licenseType.toLowerCase().includes(shift.field.toLowerCase())
+  ) {
+    score += 20;
+    reasons.push('License matches shift field');
+  }
+
+  if (shift.urgency === 'priority') {
+    score += 10;
+    reasons.push('Suitable for priority shifts');
+  }
+
+  if (shift.status === 'Open') {
+    score += 5;
+    reasons.push('Available immediately');
+  }
+
+  if (score >= 90) {
+    reasons.push('Highly recommended candidate');
+  }
+
+  return {
+    score,
+    recommended: score >= 80,
+    reasons,
+  };
+};
 // ─── Applicants Panel ───
 const ApplicantsPanel = ({ shift, applicantAction, onApprove, onReject }) => {
   const applicants = shift.applicants || [];
@@ -1063,6 +1095,7 @@ const ApplicantsPanel = ({ shift, applicantAction, onApprove, onReject }) => {
     <div style={applicantsPanelStyle}>
       <div style={applicantsListStyle}>
         {applicants.map((applicant) => {
+          const ai = generateAiRecommendation(applicant, shift);
           const gid = applicant._id || applicant.id;
           const action = applicantAction[gid];
           const isApproved = action === 'approved';
@@ -1073,6 +1106,28 @@ const ApplicantsPanel = ({ shift, applicantAction, onApprove, onReject }) => {
               <div style={{ flex: 1 }}>
                 <p style={applicantNameStyle}>{applicant.name || 'Unknown Guard'}</p>
                 <p style={applicantEmailStyle}>{applicant.email || '--'}</p>
+                <div style={aiCardStyle}>
+  <p style={aiTitleStyle}>AI Recommendation</p>
+
+  <div style={aiScoreStyle}>
+    Match Score: {ai.score}%
+  </div>
+
+  <div style={{
+    color: ai.recommended ? '#16a34a' : '#dc2626',
+    fontWeight: '600',
+    fontSize: '12px',
+    marginBottom: '6px'
+  }}>
+    {ai.recommended ? 'Recommended Candidate' : 'Needs Manual Review'}
+  </div>
+
+  {ai.reasons.map((reason, index) => (
+    <div key={index} style={aiReasonStyle}>
+      • {reason}
+    </div>
+  ))}
+</div>
                 {applicant.licenseType && <span style={licenseBadgeStyle}>{applicant.licenseType}</span>}
               </div>
               <div style={applicantActionsStyle}>
@@ -1306,3 +1361,30 @@ const chatInputRowStyle = { display: 'flex', gap: '8px', alignItems: 'center', b
 const chatInputStyle = { flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: '13px', color: '#111827' };
 const chatSendButtonStyle = { width: '34px', height: '34px', borderRadius: '8px', border: 'none', background: '#1a2f6e', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 };
 const chatFooterNoteStyle = { margin: '8px 0 0', fontSize: '11px', color: '#9ca3af', textAlign: 'center' };
+const aiCardStyle = {
+ marginTop: '10px',
+  padding: '10px',
+  borderRadius: '10px',
+  background: '#f8fafc',
+  border: '1px solid #e2e8f0',
+};
+
+const aiTitleStyle = {
+  margin: '0 0 6px',
+  fontSize: '12px',
+  fontWeight: '700',
+  color: '#274b93',
+};
+
+const aiScoreStyle = {
+  fontSize: '13px',
+  fontWeight: '600',
+  marginBottom: '6px',
+  color: '#111827',
+};
+
+const aiReasonStyle = {
+  fontSize: '12px',
+  color: '#4b5563',
+  marginBottom: '2px',
+};
