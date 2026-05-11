@@ -1,4 +1,5 @@
 import ShiftAttendance from "../models/ShiftAttendance.js";
+import Shift from "../models/Shift.js";
 
 // Utility: calculate distance using the Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {

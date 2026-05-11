@@ -4,6 +4,7 @@ import Branch from '../models/Branch.js';
 import Guard from '../models/Guard.js';
 import Availability from '../models/Availability.js';
 import ShiftAttendance from '../models/ShiftAttendance.js';
+import { generateTimesheetForCompletedShift } from '../services/timesheet.service.js';
 
 import { ACTIONS } from "../middleware/logger.js";
 
@@ -685,11 +686,13 @@ export const completeShift = async (req, res) => {
 
     shift.status = 'completed';
     await shift.save();
+    const timesheet = await generateTimesheetForCompletedShift(shift, shift.attendance);
     await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, {
-      shiftId: shift._id
+      shiftId: shift._id,
+      timesheetId: timesheet._id,
     });
 
-    return res.json({ message: 'Shift completed', shift });
+    return res.json({ message: 'Shift completed', shift, timesheet });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
