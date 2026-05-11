@@ -85,6 +85,7 @@ function AppRoutes() {
         <Route path="/guard-profiles/:guardId" element={<ProtectedLayout><GuardProfilePage /></ProtectedLayout>} />
         <Route path="/company-profile" element={<ProtectedLayout><CompanyProfile /></ProtectedLayout>} />
         <Route path="/email-settings" element={<ProtectedLayout><EmailSettings /></ProtectedLayout>} />
+        <Route path="/payroll" element={<ProtectedLayout><Payroll /></ProtectedLayout>} />
       </Routes>
     </>
   );
