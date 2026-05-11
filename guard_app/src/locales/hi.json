@@ -286,16 +286,68 @@
   "homeExtras": {
     "testNotif": "टेस्ट सूचना",
     "notifTitle": "शिफ्ट असाइन की गई",
-    "notifBody": "आपको हॉस्पिटल कॉम्प्लेक्स शिफ्ट असाइन की गई है।",
-    "payroll": {
-      "title": "वेतन",
-      "summary": "वेतन सारांश",
-      "details": "वेतन विवरण"
-    },
-    "incidentReport": {
-      "title": "घटना रिपोर्ट",
-      "submit": "रिपोर्ट जमा करें",
-      "description": "घटना का विवरण"
-    }
-  }
+    "notifBody": "आपको हॉस्पिटल कॉम्प्लेक्स शिफ्ट असाइन की गई है।"
+},
+"payroll": {
+  "period": "अवधि:",
+  "guardID": "गार्ड आईडी:",
+  "site": "साइट:",
+  "department": "विभाग:",
+  "notFound": "कोई पेरोल नहीं मिला",
+  "error": "पेरोल इतिहास लोड करने में विफल",
+  "types": {
+    "daily": "दैनिक",
+    "weekly": "साप्ताहिक",
+    "monthly": "मासिक"
+  },
+  "filter": "फ़िल्टर",
+  "startDateHead": "प्रारंभ तिथि*",
+  "selectStart": "प्रारंभ तिथि चुनें",
+  "endDateHead": "समाप्ति तिथि*",
+  "selectEnd": "समाप्ति तिथि चुनें",
+  "periodHead": "अवधि प्रकार*",
+  "selectPeriod": "अवधि चुनें",
+  "optional": "वैकल्पिक",
+  "ID": "आईडी",
+  "siteHead": "साइट",
+  "siteHint": "साइट का नाम",
+  "departmentHead": "विभाग",
+  "departmentHint": "विभाग का नाम",
+  "missingAlertHead": "जानकारी गुम है",
+  "missingAlertMsg": "कृपया प्रारंभ और समाप्ति तिथि तथा अवधि प्रकार चुनें।",
+  "invalidAlertHead": "अमान्य जानकारी",
+  "invalidAlertMsg": "प्रारंभ तिथि समाप्ति तिथि से पहले होनी चाहिए।",
+  "cancel": "रद्द करें"
+},
+"incidentReport": {
+  "title": "घटना रिपोर्ट",
+  "newReport": "नई रिपोर्ट",
+  "reportId": "रिपोर्ट आईडी:",
+  "date": "तारीख:",
+  "time": "समय:",
+  "location": "स्थान:",
+  "description": "विवरण:",
+  "reportedBy": "रिपोर्ट करने वाला:",
+  "severity": "गंभीरता:",
+  "status": "स्थिति:",
+  "types": {
+    "low": "कम",
+    "medium": "मध्यम",
+    "high": "उच्च",
+    "critical": "गंभीर"
+  },
+  "statusTypes": {
+    "open": "खुला",
+    "inProgress": "प्रगति में",
+    "resolved": "हल किया गया",
+    "closed": "बंद"
+  },
+  "noReports": "कोई घटना रिपोर्ट नहीं मिली",
+  "error": "घटना रिपोर्ट लोड करने में विफल",
+  "submit": "रिपोर्ट जमा करें",
+  "submitting": "जमा किया जा रहा है...",
+  "submitSuccess": "घटना रिपोर्ट सफलतापूर्वक जमा की गई",
+  "submitFailed": "घटना रिपोर्ट जमा करने में विफल",
+  "cancel": "रद्द करें"
+}
 }
