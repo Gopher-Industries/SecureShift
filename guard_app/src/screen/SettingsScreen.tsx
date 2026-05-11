@@ -25,6 +25,7 @@ import { LocalStorage } from '../lib/localStorage';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+import { showLocalNotification } from '../utils/notificationHelpers';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -212,6 +213,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Feather name="file-text" size={18} color={colors.primary} />}
             label={t('settings.releaseNotes')}
+            onPress={() => navigation2.navigate('ReleaseNotes')}
             colors={colors}
           />
         </View>
@@ -280,6 +282,14 @@ export default function SettingsScreen() {
             icon={<Ionicons name="qr-code-outline" size={18} color={colors.primary} />}
             label="QR Code Scanner"
             onPress={() => navigation2.navigate('QRScanner')}
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />}
+            label={t('homeExtras.testNotif')}
+            onPress={async () => {
+              await showLocalNotification(t('homeExtras.notifTitle'), t('homeExtras.notifBody'));
+            }}
             colors={colors}
           />
         </View>

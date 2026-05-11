@@ -13,9 +13,11 @@ import NotificationsScreen from '../screen/notifications';
 import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
 import QRScannerScreen from '../screen/QRScannerScreen';
+import ReleaseNotesScreen from '../screen/ReleaseNotesScreen';
 import ScanResultScreen from '../screen/ScanResultScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
+import ShiftRequestScreen from '../screen/ShiftRequestScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
 import TermsScreen from '../screen/TermsScreen';
@@ -28,6 +30,7 @@ export type RootStackParamList = {
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
+  ReleaseNotes: undefined;
   Payroll: undefined;
   PrivacyPolicy: undefined;
   EditProfile: undefined;
@@ -44,6 +47,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   Certificates: undefined;
   ShiftDetails: { shift: any };
+  ShiftRequests: undefined;
   Terms: undefined;
   IncidentReports: undefined;
   QRScanner: undefined;
@@ -88,6 +92,11 @@ export default function AppNavigator() {
         options={{ headerShown: true, title: t('nav.settings') }}
       />
       <Stack.Screen
+        name="ReleaseNotes"
+        component={ReleaseNotesScreen}
+        options={{ headerShown: true, title: 'Release Notes' }}
+      />
+      <Stack.Screen
         name="PrivacyPolicy"
         component={PrivacyPolicyScreen}
         options={{ headerShown: true, title: t('nav.privacyPolicy') }}
@@ -123,6 +132,11 @@ export default function AppNavigator() {
         options={{ headerShown: true, title: t('nav.shiftDetails') }}
       />
       <Stack.Screen
+        name="ShiftRequests"
+        component={ShiftRequestScreen}
+        options={{ headerShown: true, title: t('nav.shiftRequests') }}
+      />
+      <Stack.Screen
         name="Terms"
         component={TermsScreen}
         options={{ headerShown: true, title: 'Terms of Service' }}
@@ -130,7 +144,7 @@ export default function AppNavigator() {
       <Stack.Screen
         name="IncidentReports"
         component={IncidentReportScreen}
-        options={{ headerShown: true, title: 'Incident Reports' }}
+        options={{ headerShown: true, title: t('incidentReport.title') }}
       />
       <Stack.Screen
         name="QRScanner"

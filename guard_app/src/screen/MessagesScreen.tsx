@@ -39,6 +39,7 @@ type Message = {
   context: 'shift' | 'general';
   shiftTitle?: string;
   status?: 'sending' | 'sent' | 'delivered' | 'read';
+  isMe: boolean;
 };
 
 type ConversationItem = {
@@ -105,6 +106,7 @@ export default function MessagesScreen() {
     return {
       id: dto._id ?? `${dto.timestamp}-${senderId ?? 'unknown'}`,
       from: role,
+      isMe: Boolean(isCurrentUser),
       senderName: dto.sender?.name ?? dto.sender?.email ?? 'Unknown',
       text: dto.content,
       timestamp: dto.timestamp,
@@ -341,6 +343,7 @@ export default function MessagesScreen() {
     const newMsg: Message = {
       id: newId,
       from: currentUser?.role === 'employer' ? 'employer' : 'guard',
+      isMe: true,
       senderName: currentUser?.name ?? 'You',
       text: input.trim(),
       timestamp: new Date().toISOString(),
@@ -378,25 +381,18 @@ export default function MessagesScreen() {
       Alert.alert('Error', 'Failed to send message');
     }
   };
-
   const renderMessage = ({ item }: { item: Message }) => (
-    <View style={styles.messageRow}>
-      <View
-        style={[styles.bubble, item.from === 'guard' ? styles.bubbleGuard : styles.bubbleEmployer]}
-      >
+    <View style={[styles.messageRow, item.isMe ? styles.rowRight : styles.rowLeft]}>
+      <View style={[styles.bubble, item.isMe ? styles.bubbleGuard : styles.bubbleEmployer]}>
         <Text style={styles.msgSender}>
           {item.senderName} • {item.from === 'guard' ? 'Guard' : 'Employer'}
         </Text>
-        <Text style={item.from === 'guard' ? styles.msgTextLight : styles.msgTextDark}>
-          {item.text}
-        </Text>
+        <Text style={item.isMe ? styles.msgTextLight : styles.msgTextDark}>{item.text}</Text>
         <View style={styles.metaRow}>
-          <Text style={item.from === 'guard' ? styles.msgTimeLight : styles.msgTimeDark}>
+          <Text style={item.isMe ? styles.msgTimeLight : styles.msgTimeDark}>
             {formatTime(item.timestamp)}
           </Text>
-          {item.from === 'guard' && item.status && (
-            <Text style={styles.msgStatus}>• {item.status}</Text>
-          )}
+          {item.isMe && item.status && <Text style={styles.msgStatus}>• {item.status}</Text>}
         </View>
       </View>
     </View>
@@ -727,7 +723,18 @@ const getStyles = (colors: AppColors) =>
     },
     newConversationBtnText: { color: colors.white, fontWeight: '700', fontSize: 13 },
 
-    messageRow: { marginBottom: 10 },
+    messageRow: {
+      marginBottom: 10,
+      flexDirection: 'row',
+    },
+
+    rowRight: {
+      justifyContent: 'flex-end',
+    },
+
+    rowLeft: {
+      justifyContent: 'flex-start',
+    },
     bubble: {
       maxWidth: '75%',
       padding: 12,
