@@ -177,7 +177,7 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *                 example: "Security experience preferred"
  *     responses:
  *       201: { description: Shift created }
- *       400: { description: Validation error, unavailable guard, or shift clash }
+ *       400: { description: Validation error, unavailable guard, shift clash, or fatigue rule breach }
  *       401: { description: Unauthorized }
  *       403: { description: Forbidden }
  */
@@ -467,8 +467,8 @@ router
  *     responses:
  *       200:
  *         description: Rating saved (guardRating or employerRating based on role)
- *       400: 
- *         description: Validation error, unavailable guard, shift clash, or fatigue rule breach
+ *       400:
+ *         description: Invalid state (not completed) or duplicate rating
  *       401:
  *         description: Unauthorized
  *       403:
