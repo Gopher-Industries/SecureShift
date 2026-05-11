@@ -467,8 +467,8 @@ router
  *     responses:
  *       200:
  *         description: Rating saved (guardRating or employerRating based on role)
- *       400:
- *         description: Invalid state (not completed) or duplicate rating
+ *       400: 
+ *         description: Validation error, unavailable guard, shift clash, or fatigue rule breach
  *       401:
  *         description: Unauthorized
  *       403:

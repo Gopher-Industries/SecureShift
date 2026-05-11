@@ -284,6 +284,37 @@ export const createShift = async (req, res) => {
       }
       finalStatus = status;
     }
+    // Enforce fatigue rules for pre-selected guards during shift creation.
+    const fatigueAssessments = await Promise.all(
+      normalizedGuardIds.map(async (guardId) => {
+        const fatigueAssessment = await assessGuardFatigue(guardId, {
+          date: d,
+          startTime,
+          endTime,
+        });
+
+        return {
+          guardId,
+          ...fatigueAssessment,
+        };
+      })
+    );
+
+    const fatiguedGuards = fatigueAssessments.filter(
+      (assessment) => assessment.isFatigued
+    );
+
+    if (fatiguedGuards.length > 0) {
+      await req.audit.log(req.user._id, ACTIONS.SHIFT_FATIGUE_BLOCKED, {
+        guardIds: fatiguedGuards.map((assessment) => assessment.guardId),
+        fatigueAssessments: fatiguedGuards,
+      });
+
+      return res.status(400).json({
+        message: 'Shift creation blocked due to guard fatigue rules',
+        fatigueAssessments: fatiguedGuards,
+      });
+    }
     const shift = await Shift.create({
       title,
       date: d,
