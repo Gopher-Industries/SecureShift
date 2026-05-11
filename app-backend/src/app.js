@@ -8,7 +8,6 @@ import setupSwagger from './config/swagger.js'; // ✅ now using ES module impor
 import { auditMiddleware } from "./middleware/logger.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
-
 const app = express();
 
 app.use(helmet());
