@@ -142,18 +142,21 @@ function AllTab({ navigation }: Props) {
     setRefreshing(false);
   };
 
-  const handleApply = useCallback(async (shiftId: string) => {
-    try {
-      setApplyingId(shiftId);
-      await applyToShift(shiftId);
-      Alert.alert('Success', 'Shift applied successfully');
-      await fetchData();
-    } catch (error: any) {
-      Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
-    } finally {
-      setApplyingId(null);
-    }
-  }, [fetchData]);
+  const handleApply = useCallback(
+    async (shiftId: string) => {
+      try {
+        setApplyingId(shiftId);
+        await applyToShift(shiftId);
+        Alert.alert('Success', 'Shift applied successfully');
+        await fetchData();
+      } catch (error: any) {
+        Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
+      } finally {
+        setApplyingId(null);
+      }
+    },
+    [fetchData],
+  );
 
   const filtered = rows.filter((r) =>
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),

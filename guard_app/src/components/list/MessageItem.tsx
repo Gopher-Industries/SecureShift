@@ -41,9 +41,7 @@ function MessageItem({ message }: Props) {
           <Text style={message.isMe ? s.msgTimeLight : s.msgTimeDark}>
             {formatTime(message.timestamp)}
           </Text>
-          {message.isMe && message.status && (
-            <Text style={s.msgStatus}>• {message.status}</Text>
-          )}
+          {message.isMe && message.status && <Text style={s.msgStatus}>• {message.status}</Text>}
         </View>
       </View>
     </View>
