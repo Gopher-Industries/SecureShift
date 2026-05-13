@@ -7,6 +7,7 @@ import {
   Alert,
   Dimensions,
   FlatList,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -141,18 +142,21 @@ function AllTab({ navigation }: Props) {
     setRefreshing(false);
   };
 
-  const handleApply = async (shiftId: string) => {
-    try {
-      setApplyingId(shiftId);
-      await applyToShift(shiftId);
-      Alert.alert('Success', 'Shift applied successfully');
-      await fetchData();
-    } catch (error: any) {
-      Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
-    } finally {
-      setApplyingId(null);
-    }
-  };
+  const handleApply = useCallback(
+    async (shiftId: string) => {
+      try {
+        setApplyingId(shiftId);
+        await applyToShift(shiftId);
+        Alert.alert('Success', 'Shift applied successfully');
+        await fetchData();
+      } catch (error: any) {
+        Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
+      } finally {
+        setApplyingId(null);
+      }
+    },
+    [fetchData],
+  );
 
   const filtered = rows.filter((r) =>
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
@@ -161,6 +165,22 @@ function AllTab({ navigation }: Props) {
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
   };
+
+  const keyExtractor = useCallback((i: AllShift) => i.id, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: AllShift }) => (
+      <ShiftCard
+        shift={item}
+        onPress={() => setSelectedShift(item)}
+        colors={colors}
+        showApply
+        onApply={() => handleApply(item.id)}
+        applying={applyingId === item.id}
+      />
+    ),
+    [colors, applyingId, handleApply],
+  );
 
   return (
     <View style={s.screen}>
@@ -188,18 +208,13 @@ function AllTab({ navigation }: Props) {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(i) => i.id}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={9}
+          removeClippedSubviews={Platform.OS === 'android'}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <ShiftCard
-              shift={item}
-              onPress={() => setSelectedShift(item)}
-              colors={colors}
-              showApply
-              onApply={() => handleApply(item.id)}
-              applying={applyingId === item.id}
-            />
-          )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
         />
@@ -259,6 +274,15 @@ function AppliedTab({ navigation }: Props) {
     navigation.navigate('ShiftRequests');
   };
 
+  const keyExtractor = useCallback((i: AppliedShift) => i.id, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: AppliedShift }) => (
+      <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
+    ),
+    [colors],
+  );
+
   return (
     <View style={s.screen}>
       <TouchableOpacity style={s.requestsButton} onPress={handleViewRequests}>
@@ -285,11 +309,13 @@ function AppliedTab({ navigation }: Props) {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(i) => i.id}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={9}
+          removeClippedSubviews={Platform.OS === 'android'}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
-          )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
         />
@@ -343,6 +369,15 @@ function CompletedTab({ navigation }: Props) {
     navigation.navigate('ShiftRequests');
   };
 
+  const keyExtractor = useCallback((i: CompletedShift) => i.id, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: CompletedShift }) => (
+      <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
+    ),
+    [colors],
+  );
+
   return (
     <View style={s.screen}>
       <TouchableOpacity style={s.requestsButton} onPress={handleViewRequests}>
@@ -373,11 +408,13 @@ function CompletedTab({ navigation }: Props) {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(i) => i.id}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={9}
+          removeClippedSubviews={Platform.OS === 'android'}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
-          )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noCompleted')}</Text>}
         />
