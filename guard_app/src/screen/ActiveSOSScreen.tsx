@@ -30,6 +30,7 @@ import {
 } from '../api/sos';
 import ErrorMessageBox from '../components/ErrorMessageBox';
 import { useAppTheme } from '../theme';
+import { getUserProfile } from '../api/profile';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -83,6 +84,7 @@ export default function ActiveSOSScreen() {
 
   const [sosId, setSosId] = useState<string | null>(initialSosId ?? null);
   const [alert, setAlert] = useState<SOSAlert | null>(null);
+  const [guardProfile, setGuardProfile] = useState<any>(null);
   const [coords, setCoords] = useState<Coords | null>(null);
   const [triggeredAt, setTriggeredAt] = useState<string | null>(null);
   const [status, setStatus] = useState<SOSStatus>('pending');
@@ -178,6 +180,11 @@ export default function ActiveSOSScreen() {
             timestamp: loc.timestamp,
           };
           setCoords(next);
+          console.log('📍 LOCAL SOS LOCATION UPDATE:', {
+            sosId: activeSosId,
+            location: next,
+            updatedAt: new Date().toISOString(),
+          });
           const now = Date.now();
           if (now - lastPushedAtRef.current >= LOCATION_PUSH_INTERVAL_MS) {
             lastPushedAtRef.current = now;
@@ -238,6 +245,31 @@ export default function ActiveSOSScreen() {
     [stopLocationWatcher, stopPolling],
   );
 
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      const profile = await getUserProfile();
+
+      if (!active) return;
+
+      setGuardProfile(profile);
+
+      console.log('👮 GUARD PROFILE FOR SOS:', {
+        guardId: profile?._id,
+        name: profile?.name,
+        email: profile?.email,
+        phone: profile?.phone,
+        address: profile?.address,
+        license: profile?.license,
+      });
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   /**
    * Bootstrap: either resume an existing SOS (sosId in params) or trigger
    * a new one using the current location.
@@ -270,6 +302,24 @@ export default function ActiveSOSScreen() {
           }
           setCoords(fix);
           const created = await triggerSOS(fix);
+          console.log('🚨 LOCAL SOS DATA:', {
+            type: 'SOS_EMERGENCY_ALERT',
+            status: 'local_test_only',
+            sosId: created._id,
+
+            guardId: guardProfile?._id ?? guardProfile?.id ?? created.guardId,
+            guardName: guardProfile?.name,
+            guardEmail: guardProfile?.email,
+            guardPhone: guardProfile?.phone,
+            guardAddress: guardProfile?.address,
+            guardLicense: guardProfile?.license,
+
+            shiftId: created.shiftId,
+            location: fix,
+            triggeredAt: created.triggeredAt,
+            emergencyContact: created.emergencyContact,
+            message: 'SOS triggered locally for testing only',
+          });
           if (!active) return;
           setAlert(created);
           setSosId(created._id);
