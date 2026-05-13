@@ -97,7 +97,8 @@ export default function ActiveSOSScreen() {
   const lastPushedAtRef = useRef<number>(0);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cancelTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const cancelDeadlineRef = useRef<number>(Date.now() + CANCEL_GRACE_MS);
+  const [initialDeadline] = useState(() => Date.now() + CANCEL_GRACE_MS);
+  const cancelDeadlineRef = useRef<number>(initialDeadline);
   const mountedRef = useRef(true);
 
   const closeError = useCallback(() => setErrorState(null), []);
