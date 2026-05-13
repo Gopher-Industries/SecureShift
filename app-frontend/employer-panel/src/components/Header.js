@@ -87,7 +87,7 @@ export default function Header({ language, setLanguage }) {
           </Link>
         )}
 
-        <NotificationsPopup />
+<NotificationsPopup language={language} />
 
         {/* Avatar + Dropdown */}
         <div style={{ position: 'relative' }}>
@@ -118,46 +118,55 @@ export default function Header({ language, setLanguage }) {
             >
               {/* Profile Section */}
               <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '16px',
-                  borderBottom: '1px solid #eee',
-                }}
-              >
-                <img
-                  src={Logo}
-                  alt="Profile"
-                  style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '50%',
-                  }}
-                />
+  onClick={() => {
+    navigate('/company-profile');
+    setShowMenu(false);
+  }}
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px',
+    borderBottom: '1px solid #eee',
+    backgroundColor: '#072261',
+    cursor: 'pointer',
+  }}
+>
+  <img
+    src={Logo}
+    alt="Profile"
+    style={{
+      width: '52px',
+      height: '52px',
+      borderRadius: '50%',
+      objectFit: 'contain',
+      backgroundColor: '#fff',
+      padding: '4px',
+    }}
+  />
 
-                <div>
-                  <div
-                    style={{
-                      fontWeight: '700',
-                      fontSize: '15px',
-                      color: '#111',
-                    }}
-                  >
-                    ABC Security
-                  </div>
+  <div>
+    <div
+      style={{
+        fontWeight: '700',
+        fontSize: '15px',
+        color: '#fff',
+      }}
+    >
+      ABC Security
+    </div>
 
-                  <div
-                    style={{
-                      fontSize: '13px',
-                      color: '#666',
-                      marginTop: '2px',
-                    }}
-                  >
-                    {localStorage.getItem('email') || 'User'}
-                  </div>
-                </div>
-              </div>
+    <div
+      style={{
+        fontSize: '13px',
+        color: '#dbeafe',
+        marginTop: '2px',
+      }}
+    >
+      {localStorage.getItem('email') || 'User'}
+    </div>
+  </div>
+</div>
 
               {/* Language Section */}
               <div style={{ padding: '14px 16px' }}>

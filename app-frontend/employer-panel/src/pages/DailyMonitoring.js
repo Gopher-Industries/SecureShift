@@ -221,7 +221,7 @@ export default function DailyMonitoring({ language }) {
 
   return (
     <div className="dm-shell">
-      <h1 className="dm-heading">{t.dailyMonitoring}g</h1>
+      <h1 className="dm-heading">{t.dailyMonitoring}</h1>
 
       <div className="dm-stats">
         {stats.map((s) => (
