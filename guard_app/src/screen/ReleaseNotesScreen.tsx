@@ -29,17 +29,20 @@ export default function ReleaseNotesScreen() {
             </View>
           </View>
         </View>
+
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Features</Text>
           <Text style={styles.item}>• Added a dedicated Release Notes screen</Text>
           <Text style={styles.item}>• App version is now displayed in one place</Text>
           <Text style={styles.item}>• Content is organised and easier to read</Text>
         </View>
+
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Known Issues</Text>
           <Text style={styles.item}>• Release notes content is static for now</Text>
           <Text style={styles.item}>• Minor UI differences may appear on some devices</Text>
         </View>
+
         <View style={styles.spacer} />
       </ScrollView>
     </SafeAreaView>
@@ -60,16 +63,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
   },
-  cardTitle: {
-    color: '#0F172A',
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 8,
-  },
-  headerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
+  cardTitle: { color: '#0F172A', fontSize: 16, fontWeight: '800', marginBottom: 8 },
+  headerRow: { alignItems: 'center', flexDirection: 'row' },
   iconWrap: {
     alignItems: 'center',
     backgroundColor: '#F3F4F6',
@@ -79,25 +74,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
     width: 36,
   },
-  item: {
-    color: '#111827',
-    fontSize: 14,
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  safe: {
-    backgroundColor: '#F9FAFB',
-    flex: 1,
-  },
-  scroll: {
-    padding: CANVAS_PADDING,
-  },
-  spacer: {
-    height: 20,
-  },
-  version: {
-    color: MUTED,
-    fontSize: 14,
-    marginTop: 2,
-  },
+  item: { color: '#111827', fontSize: 14, lineHeight: 22, marginBottom: 8 },
+  safe: { backgroundColor: '#F9FAFB', flex: 1 },
+  scroll: { padding: CANVAS_PADDING },
+  spacer: { height: 20 },
+  version: { color: MUTED, fontSize: 14, marginTop: 2 },
 });
