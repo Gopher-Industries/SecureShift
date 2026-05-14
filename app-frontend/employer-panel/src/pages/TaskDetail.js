@@ -120,12 +120,12 @@ const IconChevronDown = (props) => (
 export default function TaskDetail() {
   const [tags, setTags] = useState(['UI/UX', 'Backend', 'Frontend']);
   const [showNotesOnCard, setShowNotesOnCard] = useState(true);
-  const [bucket, setBucket] = useState('Frontend Employer Panel');
-  const [startDate, setStartDate] = useState('Start anytime');
-  const [progress, setProgress] = useState('Not started');
-  const [priority, setPriority] = useState('Medium');
-  const [dueDate, setDueDate] = useState('12/12/2025');
-  const [repeat, setRepeat] = useState('Does not repeat');
+  const [bucket] = useState('Frontend Employer Panel');
+  const [startDate] = useState('Start anytime');
+  const [progress] = useState('Not started');
+  const [priority] = useState('Medium');
+  const [dueDate] = useState('12/12/2025');
+  const [repeat] = useState('Does not repeat');
 
   const removeTag = (tagToRemove) => {
     setTags(tags.filter((tag) => tag !== tagToRemove));
