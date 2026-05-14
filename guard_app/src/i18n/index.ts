@@ -4,6 +4,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import en from '../locales/en.json';
+import guj from '../locales/guj.json';
 import hi from '../locales/hi.json';
 import pa from '../locales/pa.json';
 import zhCN from '../locales/zh-CN.json';
@@ -17,6 +18,7 @@ const resources = {
   'zh-TW': { translation: zhTW },
   hi: { translation: hi },
   pa: { translation: pa },
+  guj: { translation: guj },
 };
 
 const languageDetectorPlugin = {

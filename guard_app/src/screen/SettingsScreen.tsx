@@ -198,7 +198,9 @@ export default function SettingsScreen() {
           ? 'हिन्दी'
           : i18n.language === 'pa'
             ? 'Punjabi'
-            : 'English';
+            : i18n.language === 'guj'
+              ? 'ગુજરાતી'
+              : 'English';
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -347,6 +349,7 @@ export default function SettingsScreen() {
               { code: 'zh-CN', label: '简体中文' },
               { code: 'zh-TW', label: '繁體中文' },
               { code: 'hi', label: 'हिन्दी' },
+              { code: 'guj', label: 'ગુજરાતી' },
             ].map((lng) => (
               <TouchableOpacity
                 key={lng.code}
