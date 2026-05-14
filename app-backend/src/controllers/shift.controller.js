@@ -3,9 +3,8 @@ import Shift from '../models/Shift.js';
 import Branch from '../models/Branch.js';
 import Guard from '../models/Guard.js';
 import Availability from '../models/Availability.js';
-
+import { assessGuardFatigue } from '../services/fatigue.service.js';
 import { ACTIONS } from "../middleware/logger.js";
-
 import { timeToMinutes, normalizeEnd } from '../utils/timeUtils.js';
 
 // Helpers
@@ -282,6 +281,37 @@ export const createShift = async (req, res) => {
         });
       }
       finalStatus = status;
+    }
+    // Enforce fatigue rules for pre-selected guards during shift creation.
+    const fatigueAssessments = await Promise.all(
+      normalizedGuardIds.map(async (guardId) => {
+        const fatigueAssessment = await assessGuardFatigue(guardId, {
+          date: d,
+          startTime,
+          endTime,
+        });
+
+        return {
+          guardId,
+          ...fatigueAssessment,
+        };
+      })
+    );
+
+    const fatiguedGuards = fatigueAssessments.filter(
+      (assessment) => assessment.isFatigued
+    );
+
+    if (fatiguedGuards.length > 0) {
+      await req.audit.log(req.user._id, ACTIONS.SHIFT_FATIGUE_BLOCKED, {
+        guardIds: fatiguedGuards.map((assessment) => assessment.guardId),
+        fatigueAssessments: fatiguedGuards,
+      });
+
+      return res.status(400).json({
+        message: 'Shift creation blocked due to guard fatigue rules',
+        fatigueAssessments: fatiguedGuards,
+      });
     }
     const shift = await Shift.create({
       title,
@@ -656,6 +686,21 @@ export const approveShift = async (req, res) => {
     }
     if (!shift.applicants.some(a => String(a) === String(guardId))) {
       return res.status(400).json({ message: 'Guard did not apply for this shift' });
+    }
+
+    const fatigueAssessment = await assessGuardFatigue(guardId, shift);
+
+    if (fatigueAssessment.isFatigued) {
+      await req.audit.log(req.user._id, ACTIONS.SHIFT_FATIGUE_BLOCKED, {
+        shiftId: shift._id,
+        guardId,
+        fatigueAssessment,
+      });
+
+      return res.status(400).json({
+        message: 'Shift approval blocked due to guard fatigue rules',
+        fatigueAssessment,
+      });
     }
 
     shift.assignedGuard = guardId; // virtual -> acceptedBy

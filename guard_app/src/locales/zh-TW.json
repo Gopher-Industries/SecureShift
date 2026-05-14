@@ -132,7 +132,29 @@
     "search": "搜尋排班...",
     "noShifts": "未找到排班",
     "noCompleted": "未找到已完成的排班",
-    "accepted": "已接受"
+    "accepted": "已接受",
+    "approved": "已批准",
+    "createRequest": "建立請求",
+    "viewRequests": "換班和請假請求",
+    "change": "更改",
+    "requestType": "請求類型",
+    "requestedDate": "請求日期",
+    "reason": "原因",
+    "swap": "換班",
+    "leave": "請假",
+    "selectRequestType": "選擇請求類型",
+    "reasonHint": "抱歉我生病了...",
+    "requestedTime": "請求時間",
+    "selectDate": "選擇日期",
+    "selectTime": "選擇時間",
+    "notFound": "未找到排班請求",
+    "requestError": "載入請求失敗。",
+    "alerts": {
+      "missingTimeHead": "缺少日期或時間",
+      "missingTimeMsg": "輸入您想要將排班移動到的日期和時間。",
+      "invalidDateHead": "無效日期",
+      "invalidDateMsg": "選擇的日期無效"
+    }
   },
   "timesheet": {
     "checkIn": "簽到：",
@@ -162,7 +184,8 @@
     "messages": "訊息",
     "notifications": "通知",
     "certificates": "資質認證",
-    "shiftDetails": "排班詳情"
+    "shiftDetails": "排班詳情",
+    "shiftRequests": "排班更改請求"
   },
   "docs": {
     "title": "文件概覽",
@@ -286,5 +309,67 @@
     "testNotif": "測試通知",
     "notifTitle": "已分配班次",
     "notifBody": "您已被分配到醫院綜合大樓班次。"
+  },
+  "payroll": {
+    "period": "期間:",
+    "guardID": "保安ID:",
+    "site": "地點:",
+    "department": "部門:",
+    "notFound": "未找到薪資單",
+    "error": "載入薪資單紀錄失敗",
+    "types": {
+      "daily": "每日",
+      "weekly": "每週",
+      "monthly": "每月"
+    },
+    "filter": "篩選",
+    "startDateHead": "開始日期*",
+    "selectStart": "選擇開始日期",
+    "endDateHead": "結束日期*",
+    "selectEnd": "選擇結束日期",
+    "periodHead": "期間類型*",
+    "selectPeriod": "選擇期間",
+    "optional": "可選",
+    "ID": "ID",
+    "siteHead": "地點",
+    "siteHint": "地點名稱",
+    "departmentHead": "部門",
+    "departmentHint": "部門名稱",
+    "missingAlertHead": "資訊缺失",
+    "missingAlertMsg": "請選擇開始日期、結束日期以及期間類型。",
+    "invalidAlertHead": "無效資訊",
+    "invalidAlertMsg": "開始日期必須早於結束日期。",
+    "cancel": "取消"
+  },
+  "incidentReport": {
+    "title": "事件報告",
+    "newReport": "新增報告",
+    "reportId": "報告ID：",
+    "date": "日期：",
+    "time": "時間：",
+    "location": "地點：",
+    "description": "描述：",
+    "reportedBy": "報告人：",
+    "severity": "嚴重程度：",
+    "status": "狀態：",
+    "types": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "critical": "嚴重"
+    },
+    "statusTypes": {
+      "open": "開啟",
+      "inProgress": "處理中",
+      "resolved": "已解決",
+      "closed": "已關閉"
+    },
+    "noReports": "未找到事件報告",
+    "error": "載入事件報告失敗",
+    "submit": "提交報告",
+    "submitting": "提交中...",
+    "submitSuccess": "事件報告提交成功",
+    "submitFailed": "提交事件報告失敗",
+    "cancel": "取消"
   }
 }

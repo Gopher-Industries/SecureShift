@@ -12,6 +12,12 @@ const router = express.Router();
  */
 
 /**
+ * =========================
+ * CREATE / UPDATE AVAILABILITY
+ * =========================
+ */
+
+/**
  * @swagger
  * /api/v1/availability:
  *   post:
@@ -20,7 +26,6 @@ const router = express.Router();
  *     security:
  *       - bearerAuth: []
  *     requestBody:
- *       description: Availability data to create or update
  *       required: true
  *       content:
  *         application/json:
@@ -30,78 +35,38 @@ const router = express.Router();
  *               user:
  *                 type: string
  *                 description: User ID (Admin only)
- *                 example: "60d0fe4f5311236168a109ca"
  *               days:
  *                 type: array
  *                 items:
  *                   type: string
- *                 example: ["Monday", "Wednesday", "Friday"]
- *                 description: List of preferred days
  *               timeSlots:
  *                 type: array
  *                 items:
  *                   type: string
- *                 example: ["09:00-12:00", "14:00-18:00"]
- *                 description: Time slots in HH:MM-HH:MM format
  *             required:
  *               - days
  *               - timeSlots
  *     responses:
  *       200:
- *         description: Availability saved or updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Availability saved.
- *                 availability:
- *                   type: object
- *                   properties:
- *                     _id:
- *                       type: string
- *                     user:
- *                       type: object
- *                       properties:
- *                         _id:
- *                           type: string
- *                         name:
- *                           type: string
- *                         email:
- *                           type: string
- *                         role:
- *                           type: string
- *                     days:
- *                       type: array
- *                       items:
- *                         type: string
- *                     timeSlots:
- *                       type: array
- *                       items:
- *                         type: string
- *                     updatedAt:
- *                       type: string
- *                       format: date-time
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized (no or invalid token)
- *       403:
- *         description: Forbidden (access denied)
+ *         description: Availability saved successfully
  */
+router.post(
+  '/',
+  auth,
+  availabilityController.createOrUpdateAvailability
+);
 
 /**
- * Create or update availability for a user (upsert).
+ * =========================
+ * GET AVAILABILITY BY USER
+ * =========================
  */
-router.post('/', auth, availabilityController.createOrUpdateAvailability);
 
 /**
  * @swagger
  * /api/v1/availability/{userId}:
  *   get:
- *     summary: Get availability for a specific user by userId
+ *     summary: Get availability for a user
  *     tags: [Availability]
  *     security:
  *       - bearerAuth: []
@@ -109,55 +74,55 @@ router.post('/', auth, availabilityController.createOrUpdateAvailability);
  *       - in: path
  *         name: userId
  *         required: true
- *         schema:
- *           type: string
- *         description: User ID to fetch availability for
  *     responses:
  *       200:
  *         description: Availability found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 availability:
- *                   type: object
- *                   properties:
- *                     _id:
- *                       type: string
- *                     user:
- *                       type: object
- *                       properties:
- *                         _id:
- *                           type: string
- *                         name:
- *                           type: string
- *                         email:
- *                           type: string
- *                         role:
- *                           type: string
- *                     days:
- *                       type: array
- *                       items:
- *                         type: string
- *                     timeSlots:
- *                       type: array
- *                       items:
- *                         type: string
- *                     updatedAt:
- *                       type: string
- *                       format: date-time
- *       401:
- *         description: Unauthorized (no or invalid token)
- *       403:
- *         description: Forbidden (access denied)
- *       404:
- *         description: Availability not found
+ */
+router.get(
+  '/:userId',
+  auth,
+  availabilityController.getAvailability
+);
+
+/**
+ * =========================
+ * 🔥 NEW: UPDATE LIVE STATUS
+ * =========================
  */
 
 /**
- * Get availability for a user by userId.
+ * @swagger
+ * /api/v1/availability/status:
+ *   patch:
+ *     summary: Update live availability status (AVAILABLE / BUSY / OFF_DUTY)
+ *     tags: [Availability]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [AVAILABLE, BUSY, OFF_DUTY]
+ *                 example: AVAILABLE
+ *     responses:
+ *       200:
+ *         description: Status updated successfully
+ *       400:
+ *         description: Invalid status
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Availability not found
  */
-router.get('/:userId', auth, availabilityController.getAvailability);
+router.patch(
+  '/status',
+  auth,
+  availabilityController.updateAvailabilityStatus
+);
 
 export default router;
