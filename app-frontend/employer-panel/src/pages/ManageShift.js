@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import http from '../lib/http';
+import translations from "../i18n/translations";
 
 // Map backend status to filter display
 const statusDisplayMap = {
@@ -69,7 +70,8 @@ const normalizeShift = (s) => ({
   assignedGuard: s.assignedGuard || s.acceptedBy || null,
 });
 
-const ManageShift = () => {
+const ManageShift = ({ language }) => {
+  const t = translations[language || "en"] || translations.en;
   const navigate = useNavigate();
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -452,7 +454,7 @@ const ManageShift = () => {
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        <h1 style={titleStyle}>Manage Shifts</h1>
+        <h1 style={titleStyle}>{t.manageShifts}</h1>
         <button style={addButtonStyle} onClick={() => navigate('/create-shift')}>
           <img src={'/ic-add.svg'} alt="Add" style={bigIconStyle} /> Add New Shift
         </button>

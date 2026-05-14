@@ -1,8 +1,10 @@
 import React from 'react';
 import CompanyLogo from './company_logo.svg';
 import { Link } from 'react-router-dom';
+import translations from "../i18n/translations";
 
-export default function Footer() {
+export default function Footer({ language }) {
+  const t = translations[language || "en"] || translations.en;
   const footerNavList = [
     { title: 'Privacy Policy', link: '/privacy-policy' },
     { title: 'Terms and Conditions', link: '/terms-and-condition' },
@@ -35,11 +37,11 @@ export default function Footer() {
 
   const buttonList = [
     {
-      title: 'Expression of Interest', // fixed title
+      title: t.expressionInterest, // fixed title
       link: '/expression-of-interest', // ✅ now routes correctly
     },
     {
-      title: 'Login',
+      title: t.login,
       link: '/login',
     },
   ];

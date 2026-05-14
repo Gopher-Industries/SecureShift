@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DailyMonitoring.css';
+import translations from '../i18n/translations';
 
 const IconLocation = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -197,8 +198,9 @@ const statusBg = { 'On Shift': '#e1effe', Completed: '#def7ec', Absent: '#fde8e8
 
 const filters = ['All', 'On Shift', 'Late', 'Absent', 'Completed'];
 
-export default function DailyMonitoring() {
+export default function DailyMonitoring({ language }) {
   const navigate = useNavigate();
+  const t = translations[language || "en"] || translations.en;
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
   const [selected, setSelected] = useState(guards[0]);
@@ -219,7 +221,7 @@ export default function DailyMonitoring() {
 
   return (
     <div className="dm-shell">
-      <h1 className="dm-heading">Daily Activity Monitoring</h1>
+      <h1 className="dm-heading">{t.dailyMonitoring}</h1>
 
       <div className="dm-stats">
         {stats.map((s) => (
@@ -381,7 +383,7 @@ export default function DailyMonitoring() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6"/>
         </svg>
-        Back to Dashboard
+        {t.backDashboard}
       </button>
     </div>
   );
