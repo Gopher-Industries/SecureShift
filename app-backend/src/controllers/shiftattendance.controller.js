@@ -17,31 +17,82 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // POST /api/v1/attendance/checkin/:shiftId
 export const checkIn = async (req, res) => {
   try {
-    console.log("Incoming check-in request:", req.params, req.body);
-
     const { latitude, longitude } = req.body;
     const { shiftId } = req.params;
-    const guardId = req.user.id; // from JWT
+    const guardId = req.user.id;
 
-    const siteLocation = [145.1140, -37.8496]; // placeholder until integrated with Shift model
-    const distance = calculateDistance(latitude, longitude, siteLocation[1], siteLocation[0]);
+    // ✅ Validate inputs
+    if (
+      latitude === undefined ||
+      longitude === undefined ||
+      isNaN(latitude) ||
+      isNaN(longitude)
+    ) {
+      return res.status(400).json({ message: "Invalid location coordinates" });
+    }
 
-    if (distance > 0.1)
-      return res.status(400).json({ message: "Not within shift radius (100m)" });
+    // ✅ Validate shift
+    const shift = await Shift.findById(shiftId).populate("siteId");
+    if (!shift) {
+      return res.status(404).json({ message: "Shift not found" });
+    }
 
+    // ✅ Check guard is assigned
+    if (String(shift.assignedGuard) !== String(guardId)) {
+      return res.status(403).json({ message: "Not assigned to this shift" });
+    }
+
+    // ✅ Prevent duplicate check-in
+    const existing = await ShiftAttendance.findOne({ guardId, shiftId });
+    if (existing) {
+      return res.status(400).json({ message: "Already checked in" });
+    }
+
+    // ✅ Get real site location
+    const siteLocation = shift.siteId?.location;
+    if (!siteLocation?.latitude || !siteLocation?.longitude) {
+      return res.status(400).json({ message: "Site location not configured" });
+    }
+
+    const distance = calculateDistance(
+      latitude,
+      longitude,
+      siteLocation.latitude,
+      siteLocation.longitude
+    );
+
+    // ✅ Radius check (100m)
+    if (distance > 0.1) {
+      return res.status(400).json({
+        message: "Not within shift radius (100m)",
+      });
+    }
+
+    // ✅ Save attendance
     const attendance = new ShiftAttendance({
       guardId,
       shiftId,
-      siteLocation: { type: "Point", coordinates: siteLocation },
       checkInTime: new Date(),
-      checkInLocation: { type: "Point", coordinates: [longitude, latitude] },
+      siteLocation: {
+        type: "Point",
+        coordinates: [siteLocation.longitude, siteLocation.latitude],
+      },
+      checkInLocation: {
+        type: "Point",
+        coordinates: [longitude, latitude],
+      },
       locationVerified: true,
     });
 
     await attendance.save();
-    res.status(201).json({ message: "Check-in recorded", attendance });
+
+    return res.status(201).json({
+      message: "Check-in recorded",
+      attendance,
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 

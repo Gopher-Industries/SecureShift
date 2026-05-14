@@ -1,5 +1,6 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -21,6 +22,7 @@ export default function AddAvailabilityModal({
   onClose,
   onAddSlot,
 }: AddAvailabilityModalProps) {
+  const { t } = useTranslation();
   const [slotDate, setSlotDate] = useState<Date | null>(new Date());
   const [fromTime, setFromTime] = useState<Date | null>(null);
   const [toTime, setToTime] = useState<Date | null>(null);
@@ -65,7 +67,7 @@ export default function AddAvailabilityModal({
 
   const handleAdd = () => {
     if (!slotDate || !fromTime || !toTime) {
-      Alert.alert('Missing info', 'Please select a date, start time, and end time.');
+      Alert.alert(t('avail.validation'), t('avail.missingInfoMsg'));
       return;
     }
 
@@ -73,7 +75,7 @@ export default function AddAvailabilityModal({
     const fromMinutes = fromTime.getHours() * 60 + fromTime.getMinutes();
     const toMinutes = toTime.getHours() * 60 + toTime.getMinutes();
     if (toMinutes <= fromMinutes) {
-      Alert.alert('Invalid time', 'End time must be after start time.');
+      Alert.alert(t('avail.validation'), t('avail.endAfterStart'));
       return;
     }
 
@@ -92,36 +94,36 @@ export default function AddAvailabilityModal({
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>Add Availability</Text>
+          <Text style={styles.title}>{t('avail.addAvailTitle')}</Text>
 
-          <Text style={styles.label}>Date</Text>
+          <Text style={styles.label}>{t('avail.date')}</Text>
           <TouchableOpacity style={styles.inputLike} onPress={() => openPicker('date')}>
-            <Text>{slotDate ? slotDate.toDateString() : 'Select date'}</Text>
+            <Text>{slotDate ? slotDate.toDateString() : t('avail.selectDate')}</Text>
           </TouchableOpacity>
 
           <View style={styles.row}>
             <View style={styles.column}>
-              <Text style={styles.label}>From</Text>
+              <Text style={styles.label}>{t('avail.from')}</Text>
               <TouchableOpacity style={styles.inputLike} onPress={() => openPicker('from')}>
-                <Text>{fromTime ? formatTime(fromTime) : 'Start time'}</Text>
+                <Text>{fromTime ? formatTime(fromTime) : t('avail.startTime')}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.column}>
-              <Text style={styles.label}>To</Text>
+              <Text style={styles.label}>{t('avail.to')}</Text>
               <TouchableOpacity style={styles.inputLike} onPress={() => openPicker('to')}>
-                <Text>{toTime ? formatTime(toTime) : 'End time'}</Text>
+                <Text>{toTime ? formatTime(toTime) : t('avail.endTime')}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.buttonsRow}>
             <TouchableOpacity style={styles.secondaryButton} onPress={handleCancel}>
-              <Text style={styles.secondaryButtonText}>Cancel</Text>
+              <Text style={styles.secondaryButtonText}>{t('avail.cancel')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.primaryButton} onPress={handleAdd}>
-              <Text style={styles.primaryButtonText}>Add</Text>
+              <Text style={styles.primaryButtonText}>{t('avail.addBtn')}</Text>
             </TouchableOpacity>
           </View>
         </View>

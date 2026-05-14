@@ -18,7 +18,10 @@ const router = express.Router();
  * Inline role guards (same pattern as authorizeAdmin in users.route)
  */
 const authorizeRole = (...allowed) => (req, res, next) => {
-  if (!req.user || !allowed.includes(req.user.role)) {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  if (!allowed.includes(req.user.role)) {
     return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
   }
   next();
@@ -89,7 +92,7 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required: [title, date, startTime, endTime]
+ *             required: [title, date, startTime, endTime, shiftType, location, payRate, siteId]
  *             properties:
  *               title:
  *                 type: string
@@ -97,7 +100,7 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *               date:
  *                 type: string
  *                 format: date
- *                 example: "2025-08-25"
+ *                 example: "2026-04-07"
  *               startTime:
  *                 type: string
  *                 example: "20:00"
@@ -105,14 +108,56 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *               endTime:
  *                 type: string
  *                 example: "23:00"
- *                 description: "HH:MM (24h), must be after startTime (same day)"
+ *                 description: "HH:MM (24h). Overnight shifts are supported when endTime is earlier than or equal to startTime."
+ *               shiftType:
+ *                 type: string
+ *                 enum: [Day, Night]
+ *                 example: "Night"
+ *               status:
+ *                 type: string
+ *                 enum: [draft, open]
+ *                 example: "draft"
+ *                 description: "Shift visibility status. draft = hidden, open = visible to guards"
+ *               breakTime:
+ *                 type: number
+ *                 example: 30
+ *                 description: "Break duration in minutes"
+ *               detailedInstructions:
+ *                 type: string
+ *                 example: "Patrol the warehouse perimeter and check all entrances."
+ *               guardIds:
+ *                 type: array
+ *                 description: "Optional pre-selected guards to assign/check during shift creation"
+ *                 items:
+ *                   type: string
+ *                   example: "69c8be49d6bdc8e196c35011"
+ *               siteId:
+ *                 type: string
+ *                 example: "69c7c741658cabe0d099e4a0"
+ *                 description: "Branch/site ID that must belong to the employer"
  *               location:
  *                 type: object
+ *                 required: [street, suburb, state, postcode]
  *                 properties:
- *                   street:   { type: string, example: "10 Dock Rd" }
- *                   suburb:   { type: string, example: "Port Melbourne" }
- *                   state:    { type: string, example: "VIC" }
- *                   postcode: { type: string, example: "3207", description: "4 digits (AU)" }
+ *                   street:
+ *                     type: string
+ *                     example: "10 Dock Rd"
+ *                   suburb:
+ *                     type: string
+ *                     example: "Port Melbourne"
+ *                   state:
+ *                     type: string
+ *                     example: "VIC"
+ *                   postcode:
+ *                     type: string
+ *                     example: "3207"
+ *                     description: "4 digits (AU)"
+ *                   latitude:
+ *                     type: number
+ *                     example: -37.834
+ *                   longitude:
+ *                     type: number
+ *                     example: 144.945
  *               urgency:
  *                 type: string
  *                 enum: [normal, priority, last-minute]
@@ -124,9 +169,15 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *                 type: number
  *                 example: 30
  *                 description: "Hourly pay rate in AUD"
+ *               description:
+ *                 type: string
+ *                 example: "Night shift at the warehouse"
+ *               requirements:
+ *                 type: string
+ *                 example: "Security experience preferred"
  *     responses:
  *       201: { description: Shift created }
- *       400: { description: Validation error }
+ *       400: { description: Validation error, unavailable guard, or shift clash }
  *       401: { description: Unauthorized }
  *       403: { description: Forbidden }
  */
@@ -142,6 +193,80 @@ router
 router
   .route('/:id')
   .patch(protect, authorizeRole('employer', 'admin'), updateShift);
+
+/**
+ * @swagger
+ * /api/v1/shifts/{id}:
+ *   patch:
+ *     summary: Update a shift (Employer/Admin only)
+ *     description: |
+ *       Allows updating editable shift fields before it starts or is completed.
+ *       - Only shift owner (employer) or admin can update
+ *       - Cannot update completed shifts
+ *       - Cannot update shifts that have already started
+ *       - Supports partial updates
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Shift ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *               startTime:
+ *                 type: string
+ *                 example: "08:00"
+ *               endTime:
+ *                 type: string
+ *                 example: "16:00"
+ *               payRate:
+ *                 type: number
+ *               urgency:
+ *                 type: string
+ *                 enum: [normal, priority, last-minute]
+ *               field:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               requirements:
+ *                 type: string
+ *               location:
+ *                 type: object
+ *                 properties:
+ *                   street:
+ *                     type: string
+ *                   suburb:
+ *                     type: string
+ *                   state:
+ *                     type: string
+ *                   postcode:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Shift updated successfully
+ *       400:
+ *         description: Validation error or invalid state (past/completed)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Shift not found
+ */
 
 /**
  * @swagger

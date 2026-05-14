@@ -7,6 +7,7 @@ This is the mobile frontend for the SecureShift Guard App, developed using React
 - Node.js (v18+ recommended)
 - Expo CLI
 - Android Studio (for emulator) or physical Android device
+- Xcode (for iOS simulator, macOS only) or physical iOS device
 - Git
 
 ## Getting Started
@@ -20,11 +21,20 @@ Install Dependencies
 - npm install
 - Run the App
 
-Start Expo and run on an Android emulator or physical device:
+Start the app on your preferred platform using the following commands:
 
-=> npx expo start --android
+```bash
+# Run on Android (Expo Go)
+npm run android
 
-If you're using a physical device, install the Expo Go app from the Play Store and scan the QR code.
+# Run on iOS (Expo Go)
+npm run ios
+
+# Run on Web
+npm run web
+```
+
+If you're using a physical device, install the Expo Go app from the Play Store or App Store and scan the QR code.
 
 Project Setup Notes
 
@@ -45,7 +55,7 @@ Branching Strategy
 #####Pull requests must be reviewed before merging.###$$$$
 
 Contributor Setup Checklist
-=> Install Android Studio and configure an emulator, or use Expo Go on your phone.
+=> Install Android Studio and configure an Android emulator, or install Xcode to configure an iOS simulator (macOS only), or use Expo Go on your phone.
 
 +> Clone the full SecureShift repository.
 
