@@ -15,11 +15,13 @@ import notificationRoutes from './notification.routes.js'
 import equipmentRoutes from './equipment.routes.js';
 import payrollRoutes from './payroll.routes.js';
 import documentRoutes from './document.routes.js';
+import shiftMatchingRoutes from "./shiftMatching.routes.js";
 const router = express.Router();
 router.use('/documents', documentRoutes);
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/shifts', shiftRoutes);
+router.use("/shift-matches", shiftMatchingRoutes);
 router.use('/messages', messageRoutes);
 router.use('/admin', adminRoutes);
 router.use('/availability', availabilityRoutes); 
