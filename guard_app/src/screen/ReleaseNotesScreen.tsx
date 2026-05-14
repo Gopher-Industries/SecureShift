@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import ExpoConstants from 'expo-constants';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -10,29 +11,35 @@ const CANVAS_PADDING = 20;
 
 export default function ReleaseNotesScreen() {
   const appVersion =
-    ExpoConstants.expoConfig?.version || ExpoConstants.manifest?.version || '1.0.0';
+    (ExpoConstants?.expoConfig as any)?.version ||
+    (ExpoConstants as any)?.manifest?.version ||
+    '1.0.0';
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Release Notes</Text>
-          <Text style={styles.version}>Version {appVersion}</Text>
+          <View style={styles.headerRow}>
+            <View style={styles.iconWrap}>
+              <Ionicons name="information-circle-outline" size={18} color={NAVY} />
+            </View>
+            <View>
+              <Text style={styles.cardTitle}>Release Notes</Text>
+              <Text style={styles.version}>Version {appVersion}</Text>
+            </View>
+          </View>
         </View>
-
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Features</Text>
           <Text style={styles.item}>• Added a dedicated Release Notes screen</Text>
           <Text style={styles.item}>• App version is now displayed in one place</Text>
           <Text style={styles.item}>• Content is organised and easier to read</Text>
         </View>
-
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Known Issues</Text>
           <Text style={styles.item}>• Release notes content is static for now</Text>
           <Text style={styles.item}>• Minor UI differences may appear on some devices</Text>
         </View>
-
         <View style={styles.spacer} />
       </ScrollView>
     </SafeAreaView>
@@ -58,6 +65,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 8,
+  },
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  iconWrap: {
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    height: 36,
+    justifyContent: 'center',
+    marginRight: 10,
+    width: 36,
   },
   item: {
     color: '#111827',
