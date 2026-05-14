@@ -4,9 +4,7 @@ import Branch from '../models/Branch.js';
 import Guard from '../models/Guard.js';
 import Availability from '../models/Availability.js';
 import { assessGuardFatigue } from '../services/fatigue.service.js';
-
 import { ACTIONS } from "../middleware/logger.js";
-
 import { timeToMinutes, normalizeEnd } from '../utils/timeUtils.js';
 
 // Helpers
@@ -557,9 +555,16 @@ export const listAvailableShifts = async (req, res) => {
     }
 
     const findQ = Shift.find(query)
-      .sort({ date: role === 'guard' ? 1 : -1, startTime: role === 'guard' ? 1 : -1, createdAt: -1 })
-      .skip(skip).limit(limit)
-      .populate('createdBy', 'name');
+      .sort({
+        date: role === 'guard' ? 1 : -1,
+        startTime: role === 'guard' ? 1 : -1,
+        createdAt: -1,
+      })
+      .skip(skip)
+      .limit(limit)
+      .populate('createdBy', 'name email')
+      .populate('guardIds', 'name email')
+      .populate('acceptedBy', 'name email');
 
     if (role === 'employer' || role === 'admin') {
       findQ.populate('applicants', 'name email');
@@ -567,13 +572,20 @@ export const listAvailableShifts = async (req, res) => {
 
     const [docs, total] = await Promise.all([findQ.lean(), Shift.countDocuments(query)]);
 
-    const items = (role === 'employer' || role === 'admin')
-      ? docs.map(d => ({
-        ...d,
-        applicantCount: Array.isArray(d.applicants) ? d.applicants.length : 0,
-        hasApplicants: Array.isArray(d.applicants) && d.applicants.length > 0,
-      }))
-      : docs;
+    const items = docs.map((shift) => {
+      const assignedGuards = shift.acceptedBy
+        ? [shift.acceptedBy]
+        : Array.isArray(shift.guardIds)
+          ? shift.guardIds
+          : [];
+
+      return {
+        ...shift,
+        assignedGuards,
+        applicantCount: Array.isArray(shift.applicants) ? shift.applicants.length : 0,
+        hasApplicants: Array.isArray(shift.applicants) && shift.applicants.length > 0,
+      };
+    });
 
     res.json({ page, limit, total, items });
   } catch (e) {
