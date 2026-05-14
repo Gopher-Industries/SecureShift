@@ -4,6 +4,8 @@ import Guard from "../models/Guard.js";
 import Availability from "../models/Availability.js";
 import User from "../models/User.js";
 import { timeToMinutes, normalizeEnd } from "../utils/timeUtils.js";
+import GuardPreference from "../models/GuardPreference.js";
+import ShiftInvitation from "../models/ShiftInvitation.js";
 
 const WEEKDAY_NAMES = [
   "Sunday",
@@ -243,6 +245,213 @@ export const getShiftMatches = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Failed to generate shift matches",
+      error: error.message,
+    });
+  }
+};
+
+export const createOrUpdateGuardPreference = async (req, res) => {
+  try {
+    if (req.user.role !== "guard") {
+      return res.status(403).json({ message: "Only guards can set preferences" });
+    }
+
+    const guardId = req.user._id || req.user.id;
+
+    const {
+      preferredShiftTypes = [],
+      preferredFields = [],
+      preferredSuburbs = [],
+      minimumPayRate = 0,
+      acceptsUrgentShifts = false,
+    } = req.body;
+
+    const preference = await GuardPreference.findOneAndUpdate(
+      { guardId },
+      {
+        guardId,
+        preferredShiftTypes,
+        preferredFields,
+        preferredSuburbs,
+        minimumPayRate,
+        acceptsUrgentShifts,
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      message: "Guard preferences saved",
+      preference,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to save guard preferences",
+      error: error.message,
+    });
+  }
+};
+
+export const getMyGuardPreference = async (req, res) => {
+  try {
+    if (req.user.role !== "guard") {
+      return res.status(403).json({ message: "Only guards can view preferences" });
+    }
+
+    const guardId = req.user._id || req.user.id;
+
+    const preference = await GuardPreference.findOne({ guardId });
+
+    return res.status(200).json({
+      preference,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch guard preferences",
+      error: error.message,
+    });
+  }
+};
+
+export const inviteGuardToShift = async (req, res) => {
+  try {
+    if (req.user.role !== "employer" && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only employers/admins can invite guards" });
+    }
+
+    const { shiftId, guardId } = req.params;
+    const { message } = req.body;
+
+    if (!mongoose.isValidObjectId(shiftId) || !mongoose.isValidObjectId(guardId)) {
+      return res.status(400).json({ message: "Invalid shiftId or guardId" });
+    }
+
+    const employerId = req.user._id || req.user.id;
+
+    const shift = await Shift.findById(shiftId);
+
+    if (!shift) {
+      return res.status(404).json({ message: "Shift not found" });
+    }
+
+    const isOwner = String(shift.createdBy) === String(employerId);
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Not allowed to invite for this shift" });
+    }
+
+    const guard = await Guard.findById(guardId);
+
+    if (!guard || guard.isDeleted) {
+      return res.status(404).json({ message: "Guard not found" });
+    }
+
+    const invitation = await ShiftInvitation.findOneAndUpdate(
+      { shiftId, guardId },
+      {
+        shiftId,
+        guardId,
+        employerId,
+        message,
+        status: "PENDING",
+        respondedAt: null,
+      },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    return res.status(201).json({
+      message: "Invitation sent",
+      invitation,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "Invitation already exists" });
+    }
+
+    return res.status(500).json({
+      message: "Failed to invite guard",
+      error: error.message,
+    });
+  }
+};
+
+export const getMyShiftInvitations = async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+
+    let query = {};
+
+    if (req.user.role === "guard") {
+      query.guardId = userId;
+    } else if (req.user.role === "employer") {
+      query.employerId = userId;
+    } else if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not allowed to view invitations" });
+    }
+
+    const invitations = await ShiftInvitation.find(query)
+      .populate("shiftId", "title date startTime endTime status location urgency payRate")
+      .populate("guardId", "name email role")
+      .populate("employerId", "name email role")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      total: invitations.length,
+      invitations,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch invitations",
+      error: error.message,
+    });
+  }
+};
+
+export const respondToShiftInvitation = async (req, res) => {
+  try {
+    if (req.user.role !== "guard") {
+      return res.status(403).json({ message: "Only guards can respond to invitations" });
+    }
+
+    const { invitationId } = req.params;
+    const { status } = req.body;
+
+    if (!["ACCEPTED", "DECLINED"].includes(status)) {
+      return res.status(400).json({ message: "status must be ACCEPTED or DECLINED" });
+    }
+
+    if (!mongoose.isValidObjectId(invitationId)) {
+      return res.status(400).json({ message: "Invalid invitationId" });
+    }
+
+    const guardId = req.user._id || req.user.id;
+
+    const invitation = await ShiftInvitation.findById(invitationId);
+
+    if (!invitation) {
+      return res.status(404).json({ message: "Invitation not found" });
+    }
+
+    if (String(invitation.guardId) !== String(guardId)) {
+      return res.status(403).json({ message: "Not allowed to respond to this invitation" });
+    }
+
+    if (invitation.status !== "PENDING") {
+      return res.status(400).json({ message: `Invitation already ${invitation.status}` });
+    }
+
+    invitation.status = status;
+    invitation.respondedAt = new Date();
+
+    await invitation.save();
+
+    return res.status(200).json({
+      message: `Invitation ${status.toLowerCase()}`,
+      invitation,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to respond to invitation",
       error: error.message,
     });
   }
