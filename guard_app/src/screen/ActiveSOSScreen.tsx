@@ -19,6 +19,7 @@ import {
   View,
 } from 'react-native';
 
+import { getUserProfile } from '../api/profile';
 import {
   addSOSNote,
   cancelSOS,
@@ -30,7 +31,6 @@ import {
 } from '../api/sos';
 import ErrorMessageBox from '../components/ErrorMessageBox';
 import { useAppTheme } from '../theme';
-import { getUserProfile } from '../api/profile';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 

@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/refs */
 // src/components/sos/SOSConfirmSheet.tsx
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';

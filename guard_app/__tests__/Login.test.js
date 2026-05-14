@@ -36,44 +36,39 @@ describe('Login Screen', () => {
   it('renders the login form correctly', async () => {
     const { findByPlaceholderText, findByText } = renderLoginScreen();
 
-    expect(await findByText(/Login with your email and password/i)).toBeTruthy();
-    expect(await findByPlaceholderText('Enter your email')).toBeTruthy();
-    expect(await findByPlaceholderText('Enter your password')).toBeTruthy();
-    expect(await findByText('Login')).toBeTruthy();
-    expect(await findByText('Sign Up')).toBeTruthy();
+    // After mocking i18next, t(key) returns the key name
+    expect(await findByText('login.title')).toBeTruthy();
+    expect(await findByPlaceholderText('login.emailPlaceholder')).toBeTruthy();
+    expect(await findByPlaceholderText('login.passwordPlaceholder')).toBeTruthy();
+    expect(await findByText('login.button')).toBeTruthy();
+    expect(await findByText('login.signupLink')).toBeTruthy();
   });
 
   it('shows validation error when fields are empty', async () => {
     const { findByText } = renderLoginScreen();
 
-    fireEvent.press(await findByText('Login'));
+    fireEvent.press(await findByText('login.button'));
 
-    expect(await findByText('Please enter a valid email address.')).toBeTruthy();
-    expect(Alert.alert).toHaveBeenCalledWith(
-      'Invalid input',
-      'Please enter a valid email address.',
-    );
+    // In the code, validation returns t('err.invalidEmail')
+    expect(Alert.alert).toHaveBeenCalledWith('login.invalidInput', 'err.invalidEmail');
   });
 
   it('shows validation error when password is too short', async () => {
     const { findByPlaceholderText, findByText } = renderLoginScreen();
 
-    fireEvent.changeText(await findByPlaceholderText('Enter your email'), 'guard@test.com');
-    fireEvent.changeText(await findByPlaceholderText('Enter your password'), '123');
+    fireEvent.changeText(await findByPlaceholderText('login.emailPlaceholder'), 'guard@test.com');
+    fireEvent.changeText(await findByPlaceholderText('login.passwordPlaceholder'), '123');
 
-    fireEvent.press(await findByText('Login'));
+    fireEvent.press(await findByText('login.button'));
 
-    expect(await findByText('Password must be at least 6 characters.')).toBeTruthy();
-    expect(Alert.alert).toHaveBeenCalledWith(
-      'Invalid input',
-      'Password must be at least 6 characters.',
-    );
+    // In the code, validation returns t('err.shortPassword')
+    expect(Alert.alert).toHaveBeenCalledWith('login.invalidInput', 'err.shortPassword');
   });
 
   it('does not navigate when inputs are invalid', async () => {
     const { findByText, navigation } = renderLoginScreen();
 
-    fireEvent.press(await findByText('Login'));
+    fireEvent.press(await findByText('login.button'));
 
     expect(navigation.navigate).not.toHaveBeenCalled();
   });
@@ -81,7 +76,7 @@ describe('Login Screen', () => {
   it('navigates to signup screen when Sign Up is pressed', async () => {
     const { findByText, navigation } = renderLoginScreen();
 
-    fireEvent.press(await findByText('Sign Up'));
+    fireEvent.press(await findByText('login.signupLink'));
 
     await waitFor(() => {
       expect(navigation.navigate).toHaveBeenCalledWith('Signup');
