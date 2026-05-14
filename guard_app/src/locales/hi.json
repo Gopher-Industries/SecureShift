@@ -1,12 +1,12 @@
 {
   "login": {
-    "title": "अपने ईमेल और पासवर्ड से लॉगिन करें",
+    "title": "अपने ईमेल और पासवर्ड से लॉग इन करें",
     "email": "ईमेल*",
     "emailPlaceholder": "अपना ईमेल दर्ज करें",
     "password": "पासवर्ड*",
     "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
-    "button": "लॉगिन",
-    "loggingIn": "लॉगिन हो रहा है...",
+    "button": "लॉग इन",
+    "loggingIn": "लॉग इन हो रहा है...",
     "otpRequired": "OTP आवश्यक है",
     "otpMsg": "कृपया अपने ईमेल पर भेजा गया कोड दर्ज करें।",
     "enterOtp": "OTP दर्ज करें*",
@@ -15,7 +15,7 @@
     "noAccount": "क्या आपका खाता नहीं है?",
     "signupLink": "साइन अप करें",
     "invalidInput": "अमान्य इनपुट",
-    "loginFailed": "लॉगिन असफल",
+    "loginFailed": "लॉग इन असफल",
     "otpFailed": "OTP सत्यापन असफल",
     "otpMsgReq": "अपना OTP कोड दर्ज करें।"
   },
@@ -33,17 +33,17 @@
     "email": "ईमेल*",
     "password": "पासवर्ड*",
     "confirmPassword": "पासवर्ड की पुष्टि करें*",
-    "confirmPasswordPlaceholder": "अपना पासवर्ड पुष्टि करें",
+    "confirmPasswordPlaceholder": "अपने पासवर्ड की पुष्टि करें",
     "button": "साइन अप करें",
     "signingUp": "साइन अप हो रहा है...",
     "haveAccount": "क्या आपके पास पहले से खाता है?",
-    "loginLink": "लॉगिन",
+    "loginLink": "लॉग इन",
     "licenseReq": "लाइसेंस आवश्यक है",
     "uploadLicense": "अपना सुरक्षा लाइसेंस अपलोड करें",
     "licenseUploaded": "लाइसेंस अपलोड किया गया",
     "success": "सफल",
-    "created": "खाता बन गया। कृपया लॉगिन करें।",
-    "failed": "साइनअप असफल"
+    "created": "खाता बन गया। कृपया लॉग इन करें।",
+    "failed": "साइन अप असफल"
   },
   "err": {
     "invalidEmail": "कृपया एक वैध ईमेल पता दर्ज करें।",
@@ -69,7 +69,7 @@
     "noUpcoming": "कोई आगामी शिफ्ट नहीं"
   },
   "settings": {
-    "about": "के बारे में",
+    "about": "ऐप जानकारी",
     "releaseNotes": "रिलीज़ नोट्स",
     "contactUs": "हमसे संपर्क करें",
     "emailSupport": "ईमेल सहायता",
@@ -83,7 +83,7 @@
     "clearLocalData": "लोकल डेटा साफ करें",
     "privacyPolicy": "गोपनीयता नीति",
     "tos": "सेवा की शर्तें",
-    "logout": "लॉगआउट"
+    "logout": "लॉग आउट"
   },
   "lang": {
     "en": "English",
@@ -133,7 +133,8 @@
     "search": "शिफ्ट खोजें...",
     "noShifts": "कोई शिफ्ट नहीं मिली",
     "noCompleted": "कोई पूर्ण शिफ्ट नहीं मिली",
-    "accepted": "स्वीकृत"
+    "accepted": "स्वीकृत",
+    "swapLeaveRequests": "स्वैप और छुट्टी अनुरोध"
   },
   "timesheet": {
     "checkIn": "चेक इन:",
@@ -163,7 +164,10 @@
     "messages": "संदेश",
     "notifications": "सूचनाएँ",
     "certificates": "प्रमाणपत्र",
-    "shiftDetails": "शिफ्ट विवरण"
+    "shiftDetails": "शिफ्ट विवरण",
+    "shifts": "शिफ्ट्स",
+    "home": "होम",
+    "profile": "प्रोफ़ाइल"
   },
   "docs": {
     "title": "दस्तावेज़ अवलोकन",
