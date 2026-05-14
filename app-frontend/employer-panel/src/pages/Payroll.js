@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./Payroll.css";
 import http from "../lib/http";
+import translations from "../i18n/translations";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -34,7 +35,8 @@ function getMonthRange(year, month) {
   };
 }
 
-export default function Payroll() {
+export default function Payroll({ language }) {
+  const t = translations[language || "en"] || translations.en;
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear] = useState(now.getFullYear());
@@ -106,7 +108,7 @@ export default function Payroll() {
 
         {/* Page header - title + month picker */}
         <div className="payroll-header-row">
-          <h1 className="payroll-title">Payroll</h1>
+          <h1 className="payroll-title">{t.payroll}</h1>
           <div className="payroll-period">
             <span className="payroll-period-label">Pay Period</span>
             <select

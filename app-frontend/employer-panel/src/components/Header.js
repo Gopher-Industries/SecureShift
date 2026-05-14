@@ -81,7 +81,7 @@ export default function Header({ language, setLanguage }) {
         </Link>
 
         <Link to="/payroll" style={navButtonStyle}>
-          Payroll
+        {t.payroll}
         </Link>
 
         {localStorage.getItem('userRole') === 'admin' && (

@@ -19,6 +19,7 @@ const translations = {
     companyProfile: "Company Profile",
     companyNameTitle: "ABC Security",
     notifications: "Notifications",
+    payroll: "Payroll",
   },
 
   hi: {
@@ -41,6 +42,7 @@ const translations = {
     companyProfile: "कंपनी प्रोफ़ाइल",
     companyNameTitle: "एबीसी सिक्योरिटी",
     notifications: "सूचनाएं",
+    payroll: "पेरोल",
   },
 
   pa: {
@@ -63,6 +65,7 @@ const translations = {
     companyProfile: "ਕੰਪਨੀ ਪ੍ਰੋਫਾਈਲ",
     companyNameTitle: "ਏਬੀਸੀ ਸਿਕਿਊਰਿਟੀ",
     notifications: "ਸੂਚਨਾਵਾਂ",
+    payroll: "ਤਨਖਾਹ",
   },
 
   zh: {
@@ -85,6 +88,7 @@ const translations = {
     companyProfile: "公司简介",
     companyNameTitle: "ABC 安保",
     notifications: "通知",
+    payroll: "工资单",
   },
 };
 

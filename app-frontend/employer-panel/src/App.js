@@ -113,16 +113,11 @@ function AppRoutes({ language, setLanguage }) {
           path="/daily-monitoring"
           element={protectedLayout(<DailyMonitoring language={language} />)}
         />
-        <Route path="/employer-dashboard" element={<ProtectedLayout><EmployerDashboard /></ProtectedLayout>} />
-        <Route path="/create-shift" element={<ProtectedLayout><CreateShift /></ProtectedLayout>} />
-        <Route path="/timesheet" element={<ProtectedLayout><Timesheet /></ProtectedLayout>} />
-        <Route path="/manage-shift" element={<ProtectedLayout><ManageShift /></ProtectedLayout>} />
-        <Route path="/guard-profiles" element={<ProtectedLayout><GuardProfiles /></ProtectedLayout>} />
-        <Route path="/guard-profiles/:guardId" element={<ProtectedLayout><GuardProfilePage /></ProtectedLayout>} />
-        <Route path="/company-profile" element={<ProtectedLayout><CompanyProfile /></ProtectedLayout>} />
-        <Route path="/email-settings" element={<ProtectedLayout><EmailSettings /></ProtectedLayout>} />
-        <Route path="/payroll" element={<ProtectedLayout><Payroll /></ProtectedLayout>} />
-        <Route path="/daily-monitoring" element={<ProtectedLayout><DailyMonitoring /></ProtectedLayout>} />
+        <Route
+          path="/payroll"
+          element={protectedLayout(<Payroll language={language} />)}
+        />
+
       </Routes>
     </>
   );
