@@ -8,54 +8,49 @@ export default function PrivacyPolicy() {
         <p style={styles.updated}>Last updated: April 2026</p>
 
         <p style={styles.paragraph}>
-          SecureShift is a shift management platform designed to connect employers
-          with security guards and support the management of shifts, timesheets,
-          availability, and related workplace communication. This Privacy Policy
-          explains how SecureShift may collect, use, and protect information when
-          users access the platform.
+          SecureShift is a shift management platform designed to connect employers with security
+          guards and support the management of shifts, timesheets, availability, and related
+          workplace communication. This Privacy Policy explains how SecureShift may collect, use,
+          and protect information when users access the platform.
         </p>
 
         <h2 style={styles.heading}>Information We Collect</h2>
         <p style={styles.paragraph}>
-          SecureShift may collect information such as names, email addresses,
-          employer details, guard profiles, shift details, site locations,
-          availability, timesheet records, clock-in and clock-out information,
-          incident reports, and account login details.
+          SecureShift may collect information such as names, email addresses, employer details,
+          guard profiles, shift details, site locations, availability, timesheet records, clock-in
+          and clock-out information, incident reports, and account login details.
         </p>
 
         <h2 style={styles.heading}>How We Use Information</h2>
         <p style={styles.paragraph}>
-          The information collected is used to manage accounts, organise shifts,
-          support timesheet and attendance tracking, improve communication between
-          employers and guards, and maintain the overall functionality of the
-          platform.
+          The information collected is used to manage accounts, organise shifts, support timesheet
+          and attendance tracking, improve communication between employers and guards, and maintain
+          the overall functionality of the platform.
         </p>
 
         <h2 style={styles.heading}>Data Security</h2>
         <p style={styles.paragraph}>
-          SecureShift aims to protect user information through appropriate security
-          practices, including authentication, access control, and responsible data
-          handling. Users are responsible for keeping their login details secure.
+          SecureShift aims to protect user information through appropriate security practices,
+          including authentication, access control, and responsible data handling. Users are
+          responsible for keeping their login details secure.
         </p>
 
         <h2 style={styles.heading}>Sharing of Information</h2>
         <p style={styles.paragraph}>
-          Information may be shared between relevant users of the platform, such as
-          employers and guards, where required for shift management, timesheet
-          processing, incident reporting, or operational communication.
+          Information may be shared between relevant users of the platform, such as employers and
+          guards, where required for shift management, timesheet processing, incident reporting, or
+          operational communication.
         </p>
 
         <h2 style={styles.heading}>User Responsibilities</h2>
         <p style={styles.paragraph}>
-          Users should provide accurate information, protect their account access,
-          and notify the SecureShift team if they suspect unauthorised access or
-          misuse of their account.
+          Users should provide accurate information, protect their account access, and notify the
+          SecureShift team if they suspect unauthorised access or misuse of their account.
         </p>
 
         <h2 style={styles.heading}>Contact</h2>
         <p style={styles.paragraph}>
-          For questions about this Privacy Policy, users may contact the SecureShift
-          project team.
+          For questions about this Privacy Policy, users may contact the SecureShift project team.
         </p>
       </div>
     </div>
