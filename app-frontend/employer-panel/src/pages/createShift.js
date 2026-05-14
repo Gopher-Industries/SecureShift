@@ -71,7 +71,6 @@ const shiftSchema = yup.object({
   newSiteAddress: yup.string(),
 });
 
-
 const guardOptions = [
   { id: 'g-smith', name: 'John Smith', skills: 'Events, RSA' },
   { id: 'g-chan', name: 'Amy Chan', skills: 'Retail, Concierge' },
@@ -139,6 +138,7 @@ const loadGooglePlaces = (onReady, onError) => {
   if (document.getElementById('ss-places-script')) return;
   const script = document.createElement('script');
   script.id = 'ss-places-script';
+  /* global process */
   const key = process.env.REACT_APP_GOOGLE_MAPS_KEY || '';
   const keyParam = key ? `&key=${key}` : '';
   script.src = `https://maps.googleapis.com/maps/api/js?libraries=places${keyParam}`;
@@ -149,7 +149,7 @@ const loadGooglePlaces = (onReady, onError) => {
   document.body.appendChild(script);
 };
 
-const CreateShift = ({ isModal = false, onClose }) => {
+const CreateShift = () => {
   const navigate = useNavigate();
   const [sites, setSites] = useState([]);
   const [pendingSiteId, setPendingSiteId] = useState(null);
@@ -202,13 +202,15 @@ const CreateShift = ({ isModal = false, onClose }) => {
   const newSiteAddressReg = register('newSiteAddress');
 
   useEffect(() => {
-    http.get('/branch/site')
+    http
+      .get('/branch/site')
       .then((res) => {
         const fetched = (res.data.sites || []).map((s) => ({
           id: s._id,
           name: s.name,
           address: [s.location?.line1, s.location?.city, s.location?.state, s.location?.postcode]
-            .filter(Boolean).join(', '),
+            .filter(Boolean)
+            .join(', '),
           street: s.location?.line1,
           suburb: s.location?.city,
           state: s.location?.state,
@@ -433,7 +435,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
       shiftType: values.shiftType === 'day' ? 'Day' : 'Night',
       description: values.instructions,
       guards: values.guards || [],
-      status:"open",
+      status: 'open',
       location: (() => {
         const parsed = parseAddress(selectedSite?.address || values.location);
         return {
