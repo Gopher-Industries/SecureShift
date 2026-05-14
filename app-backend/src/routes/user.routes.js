@@ -6,6 +6,7 @@ import {
   authorizeRoles,
   authorizePermissions,
   requireSameBranchAsTargetUser,
+  requireSelfOrRoles,
   ROLES,
 } from '../middleware/rbac.js';
 import {
@@ -16,6 +17,7 @@ import {
   adminGetUserProfile,
   adminUpdateUserProfile,
   getAllGuards,
+  getGuardScore,
   listUsers,
   deleteUser,
   addFavouriteGuard,
@@ -271,6 +273,38 @@ router.get(
   authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE),
   authorizePermissions('user:read'),
   getAllGuards
+);
+
+/**
+ * @swagger
+ * /api/v1/users/guards/{id}/score:
+ *   get:
+ *     summary: Get a guard's performance score (0–100)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Guard ID
+ *     responses:
+ *       200:
+ *         description: Guard score and breakdown
+ *       400:
+ *         description: Invalid guard ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+  '/guards/:id/score',
+  auth,
+  requireSelfOrRoles({ paramKey: 'id', roles: [ROLES.EMPLOYER, ROLES.ADMIN] }),
+  getGuardScore
 );
 
 /**
