@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationIcon from '../components/NotificationIcon.svg';
 import http from '../lib/http';
+import translations from "../i18n/translations";
 
 const POLL_INTERVAL_MS = 15_000;
 
-export default function NotificationsPopup() {
+export default function NotificationsPopup({ language }) {
+  const t = translations[language || "en"] || translations.en;
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
@@ -159,7 +161,7 @@ export default function NotificationsPopup() {
           color: '#333',
         }}>
           <div style={{ padding: '14px 16px', fontWeight: '700', fontSize: '16px', borderBottom: '1px solid #e0e0e0' }}>
-            Notifications
+          {t.notifications}
           </div>
 
           {unread.length === 0 ? (

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import translations from "../i18n/translations";
 
 // ❌ removed local dummy guardData
 
@@ -22,7 +23,8 @@ const availabilityOptions = ['Available', 'Unavailable', 'On Leave'];
 const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 // NEW
 
-function GuardProfiles() {
+function GuardProfiles({ language }) {
+  const t = translations[language || "en"] || translations.en;
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSkills, setSelectedSkills] = useState([]);
@@ -251,7 +253,7 @@ function GuardProfiles() {
   return (
     <div style={pageStyle}>
       <div style={contentStyle}>
-        <h2 style={{ textAlign: 'center', marginTop: '1rem' }}>Guard Profiles</h2>
+        <h2 style={{ textAlign: 'center', marginTop: '1rem' }}>{t.guardProfiles}</h2>
         {/* NEW: loading / error / empty states */}
         {loading && <p style={{ textAlign: 'center' }}>Loading guards…</p>} {/* NEW */}
         {!loading && error /* NEW */ && (

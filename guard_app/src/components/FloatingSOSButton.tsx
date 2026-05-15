@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+
 import SOSConfirmSheet from './sos/SOSConfirmSheet';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
