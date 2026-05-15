@@ -350,6 +350,8 @@ export default function SettingsScreen() {
               { code: 'zh-TW', label: '繁體中文' },
               { code: 'hi', label: 'हिन्दी' },
               { code: 'guj', label: 'ગુજરાતી' },
+              { code: 'pa', label: 'ਪੰਜਾਬੀ' },
+
             ].map((lng) => (
               <TouchableOpacity
                 key={lng.code}

@@ -286,16 +286,77 @@
   "homeExtras": {
     "testNotif": "टेस्ट सूचना",
     "notifTitle": "शिफ्ट असाइन की गई",
-    "notifBody": "आपको हॉस्पिटल कॉम्प्लेक्स शिफ्ट असाइन की गई है।",
-    "payroll": {
-      "title": "ਤਨਖਾਹ",
-      "summary": "ਤਨਖਾਹ ਸੰਖੇਪ",
-      "details": "ਤਨਖਾਹ ਵੇਰਵੇ"
+    "notifBody": "आपको हॉस्पिटल कॉम्प्लेक्स शिफ्ट असाइन की गई है।"
+  },
+  "payroll": {
+    "period": "ਮਿਆਦ:",
+    "guardID": "ਗਾਰਡ ਆਈਡੀ:",
+    "site": "ਸਾਈਟ:",
+    "department": "ਵਿਭਾਗ:",
+    "notFound": "ਕੋਈ ਪੇਰੋਲ ਨਹੀਂ ਮਿਲਿਆ",
+    "error": "ਪੇਰੋਲ ਇਤਿਹਾਸ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ",
+    "types": {
+      "daily": "ਰੋਜ਼ਾਨਾ",
+      "weekly": "ਹਫਤਾਵਾਰੀ",
+      "monthly": "ਮਹੀਨਾਵਾਰ"
     },
-    "incidentReport": {
-      "title": "ਘਟਨਾ ਰਿਪੋਰਟ",
-      "submit": "ਰਿਪੋਰਟ ਜਮ੍ਹਾਂ ਕਰੋ",
-      "description": "ਘਟਨਾ ਦਾ ਵੇਰਵਾ"
-    }
+    "filter": "ਫਿਲਟਰ",
+    "startDateHead": "ਸ਼ੁਰੂ ਤਾਰੀਖ*",
+    "selectStart": "ਸ਼ੁਰੂ ਤਾਰੀਖ ਚੁਣੋ",
+    "endDateHead": "ਅੰਤ ਤਾਰੀਖ*",
+    "selectEnd": "ਅੰਤ ਤਾਰੀਖ ਚੁਣੋ",
+    "periodHead": "ਮਿਆਦ ਕਿਸਮ*",
+    "selectPeriod": "ਮਿਆਦ ਚੁਣੋ",
+    "optional": "ਵਿਕਲਪਿਕ",
+    "ID": "ਆਈਡੀ",
+    "siteHead": "ਸਾਈਟ",
+    "siteHint": "ਸਾਈਟ ਦਾ ਨਾਮ",
+    "departmentHead": "ਵਿਭਾਗ",
+    "departmentHint": "ਵਿਭਾਗ ਦਾ ਨਾਮ",
+    "missingAlertHead": "ਜਾਣਕਾਰੀ ਗੁੰਮ ਹੈ",
+    "missingAlertMsg": "ਕਿਰਪਾ ਕਰਕੇ ਸ਼ੁਰੂ ਅਤੇ ਅੰਤ ਦੀ ਤਾਰੀਖ ਅਤੇ ਮਿਆਦ ਦੀ ਕਿਸਮ ਚੁਣੋ।",
+    "invalidAlertHead": "ਅਵੈਧ ਜਾਣਕਾਰੀ",
+    "invalidAlertMsg": "ਸ਼ੁਰੂ ਦੀ ਤਾਰੀਖ ਅੰਤ ਦੀ ਤਾਰੀਖ ਤੋਂ ਪਹਿਲਾਂ ਹੋਣੀ ਚਾਹੀਦੀ ਹੈ।",
+    "cancel": "ਰੱਦ ਕਰੋ"
+  },
+  "incidentReport": {
+    "title": "ਘਟਨਾ ਰਿਪੋਰਟ",
+    "newReport": "ਨਵੀਂ ਰਿਪੋਰਟ",
+    "reportId": "ਰਿਪੋਰਟ ਆਈਡੀ:",
+    "date": "ਤਾਰੀਖ:",
+    "time": "ਸਮਾਂ:",
+    "location": "ਸਥਾਨ:",
+    "description": "ਵੇਰਵਾ:",
+    "reportedBy": "ਰਿਪੋਰਟ ਕਰਨ ਵਾਲਾ:",
+    "severity": "ਗੰਭੀਰਤਾ:",
+    "status": "ਸਥਿਤੀ:",
+    "types": {
+      "low": "ਘੱਟ",
+      "medium": "ਮੱਧਮ",
+      "high": "ਉੱਚ",
+      "critical": "ਗੰਭੀਰ"
+    },
+    "statusTypes": {
+      "open": "ਖੁੱਲਾ",
+      "inProgress": "ਪ੍ਰਗਤੀ ਵਿੱਚ",
+      "resolved": "ਹੱਲ ਕੀਤਾ ਗਿਆ",
+      "closed": "ਬੰਦ"
+    },
+    "noReports": "ਕੋਈ ਘਟਨਾ ਰਿਪੋਰਟ ਨਹੀਂ ਮਿਲੀ",
+    "error": "ਘਟਨਾ ਰਿਪੋਰਟਾਂ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ",
+    "submit": "ਰਿਪੋਰਟ ਜਮ੍ਹਾਂ ਕਰੋ",
+    "submitting": "ਜਮ੍ਹਾਂ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ...",
+    "submitSuccess": "ਘਟਨਾ ਰਿਪੋਰਟ ਸਫਲਤਾਪੂਰਵਕ ਜਮ੍ਹਾਂ ਕੀਤੀ ਗਈ",
+    "submitFailed": "ਘਟਨਾ ਰਿਪੋਰਟ ਜਮ੍ਹਾਂ ਕਰਨ ਵਿੱਚ ਅਸਫਲ",
+    "myReports": "ਮੇਰੀਆਂ ਰਿਪੋਰਟਾਂ",
+    "noIncidents": "ਹਾਲੇ ਕੋਈ ਘਟਨਾ ਰਿਪੋਰਟ ਨਹੀਂ ਕੀਤੀ ਗਈ।",
+    "shift": "ਸ਼ਿਫਟ *",
+    "selectShift": "ਸ਼ਿਫਟ ਚੁਣੋ...",
+    "incidentDescription": "ਘਟਨਾ ਦਾ ਵੇਰਵਾ *",
+    "descriptionPlaceholder": "ਦੱਸੋ ਕੀ ਹੋਇਆ...",
+    "dateTime": "ਤਾਰੀਖ ਅਤੇ ਸਮਾਂ *",
+    "photosOptional": "ਫੋਟੋਆਂ (ਵਿਕਲਪਿਕ)",
+    "addPhotos": "ਫੋਟੋਆਂ ਸ਼ਾਮਲ ਕਰੋ",
+    "cancel": "ਰੱਦ ਕਰੋ"
   }
 }
