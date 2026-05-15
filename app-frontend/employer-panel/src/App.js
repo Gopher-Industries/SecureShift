@@ -10,6 +10,7 @@ import CreateShift from './pages/createShift';
 import ManageShift from './pages/ManageShift';
 import GuardProfiles from './pages/GuardProfile';
 import GuardProfilePage from './pages/GuardProfilePage';
+import Documents from './pages/Documents';
 
 import CompanyProfile from './pages/CompanyProfile';
 import SubmissionConfirmation from './pages/SubmissionConfirmation';
@@ -87,6 +88,7 @@ function AppRoutes() {
         <Route path="/email-settings" element={<ProtectedLayout><EmailSettings /></ProtectedLayout>} />
         <Route path="/payroll" element={<ProtectedLayout><Payroll /></ProtectedLayout>} />
         <Route path="/daily-monitoring" element={<ProtectedLayout><DailyMonitoring /></ProtectedLayout>} />
+        <Route path="/documents" element={<ProtectedLayout><Documents /></ProtectedLayout>} />
       </Routes>
     </>
   );
