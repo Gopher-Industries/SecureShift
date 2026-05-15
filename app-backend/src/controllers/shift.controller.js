@@ -376,7 +376,19 @@ export const updateShift = async (req, res) => {
     }
 
     const updates = {};
-    const { title, date, startTime, endTime, payRate, urgency, field, location, description, requirements } = req.body;
+    const {
+      title,
+      date,
+      startTime,
+      endTime,
+      payRate,
+      urgency,
+      field,
+      location,
+      description,
+      requirements,
+      status,
+    } = req.body;
 
     if (title !== undefined) {
       if (typeof title !== 'string' || title.trim().length < 3) {
