@@ -46,6 +46,7 @@ export default function ProfileScreen({ navigation, route }: any) {
   };
 
   const loadProfileData = async () => {
+    await Promise.resolve();
     try {
       setLoading(true);
       setError(null);
@@ -60,16 +61,22 @@ export default function ProfileScreen({ navigation, route }: any) {
   };
 
   useEffect(() => {
-    loadProfileData();
-    loadProfileImage();
+    const init = async () => {
+      loadProfileData();
+      loadProfileImage();
+    };
+    init();
   }, []);
 
   useEffect(() => {
-    if (route?.params?.refresh) {
-      loadProfileData();
-      loadProfileImage();
-      navigation.setParams({ refresh: false });
-    }
+    const init = async () => {
+      if (route?.params?.refresh) {
+        loadProfileData();
+        loadProfileImage();
+        navigation.setParams({ refresh: false });
+      }
+    };
+    init();
   }, [navigation, route?.params?.refresh]);
 
   const getStatusBadgeStyle = (status: LicenseStatus) => {

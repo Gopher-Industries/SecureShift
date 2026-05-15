@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -24,31 +24,22 @@ import {
   type MessageDto,
   type MessageUser,
 } from '../api/messages';
+import ConversationItemComponent, {
+  type ConversationItemData,
+} from '../components/list/ConversationItem';
+import MessageItem, { type MessageItemData } from '../components/list/MessageItem';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { RouteProp } from '@react-navigation/native';
 
-type Message = {
-  id: string;
-  from: 'guard' | 'employer';
-  senderName: string;
-  text: string;
-  timestamp: string;
+type Message = MessageItemData & {
   context: 'shift' | 'general';
   shiftTitle?: string;
-  status?: 'sending' | 'sent' | 'delivered' | 'read';
 };
 
-type ConversationItem = {
-  id: string;
-  name: string;
-  role?: string;
-  lastMessage: string;
-  lastTimestamp: string;
-  unreadCount: number;
-};
+type ConversationItem = ConversationItemData;
 
 export default function MessagesScreen() {
   const { colors } = useAppTheme();
@@ -105,6 +96,7 @@ export default function MessagesScreen() {
     return {
       id: dto._id ?? `${dto.timestamp}-${senderId ?? 'unknown'}`,
       from: role,
+      isMe: Boolean(isCurrentUser),
       senderName: dto.sender?.name ?? dto.sender?.email ?? 'Unknown',
       text: dto.content,
       timestamp: dto.timestamp,
@@ -251,6 +243,9 @@ export default function MessagesScreen() {
   // server acknowledgment arrives via the existing sendMessage flow.
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPollingRef = useRef(false);
+  // Used to keep the chat pinned to the newest message whenever the list
+  // content size changes (new sent message, polled-in message, initial load).
+  const messagesListRef = useRef<FlatList<Message>>(null);
 
   useEffect(() => {
     // Always tear down a previous interval before starting a new one so we
@@ -326,9 +321,6 @@ export default function MessagesScreen() {
     };
   }, [activeContext, generalParticipant?.id, shiftParticipant?.id, currentUser?.id]);
 
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
   const sendMessage = async () => {
     if (!input.trim()) return;
     const participant = activeContext === 'shift' ? shiftParticipant : generalParticipant;
@@ -341,6 +333,7 @@ export default function MessagesScreen() {
     const newMsg: Message = {
       id: newId,
       from: currentUser?.role === 'employer' ? 'employer' : 'guard',
+      isMe: true,
       senderName: currentUser?.name ?? 'You',
       text: input.trim(),
       timestamp: new Date().toISOString(),
@@ -378,58 +371,29 @@ export default function MessagesScreen() {
       Alert.alert('Error', 'Failed to send message');
     }
   };
+  // Stable handler so ConversationItem's memo isn't busted on every parent render.
+  const handleConversationPress = useCallback((conversation: ConversationItemData) => {
+    setGeneralParticipant({
+      id: conversation.id,
+      name: conversation.name,
+      role: conversation.role,
+    });
+    setActiveContext('general');
+  }, []);
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <View style={styles.messageRow}>
-      <View
-        style={[styles.bubble, item.from === 'guard' ? styles.bubbleGuard : styles.bubbleEmployer]}
-      >
-        <Text style={styles.msgSender}>
-          {item.senderName} • {item.from === 'guard' ? 'Guard' : 'Employer'}
-        </Text>
-        <Text style={item.from === 'guard' ? styles.msgTextLight : styles.msgTextDark}>
-          {item.text}
-        </Text>
-        <View style={styles.metaRow}>
-          <Text style={item.from === 'guard' ? styles.msgTimeLight : styles.msgTimeDark}>
-            {formatTime(item.timestamp)}
-          </Text>
-          {item.from === 'guard' && item.status && (
-            <Text style={styles.msgStatus}>• {item.status}</Text>
-          )}
-        </View>
-      </View>
-    </View>
+  const renderMessage = useCallback(
+    ({ item }: { item: Message }) => <MessageItem message={item} />,
+    [],
   );
 
-  const renderConversation = ({ item }: { item: ConversationItem }) => (
-    <TouchableOpacity
-      style={styles.conversationRow}
-      onPress={() => {
-        setGeneralParticipant({
-          id: item.id,
-          name: item.name,
-          role: item.role,
-        });
-        setActiveContext('general');
-      }}
-    >
-      <View style={styles.conversationInfo}>
-        <View style={styles.conversationHeader}>
-          <Text style={styles.conversationName}>{item.name}</Text>
-          <Text style={styles.conversationTime}>{formatTime(item.lastTimestamp)}</Text>
-        </View>
-        <Text style={styles.conversationPreview} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
-      </View>
-      {item.unreadCount > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadText}>{item.unreadCount}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
+  const renderConversation = useCallback(
+    ({ item }: { item: ConversationItem }) => (
+      <ConversationItemComponent conversation={item} onPress={handleConversationPress} />
+    ),
+    [handleConversationPress],
   );
+
+  const keyExtractor = useCallback((item: { id: string }) => item.id, []);
 
   const handleStartConversation = () => {
     const id = newRecipientId.trim();
@@ -525,8 +489,12 @@ export default function MessagesScreen() {
             </View>
             <FlatList
               data={conversations}
-              keyExtractor={(item) => item.id}
+              keyExtractor={keyExtractor}
               renderItem={renderConversation}
+              initialNumToRender={12}
+              maxToRenderPerBatch={8}
+              windowSize={10}
+              removeClippedSubviews={Platform.OS === 'android'}
               contentContainerStyle={[styles.chat, conversations.length === 0 && styles.chatEmpty]}
               ListEmptyComponent={
                 loading ? (
@@ -548,9 +516,18 @@ export default function MessagesScreen() {
           </View>
         ) : (
           <FlatList
+            ref={messagesListRef}
             data={contextMessages}
-            keyExtractor={(item) => item.id}
+            keyExtractor={keyExtractor}
             renderItem={renderMessage}
+            initialNumToRender={15}
+            maxToRenderPerBatch={10}
+            windowSize={11}
+            removeClippedSubviews={Platform.OS === 'android'}
+            // Pin the view to the newest message whenever content grows or shrinks.
+            // Fires on initial mount (jumps to bottom), on every sent message
+            // (optimistic insert grows the list), and on every polled-in message.
+            onContentSizeChange={() => messagesListRef.current?.scrollToEnd({ animated: true })}
             contentContainerStyle={[styles.chat, contextMessages.length === 0 && styles.chatEmpty]}
             ListEmptyComponent={
               loading ? (
@@ -667,36 +644,6 @@ const getStyles = (colors: AppColors) =>
       paddingTop: 12,
       paddingBottom: 4,
     },
-    conversationRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 12,
-      marginBottom: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    conversationInfo: { flex: 1 },
-    conversationHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 4,
-    },
-    conversationName: { fontSize: 14, fontWeight: '700', color: colors.text },
-    conversationTime: { fontSize: 11, color: colors.muted },
-    conversationPreview: { fontSize: 12, color: colors.muted },
-    unreadBadge: {
-      minWidth: 20,
-      paddingHorizontal: 6,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    unreadText: { color: colors.white, fontSize: 11, fontWeight: '700' },
     newConversationCard: {
       backgroundColor: colors.card,
       borderRadius: 12,
@@ -726,32 +673,6 @@ const getStyles = (colors: AppColors) =>
       borderRadius: 8,
     },
     newConversationBtnText: { color: colors.white, fontWeight: '700', fontSize: 13 },
-
-    messageRow: { marginBottom: 10 },
-    bubble: {
-      maxWidth: '75%',
-      padding: 12,
-      borderRadius: 16,
-    },
-    bubbleGuard: {
-      alignSelf: 'flex-end',
-      backgroundColor: colors.primary,
-      borderTopRightRadius: 4,
-    },
-    bubbleEmployer: {
-      alignSelf: 'flex-start',
-      backgroundColor: colors.card,
-      borderTopLeftRadius: 4,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    msgSender: { fontSize: 11, color: colors.muted, marginBottom: 4, fontWeight: '600' },
-    msgTextLight: { color: colors.white, fontSize: 15 },
-    msgTextDark: { color: colors.text, fontSize: 15 },
-    metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-    msgTimeLight: { fontSize: 10, color: '#d1d5db' },
-    msgTimeDark: { fontSize: 10, color: colors.muted },
-    msgStatus: { marginLeft: 4, fontSize: 10, color: '#c7d2fe' },
 
     typingRow: {
       flexDirection: 'row',

@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import { ACTIONS } from "../middleware/logger.js";
+import { computeGuardScore } from '../services/guardScore.service.js';
 
 /**
  * @desc    View logged-in user's profile
@@ -264,6 +266,26 @@ export const removeFavouriteGuard = async (req, res) => {
   }
 };
 
+
+/**
+ * @desc    Get guard performance score (0–100)
+ * @route   GET /api/v1/users/guards/:id/score
+ * @access  Private (self, employer, admin)
+ */
+export const getGuardScore = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid guard ID' });
+    }
+
+    const result = await computeGuardScore(id);
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    return res.status(err.statusCode ?? 500).json({ message: err.message });
+  }
+};
 
 /**
  * @desc    Get favourite guards list

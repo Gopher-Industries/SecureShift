@@ -8,9 +8,11 @@ import AppIcon from '../images/app_icon.png';
 import ABC_COMPANY_ICON from '../images/ABC_company_icon.png';
 import ImageUpload from '../input/ImageUpload';
 import ChipsGroup from '../input/ChipsGroup';
+import translations from "../i18n/translations";
 
-export default function CompanyProfile() {
+export default function CompanyProfile({ language }) {
   const [enableEdit, setEnableEdit] = useState(false);
+  const t = translations[language || "en"] || translations.en;
 
   // Yup validation schema
   const validationSchema = Yup.object().shape({
@@ -78,7 +80,7 @@ export default function CompanyProfile() {
 
   return (
     <div style={{ padding: '20px' }}>
-      <PageHeader companyName={'ABC Security'} />
+<PageHeader companyName={t.companyNameTitle} title={t.companyProfile} />
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div
@@ -171,7 +173,7 @@ export default function CompanyProfile() {
   );
 }
 
-function PageHeader({ companyName }) {
+function PageHeader({ companyName, title }) {
   const headerStyles = {
     display: 'flex',
     alignItems: 'center',
@@ -198,7 +200,7 @@ function PageHeader({ companyName }) {
         <div style={companyNameStyles}>{companyName}</div>
         <img src={ABC_COMPANY_ICON} alt="abc_company_icon" style={{ width: '80px' }} />
       </div>
-      <div style={titleStyles}>Company Profile</div>
+      <div style={titleStyles}>{title}</div>
     </>
   );
 }
