@@ -17,7 +17,7 @@ router.use(auth);
  * @swagger
  * tags:
  *   name: Messages
- *   description: Messaging endpoints between guards and employers
+ *   description: Messaging endpoints between guards, and between guards and employers
  */
 
 /**

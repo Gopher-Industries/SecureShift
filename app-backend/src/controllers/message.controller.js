@@ -37,16 +37,18 @@ const sendMessage = async (req, res, next) => {
       throw error;
     }
 
-    //Ensure communication is only between guards and employers
+    // Allow guard-to-guard and guard/employer messaging, but keep
+    // employer-to-employer and admin messaging blocked.
     const senderRole = req.user.role;
     const receiverRole = receiver.role;
     
     const validCommunication = 
+      (senderRole === 'guard' && receiverRole === 'guard') ||
       (senderRole === 'guard' && receiverRole === 'employer') ||
       (senderRole === 'employer' && receiverRole === 'guard');
 
     if (!validCommunication) {
-      const error = new Error('Messages can only be sent between guards and employers');
+      const error = new Error('Messages can only be sent between guards, or between guards and employers');
       error.status = 403;
       throw error;
     }

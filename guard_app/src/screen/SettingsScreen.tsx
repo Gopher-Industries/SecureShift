@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ExpoConstants from 'expo-constants';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -25,11 +25,13 @@ import { LocalStorage } from '../lib/localStorage';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+import { showLocalNotification } from '../utils/notificationHelpers';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 // Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';
+const NOTIFICATIONS_STORAGE_KEY = '@guard_notifications_enabled';
 const CANVAS_PADDING = 20;
 
 function Row({
@@ -95,6 +97,37 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [langModalVisible, setLangModalVisible] = useState(false);
 
+  useEffect(() => {
+    const loadNotificationPreference = async () => {
+      try {
+        const savedValue = await AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+
+        if (savedValue !== null) {
+          setNotificationsEnabled(savedValue === 'true');
+        }
+      } catch (error) {
+        console.error('Failed to load notification preference:', error);
+      }
+    };
+
+    void loadNotificationPreference();
+  }, []);
+
+  const handleToggleNotifications = async (value: boolean) => {
+    try {
+      setNotificationsEnabled(value);
+      await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, String(value));
+
+      Alert.alert(
+        'Notifications',
+        value ? 'Notifications have been enabled.' : 'Notifications have been disabled.',
+      );
+    } catch (error) {
+      console.error('Failed to save notification preference:', error);
+      Alert.alert('Error', 'Unable to update notification preference.');
+    }
+  };
+
   const darkMode = themeMode === 'dark';
 
   const appName =
@@ -109,9 +142,9 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     try {
-      await LocalStorage.removeToken(); // clear auth tokens
-      await LocalStorage.removePushToken(); // clear push tokens
-      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY); // clear profile data
+      await LocalStorage.removeToken();
+      await LocalStorage.removePushToken();
+      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY);
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' as never }],
@@ -157,8 +190,17 @@ export default function SettingsScreen() {
   };
 
   const currentLangLabel =
-    i18n.language === 'zh-CN' ? '简体中文' : i18n.language === 'zh-TW' ? '繁體中文' : 'English';
-
+    i18n.language === 'zh-CN'
+      ? '简体中文'
+      : i18n.language === 'zh-TW'
+        ? '繁體中文'
+        : i18n.language === 'hi'
+          ? 'हिन्दी'
+          : i18n.language === 'pa'
+            ? 'Punjabi'
+            : i18n.language === 'guj'
+              ? 'ગુજરાતી'
+              : 'English';
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -173,6 +215,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Feather name="file-text" size={18} color={colors.primary} />}
             label={t('settings.releaseNotes')}
+            onPress={() => navigation2.navigate('ReleaseNotes')}
             colors={colors}
           />
         </View>
@@ -207,7 +250,7 @@ export default function SettingsScreen() {
             right={
               <Switch
                 value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
+                onValueChange={(value) => void handleToggleNotifications(value)}
                 thumbColor={Platform.OS === 'android' ? colors.white : undefined}
                 trackColor={{ false: colors.border, true: colors.primary }}
               />
@@ -235,6 +278,23 @@ export default function SettingsScreen() {
             colors={colors}
           />
         </View>
+        <View style={styles.card} testID="beta-card">
+          <Text style={styles.cardTitle}>Beta</Text>
+          <Row
+            icon={<Ionicons name="qr-code-outline" size={18} color={colors.primary} />}
+            label="QR Code Scanner"
+            onPress={() => navigation2.navigate('QRScanner')}
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />}
+            label={t('homeExtras.testNotif')}
+            onPress={async () => {
+              await showLocalNotification(t('homeExtras.notifTitle'), t('homeExtras.notifBody'));
+            }}
+            colors={colors}
+          />
+        </View>
 
         <View style={styles.card} testID="privacy-card">
           <Text style={styles.cardTitle}>{t('settings.dataPrivacy')}</Text>
@@ -253,6 +313,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />}
             label={t('settings.tos')}
+            onPress={() => navigation2.navigate('Terms')}
             colors={colors}
           />
         </View>
@@ -287,6 +348,8 @@ export default function SettingsScreen() {
               { code: 'en', label: 'English' },
               { code: 'zh-CN', label: '简体中文' },
               { code: 'zh-TW', label: '繁體中文' },
+              { code: 'hi', label: 'हिन्दी' },
+              { code: 'guj', label: 'ગુજરાતી' },
             ].map((lng) => (
               <TouchableOpacity
                 key={lng.code}

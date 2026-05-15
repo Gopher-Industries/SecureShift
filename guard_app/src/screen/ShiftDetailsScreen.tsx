@@ -5,10 +5,11 @@ import { AxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { checkIn, checkOut } from '../api/attendance';
+import { checkIn, checkOut, getUserAttendance } from '../api/attendance';
 import ErrorMessageBox from '../components/ErrorMessageBox';
 import LocationVerificationModal from '../components/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
+import { LocalStorage } from '../lib/localStorage';
 import { useAppTheme } from '../theme';
 import { formatDate } from '../utils/date';
 
@@ -123,7 +124,32 @@ export default function ShiftDetailsScreen() {
   useEffect(() => {
     (async () => {
       const storedAttendance = await getAttendanceForShift(shift._id);
-      setAttendance(storedAttendance ? normalizeAttendance(storedAttendance) : null);
+      if (storedAttendance?.checkInTime) {
+        setAttendance(normalizeAttendance(storedAttendance));
+        return;
+      }
+
+      try {
+        const token = await LocalStorage.getToken();
+        if (!token) return;
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload.id ?? payload._id ?? payload.sub;
+        if (!userId) return;
+
+        const records = await getUserAttendance(userId);
+        const match = records.find(
+          (r) =>
+            String(r.shiftId === 'object' ? (r.shiftId as any)?._id : r.shiftId) ===
+              String(shift._id) || String(r.shiftId) === String(shift._id),
+        );
+        if (match?.checkInTime) {
+          const synced = normalizeAttendance(match);
+          setAttendance(synced);
+          setAttendanceForShift(shift._id, synced).catch(() => {});
+        }
+      } catch {
+        // server fetch failed, stay with null
+      }
     })();
   }, [shift._id]);
 
@@ -219,12 +245,12 @@ export default function ShiftDetailsScreen() {
         const res = await checkIn(shift._id, loc);
 
         const next: AttendanceState = normalizeAttendance({
-          checkInTime: res.attendance?.checkInTime,
+          checkInTime: res.attendance?.checkInTime ?? new Date().toISOString(),
           checkOutTime: undefined,
         });
 
-        await setAttendanceForShift(shift._id, next);
         setAttendance(next);
+        setAttendanceForShift(shift._id, next).catch(() => {});
 
         Alert.alert('Success', 'Checked in successfully ✅');
       } else {
@@ -242,12 +268,12 @@ export default function ShiftDetailsScreen() {
         const res = await checkOut(shift._id, loc);
 
         const next: AttendanceState = normalizeAttendance({
-          checkInTime: res.attendance?.checkInTime,
-          checkOutTime: res.attendance?.checkOutTime,
+          checkInTime: res.attendance?.checkInTime ?? attendance?.checkInTime,
+          checkOutTime: res.attendance?.checkOutTime ?? new Date().toISOString(),
         });
 
-        await setAttendanceForShift(shift._id, next);
         setAttendance(next);
+        setAttendanceForShift(shift._id, next).catch(() => {});
 
         Alert.alert('Success', 'Checked out successfully ✅');
       }
@@ -290,6 +316,13 @@ export default function ShiftDetailsScreen() {
         normalizedMsg.includes('within 100 metres')
       ) {
         showErrorBox('Location mismatch', msg);
+        return;
+      }
+
+      if (normalizedMsg.includes('already checked in')) {
+        const synced: AttendanceState = { checkInTime: new Date().toISOString() };
+        setAttendance(synced);
+        setAttendanceForShift(shift._id, synced).catch(() => {});
         return;
       }
 

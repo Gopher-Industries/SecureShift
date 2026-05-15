@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import "./EmployerDashboard.css";
+import translations from '../i18n/translations';
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -75,7 +76,8 @@ const parseIncidentDateTime = (incident) => {
   return baseDate.getTime();
 };
 
-export default function EmployerDashboard() {
+export default function EmployerDashboard({ language }) {
+  const t = translations[language || "en"] || translations.en;
   const [view, setView] = useState("list"); // default list view
   const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
@@ -248,14 +250,14 @@ useEffect(() => {
   
       {/* -------- Overview -------- */}
       <main className="ss-main">
-        <h2 className="ss-h1">Overview</h2>
+        <h2 className="ss-h1">{t.overview}</h2>
   
         {/* Controls ABOVE grey grid */}
         <div className="ss-controls">
           <div className="ss-controls-right">
             <button
               className="ss-primary ss-primary--wide"
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => navigate("/create-shift")}
             >
               <IconPlus className="ss-plus" /> Create Shift
             </button>
@@ -291,16 +293,7 @@ useEffect(() => {
               className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}
             >
   
-              {/* Create Shift Card (only in grid view) */}
-              {view === "grid" && (
-                <div
-                  className="ss-card ss-card--create"
-                  onClick={() => navigate("/create-shift")}
-                >
-                  <div className="ss-card__createicon"><IconPlus /></div>
-                  <div className="ss-card__createtext">Create Shift</div>
-                </div>
-              )}
+              
   
               {loading && <div>Loading shifts...</div>}
               {error && <div style={{ color: "red" }}>{error}</div>}
@@ -382,7 +375,7 @@ useEffect(() => {
         </div>
 
         {/* Incident Reports */}
-        <h2 className="ss-h1 ss-h1--spaced">Incident Reports</h2>
+        <h2 className="ss-h1 ss-h1--spaced">{t.incidentReports}</h2>
         <div className="ss-incident-toolbar">
           <input
             className="ss-incident-search"
@@ -454,7 +447,7 @@ useEffect(() => {
         </div>
 
         {/* Reviews */}
-        <h2 className="ss-h1 ss-h1--spaced">Recent Review</h2>
+        <h2 className="ss-h1 ss-h1--spaced">{t.recentReview}</h2>
         <div className="ss-reviews">
           <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(reviewScroller, -300)}>‹</button>
           <div ref={reviewScroller} className="ss-reviews__track">
