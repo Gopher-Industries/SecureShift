@@ -1,11 +1,10 @@
 // component/card/ShiftCard.tsx
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { useAppTheme } from '../../theme';
-import type { AppColors } from '../../theme/colors';
 import type { ShiftCardItem } from '../../models/Shifts';
+import type { AppColors } from '../../theme/colors';
 
 type Props = {
   shift: ShiftCardItem;
@@ -16,16 +15,18 @@ type Props = {
   colors: AppColors;
 };
 
-export default function ShiftCard({
+function ShiftCard({
   shift,
   onPress,
   showApply = false,
   onApply,
   applying = false,
+  colors,
 }: Props) {
-  const { colors } = useAppTheme();
   const { t } = useTranslation();
-  const s = getStyles(colors);
+  // Memoize the stylesheet so the object identity stays stable across renders
+  // when the theme hasn't changed — this lets React.memo on the export do its job.
+  const s = useMemo(() => getStyles(colors), [colors]);
 
   const status = 'status' in shift ? shift.status : 'Completed';
 
@@ -89,6 +90,8 @@ export default function ShiftCard({
     </TouchableOpacity>
   );
 }
+
+export default React.memo(ShiftCard);
 
 const getStyles = (colors: AppColors) =>
   StyleSheet.create({

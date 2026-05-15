@@ -49,6 +49,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.5",
+    "pdfkit": "^0.18.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },
@@ -56,6 +57,7 @@
     "@babel/core": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
     "@eslint/js": "^9.31.0",
+    "@jest/globals": "^29.7.0",
     "babel-jest": "^30.0.4",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^9.1.2",
