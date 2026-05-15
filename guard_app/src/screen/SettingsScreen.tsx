@@ -25,6 +25,7 @@ import { LocalStorage } from '../lib/localStorage';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+import { showLocalNotification } from '../utils/notificationHelpers';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -195,8 +196,11 @@ export default function SettingsScreen() {
         ? '繁體中文'
         : i18n.language === 'hi'
           ? 'हिन्दी'
-          : 'English';
-
+          : i18n.language === 'pa'
+            ? 'Punjabi'
+            : i18n.language === 'guj'
+              ? 'ગુજરાતી'
+              : 'English';
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -211,6 +215,7 @@ export default function SettingsScreen() {
           <Row
             icon={<Feather name="file-text" size={18} color={colors.primary} />}
             label={t('settings.releaseNotes')}
+            onPress={() => navigation2.navigate('ReleaseNotes')}
             colors={colors}
           />
         </View>
@@ -273,6 +278,23 @@ export default function SettingsScreen() {
             colors={colors}
           />
         </View>
+        <View style={styles.card} testID="beta-card">
+          <Text style={styles.cardTitle}>Beta</Text>
+          <Row
+            icon={<Ionicons name="qr-code-outline" size={18} color={colors.primary} />}
+            label="QR Code Scanner"
+            onPress={() => navigation2.navigate('QRScanner')}
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="notifications-outline" size={18} color={colors.primary} />}
+            label={t('homeExtras.testNotif')}
+            onPress={async () => {
+              await showLocalNotification(t('homeExtras.notifTitle'), t('homeExtras.notifBody'));
+            }}
+            colors={colors}
+          />
+        </View>
 
         <View style={styles.card} testID="privacy-card">
           <Text style={styles.cardTitle}>{t('settings.dataPrivacy')}</Text>
@@ -327,6 +349,7 @@ export default function SettingsScreen() {
               { code: 'zh-CN', label: '简体中文' },
               { code: 'zh-TW', label: '繁體中文' },
               { code: 'hi', label: 'हिन्दी' },
+              { code: 'guj', label: 'ગુજરાતી' },
             ].map((lng) => (
               <TouchableOpacity
                 key={lng.code}
