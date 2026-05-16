@@ -4,9 +4,11 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import en from '../locales/en.json';
+import guj from '../locales/guj.json';
+import hi from '../locales/hi.json';
+import pa from '../locales/pa.json';
 import zhCN from '../locales/zh-CN.json';
 import zhTW from '../locales/zh-TW.json';
-import hi from '../locales/hi.json';
 
 const STORE_LANGUAGE_KEY = 'settings.lang';
 
@@ -15,6 +17,8 @@ const resources = {
   'zh-CN': { translation: zhCN },
   'zh-TW': { translation: zhTW },
   hi: { translation: hi },
+  pa: { translation: pa },
+  guj: { translation: guj },
 };
 
 const languageDetectorPlugin = {

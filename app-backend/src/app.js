@@ -21,8 +21,6 @@ app.use(auditMiddleware);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Serve static uploads folder
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Swagger docs
 setupSwagger(app);

@@ -14,7 +14,6 @@ import {
   Platform,
   Image,
   ScrollView,
-  TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
 
@@ -135,127 +134,125 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView
-        style={styles.safe}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    <KeyboardAvoidingView
+      style={styles.safe}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.container}>
-            <Image source={logo} style={styles.logo} />
-            <Text style={styles.subtitle}>{t('login.title')}</Text>
+        <View style={styles.container}>
+          <Image source={logo} style={styles.logo} />
+          <Text style={styles.subtitle}>{t('login.title')}</Text>
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Text style={styles.label}>{t('login.email')}</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={styles.input}
-                placeholder={t('login.emailPlaceholder')}
-                placeholderTextColor={colors.muted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  if (otpMode) {
-                    setOtpMode(false);
-                    setOtp('');
-                  }
-                  if (error) setError(null);
-                }}
-                autoCorrect={false}
-                textContentType="emailAddress"
-                returnKeyType="next"
-              />
-            </View>
-
-            <Text style={[styles.label, styles.mt16]}>{t('login.password')}</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={[styles.input, styles.padRight]}
-                placeholder={t('login.passwordPlaceholder')}
-                placeholderTextColor={colors.muted}
-                secureTextEntry={!showPass}
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  if (error) setError(null);
-                }}
-                textContentType="password"
-                returnKeyType={otpMode ? 'next' : 'done'}
-                onSubmitEditing={handleLogin}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPass((s) => !s)}
-                style={styles.eye}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <MaterialCommunityIcons
-                  name={showPass ? 'eye-off-outline' : 'eye-outline'}
-                  size={22}
-                  color={colors.muted}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.button, submitting && { opacity: 0.6 }]}
-              onPress={handleLogin}
-              disabled={submitting}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.buttonText}>
-                {submitting ? t('login.loggingIn') : t('login.button')}
-              </Text>
-            </TouchableOpacity>
-
-            {otpMode && (
-              <>
-                <Text style={styles.label}>{t('login.enterOtp')}</Text>
-                <View style={styles.inputWrap}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="123456"
-                    placeholderTextColor={colors.muted}
-                    keyboardType="number-pad"
-                    value={otp}
-                    onChangeText={(text) => {
-                      setOtp(text);
-                      if (error) setError(null);
-                    }}
-                    returnKeyType="done"
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.button, styles.otpButton, submitting && { opacity: 0.6 }]}
-                  onPress={handleVerifyOtp}
-                  disabled={submitting}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.buttonText}>
-                    {submitting ? t('login.verifying') : t('login.verifyOtp')}
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-
-            <Text style={styles.footerText}>
-              {t('login.noAccount')}{' '}
-              <Text style={styles.footerLink} onPress={() => navigation.navigate('Signup')}>
-                {t('login.signupLink')}
-              </Text>
-            </Text>
+          <Text style={styles.label}>{t('login.email')}</Text>
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={styles.input}
+              placeholder={t('login.emailPlaceholder')}
+              placeholderTextColor={colors.muted}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (otpMode) {
+                  setOtpMode(false);
+                  setOtp('');
+                }
+                if (error) setError(null);
+              }}
+              autoCorrect={false}
+              textContentType="emailAddress"
+              returnKeyType="next"
+            />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+
+          <Text style={[styles.label, styles.mt16]}>{t('login.password')}</Text>
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={[styles.input, styles.padRight]}
+              placeholder={t('login.passwordPlaceholder')}
+              placeholderTextColor={colors.muted}
+              secureTextEntry={!showPass}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (error) setError(null);
+              }}
+              textContentType="password"
+              returnKeyType={otpMode ? 'next' : 'done'}
+              onSubmitEditing={handleLogin}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPass((s) => !s)}
+              style={styles.eye}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <MaterialCommunityIcons
+                name={showPass ? 'eye-off-outline' : 'eye-outline'}
+                size={22}
+                color={colors.muted}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.button, submitting && { opacity: 0.6 }]}
+            onPress={handleLogin}
+            disabled={submitting}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.buttonText}>
+              {submitting ? t('login.loggingIn') : t('login.button')}
+            </Text>
+          </TouchableOpacity>
+
+          {otpMode && (
+            <>
+              <Text style={styles.label}>{t('login.enterOtp')}</Text>
+              <View style={styles.inputWrap}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="123456"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="number-pad"
+                  value={otp}
+                  onChangeText={(text) => {
+                    setOtp(text);
+                    if (error) setError(null);
+                  }}
+                  returnKeyType="done"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.button, styles.otpButton, submitting && { opacity: 0.6 }]}
+                onPress={handleVerifyOtp}
+                disabled={submitting}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.buttonText}>
+                  {submitting ? t('login.verifying') : t('login.verifyOtp')}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          <Text style={styles.footerText}>
+            {t('login.noAccount')}{' '}
+            <Text style={styles.footerLink} onPress={() => navigation.navigate('Signup')}>
+              {t('login.signupLink')}
+            </Text>
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
