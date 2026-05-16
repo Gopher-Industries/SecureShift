@@ -8,9 +8,11 @@ import userRoutes from './user.routes.js';
 import adminRoutes from './admin.routes.js';
 import availabilityRoutes from './availability.routes.js'; 
 import rbacRoutes from './rbac.routes.js';
+import shiftAttendanceRoutes from './shiftattendance.routes.js';
+import incidentRoutes from "./incident.routes.js";
 import branchRoutes from './branch.routes.js';
 import notificationRoutes from './notification.routes.js'
-
+import equipmentRoutes from './equipment.routes.js';
 import payrollRoutes from './payroll.routes.js';
 import documentRoutes from './document.routes.js';
 const router = express.Router();
@@ -24,7 +26,9 @@ router.use('/availability', availabilityRoutes);
 router.use('/users', userRoutes);  
 router.use('/rbac', rbacRoutes);
 router.use('/branch', branchRoutes);
+router.use('/attendance', shiftAttendanceRoutes);
+router.use("/incidents", incidentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payroll', payrollRoutes);
-
+router.use('/equipment', equipmentRoutes);
 export default router;

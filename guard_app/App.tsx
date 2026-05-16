@@ -7,6 +7,7 @@ import {
 // App.tsx
 import React, { useEffect } from 'react';
 
+import './src/i18n'; // Initialize i18n
 import { attach401Handler } from './src/lib/http';
 import {
   registerPushTokenIfNeeded,
@@ -65,7 +66,7 @@ function AppContent() {
   };
 
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer theme={navigationTheme} ref={navigationRef}>
       <AppNavigator />
     </NavigationContainer>
   );

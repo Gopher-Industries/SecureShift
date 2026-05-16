@@ -1,121 +1,321 @@
-// src/components/LocationVerificationModal.tsx
 import * as Location from 'expo-location';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  Modal,
-  StyleSheet,
   ActivityIndicator,
-  Alert,
-  Pressable,
   Linking,
+  Modal,
   Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
-import { COLORS } from '../theme/colors';
+import ErrorMessageBox from './ErrorMessageBox';
+import { useAppTheme } from '../theme';
+
+type LocationPayload = {
+  latitude: number;
+  longitude: number;
+  timestamp: number;
+};
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onVerified: (loc: { latitude: number; longitude: number; timestamp: number }) => void;
+  onVerified: (loc: LocationPayload) => void;
 };
 
-type Status = 'idle' | 'requesting' | 'checking' | 'failed' | 'denied' | 'permanentDenied';
+type Status = 'idle' | 'requesting' | 'checking';
+
+type ErrorState = {
+  title: string;
+  message: string;
+  primaryLabel?: string;
+  onPrimaryPress?: () => void;
+  secondaryLabel?: string;
+  onSecondaryPress?: () => void;
+} | null;
 
 export default function LocationVerificationModal({ visible, onClose, onVerified }: Props) {
+  const { colors } = useAppTheme();
+  const s = getStyles(colors);
+
   const [status, setStatus] = useState<Status>('idle');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorState, setErrorState] = useState<ErrorState>(null);
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelledRef = useRef(false);
+  const retryRequestedRef = useRef(false);
 
-  useEffect(() => {
-    if (visible) {
-      startCheck();
-    } else {
-      // ✅ reset when modal closes
-      setStatus('idle');
-      setErrorMsg(null);
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
     }
+    timerRef.current = null;
+  }, []);
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  const resetState = useCallback(() => {
+    setStatus('idle');
+    setErrorState(null);
+  }, []);
 
-  const startCheck = async () => {
-    try {
-      setStatus('requesting');
-      setErrorMsg(null);
+  const closeErrorBox = useCallback(() => {
+    setErrorState(null);
+  }, []);
 
-      // ✅ timeout after 15s (auto-close)
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        setStatus('failed');
-        setErrorMsg('Timed out while getting your location. Please try again.');
-        onClose(); // ✅ close on timeout (per Task 2 requirement)
-      }, 15000);
+  const showErrorBox = useCallback((next: ErrorState) => {
+    setErrorState(next);
+  }, []);
 
-      // 1) permission
-      const perm = await Location.requestForegroundPermissionsAsync();
-
-      if (perm.status !== 'granted') {
-        // stop timeout
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = null;
-
-        if (perm.canAskAgain === false) setStatus('permanentDenied');
-        else setStatus('denied');
-        return;
-      }
-
-      // 2) location
-      setStatus('checking');
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      // clear timeout
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = null;
-
-      // 3) success
-      onVerified({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        timestamp: loc.timestamp ?? Date.now(),
-      });
-    } catch (e: unknown) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = null;
-
-      const msg = e instanceof Error ? e.message : 'Failed to get location';
-      setStatus('failed');
-      setErrorMsg(msg);
-    }
-  };
-
-  const openSettings = async () => {
+  const openSettings = useCallback(async () => {
     try {
       await Linking.openSettings();
     } catch {
-      Alert.alert(
-        'Open Settings',
-        Platform.select({
-          ios: 'Please open Settings > Privacy & Security > Location Services and enable permission.',
-          android: 'Please open Settings > Location and enable permission for the app.',
-          default: 'Please open device settings and enable location permission.',
-        }) as string,
-      );
+      showErrorBox({
+        title: 'Open Settings manually',
+        message:
+          Platform.OS === 'ios'
+            ? 'Please open Settings > Privacy & Security > Location Services and enable permission for the app.'
+            : 'Please open Settings > Location and enable permission for the app.',
+        primaryLabel: 'OK',
+        onPrimaryPress: closeErrorBox,
+      });
     }
-  };
+  }, [closeErrorBox, showErrorBox]);
 
-  const content = () => {
+  const startCheck = useCallback(async () => {
+    try {
+      retryRequestedRef.current = false;
+      setStatus('requesting');
+      setErrorState(null);
+      clearTimer();
+
+      timerRef.current = setTimeout(() => {
+        if (cancelledRef.current) return;
+
+        setStatus('idle');
+        showErrorBox({
+          title: 'Location check timed out',
+          message: 'We could not get your location in time. Please try again.',
+          primaryLabel: 'Retry',
+          onPrimaryPress: () => {
+            closeErrorBox();
+            retryRequestedRef.current = true;
+          },
+          secondaryLabel: 'Cancel',
+          onSecondaryPress: () => {
+            closeErrorBox();
+            onClose();
+          },
+        });
+      }, 30000);
+
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
+
+      if (!servicesEnabled) {
+        clearTimer();
+        setStatus('idle');
+        showErrorBox({
+          title: 'Turn on location services',
+          message:
+            'Location services are turned off on this device. Please enable them and try again.',
+          primaryLabel: 'Open Settings',
+          onPrimaryPress: () => {
+            closeErrorBox();
+            void openSettings();
+          },
+          secondaryLabel: 'Cancel',
+          onSecondaryPress: () => {
+            closeErrorBox();
+            onClose();
+          },
+        });
+        return;
+      }
+
+      let perm = await Location.getForegroundPermissionsAsync();
+
+      if (perm.status !== 'granted') {
+        perm = await Location.requestForegroundPermissionsAsync();
+      }
+
+      if (perm.status !== 'granted') {
+        clearTimer();
+        setStatus('idle');
+
+        if (perm.canAskAgain === false) {
+          showErrorBox({
+            title: 'Location access needed',
+            message:
+              'Location permission has been turned off for this app. Please enable it in Settings to continue.',
+            primaryLabel: 'Open Settings',
+            onPrimaryPress: () => {
+              closeErrorBox();
+              void openSettings();
+            },
+            secondaryLabel: 'Cancel',
+            onSecondaryPress: () => {
+              closeErrorBox();
+              onClose();
+            },
+          });
+        } else {
+          showErrorBox({
+            title: 'Location permission required',
+            message: 'You need to allow location access before you can check in or check out.',
+            primaryLabel: 'Try Again',
+            onPrimaryPress: () => {
+              closeErrorBox();
+              retryRequestedRef.current = true;
+            },
+            secondaryLabel: 'Cancel',
+            onSecondaryPress: () => {
+              closeErrorBox();
+              onClose();
+            },
+          });
+        }
+        return;
+      }
+
+      if (Platform.OS === 'android') {
+        try {
+          await Location.enableNetworkProviderAsync();
+        } catch {
+          // no-op
+        }
+      }
+
+      setStatus('checking');
+
+      let loc: Location.LocationObject | null = null;
+
+      try {
+        loc = await Promise.race<Location.LocationObject>([
+          Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          }),
+          new Promise<Location.LocationObject>((_, reject) => {
+            setTimeout(() => {
+              reject(new Error('Location request exceeded internal timeout'));
+            }, 20000);
+          }),
+        ]);
+      } catch {
+        // fall back to last known position
+      }
+
+      if (!loc) {
+        const lastKnown = await Location.getLastKnownPositionAsync();
+
+        if (lastKnown) {
+          loc = {
+            coords: lastKnown.coords,
+            timestamp: lastKnown.timestamp,
+          } as Location.LocationObject;
+        }
+      }
+
+      clearTimer();
+
+      if (!loc) {
+        setStatus('idle');
+        showErrorBox({
+          title: 'Unable to get your location',
+          message: 'We could not determine your current location. Please try again.',
+          primaryLabel: 'Retry',
+          onPrimaryPress: () => {
+            closeErrorBox();
+            retryRequestedRef.current = true;
+          },
+          secondaryLabel: 'Cancel',
+          onSecondaryPress: () => {
+            closeErrorBox();
+            onClose();
+          },
+        });
+        return;
+      }
+
+      if (cancelledRef.current) return;
+
+      setStatus('idle');
+
+      const resolvedTimestamp = typeof loc.timestamp === 'number' ? loc.timestamp : 0;
+
+      onVerified({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        timestamp: resolvedTimestamp,
+      });
+    } catch (e: unknown) {
+      clearTimer();
+
+      const msg = e instanceof Error ? e.message : 'Failed to get location';
+      setStatus('idle');
+
+      showErrorBox({
+        title: 'Unable to get your location',
+        message: msg,
+        primaryLabel: 'Retry',
+        onPrimaryPress: () => {
+          closeErrorBox();
+          retryRequestedRef.current = true;
+        },
+        secondaryLabel: 'Cancel',
+        onSecondaryPress: () => {
+          closeErrorBox();
+          onClose();
+        },
+      });
+    }
+  }, [clearTimer, closeErrorBox, onClose, onVerified, openSettings, showErrorBox]);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    if (visible) {
+      cancelledRef.current = false;
+      timeoutId = setTimeout(() => {
+        void startCheck();
+      }, 0);
+    } else {
+      cancelledRef.current = true;
+      clearTimer();
+      timeoutId = setTimeout(() => {
+        resetState();
+      }, 0);
+    }
+
+    return () => {
+      cancelledRef.current = true;
+      clearTimer();
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [clearTimer, resetState, startCheck, visible]);
+
+  useEffect(() => {
+    if (!visible || !retryRequestedRef.current) return;
+
+    const timeoutId = setTimeout(() => {
+      retryRequestedRef.current = false;
+      void startCheck();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [startCheck, visible, errorState]);
+
+  const renderContent = () => {
     if (status === 'requesting') {
       return (
         <View style={s.center}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={s.text}>Requesting permission...</Text>
         </View>
       );
@@ -124,47 +324,8 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
     if (status === 'checking') {
       return (
         <View style={s.center}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={s.text}>Verifying your location...</Text>
-        </View>
-      );
-    }
-
-    if (status === 'denied') {
-      return (
-        <View style={s.center}>
-          <Text style={s.errorText}>Location permission is required to check in/out.</Text>
-          <Pressable style={s.btn} onPress={startCheck}>
-            <Text style={s.btnText}>Try Again</Text>
-          </Pressable>
-          <Pressable style={[s.btn, s.btnSec]} onPress={openSettings}>
-            <Text style={[s.btnText, s.btnTextSec]}>Open Settings</Text>
-          </Pressable>
-        </View>
-      );
-    }
-
-    if (status === 'permanentDenied') {
-      return (
-        <View style={s.center}>
-          <Text style={s.errorText}>
-            Location permission is permanently denied. Please enable it in Settings to continue.
-          </Text>
-          <Pressable style={s.btn} onPress={openSettings}>
-            <Text style={s.btnText}>Open Settings</Text>
-          </Pressable>
-        </View>
-      );
-    }
-
-    if (status === 'failed') {
-      return (
-        <View style={s.center}>
-          <Text style={s.errorText}>Failed to get location.</Text>
-          {!!errorMsg && <Text style={s.muted}>{errorMsg}</Text>}
-          <Pressable style={s.btn} onPress={startCheck}>
-            <Text style={s.btnText}>Retry</Text>
-          </Pressable>
         </View>
       );
     }
@@ -173,69 +334,73 @@ export default function LocationVerificationModal({ visible, onClose, onVerified
   };
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={() => {
-        // ✅ Android back button: parent controls close (prevents accidental dismiss)
-      }}
-    >
-      <View style={s.overlay}>
-        <View style={s.card}>
-          <Text style={s.title}>Location Verification</Text>
-
-          {content()}
-
-          <Pressable style={s.close} onPress={onClose}>
-            <Text style={s.closeText}>Cancel</Text>
-          </Pressable>
+    <>
+      <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+        <View style={s.overlay}>
+          <View style={s.card}>
+            <Text style={s.title}>Location Verification</Text>
+            {renderContent()}
+            <Pressable style={s.close} onPress={onClose}>
+              <Text style={s.closeText}>Cancel</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <ErrorMessageBox
+        visible={Boolean(errorState)}
+        title={errorState?.title}
+        message={errorState?.message}
+        primaryLabel={errorState?.primaryLabel}
+        onPrimaryPress={errorState?.onPrimaryPress ?? closeErrorBox}
+        secondaryLabel={errorState?.secondaryLabel}
+        onSecondaryPress={errorState?.onSecondaryPress}
+        onClose={closeErrorBox}
+      />
+    </>
   );
 }
 
-const s = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  card: {
-    width: '85%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    elevation: 5,
-  },
-  title: { fontSize: 18, fontWeight: '700', marginBottom: 20, color: '#111' },
-  center: { alignItems: 'center', width: '100%' },
-  text: { marginTop: 12, fontSize: 16, color: '#444' },
-  errorText: {
-    color: COLORS.status.rejected,
-    textAlign: 'center',
-    marginBottom: 12,
-    fontSize: 15,
-  },
-  muted: { color: '#666', fontSize: 13, marginBottom: 12, textAlign: 'center' },
-
-  btn: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 8,
-    width: '100%',
-    alignItems: 'center',
-  },
-  btnText: { color: '#fff', fontWeight: '600' },
-  btnSec: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#ccc', marginTop: 12 },
-  btnTextSec: { color: '#555' },
-
-  close: { marginTop: 24 },
-  closeText: { color: '#888', fontWeight: '500' },
-});
+const getStyles = (colors: ReturnType<typeof useAppTheme>['colors']) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    card: {
+      width: '85%',
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 24,
+      alignItems: 'center',
+      elevation: 5,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '700',
+      marginBottom: 20,
+      color: colors.text,
+    },
+    center: {
+      alignItems: 'center',
+      width: '100%',
+    },
+    text: {
+      marginTop: 12,
+      fontSize: 16,
+      color: colors.muted,
+      textAlign: 'center',
+    },
+    close: {
+      marginTop: 24,
+    },
+    closeText: {
+      color: colors.muted,
+      fontWeight: '500',
+    },
+  });

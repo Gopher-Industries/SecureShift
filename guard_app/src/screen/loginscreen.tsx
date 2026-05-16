@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Text,
@@ -13,7 +14,6 @@ import {
   Platform,
   Image,
   ScrollView,
-  TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
 
@@ -27,6 +27,7 @@ import { AppColors } from '../theme/colors';
 export default function LoginScreen({ navigation }: any) {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,8 +40,8 @@ export default function LoginScreen({ navigation }: any) {
   const validate = () => {
     const e = email.trim().toLowerCase();
     const emailOk = /^\S+@\S+\.\S+$/.test(e);
-    if (!emailOk) return 'Please enter a valid email address.';
-    if (password.length < 6) return 'Password must be at least 6 characters.';
+    if (!emailOk) return t('err.invalidEmail');
+    if (password.length < 6) return t('err.shortPassword');
     return null;
   };
 
@@ -54,7 +55,7 @@ export default function LoginScreen({ navigation }: any) {
     const msg = validate();
     if (msg) {
       setError(msg);
-      Alert.alert('Invalid input', msg);
+      Alert.alert(t('login.invalidInput'), msg);
       return;
     }
 
@@ -68,12 +69,12 @@ export default function LoginScreen({ navigation }: any) {
         await goToApp();
       } else {
         setOtpMode(true);
-        Alert.alert('OTP required', 'Please enter the code sent to your email.');
+        Alert.alert(t('login.otpRequired'), t('login.otpMsg'));
       }
     } catch (e: any) {
-      const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Try again';
+      const apiMsg = e?.response?.data?.message ?? e?.message ?? t('err.tryAgain');
       setError(apiMsg);
-      Alert.alert('Login failed', apiMsg);
+      Alert.alert(t('login.loginFailed'), apiMsg);
     } finally {
       setSubmitting(false);
     }
@@ -83,7 +84,7 @@ export default function LoginScreen({ navigation }: any) {
     Keyboard.dismiss();
 
     if (!otp.trim()) {
-      Alert.alert('OTP required', 'Enter your OTP code.');
+      Alert.alert(t('login.otpRequired'), t('login.otpMsgReq'));
       return;
     }
 
@@ -124,134 +125,134 @@ export default function LoginScreen({ navigation }: any) {
         Alert.alert('Unknown License Status', `Status: ${status}`);
       }
     } catch (e: any) {
-      const apiMsg = e?.response?.data?.message ?? e?.message ?? 'Invalid or expired code';
+      const apiMsg = e?.response?.data?.message ?? e?.message ?? t('err.tryAgain');
       setError(apiMsg);
-      Alert.alert('OTP verification failed', apiMsg);
+      Alert.alert(t('login.otpFailed'), apiMsg);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView
-        style={styles.safe}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    <KeyboardAvoidingView
+      style={styles.safe}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.container}>
-            <Image source={logo} style={styles.logo} />
-            <Text style={styles.subtitle}>Login with your email and password</Text>
+        <View style={styles.container}>
+          <Image source={logo} style={styles.logo} />
+          <Text style={styles.subtitle}>{t('login.title')}</Text>
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Text style={styles.label}>Email*</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor={colors.muted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={(t) => {
-                  setEmail(t);
-                  if (otpMode) {
-                    setOtpMode(false);
-                    setOtp('');
-                  }
-                  if (error) setError(null);
-                }}
-                autoCorrect={false}
-                textContentType="emailAddress"
-                returnKeyType="next"
-              />
-            </View>
-
-            <Text style={[styles.label, styles.mt16]}>Password*</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={[styles.input, styles.padRight]}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.muted}
-                secureTextEntry={!showPass}
-                value={password}
-                onChangeText={(t) => {
-                  setPassword(t);
-                  if (error) setError(null);
-                }}
-                textContentType="password"
-                returnKeyType={otpMode ? 'next' : 'done'}
-                onSubmitEditing={handleLogin}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPass((s) => !s)}
-                style={styles.eye}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <MaterialCommunityIcons
-                  name={showPass ? 'eye-off-outline' : 'eye-outline'}
-                  size={22}
-                  color={colors.muted}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.button, submitting && { opacity: 0.6 }]}
-              onPress={handleLogin}
-              disabled={submitting}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Login'}</Text>
-            </TouchableOpacity>
-
-            {otpMode && (
-              <>
-                <Text style={styles.label}>Enter OTP*</Text>
-                <View style={styles.inputWrap}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="123456"
-                    placeholderTextColor={colors.muted}
-                    keyboardType="number-pad"
-                    value={otp}
-                    onChangeText={(t) => {
-                      setOtp(t);
-                      if (error) setError(null);
-                    }}
-                    returnKeyType="done"
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.button, styles.otpButton, submitting && { opacity: 0.6 }]}
-                  onPress={handleVerifyOtp}
-                  disabled={submitting}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.buttonText}>
-                    {submitting ? 'Verifying...' : 'Verify OTP'}
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-
-            <Text style={styles.footerText}>
-              Don’t have an account?{' '}
-              <Text style={styles.footerLink} onPress={() => navigation.navigate('Signup')}>
-                Sign Up
-              </Text>
-            </Text>
+          <Text style={styles.label}>{t('login.email')}</Text>
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={styles.input}
+              placeholder={t('login.emailPlaceholder')}
+              placeholderTextColor={colors.muted}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (otpMode) {
+                  setOtpMode(false);
+                  setOtp('');
+                }
+                if (error) setError(null);
+              }}
+              autoCorrect={false}
+              textContentType="emailAddress"
+              returnKeyType="next"
+            />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+
+          <Text style={[styles.label, styles.mt16]}>{t('login.password')}</Text>
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={[styles.input, styles.padRight]}
+              placeholder={t('login.passwordPlaceholder')}
+              placeholderTextColor={colors.muted}
+              secureTextEntry={!showPass}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (error) setError(null);
+              }}
+              textContentType="password"
+              returnKeyType={otpMode ? 'next' : 'done'}
+              onSubmitEditing={handleLogin}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPass((s) => !s)}
+              style={styles.eye}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <MaterialCommunityIcons
+                name={showPass ? 'eye-off-outline' : 'eye-outline'}
+                size={22}
+                color={colors.muted}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.button, submitting && { opacity: 0.6 }]}
+            onPress={handleLogin}
+            disabled={submitting}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.buttonText}>
+              {submitting ? t('login.loggingIn') : t('login.button')}
+            </Text>
+          </TouchableOpacity>
+
+          {otpMode && (
+            <>
+              <Text style={styles.label}>{t('login.enterOtp')}</Text>
+              <View style={styles.inputWrap}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="123456"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="number-pad"
+                  value={otp}
+                  onChangeText={(text) => {
+                    setOtp(text);
+                    if (error) setError(null);
+                  }}
+                  returnKeyType="done"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.button, styles.otpButton, submitting && { opacity: 0.6 }]}
+                onPress={handleVerifyOtp}
+                disabled={submitting}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.buttonText}>
+                  {submitting ? t('login.verifying') : t('login.verifyOtp')}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          <Text style={styles.footerText}>
+            {t('login.noAccount')}{' '}
+            <Text style={styles.footerLink} onPress={() => navigation.navigate('Signup')}>
+              {t('login.signupLink')}
+            </Text>
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

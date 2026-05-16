@@ -1,8 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { attach401Handler } from './lib/http';
 
 import ExpressionOfInterest from './pages/ExpressionOfInterest';
 import Login from './pages/Login';
-import TwoFA from './pages/2FA';
 
 import EmployerDashboard from './pages/EmployerDashboard';
 import CreateShift from './pages/createShift';
@@ -22,11 +23,12 @@ import PageTitleHandler from './components/PageTitleHandler';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 
-import Timesheet from "./pages/Timesheet";
+import Timesheet from './pages/Timesheet';
+import DailyMonitoring from './pages/DailyMonitoring';
+import Payroll from './pages/Payroll';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 
-/**
- * PUBLIC ROUTE: Task Detail (no layout)
- */
 function TaskRoute() {
   return (
     <Routes>
@@ -35,112 +37,104 @@ function TaskRoute() {
   );
 }
 
-/**
- * PROTECTED LAYOUT WRAPPER
- */
-function ProtectedLayout({ children }) {
+function ProtectedLayout({ children, language, setLanguage }) {
   return (
     <ProtectedRoute>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Header />
+        <Header language={language} setLanguage={setLanguage} />
         <main style={{ flex: 1, paddingBottom: '20px' }}>{children}</main>
-        <Footer />
+        <Footer language={language} />
       </div>
     </ProtectedRoute>
   );
 }
 
-/**
- * MAIN APP ROUTES
- */
-function App() {
-  return (
-    <Router>
-      <PageTitleHandler />
+function AppRoutes({ language, setLanguage }) {
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    attach401Handler(() => navigate('/login'));
+  }, [navigate]);
+
+  const protectedLayout = (children) => (
+    <ProtectedLayout language={language} setLanguage={setLanguage}>
+      {children}
+    </ProtectedLayout>
+  );
+
+  return (
+    <>
+      <PageTitleHandler />
       <Routes>
-        {/* PUBLIC ROUTES (NO AUTH REQUIRED) */}
+        {/* PUBLIC ROUTES */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/2fa" element={<TwoFA />} />
+        <Route path="/2fa" element={<Login />} />
         <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
         <Route path="/submission" element={<SubmissionConfirmation />} />
-
-        {/* TASK DETAIL (special case like your original logic) */}
         <Route path="/task-detail" element={<TaskRoute />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-and-condition" element={<TermsAndConditions />} />
 
         {/* PROTECTED ROUTES */}
         <Route
           path="/employer-dashboard"
-          element={
-            <ProtectedLayout>
-              <EmployerDashboard />
-            </ProtectedLayout>
-          }
+          element={protectedLayout(<EmployerDashboard language={language} />)}
         />
-
         <Route
           path="/create-shift"
-          element={
-            <ProtectedLayout>
-              <CreateShift />
-            </ProtectedLayout>
-          }
+          element={protectedLayout(<CreateShift language={language} />)}
         />
         <Route
           path="/timesheet"
-          element={
-            <ProtectedLayout>
-              <Timesheet />
-            </ProtectedLayout>
-          }
+          element={protectedLayout(<Timesheet language={language} />)}
         />
-
         <Route
           path="/manage-shift"
-          element={
-            <ProtectedLayout>
-              <ManageShift />
-            </ProtectedLayout>
-          }
+          element={protectedLayout(<ManageShift language={language} />)}
         />
-
         <Route
           path="/guard-profiles"
-          element={
-            <ProtectedLayout>
-              <GuardProfiles />
-            </ProtectedLayout>
-          }
+          element={protectedLayout(<GuardProfiles language={language} />)}
         />
-
         <Route
           path="/guard-profiles/:guardId"
-          element={
-            <ProtectedLayout>
-              <GuardProfilePage />
-            </ProtectedLayout>
-          }
+          element={protectedLayout(<GuardProfilePage language={language} />)}
         />
-
         <Route
           path="/company-profile"
-          element={
-            <ProtectedLayout>
-              <CompanyProfile />
-            </ProtectedLayout>
-          }
+          element={protectedLayout(<CompanyProfile language={language} />)}
         />
-
         <Route
           path="/email-settings"
-          element={
-            <ProtectedLayout>
-              <EmailSettings />
-            </ProtectedLayout>
-          }
+          element={protectedLayout(<EmailSettings language={language} />)}
         />
+        <Route
+          path="/daily-monitoring"
+          element={protectedLayout(<DailyMonitoring language={language} />)}
+        />
+        <Route
+          path="/payroll"
+          element={protectedLayout(<Payroll language={language} />)}
+        />
+
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  const [language, setLanguage] = useState(
+    localStorage.getItem('language') || 'en'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('language', language);
+  }, [language]);
+
+  return (
+    <Router>
+      <AppRoutes language={language} setLanguage={setLanguage} />
     </Router>
   );
 }
