@@ -1,12 +1,12 @@
 {
   "login": {
-    "title": "अपने ईमेल और पासवर्ड से लॉगिन करें",
+    "title": "अपने ईमेल और पासवर्ड से लॉग इन करें",
     "email": "ईमेल*",
     "emailPlaceholder": "अपना ईमेल दर्ज करें",
     "password": "पासवर्ड*",
     "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
-    "button": "लॉगिन",
-    "loggingIn": "लॉगिन हो रहा है...",
+    "button": "लॉग इन",
+    "loggingIn": "लॉग इन हो रहा है...",
     "otpRequired": "OTP आवश्यक है",
     "otpMsg": "कृपया अपने ईमेल पर भेजा गया कोड दर्ज करें।",
     "enterOtp": "OTP दर्ज करें*",
@@ -15,7 +15,7 @@
     "noAccount": "क्या आपका खाता नहीं है?",
     "signupLink": "साइन अप करें",
     "invalidInput": "अमान्य इनपुट",
-    "loginFailed": "लॉगिन असफल",
+    "loginFailed": "लॉग इन असफल",
     "otpFailed": "OTP सत्यापन असफल",
     "otpMsgReq": "अपना OTP कोड दर्ज करें।"
   },
@@ -33,17 +33,17 @@
     "email": "ईमेल*",
     "password": "पासवर्ड*",
     "confirmPassword": "पासवर्ड की पुष्टि करें*",
-    "confirmPasswordPlaceholder": "अपना पासवर्ड पुष्टि करें",
+    "confirmPasswordPlaceholder": "अपने पासवर्ड की पुष्टि करें",
     "button": "साइन अप करें",
     "signingUp": "साइन अप हो रहा है...",
     "haveAccount": "क्या आपके पास पहले से खाता है?",
-    "loginLink": "लॉगिन",
+    "loginLink": "लॉग इन",
     "licenseReq": "लाइसेंस आवश्यक है",
     "uploadLicense": "अपना सुरक्षा लाइसेंस अपलोड करें",
     "licenseUploaded": "लाइसेंस अपलोड किया गया",
     "success": "सफल",
-    "created": "खाता बन गया। कृपया लॉगिन करें।",
-    "failed": "साइनअप असफल"
+    "created": "खाता बन गया। कृपया लॉग इन करें।",
+    "failed": "साइन अप असफल"
   },
   "err": {
     "invalidEmail": "कृपया एक वैध ईमेल पता दर्ज करें।",
@@ -69,7 +69,7 @@
     "noUpcoming": "कोई आगामी शिफ्ट नहीं"
   },
   "settings": {
-    "about": "के बारे में",
+    "about": "ऐप जानकारी",
     "releaseNotes": "रिलीज़ नोट्स",
     "contactUs": "हमसे संपर्क करें",
     "emailSupport": "ईमेल सहायता",
@@ -83,7 +83,7 @@
     "clearLocalData": "लोकल डेटा साफ करें",
     "privacyPolicy": "गोपनीयता नीति",
     "tos": "सेवा की शर्तें",
-    "logout": "लॉगआउट"
+    "logout": "लॉग आउट"
   },
   "lang": {
     "en": "English",
@@ -133,7 +133,8 @@
     "search": "शिफ्ट खोजें...",
     "noShifts": "कोई शिफ्ट नहीं मिली",
     "noCompleted": "कोई पूर्ण शिफ्ट नहीं मिली",
-    "accepted": "स्वीकृत"
+    "accepted": "स्वीकृत",
+    "swapLeaveRequests": "स्वैप और छुट्टी अनुरोध"
   },
   "timesheet": {
     "checkIn": "चेक इन:",
@@ -163,7 +164,10 @@
     "messages": "संदेश",
     "notifications": "सूचनाएँ",
     "certificates": "प्रमाणपत्र",
-    "shiftDetails": "शिफ्ट विवरण"
+    "shiftDetails": "शिफ्ट विवरण",
+    "shifts": "शिफ्ट्स",
+    "home": "होम",
+    "profile": "प्रोफ़ाइल"
   },
   "docs": {
     "title": "दस्तावेज़ अवलोकन",
@@ -287,5 +291,67 @@
     "testNotif": "टेस्ट सूचना",
     "notifTitle": "शिफ्ट असाइन की गई",
     "notifBody": "आपको हॉस्पिटल कॉम्प्लेक्स शिफ्ट असाइन की गई है।"
+  },
+  "payroll": {
+    "period": "अवधि:",
+    "guardID": "गार्ड आईडी:",
+    "site": "साइट:",
+    "department": "विभाग:",
+    "notFound": "कोई पेरोल नहीं मिला",
+    "error": "पेरोल इतिहास लोड करने में विफल",
+    "types": {
+      "daily": "दैनिक",
+      "weekly": "साप्ताहिक",
+      "monthly": "मासिक"
+    },
+    "filter": "फ़िल्टर",
+    "startDateHead": "प्रारंभ तिथि*",
+    "selectStart": "प्रारंभ तिथि चुनें",
+    "endDateHead": "समाप्ति तिथि*",
+    "selectEnd": "समाप्ति तिथि चुनें",
+    "periodHead": "अवधि प्रकार*",
+    "selectPeriod": "अवधि चुनें",
+    "optional": "वैकल्पिक",
+    "ID": "आईडी",
+    "siteHead": "साइट",
+    "siteHint": "साइट का नाम",
+    "departmentHead": "विभाग",
+    "departmentHint": "विभाग का नाम",
+    "missingAlertHead": "जानकारी गुम है",
+    "missingAlertMsg": "कृपया प्रारंभ और समाप्ति तिथि तथा अवधि प्रकार चुनें।",
+    "invalidAlertHead": "अमान्य जानकारी",
+    "invalidAlertMsg": "प्रारंभ तिथि समाप्ति तिथि से पहले होनी चाहिए।",
+    "cancel": "रद्द करें"
+  },
+  "incidentReport": {
+    "title": "घटना रिपोर्ट",
+    "newReport": "नई रिपोर्ट",
+    "reportId": "रिपोर्ट आईडी:",
+    "date": "तारीख:",
+    "time": "समय:",
+    "location": "स्थान:",
+    "description": "विवरण:",
+    "reportedBy": "रिपोर्ट करने वाला:",
+    "severity": "गंभीरता:",
+    "status": "स्थिति:",
+    "types": {
+      "low": "कम",
+      "medium": "मध्यम",
+      "high": "उच्च",
+      "critical": "गंभीर"
+    },
+    "statusTypes": {
+      "open": "खुला",
+      "inProgress": "प्रगति में",
+      "resolved": "हल किया गया",
+      "closed": "बंद"
+    },
+    "noReports": "कोई घटना रिपोर्ट नहीं मिली",
+    "error": "घटना रिपोर्ट लोड करने में विफल",
+    "submit": "रिपोर्ट जमा करें",
+    "submitting": "जमा किया जा रहा है...",
+    "submitSuccess": "घटना रिपोर्ट सफलतापूर्वक जमा की गई",
+    "submitFailed": "घटना रिपोर्ट जमा करने में विफल",
+    "cancel": "रद्द करें"
   }
 }

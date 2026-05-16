@@ -1,0 +1,226 @@
+.payroll-page {
+  background-color: #f4f6fb;
+  min-height: 100vh;
+  padding: 30px 20px;
+}
+
+.payroll-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.payroll-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.payroll-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.payroll-period {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.payroll-period-label {
+  font-size: 14px;
+  color: #718096;
+  font-weight: 500;
+}
+
+.payroll-month-select {
+  appearance: none;
+  border: 1.5px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 7px 32px 7px 14px;
+  font-size: 14px;
+  color: #1a202c;
+  /* inline svg used as the dropdown arrow */
+  background: white
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 8L1 3h10z'/%3E%3C/svg%3E")
+    no-repeat right 10px center;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.payroll-month-select:focus {
+  border-color: #274b93;
+}
+
+.payroll-toolbar {
+  margin-bottom: 20px;
+}
+
+.payroll-search {
+  border: 1.5px solid #cbd5e0;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 14px;
+  color: #1a202c;
+  width: 280px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.payroll-search:focus {
+  border-color: #274b93;
+}
+
+.payroll-table-wrapper {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+/* table-layout: fixed lets the colgroup percentages take effect */
+.payroll-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.payroll-guard-thead tr {
+  background: #f7fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* remove top border from the very first thead so it doesn't double up with the wrapper */
+.payroll-guard-thead:first-of-type tr {
+  border-top: none;
+}
+
+.payroll-guard-thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.payroll-shift-row {
+  border-bottom: 1px solid #f0f4f8;
+  transition: background 0.15s;
+}
+
+.payroll-shift-row:hover {
+  background: #f7fafc;
+}
+
+.payroll-shift-row td {
+  padding: 13px 16px;
+  color: #2d3748;
+}
+
+.guard-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guard-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #274b93;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.payroll-total-row {
+  background: #f7fafc;
+  border-top: 2px solid #e2e8f0;
+}
+
+.payroll-total-label {
+  padding: 12px 16px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 14px;
+  color: #1a202c;
+}
+
+.payroll-total-amount {
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #1a202c;
+}
+
+.payroll-spacer td {
+  height: 12px;
+  background: #f4f6fb;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0;
+}
+
+.payroll-empty {
+  text-align: center;
+  padding: 48px;
+  color: #718096;
+  font-size: 15px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.page-btn.active-page {
+  background: #274b93;
+  color: white;
+  border-color: #274b93;
+  font-weight: 600;
+}
+
+.page-ellipsis {
+  width: 34px;
+  text-align: center;
+  color: #a0aec0;
+  font-size: 14px;
+}

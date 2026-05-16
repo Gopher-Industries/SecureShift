@@ -433,6 +433,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
       shiftType: values.shiftType === 'day' ? 'Day' : 'Night',
       description: values.instructions,
       guards: values.guards || [],
+      status:"open",
       location: (() => {
         const parsed = parseAddress(selectedSite?.address || values.location);
         return {

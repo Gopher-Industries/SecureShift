@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EmployerDashboard.css";
+import translations from '../i18n/translations';
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -29,18 +30,18 @@ const IconPlus = (props) => (
 
 const IconGrid = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="3" width="7" height="7" rx="1" />
-    <rect x="14" y="3" width="7" height="7" rx="1" />
-    <rect x="3" y="14" width="7" height="7" rx="1" />
-    <rect x="14" y="14" width="7" height="7" rx="1" />
+    <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" />
+    <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" />
+    <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" />
+    <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" />
   </svg>
 );
 
 const IconList = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="4" width="18" height="3" rx="1" />
-    <rect x="3" y="10.5" width="18" height="3" rx="1" />
-    <rect x="3" y="17" width="18" height="3" rx="1" />
+    <rect x="3" y="4" width="18" height="3" rx="1" fill="currentColor" />
+    <rect x="3" y="10.5" width="18" height="3" rx="1" fill="currentColor" />
+    <rect x="3" y="17" width="18" height="3" rx="1" fill="currentColor" />
   </svg>
 );
 
@@ -100,6 +101,24 @@ const parseIncidentDateTime = (incident) => {
   return baseDate.getTime();
 };
 
+const getShiftStatusCategory = (shift) => {
+  const text = String(shift?.status?.text || "").toLowerCase();
+  const tone = String(shift?.status?.tone || "").toLowerCase();
+
+  if (tone.includes("pending") || text.includes("pending")) return "Pending";
+  if (tone.includes("completed") || text.includes("completed")) return "Completed";
+  if (
+    tone.includes("confirmed") ||
+    tone.includes("open") ||
+    text.includes("confirmed") ||
+    text.includes("open")
+  ) {
+    return "Open";
+  }
+
+  return "All";
+};
+
 export default function EmployerDashboard() {
   const [view, setView] = useState("list");
   const overviewScroller = useRef(null);
@@ -109,6 +128,10 @@ export default function EmployerDashboard() {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [statusTab, setStatusTab] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [incidentDraft, setIncidentDraft] = useState({ severity: "Medium", comments: "" });
@@ -265,47 +288,73 @@ export default function EmployerDashboard() {
         setShifts([
           {
             id: 1,
-            title: "Crowd Control",
-            location: "Marvel Stadium",
-            date: "22-03-2026",
-            time: "5:00 pm - 1:00 am",
-            status: { text: "Confirmed", tone: "confirmed" },
-            payRate: 55,
+            title: "Shift 1",
+            location: "740 Bourke St, Docklands VIC",
+            date: "Mar 20, 2026",
+            time: "15:04 - 02:04",
+            status: { text: "Open", tone: "confirmed" },
+            payRate: 23,
             priority: "High",
-            assignedGuards: 2,
           },
           {
             id: 2,
-            title: "Shopping Centre Security",
-            location: "Chadstone Shopping Centre",
-            date: "24-03-2026",
-            time: "1:00 pm - 9:00 pm",
-            status: { text: "Pending", tone: "pending" },
-            payRate: 75,
-            priority: "Medium",
-            assignedGuards: 1,
+            title: "Shift 1",
+            location: "740 Bourke St, Docklands VIC",
+            date: "Mar 20, 2026",
+            time: "15:04 - 02:04",
+            status: { text: "Open", tone: "confirmed" },
+            payRate: 23,
+            priority: "High",
           },
           {
             id: 3,
-            title: "Event Security",
-            location: "Rod Laver Arena",
-            date: "26-03-2026",
-            time: "2:00 pm - 10:00 pm",
-            status: { text: "Confirmed", tone: "confirmed" },
-            payRate: 65,
+            title: "Shift 1",
+            location: "740 Bourke St, Docklands VIC",
+            date: "Mar 20, 2026",
+            time: "15:04 - 02:04",
+            status: { text: "Open", tone: "confirmed" },
+            payRate: 23,
             priority: "High",
-            assignedGuards: 3,
           },
           {
             id: 4,
-            title: "Static Guarding",
-            location: "Corporate Office",
-            date: "27-03-2026",
-            time: "8:00 am - 4:00 pm",
-            status: { text: "Completed (Rated)", tone: "completed" },
-            payRate: 50,
+            title: "Shift 1",
+            location: "740 Bourke St, Docklands VIC",
+            date: "Mar 20, 2026",
+            time: "15:04 - 02:04",
+            status: { text: "Open", tone: "confirmed" },
+            payRate: 23,
+            priority: "High",
+          },
+          {
+            id: 5,
+            title: "Shift 1",
+            location: "740 Bourke St, Docklands VIC",
+            date: "Mar 20, 2026",
+            time: "15:04 - 02:04",
+            status: { text: "Open", tone: "confirmed" },
+            payRate: 23,
+            priority: "High",
+          },
+          {
+            id: 6,
+            title: "Shift 1",
+            location: "740 Bourke St, Docklands VIC",
+            date: "Mar 21, 2026",
+            time: "13:00 - 21:00",
+            status: { text: "Pending", tone: "pending" },
+            payRate: 25,
+            priority: "Medium",
+          },
+          {
+            id: 7,
+            title: "Shift 1",
+            location: "740 Bourke St, Docklands VIC",
+            date: "Mar 22, 2026",
+            time: "09:00 - 17:00",
+            status: { text: "Completed", tone: "completed" },
+            payRate: 24,
             priority: "Low",
-            assignedGuards: 1,
           },
         ]);
       } finally {
@@ -318,34 +367,74 @@ export default function EmployerDashboard() {
 
   const reviews = useMemo(
     () => [
-      { name: "John Smith", role: "Crowd Control", stars: 5 },
-      { name: "Andrew Goddard", role: "Crowd Control", stars: 4 },
-      { name: "Amy Huggins", role: "Crowd Control", stars: 4 },
+      {
+        name: "Marcus Johnson",
+        role: "Downtown Plaza",
+        stars: 5,
+        text:
+          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
+        date: "May 4, 2025",
+      },
+      {
+        name: "Marcus Johnson",
+        role: "Downtown Plaza",
+        stars: 5,
+        text:
+          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
+        date: "May 4, 2025",
+      },
+      {
+        name: "Marcus Johnson",
+        role: "Downtown Plaza",
+        stars: 5,
+        text:
+          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
+        date: "May 4, 2025",
+      },
     ],
     []
   );
 
-  const priorityOrder = { High: 0, Medium: 1, Low: 2 };
+  const filteredShifts = useMemo(() => {
+    return shifts.filter((shift) => {
+      const matchesStatus =
+        statusTab === "All" ? true : getShiftStatusCategory(shift) === statusTab;
+      const matchesPriority =
+        priorityFilter === "All" ? true : String(shift.priority) === priorityFilter;
 
-  const priorityShifts = useMemo(() => {
-    return [...shifts].sort((a, b) => {
-      const aPriority = priorityOrder[a.priority] ?? 99;
-      const bPriority = priorityOrder[b.priority] ?? 99;
-      return aPriority - bPriority;
+      return matchesStatus && matchesPriority;
     });
+  }, [priorityFilter, shifts, statusTab]);
+
+  const pageSize = 5;
+  const totalPages = Math.max(1, Math.ceil(filteredShifts.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusTab, priorityFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedShifts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredShifts.slice(start, start + pageSize);
+  }, [currentPage, filteredShifts]);
+
+  const showingStart = filteredShifts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const showingEnd = Math.min(currentPage * pageSize, filteredShifts.length);
+
+  const tabCounts = useMemo(() => {
+    return {
+      All: shifts.length,
+      Pending: shifts.filter((s) => getShiftStatusCategory(s) === "Pending").length,
+      Open: shifts.filter((s) => getShiftStatusCategory(s) === "Open").length,
+      Completed: shifts.filter((s) => getShiftStatusCategory(s) === "Completed").length,
+    };
   }, [shifts]);
-
-  const highPriorityCount = useMemo(
-    () => shifts.filter((shift) => shift.priority === "High").length,
-    [shifts]
-  );
-
-  const totalAssignedGuards = useMemo(
-    () => shifts.reduce((total, shift) => total + (shift.assignedGuards || 0), 0),
-    [shifts]
-  );
-
-  const upcomingShiftCount = shifts.length;
 
   const filteredIncidents = useMemo(() => {
     const normalizedQuery = incidentQuery.trim().toLowerCase();
@@ -419,26 +508,48 @@ export default function EmployerDashboard() {
     setRequests((prev) =>
       prev.map((req) => (req.id === id ? { ...req, status: newStatus } : req))
     );
+  const scrollByAmount = (ref, amt) => {
+    if (!ref.current) return;
+    ref.current.scrollBy({ left: amt, behavior: "smooth" });
   };
 
   return (
     <div className="ss-page">
       <main className="ss-main">
-        <h2 className="ss-h1">Overview</h2>
+        <div className="ss-overview-head">
+          <div>
+            <h2 className="ss-h1">Overview</h2>
+            <p className="ss-overview-subtitle">
+              {shifts.length} shifts · last updated just now
+            </p>
+          </div>
 
-        <div className="ss-controls">
-          <div className="ss-controls-right">
-            <button className="ss-primary ss-primary--wide" onClick={() => navigate("/create-shift")}>
-              <IconPlus className="ss-plus" /> Create Shift
-            </button>
+          <button
+            className="ss-primary ss-primary--wide"
+            onClick={() => navigate("/create-shift")}
+            type="button"
+          >
+            <IconPlus className="ss-plus" /> Create Shift
+          </button>
+        </div>
+
+        <div className="ss-dashboard-card">
+          <div className="ss-topbar">
+            <div className="ss-tabs">
+              {["All", "Pending", "Open", "Completed"].map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`ss-tab ${statusTab === tab ? "is-active" : ""}`}
+                  onClick={() => setStatusTab(tab)}
+                >
+                  {tab}
+                  <span className="ss-tab__count">{tabCounts[tab]}</span>
+                </button>
+              ))}
+            </div>
+
             <div className="ss-viewtoggle">
-              <button
-                className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
-                onClick={() => setView("grid")}
-                type="button"
-              >
-                <IconGrid />
-              </button>
               <button
                 className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`}
                 onClick={() => setView("list")}
@@ -446,253 +557,277 @@ export default function EmployerDashboard() {
               >
                 <IconList />
               </button>
+              <button
+                className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
+                onClick={() => setView("grid")}
+                type="button"
+              >
+                <IconGrid />
+              </button>
             </div>
           </div>
-        </div>
 
-        <div className="ss-overview">
-          <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(overviewScroller, -320)}>
-            ‹
-          </button>
+          <div className="ss-filterbar">
+            <span className="ss-filterbar__label">Priority</span>
+            {["All", "High", "Medium", "Low"].map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                className={`ss-chip-btn ${priorityFilter === chip ? "is-active" : ""}`}
+                onClick={() => setPriorityFilter(chip)}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
 
-          <div className="ss-panel">
-            <div
-              ref={overviewScroller}
-              className={`ss-shifts ${view === "grid" ? "ss-shifts--grid" : "ss-shifts--list"}`}
-            >
-              {loading && <div>Loading shifts...</div>}
-              {error && <div style={{ color: "red" }}>{error}</div>}
-              {!loading && !error && shifts.length === 0 && <div>No shifts yet. Create your first shift.</div>}
+          {view === "list" ? (
+            <div className="ss-table">
+              <div className="ss-table__head">
+                <div>Shift</div>
+                <div>Priority</div>
+                <div>Date / Time</div>
+                <div>Pay</div>
+                <div>Status</div>
+              </div>
 
-              {shifts.map((s, idx) =>
-                view === "grid" ? (
-                  <div className="ss-card" key={s.id || idx}>
-                    <div className="ss-card__head">
-                      <div className="ss-role">{s.title}</div>
-                      <div className="ss-rate">${s.payRate} p/h</div>
-                    </div>
-
-                    <div className="ss-meta">{s.location}</div>
-
-                    <div className={`ss-status ss-status--${String(s.status.tone).toLowerCase()}`}>
-                      Status: {s.status.text}
-                    </div>
-
-                    <div className="ss-when">
-                      <span className="ss-when__item">
-                        <IconCalendar className="ss-ico" />
-                        {s.date}
-                      </span>
-                      <span className="ss-when__item">
-                        <IconClock className="ss-ico" />
-                        {s.time}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="ss-row" key={s.id || idx}>
-                    <div className="ss-col ss-role">{s.title}</div>
-                    <div className="ss-col ss-company">{s.location}</div>
-                    <div className="ss-col ss-rate">${s.payRate} p/h</div>
-                    <div className="ss-col ss-date">
-                      <IconCalendar className="ss-ico" /> {s.date}
-                    </div>
-                    <div className="ss-col ss-time">
-                      <IconClock className="ss-ico" /> {s.time}
-                    </div>
-                    <div className={`ss-col ss-status ss-status--${String(s.status.tone).toLowerCase()}`}>
-                      Status: {s.status.text}
-                    </div>
-                  </div>
-                )
+              {loading && <div className="ss-empty-state">Loading shifts...</div>}
+              {error && <div className="ss-empty-state ss-empty-state--error">{error}</div>}
+              {!loading && !error && filteredShifts.length === 0 && (
+                <div className="ss-empty-state">No shifts match the selected filters.</div>
               )}
-            </div>
-          </div>
 
-          <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(overviewScroller, 320)}>
-            ›
-          </button>
-        </div>
+              {!loading &&
+                !error &&
+                paginatedShifts.map((shift) => (
+                  <div className="ss-table__row" key={shift.id}>
+                    <div className="ss-shift-col">
+                      <div className="ss-shift-title">{shift.title}</div>
+                      <div className="ss-shift-location">{shift.location}</div>
+                    </div>
 
-        <h2 className="ss-h1 ss-h1--spaced">Priority Shifts</h2>
-        <div className="ss-overview">
-          <div className="ss-panel">
-            <div className="ss-priority-topstats">
-              <div className="ss-priority-mini-card">
-                <h3>{upcomingShiftCount}</h3>
-                <p>Upcoming Shifts</p>
-              </div>
-              <div className="ss-priority-mini-card">
-                <h3>{highPriorityCount}</h3>
-                <p>High Priority</p>
-              </div>
-              <div className="ss-priority-mini-card">
-                <h3>{totalAssignedGuards}</h3>
-                <p>Guards Assigned</p>
-              </div>
-            </div>
+                    <div>
+                      <span
+                        className={`ss-badge ss-badge--priority-${String(shift.priority).toLowerCase()}`}
+                      >
+                        {shift.priority}
+                      </span>
+                    </div>
 
-            <div className="ss-priority-list">
-              {priorityShifts.map((shift, idx) => (
-                <div className="ss-priority-simple-row" key={shift.id || idx}>
-                  <div className="ss-priority-left">
-                    <div className="ss-role">{shift.title}</div>
-                    <div className="ss-meta">{shift.location}</div>
+                    <div className="ss-datetime-col">
+                      <div className="ss-datetime-line">
+                        <IconCalendar className="ss-ico" />
+                        {shift.date}
+                      </div>
+                      <div className="ss-datetime-line">
+                        <IconClock className="ss-ico" />
+                        {shift.time}
+                      </div>
+                    </div>
+
+                    <div className="ss-pay-col">${shift.payRate}/hr</div>
+
+                    <div>
+                      <span
+                        className={`ss-badge ss-badge--status-${String(shift.status.tone).toLowerCase()}`}
+                      >
+                        {shift.status.text}
+                      </span>
+                    </div>
                   </div>
-
-                  <div className="ss-priority-middle">
-                    <div className="ss-date">
+                ))}
+            </div>
+          ) : (
+            <div className="ss-shifts ss-shifts--grid ss-grid-view">
+              {paginatedShifts.map((shift) => (
+                <div className="ss-card" key={shift.id}>
+                  <div className="ss-card__head">
+                    <div className="ss-role">{shift.title}</div>
+                    <div className="ss-rate">${shift.payRate} p/h</div>
+                  </div>
+                  <div className="ss-meta">{shift.location}</div>
+                  <div className="ss-when">
+                    <span className="ss-when__item">
                       <IconCalendar className="ss-ico" />
                       {shift.date}
-                    </div>
-                    <div className="ss-time">
+                    </span>
+                    <span className="ss-when__item">
                       <IconClock className="ss-ico" />
                       {shift.time}
-                    </div>
+                    </span>
                   </div>
-
-                  <div className="ss-priority-right">
-                    <span className={`ss-priority-pill ss-priority-pill--${shift.priority.toLowerCase()}`}>
+                  <div className="ss-grid-foot">
+                    <span
+                      className={`ss-badge ss-badge--priority-${String(shift.priority).toLowerCase()}`}
+                    >
                       {shift.priority}
                     </span>
-                    <div className="ss-priority-guards">{shift.assignedGuards} guards assigned</div>
+                    <span
+                      className={`ss-badge ss-badge--status-${String(shift.status.tone).toLowerCase()}`}
+                    >
+                      {shift.status.text}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
+          )}
 
-        <h2 className="ss-h1 ss-h1--spaced">Shift Swap / Leave Requests</h2>
-        <div className="ss-overview">
-          <div className="ss-panel">
-            <div className="ss-requests-list">
-              {requests.map((req) => (
-                <div className="ss-request-row" key={req.id}>
-                  <div className="ss-request-left">
-                    <div className="ss-role">{req.type}</div>
-                    <div className="ss-meta">
-                      {req.employee} — {req.shift}
-                    </div>
-                    <div className="ss-request-reason">{req.reason}</div>
-                  </div>
+          <div className="ss-pagination">
+            <div className="ss-pagination__meta">
+              Showing {showingStart}-{showingEnd} of {filteredShifts.length}
+            </div>
 
-                  <div className="ss-request-middle">
-                    <div className="ss-date">
-                      <IconCalendar className="ss-ico" />
-                      {req.requestDate}
-                    </div>
-                    <div className={`ss-status ss-status--${req.status.toLowerCase()}`}>{req.status}</div>
-                  </div>
+            <div className="ss-pagination__controls">
+              <button
+                type="button"
+                className="ss-page-btn"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              >
+                ‹
+              </button>
 
-                  <div className="ss-request-actions">
-                    <button
-                      className="ss-secondary ss-secondary--small"
-                      type="button"
-                      onClick={() => updateRequestStatus(req.id, "Approved")}
-                      disabled={req.status === "Approved"}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      className="ss-secondary ss-secondary--small ss-secondary--danger"
-                      type="button"
-                      onClick={() => updateRequestStatus(req.id, "Rejected")}
-                      disabled={req.status === "Rejected"}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`ss-page-btn ${currentPage === page ? "is-active" : ""}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
               ))}
+
+              <button
+                type="button"
+                className="ss-page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              >
+                ›
+              </button>
             </div>
           </div>
         </div>
 
-        <h2 className="ss-h1 ss-h1--spaced">Incident Reports</h2>
-        <div className="ss-incident-toolbar">
-          <input
-            className="ss-incident-search"
-            placeholder="Search by incident ID, guard, shift, or description"
-            value={incidentQuery}
-            onChange={(e) => setIncidentQuery(e.target.value)}
-          />
-          <select value={incidentStatusFilter} onChange={(e) => setIncidentStatusFilter(e.target.value)}>
-            <option value="All">All Statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Resolved">Resolved</option>
-          </select>
-          <select value={incidentSeverityFilter} onChange={(e) => setIncidentSeverityFilter(e.target.value)}>
-            <option value="All">All Severities</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-          </select>
-          <select value={incidentSort} onChange={(e) => setIncidentSort(e.target.value)}>
-            <option value="Newest">Sort: Newest</option>
-            <option value="Oldest">Sort: Oldest</option>
-            <option value="Severity">Sort: Severity</option>
-          </select>
-          <button
-            className="ss-secondary"
-            type="button"
-            onClick={() => {
-              setIncidentQuery("");
-              setIncidentStatusFilter("All");
-              setIncidentSeverityFilter("All");
-              setIncidentSort("Newest");
-            }}
-          >
-            Reset
-          </button>
+        <div className="ss-section-head">
+          <h2 className="ss-section-title">Incident Reports</h2>
+          <p className="ss-section-subtitle">
+            {incidentSummary.pending} pending · {incidentSummary.total} total
+          </p>
         </div>
 
-        <div className="ss-incident-summary">
-          <span>{incidentSummary.total} Total</span>
-          <span>{incidentSummary.pending} Pending</span>
-          <span>{incidentSummary.resolved} Resolved</span>
-          <span>{filteredIncidents.length} Showing</span>
-        </div>
-
-        <div className="ss-overview">
-          <div style={{ width: "44px" }}></div>
-          <div className="ss-panel">
-            <div className="ss-shifts ss-shifts--list">
-              {filteredIncidents.length === 0 && (
-                <div className="ss-row ss-row--empty">No incident reports match the current filters.</div>
-              )}
-              {filteredIncidents.map((inc, i) => (
-                <div className="ss-row" key={i}>
-                  <div className="ss-col ss-role">
-                    <b>{inc.guard}</b>
-                  </div>
-                  <div className="ss-col ss-company">{inc.shift}</div>
-                  <div className="ss-col ss-incident-id">{inc.id}</div>
-                  <div className="ss-col ss-date">
-                    <IconCalendar className="ss-ico" /> {inc.date}
-                  </div>
-                  <div className={`ss-col ss-status ss-status--${inc.status.toLowerCase()}`}>{inc.status}</div>
-                  <div className="ss-col ss-time" style={{ textAlign: "right" }}>
-                    <button
-                      className="ss-secondary"
-                      style={{ width: "100px" }}
-                      onClick={() => openIncidentModal(inc)}
-                    >
-                      Review
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="ss-dashboard-card">
+          <div className="ss-incident-toolbar">
+            <input
+              className="ss-incident-search"
+              placeholder="Search by incident ID, guard, shift or description"
+              value={incidentQuery}
+              onChange={(e) => setIncidentQuery(e.target.value)}
+            />
+            <select value={incidentStatusFilter} onChange={(e) => setIncidentStatusFilter(e.target.value)}>
+              <option value="All">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+            <select value={incidentSeverityFilter} onChange={(e) => setIncidentSeverityFilter(e.target.value)}>
+              <option value="All">All Severities</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+            <select value={incidentSort} onChange={(e) => setIncidentSort(e.target.value)}>
+              <option value="Newest">Sort Newest</option>
+              <option value="Oldest">Sort Oldest</option>
+              <option value="Severity">Sort Severity</option>
+            </select>
+            <button
+              className="ss-reset-btn"
+              type="button"
+              onClick={() => {
+                setIncidentQuery("");
+                setIncidentStatusFilter("All");
+                setIncidentSeverityFilter("All");
+                setIncidentSort("Newest");
+              }}
+            >
+              Reset
+            </button>
           </div>
-          <div style={{ width: "44px" }}></div>
+
+          <div className="ss-incident-summary">
+            <span>{incidentSummary.total} Total</span>
+            <span>{incidentSummary.pending} Pending</span>
+            <span>{incidentSummary.resolved} Resolved</span>
+            <span>{filteredIncidents.length} Showing</span>
+          </div>
+
+          <div className="ss-incident-list">
+            {filteredIncidents.length === 0 && (
+              <div className="ss-empty-state">No incident reports match the current filters.</div>
+            )}
+
+            {filteredIncidents.map((inc) => (
+              <div className="ss-incident-row" key={inc.id}>
+                <div className="ss-incident-row__line" />
+                <div className="ss-incident-avatar">
+                  {inc.guard
+                    .split(" ")
+                    .map((name) => name[0])
+                    .join("")
+                    .slice(0, 2)}
+                </div>
+
+                <div className="ss-incident-person">
+                  <div className="ss-incident-name">{inc.guard}</div>
+                </div>
+
+                <div className="ss-incident-shift">{inc.shift}</div>
+
+                <div className="ss-incident-id">{inc.id}</div>
+
+                <div className="ss-incident-date">
+                  <IconCalendar className="ss-ico" />
+                  {inc.date}
+                </div>
+
+                <div className="ss-incident-badges">
+                  <span className={`ss-badge ss-badge--priority-${inc.severity.toLowerCase()}`}>
+                    {inc.severity}
+                  </span>
+                  <span
+                    className={`ss-badge ss-badge--status-${inc.status === "Resolved" ? "completed" : "pending"}`}
+                  >
+                    {inc.status}
+                  </span>
+                </div>
+
+                <button
+                  className="ss-review-btn"
+                  type="button"
+                  onClick={() => openIncidentModal(inc)}
+                >
+                  Review
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <h2 className="ss-h1 ss-h1--spaced">Recent Review</h2>
-        <div className="ss-reviews">
-          <button className="ss-arrow ss-arrow--left" onClick={() => scrollByAmount(reviewScroller, -300)}>
-            ‹
-          </button>
+        <div className="ss-section-head ss-section-head--reviews">
+          <h2 className="ss-section-title">Recent Reviews</h2>
+          <div className="ss-review-arrows">
+            <button className="ss-mini-arrow" onClick={() => scrollByAmount(reviewScroller, -300)} type="button">
+              ‹
+            </button>
+            <button className="ss-mini-arrow" onClick={() => scrollByAmount(reviewScroller, 300)} type="button">
+              ›
+            </button>
+          </div>
+        </div>
+
+        <div className="ss-dashboard-card ss-dashboard-card--reviews">
           <div ref={reviewScroller} className="ss-reviews__track">
             {reviews.map((r, i) => (
               <div key={i} className="ss-reviewcard">
@@ -705,18 +840,18 @@ export default function EmployerDashboard() {
                     <div className="ss-review__role">{r.role}</div>
                   </div>
                 </div>
+
                 <div className="ss-review__stars">
                   {[0, 1, 2, 3, 4].map((k) => (
                     <Star key={k} filled={k < r.stars} />
                   ))}
                 </div>
-                <button className="ss-secondary">View Review</button>
+
+                <p className="ss-review__text">“{r.text}”</p>
+                <div className="ss-review__date">{r.date}</div>
               </div>
             ))}
           </div>
-          <button className="ss-arrow ss-arrow--right" onClick={() => scrollByAmount(reviewScroller, 300)}>
-            ›
-          </button>
         </div>
       </main>
 
@@ -732,7 +867,11 @@ export default function EmployerDashboard() {
                   Recorded on: {selectedIncident.date} at {selectedIncident.time}
                 </p>
               </div>
-              <span className={`ss-status ss-status--${selectedIncident.status.toLowerCase()}`}>
+              <span
+                className={`ss-badge ss-badge--status-${
+                  selectedIncident.status === "Resolved" ? "completed" : "pending"
+                }`}
+              >
                 {selectedIncident.status}
               </span>
             </div>
