@@ -55,22 +55,17 @@ export default function ProfileScreen({ navigation, route }: any) {
 
       const profile = await getUserProfile();
       setData(profile);
-    console.log('PROFILE:', profile);
 
-const guardId = profile?._id;
+      const guardId = profile?._id;
 
-console.log('GUARD ID:', guardId);
-
-if (guardId) {
-  try {
-    const score = await getGuardScore(guardId);
-    console.log('GUARD SCORE:', score);
-    setGuardScore(score);
-  } catch (scoreError) {
-    console.log('GUARD SCORE ERROR:', scoreError);
-  }
-}
-
+      if (guardId) {
+        try {
+          const score = await getGuardScore(guardId);
+          setGuardScore(score);
+        } catch (scoreError) {
+          console.log('GUARD SCORE ERROR:', scoreError);
+        }
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load profile');
     } finally {
@@ -172,17 +167,17 @@ if (guardId) {
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: '#4F46E5' }]}>
-  {guardScore?.totalShifts ?? 0}
-</Text>
+                {guardScore?.totalShifts ?? 0}
+              </Text>
               <Text style={styles.statLabel}>{t('profile.totalShifts')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: '#facc15' }]}>
                 {guardScore?.rating
-  ? guardScore.rating.toFixed(1)
-  : guardScore?.score
-    ? guardScore.score.toFixed(1)
-    : '0.0'}
+                  ? guardScore.rating.toFixed(1)
+                  : guardScore?.score
+                    ? guardScore.score.toFixed(1)
+                    : '0.0'}
               </Text>
               <Text style={styles.statLabel}>{t('profile.rating')}</Text>
             </View>
