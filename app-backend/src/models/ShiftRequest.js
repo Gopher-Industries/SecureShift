@@ -56,7 +56,7 @@ const shiftRequestSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Shift',
             validate: {
-                validator: function (v) {
+                validator: function () {
                     // Only required for mutual swaps, can be null for gift/cover
                     return true; // Optional field
                 },

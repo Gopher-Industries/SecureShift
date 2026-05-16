@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
-import Notification from './models/Notification.js';
-import User from './models/User.js';
+import Notification from '../models/Notification.js';
+import User from '../models/User.js';
 
 let io;
 
