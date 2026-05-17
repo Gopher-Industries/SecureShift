@@ -32,6 +32,13 @@ export const PAYROLL_CONFIG = {
 
   /** Cumulative regular hours per week before weekly overtime kicks in (AU: 38 h) */
   WEEKLY_OT_THRESHOLD: 38,
+
+  /**
+   * Superannuation rate — Australian mandatory employer contribution.
+   * 11.5% for FY 2024-25, rising to 12% from 1 July 2025.
+   * Applied on top of gross pay (ordinary time + overtime earnings).
+   */
+  SUPER_RATE: 0.115,
 };
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -116,9 +123,11 @@ function applyOvertimeRules(rawEntries) {
 
     weeklyRegularAccum += weeklyRegular; // accumulate only regular hours
 
-    const regularPay  = r2(finalRegular * payRate);
-    const overtimePay = r2(finalOT * payRate * OVERTIME_MULTIPLIER);
-    const totalPay    = r2(regularPay + overtimePay);
+    const regularPay     = r2(finalRegular * payRate);
+    const overtimePay    = r2(finalOT * payRate * OVERTIME_MULTIPLIER);
+    const grossPay       = r2(regularPay + overtimePay);
+    const superannuation = r2(grossPay * PAYROLL_CONFIG.SUPER_RATE);
+    const totalPay       = r2(grossPay + superannuation);
 
     return {
       ...entry,
@@ -126,6 +135,7 @@ function applyOvertimeRules(rawEntries) {
       overtimeHours: finalOT,
       regularPay,
       overtimePay,
+      superannuation,
       totalPay,
     };
   });
@@ -236,7 +246,10 @@ export async function calculateGuardPayroll(guardId, startDate, endDate, periodT
       acc.totalWorkedHours    += e.actualHours;
       acc.totalRegularHours   += e.regularHours;
       acc.totalOvertimeHours  += e.overtimeHours;
-      acc.grossPay            += e.totalPay;
+      acc.totalRegularPay     += e.regularPay;
+      acc.totalOvertimePay    += e.overtimePay;
+      acc.totalSuperannuation += e.superannuation;
+      acc.grossPay            += r2(e.regularPay + e.overtimePay);
       return acc;
     },
     {
@@ -244,11 +257,15 @@ export async function calculateGuardPayroll(guardId, startDate, endDate, periodT
       totalWorkedHours:    0,
       totalRegularHours:   0,
       totalOvertimeHours:  0,
+      totalRegularPay:     0,
+      totalOvertimePay:    0,
+      totalSuperannuation: 0,
       grossPay:            0,
     }
   );
 
   Object.keys(totals).forEach((k) => { totals[k] = r2(totals[k]); });
+  totals.totalCostToEmployer = r2(totals.grossPay + totals.totalSuperannuation);
 
   return {
     guardId:         guard._id,
@@ -348,25 +365,28 @@ export async function generateAndPersistPayroll(filters) {
         },
         {
           $set: {
-            entries:             data.entries,
-            totalScheduledHours: data.totalScheduledHours,
-            totalWorkedHours:    data.totalWorkedHours,
-            totalRegularHours:   data.totalRegularHours,
-            totalOvertimeHours:  data.totalOvertimeHours,
-            grossPay:            data.grossPay,
-            guardName:           data.guardName,
-            guardEmail:          data.guardEmail,
-            guardRole:           data.guardRole,
-            guardDepartment:     data.guardDepartment,
-            'period.type':       periodType,
-            'period.startDate':  start,
-            'period.endDate':    end,
-            status:              'PENDING',
-            // Reset workflow fields on recalculation
-            approvedBy:  null,
-            approvedAt:  null,
-            processedBy: null,
-            processedAt: null,
+            entries:              data.entries,
+            totalScheduledHours:  data.totalScheduledHours,
+            totalWorkedHours:     data.totalWorkedHours,
+            totalRegularHours:    data.totalRegularHours,
+            totalOvertimeHours:   data.totalOvertimeHours,
+            totalRegularPay:      data.totalRegularPay,
+            totalOvertimePay:     data.totalOvertimePay,
+            totalSuperannuation:  data.totalSuperannuation,
+            grossPay:             data.grossPay,
+            totalCostToEmployer:  data.totalCostToEmployer,
+            guardName:            data.guardName,
+            guardEmail:           data.guardEmail,
+            guardRole:            data.guardRole,
+            guardDepartment:      data.guardDepartment,
+            'period.type':        periodType,
+            'period.startDate':   start,
+            'period.endDate':     end,
+            status:               'PENDING',
+            approvedBy:           null,
+            approvedAt:           null,
+            processedBy:          null,
+            processedAt:          null,
           },
           $setOnInsert: { guard: _id },
         },

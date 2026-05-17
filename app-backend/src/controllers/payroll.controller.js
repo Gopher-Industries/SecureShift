@@ -16,6 +16,7 @@ import mongoose from 'mongoose';
 import Payroll from '../models/Payroll.js';
 import ShiftAttendance from '../models/ShiftAttendance.js';
 import Shift from '../models/Shift.js';
+import User from '../models/User.js';
 import { ACTIONS } from '../middleware/logger.js';
 import {
   generateAndPersistPayroll,
@@ -23,6 +24,10 @@ import {
   calcScheduledHours,
   PAYROLL_CONFIG,
 } from '../services/payroll.service.js';
+import {
+  sendPayrollApproved,
+  sendPayrollProcessed,
+} from '../utils/sendEmail.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -107,10 +112,16 @@ export const getPayroll = async (req, res) => {
 
     // ── Period summary ─────────────────────────────────────────────────────
     const summary = {
-      totalGuards:        records.length,
-      totalWorkedHours:   round2(records.reduce((s, r) => s + (r.totalWorkedHours    || 0), 0)),
-      totalOvertimeHours: round2(records.reduce((s, r) => s + (r.totalOvertimeHours  || 0), 0)),
-      totalGrossPay:      round2(records.reduce((s, r) => s + (r.grossPay            || 0), 0)),
+      totalGuards:          records.length,
+      totalWorkedHours:     round2(records.reduce((s, r) => s + (r.totalWorkedHours    || 0), 0)),
+      totalRegularHours:    round2(records.reduce((s, r) => s + (r.totalRegularHours   || 0), 0)),
+      totalOvertimeHours:   round2(records.reduce((s, r) => s + (r.totalOvertimeHours  || 0), 0)),
+      totalRegularPay:      round2(records.reduce((s, r) => s + (r.totalRegularPay     || 0), 0)),
+      totalOvertimePay:     round2(records.reduce((s, r) => s + (r.totalOvertimePay    || 0), 0)),
+      totalSuperannuation:  round2(records.reduce((s, r) => s + (r.totalSuperannuation || 0), 0)),
+      totalGrossPay:        round2(records.reduce((s, r) => s + (r.grossPay            || 0), 0)),
+      totalCostToEmployer:  round2(records.reduce((s, r) => s + (r.totalCostToEmployer || 0), 0)),
+      superRate:            '11.5%',
     };
 
     await req.audit.log(userId, ACTIONS.PAYROLL_GENERATED, {
@@ -185,6 +196,23 @@ export const approvePayroll = async (req, res) => {
       approvedCount: result.modifiedCount,
     });
 
+    // Notify each guard their payroll was approved (non-blocking)
+    for (const record of records) {
+      const guard = await User.findById(record.guard).select('name email').lean();
+      if (guard?.email) {
+        const startDate = record.period?.startDate?.toISOString?.().split('T')[0] ?? '';
+        const endDate   = record.period?.endDate?.toISOString?.().split('T')[0] ?? '';
+        sendPayrollApproved(
+          guard.email,
+          guard.name,
+          record.grossPay || 0,
+          record.period?.type ?? '',
+          startDate,
+          endDate
+        ).catch((err) => console.error('Payroll approval notify failed:', err.message));
+      }
+    }
+
     return res.json({
       message:       `${result.modifiedCount} payroll record(s) approved successfully`,
       modifiedCount: result.modifiedCount,
@@ -247,6 +275,23 @@ export const processPayroll = async (req, res) => {
       payrollIds,
       processedCount: result.modifiedCount,
     });
+
+    // Notify each guard their payroll was processed (non-blocking)
+    for (const record of records) {
+      const guard = await User.findById(record.guard).select('name email').lean();
+      if (guard?.email) {
+        const startDate = record.period?.startDate?.toISOString?.().split('T')[0] ?? '';
+        const endDate   = record.period?.endDate?.toISOString?.().split('T')[0] ?? '';
+        sendPayrollProcessed(
+          guard.email,
+          guard.name,
+          record.grossPay || 0,
+          record.period?.type ?? '',
+          startDate,
+          endDate
+        ).catch((err) => console.error('Payroll processed notify failed:', err.message));
+      }
+    }
 
     return res.json({
       message:       `${result.modifiedCount} payroll record(s) processed successfully`,
@@ -572,6 +617,172 @@ async function sendPDF(res, records, periodType, startDate, endDate) {
 
   doc.end();
 }
+
+// ─── GET /api/v1/payroll/:payrollId/payslip ──────────────────────────────────
+
+/**
+ * Generate a PDF pay slip for a single payroll record.
+ * Guards can only download their own. Admins can download any.
+ *
+ * GET /api/v1/payroll/:payrollId/payslip
+ */
+export const generatePaySlip = async (req, res) => {
+  try {
+    const { payrollId } = req.params;
+
+    if (!mongoose.isValidObjectId(payrollId)) {
+      return res.status(400).json({ message: 'payrollId must be a valid ObjectId' });
+    }
+
+    const record = await Payroll.findById(payrollId)
+      .populate('guard',       'name email role branch')
+      .populate('approvedBy',  'name email')
+      .populate('processedBy', 'name email')
+      .lean();
+
+    if (!record) {
+      return res.status(404).json({ message: 'Payroll record not found' });
+    }
+
+    // Guards can only view their own pay slip
+    if (req.user.role === 'guard') {
+      const guardId = String(req.user._id || req.user.id);
+      if (String(record.guard?._id || record.guard) !== guardId) {
+        return res.status(403).json({ message: 'You can only view your own pay slip' });
+      }
+    }
+
+    // Dynamic import so app still boots if pdfkit not installed yet
+    let PDFDocument;
+    try {
+      const mod   = await import('pdfkit');
+      PDFDocument  = mod.default;
+    } catch {
+      return res.status(500).json({
+        message: 'PDF generation requires pdfkit. Run: npm install pdfkit',
+      });
+    }
+
+    const guardName  = record.guardName  || record.guard?.name  || 'Unknown';
+    const guardEmail = record.guardEmail || record.guard?.email || '';
+    const startDate  = record.period?.startDate
+      ? new Date(record.period.startDate).toLocaleDateString('en-AU')
+      : '';
+    const endDate    = record.period?.endDate
+      ? new Date(record.period.endDate).toLocaleDateString('en-AU')
+      : '';
+    const periodType = record.period?.type ?? '';
+
+    const filename = `payslip-${guardName.replace(/\s+/g, '-')}-${startDate}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    doc.pipe(res);
+
+    // ── Header ─────────────────────────────────────────────────────────────
+    doc.fontSize(22).font('Helvetica-Bold').text('SecureShift', { align: 'center' });
+    doc.fontSize(14).font('Helvetica').text('PAY SLIP', { align: 'center' });
+    doc.moveDown(0.3);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.5);
+
+    // ── Guard details ───────────────────────────────────────────────────────
+    doc.fontSize(11).font('Helvetica-Bold').text('Employee Details');
+    doc.font('Helvetica')
+      .text(`Name   : ${guardName}`)
+      .text(`Email  : ${guardEmail}`)
+      .text(`Role   : ${record.guardRole || 'Guard'}`);
+    doc.moveDown(0.5);
+
+    // ── Pay period ──────────────────────────────────────────────────────────
+    doc.font('Helvetica-Bold').text('Pay Period');
+    doc.font('Helvetica')
+      .text(`Period Type : ${capitalize(periodType)}`)
+      .text(`From        : ${startDate}`)
+      .text(`To          : ${endDate}`)
+      .text(`Status      : ${record.status}`);
+    doc.moveDown(0.5);
+
+    // ── Hours summary ───────────────────────────────────────────────────────
+    doc.font('Helvetica-Bold').text('Hours Summary');
+    doc.font('Helvetica')
+      .text(`Scheduled Hours  : ${record.totalScheduledHours ?? 0} hrs`)
+      .text(`Worked Hours     : ${record.totalWorkedHours    ?? 0} hrs`)
+      .text(`Regular Hours    : ${record.totalRegularHours   ?? 0} hrs`)
+      .text(`Overtime Hours   : ${record.totalOvertimeHours  ?? 0} hrs`);
+    doc.moveDown(0.5);
+
+    // ── Earnings ────────────────────────────────────────────────────────────
+    doc.font('Helvetica-Bold').text('Earnings');
+    const regularPay  = round2((record.grossPay || 0) - (record.entries || []).reduce((s, e) => s + (e.overtimePay || 0), 0));
+    const overtimePay = round2((record.entries || []).reduce((s, e) => s + (e.overtimePay || 0), 0));
+    doc.font('Helvetica')
+      .text(`Regular Pay   : $${regularPay.toFixed(2)}`)
+      .text(`Overtime Pay  : $${overtimePay.toFixed(2)}`);
+    doc.moveDown(0.3);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.3);
+    doc.fontSize(13).font('Helvetica-Bold')
+      .text(`GROSS PAY     : $${(record.grossPay || 0).toFixed(2)} AUD`);
+    doc.moveDown(0.8);
+
+    // ── Shift breakdown ─────────────────────────────────────────────────────
+    if (record.entries && record.entries.length > 0) {
+      doc.fontSize(11).font('Helvetica-Bold').text('Shift Breakdown');
+      doc.moveDown(0.3);
+      doc.fontSize(8).font('Helvetica-Bold');
+
+      const C = { date: 55, sched: 130, actual: 185, reg: 240, ot: 285, rate: 330, pay: 400 };
+      const hY = doc.y;
+      doc.text('Date',      C.date,  hY, { continued: true });
+      doc.text('Sched h',   C.sched, hY, { continued: true });
+      doc.text('Actual h',  C.actual,hY, { continued: true });
+      doc.text('Reg h',     C.reg,   hY, { continued: true });
+      doc.text('OT h',      C.ot,    hY, { continued: true });
+      doc.text('Rate',      C.rate,  hY, { continued: true });
+      doc.text('Total Pay', C.pay,   hY);
+
+      doc.font('Helvetica').fontSize(8);
+      for (const e of record.entries) {
+        if (doc.y > 740) doc.addPage();
+        const rY = doc.y;
+        doc.text(new Date(e.shiftDate).toLocaleDateString('en-AU'), C.date,  rY, { continued: true });
+        doc.text(String(e.scheduledHours),                           C.sched, rY, { continued: true });
+        doc.text(String(e.actualHours),                              C.actual,rY, { continued: true });
+        doc.text(String(e.regularHours),                             C.reg,   rY, { continued: true });
+        doc.text(String(e.overtimeHours),                            C.ot,    rY, { continued: true });
+        doc.text(`$${e.payRate}`,                                    C.rate,  rY, { continued: true });
+        doc.text(`$${(e.totalPay || 0).toFixed(2)}`,                 C.pay,   rY);
+      }
+      doc.moveDown();
+    }
+
+    // ── Approval info ───────────────────────────────────────────────────────
+    if (record.approvedBy) {
+      doc.fontSize(9).font('Helvetica').fillColor('grey')
+        .text(`Approved by: ${record.approvedBy.name || record.approvedBy}   on ${record.approvedAt ? new Date(record.approvedAt).toLocaleDateString('en-AU') : '-'}`);
+    }
+    if (record.processedBy) {
+      doc.text(`Processed by: ${record.processedBy.name || record.processedBy}   on ${record.processedAt ? new Date(record.processedAt).toLocaleDateString('en-AU') : '-'}`);
+    }
+
+    // ── Footer ──────────────────────────────────────────────────────────────
+    doc.moveDown();
+    doc.fontSize(8).fillColor('grey')
+      .text(`SecureShift Confidential — Generated ${new Date().toISOString()}`, { align: 'center' });
+
+    doc.end();
+
+    await req.audit.log(req.user._id, ACTIONS.PAYROLL_EXPORTED, {
+      payrollId, format: 'payslip-pdf', guardName,
+    });
+
+  } catch (err) {
+    console.error('[generatePaySlip]', err);
+    return res.status(500).json({ message: err.message });
+  }
+};
 
 // ─── POST /api/v1/payroll/attendance ─────────────────────────────────────────
 

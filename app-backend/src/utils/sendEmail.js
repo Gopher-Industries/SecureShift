@@ -42,6 +42,73 @@ export const sendOTP = async (email, otp) => {
   }
 };
 
+/**
+ * Notify a guard that their payroll has been APPROVED.
+ * In dev mode (EMAIL_ENABLED=false) prints to terminal.
+ */
+export const sendPayrollApproved = async (email, guardName, grossPay, periodType, startDate, endDate) => {
+  if (!EMAIL_ENABLED) {
+    console.log('');
+    console.log('┌─────────────────────────────────────────┐');
+    console.log(`│  💰 Payroll APPROVED for ${guardName.substring(0, 15).padEnd(15)} │`);
+    console.log(`│  Period : ${String(periodType).padEnd(30)}│`);
+    console.log(`│  From   : ${String(startDate).padEnd(30)}│`);
+    console.log(`│  To     : ${String(endDate).padEnd(30)}│`);
+    console.log(`│  Gross  : $${String(grossPay.toFixed(2)).padEnd(29)}│`);
+    console.log('└─────────────────────────────────────────┘');
+    console.log('');
+    return;
+  }
+
+  const mailOptions = {
+    from: `"SecureShift" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: 'Your SecureShift Payroll Has Been Approved',
+    text: `Hi ${guardName},\n\nYour payroll for the period ${startDate} to ${endDate} has been approved.\n\nGross Pay: $${grossPay.toFixed(2)}\n\nIt will be processed shortly.\n\nBest regards,\nSecureShift Team`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Payroll approval email sent to ${email}`);
+  } catch (err) {
+    console.error('❌ Failed to send payroll approval email:', err.message);
+  }
+};
+
+/**
+ * Notify a guard that their payroll has been PROCESSED (payment on the way).
+ * In dev mode (EMAIL_ENABLED=false) prints to terminal.
+ */
+export const sendPayrollProcessed = async (email, guardName, grossPay, periodType, startDate, endDate) => {
+  if (!EMAIL_ENABLED) {
+    console.log('');
+    console.log('┌─────────────────────────────────────────┐');
+    console.log(`│  ✅ Payroll PROCESSED for ${guardName.substring(0, 14).padEnd(14)} │`);
+    console.log(`│  Period : ${String(periodType).padEnd(30)}│`);
+    console.log(`│  From   : ${String(startDate).padEnd(30)}│`);
+    console.log(`│  To     : ${String(endDate).padEnd(30)}│`);
+    console.log(`│  Gross  : $${String(grossPay.toFixed(2)).padEnd(29)}│`);
+    console.log('│  Payment is on its way!                 │');
+    console.log('└─────────────────────────────────────────┘');
+    console.log('');
+    return;
+  }
+
+  const mailOptions = {
+    from: `"SecureShift" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: 'Your SecureShift Payroll Has Been Processed',
+    text: `Hi ${guardName},\n\nGreat news! Your payroll for the period ${startDate} to ${endDate} has been processed.\n\nGross Pay: $${grossPay.toFixed(2)}\n\nPayment is on its way.\n\nBest regards,\nSecureShift Team`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Payroll processed email sent to ${email}`);
+  } catch (err) {
+    console.error('❌ Failed to send payroll processed email:', err.message);
+  }
+};
+
 export const sendEmployerCredentials = async (email, tempPassword, contactPerson, companyName) => {
   // ── Dev mode: print credentials to terminal ───────────────────────────────
   if (!EMAIL_ENABLED) {

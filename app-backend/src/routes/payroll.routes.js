@@ -28,6 +28,7 @@ import {
   approvePayroll,
   processPayroll,
   exportPayroll,
+  generatePaySlip,
   recordAttendance,
   getAttendanceForShift,
 } from '../controllers/payroll.controller.js';
@@ -195,6 +196,35 @@ router.get(
   '/export',
   authorizeRoles('super_admin', 'admin', 'branch_admin', 'employer', 'guard'),
   exportPayroll
+);
+
+// ─── GET /api/v1/payroll/:payrollId/payslip ──────────────────────────────────
+/**
+ * @swagger
+ * /api/v1/payroll/{payrollId}/payslip:
+ *   get:
+ *     summary: Download a PDF pay slip for a specific payroll record
+ *     tags: [Payroll]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: payrollId
+ *         required: true
+ *         schema: { type: string }
+ *         description: The payroll record ID
+ *     responses:
+ *       200:
+ *         description: PDF pay slip file download
+ *       403:
+ *         description: Guards can only access their own pay slip
+ *       404:
+ *         description: Payroll record not found
+ */
+router.get(
+  '/:payrollId/payslip',
+  authorizeRoles('super_admin', 'admin', 'branch_admin', 'employer', 'guard'),
+  generatePaySlip
 );
 
 // ─── POST /api/v1/payroll/attendance ─────────────────────────────────────────

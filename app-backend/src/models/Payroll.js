@@ -31,9 +31,10 @@ const payrollEntrySchema = new Schema(
     /** Hourly rate used (from Shift.payRate or system default) */
     payRate: { type: Number, default: 0, min: 0 },
 
-    regularPay: { type: Number, default: 0, min: 0 },
-    overtimePay: { type: Number, default: 0, min: 0 },
-    totalPay: { type: Number, default: 0, min: 0 },
+    regularPay:      { type: Number, default: 0, min: 0 },
+    overtimePay:     { type: Number, default: 0, min: 0 },
+    superannuation:  { type: Number, default: 0, min: 0 }, // employer super contribution
+    totalPay:        { type: Number, default: 0, min: 0 },
 
     /** Whether an attendance record existed for this shift */
     hasAttendanceRecord: { type: Boolean, default: false },
@@ -83,11 +84,15 @@ const payrollSchema = new Schema(
     entries: { type: [payrollEntrySchema], default: [] },
 
     // ── Aggregated totals ──────────────────────────────────────────────────
-    totalScheduledHours: { type: Number, default: 0, min: 0 },
-    totalWorkedHours:    { type: Number, default: 0, min: 0 },
-    totalRegularHours:   { type: Number, default: 0, min: 0 },
-    totalOvertimeHours:  { type: Number, default: 0, min: 0 },
-    grossPay:            { type: Number, default: 0, min: 0 },
+    totalScheduledHours:  { type: Number, default: 0, min: 0 },
+    totalWorkedHours:     { type: Number, default: 0, min: 0 },
+    totalRegularHours:    { type: Number, default: 0, min: 0 },
+    totalOvertimeHours:   { type: Number, default: 0, min: 0 },
+    totalRegularPay:      { type: Number, default: 0, min: 0 },
+    totalOvertimePay:     { type: Number, default: 0, min: 0 },
+    totalSuperannuation:  { type: Number, default: 0, min: 0 }, // 11.5% of gross
+    grossPay:             { type: Number, default: 0, min: 0 },
+    totalCostToEmployer:  { type: Number, default: 0, min: 0 }, // grossPay + super
 
     // ── Workflow ───────────────────────────────────────────────────────────
     status: {
