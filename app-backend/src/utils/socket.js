@@ -1,4 +1,4 @@
-import { Server } from 'socket.io';
+import {Server} from 'socket.io';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 
@@ -29,7 +29,7 @@ export const initSocket = (server) => {
       socket.userRole = user.role;
       next();
     } catch (err) {
-      next(new Error('Authentication failed'));
+      next(new Error(`Authentication failed: ${err.message}`))
     }
   });
 
@@ -50,7 +50,7 @@ export const initSocket = (server) => {
         deliveryStatus: 'DELIVERED'
       });
 
-      socket.emit('alert_acknowledged', { notificationId });
+      socket.emit('alert_acknowledged', {notificationId});
     });
 
     socket.on('disconnect', () => {
@@ -82,5 +82,3 @@ export const emitSOS = (notification) => {
     io.to('role_admin').emit('sos_alert', notification);
   }
 };
-
-export default { initSocket, emitNotification, emitBroadcast, emitSOS };
