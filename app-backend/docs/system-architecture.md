@@ -183,6 +183,7 @@ Middleware layers handle authentication, RBAC, and logging before requests reach
 - Models remain responsible for persistence and validation
 
 This transition is planned incrementally rather than through large-scale refactoring.
+
 ***
 
 ## 6. Access Control and Security Model
