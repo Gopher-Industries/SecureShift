@@ -1,0 +1,261 @@
+.timesheet-page {
+  padding: 28px 20px 40px;
+  background: #f7f7f7;
+  min-height: 100vh;
+}
+
+.timesheet-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.timesheet-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #111;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.summary-card {
+  border-radius: 14px;
+  padding: 16px 16px 14px;
+  min-height: 72px;
+}
+
+.summary-title {
+  font-size: 13px;
+  color: #4b4b4b;
+  margin-bottom: 8px;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+}
+
+.active-card {
+  background: #e9f6e8;
+}
+
+.late-card {
+  background: #f8f4d9;
+}
+
+.absent-card {
+  background: #fbe9e9;
+}
+
+.completed-card {
+  background: #edf0fb;
+}
+
+.timesheet-toolbar {
+  display: grid;
+  grid-template-columns: 220px 180px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.timesheet-search,
+.timesheet-select {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+  background: white;
+  font-size: 13px;
+  outline: none;
+}
+
+.timesheet-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.filter-btn {
+  border: 1px solid #cfcfcf;
+  background: white;
+  border-radius: 20px;
+  padding: 7px 15px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s ease;
+}
+
+.filter-btn:hover {
+  background: #f1f4fb;
+}
+
+.active-filter {
+  background: #153d8a;
+  color: white;
+  border-color: #153d8a;
+}
+
+.timesheet-sort {
+  font-size: 13px;
+  color: #333;
+  text-align: right;
+}
+
+.timesheet-table-wrapper {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.timesheet-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.timesheet-table th,
+.timesheet-table td {
+  padding: 14px 10px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid #ececec;
+  vertical-align: middle;
+}
+
+.timesheet-table th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #444;
+}
+
+.timesheet-table tbody tr:hover {
+  background: #f9fafc;
+}
+
+.guard-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guard-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #153d8a;
+  flex-shrink: 0;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #e8f7e8;
+  color: #2f9d44;
+}
+
+.status-badge.absent {
+  background: #fdecec;
+  color: #d63b3b;
+}
+
+.status-badge.late {
+  background: #fff5dd;
+  color: #c99700;
+}
+
+.status-badge.completed {
+  background: #e9edff;
+  color: #3556c7;
+}
+
+.timesheet-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  color: #444;
+}
+
+.back-dashboard-btn {
+  background: #153d8a;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s ease;
+}
+
+.back-dashboard-btn:hover {
+  background: #0d2e6e;
+}
+
+@media (max-width: 1100px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .timesheet-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .timesheet-sort {
+    text-align: left;
+  }
+
+  .timesheet-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .pagination {
+    text-align: left;
+  }
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 900px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .timesheet-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .timesheet-table {
+    min-width: 900px;
+  }
+}

@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="ss-bell-icon">
+  <path d="M12 3.25c-3.18 0-5.75 2.57-5.75 5.75v2.28c0 .55-.18 1.08-.5 1.53l-1.1 1.5c-.67.91-.02 2.19 1.11 2.19h12.48c1.13 0 1.78-1.28 1.11-2.19l-1.1-1.5c-.32-.45-.5-.98-.5-1.53V9c0-3.18-2.57-5.75-5.75-5.75Z" fill="currentColor"></path>
+  <path d="M9.5 18a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+</svg>

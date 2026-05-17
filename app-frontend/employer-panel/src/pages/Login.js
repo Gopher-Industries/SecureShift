@@ -1,30 +1,73 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import logo from "../logo.png";
-import "./Login.css";
-import http from "../lib/http";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import logo from '../logo.png';
+import './Login.css';
+import http from '../lib/http';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpMode, setOtpMode] = useState(false);
+  const [otpNotice, setOtpNotice] = useState('');
+  const [error, setError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+
+  const getErrorMessage = (err, fallback) => {
+    return err?.response?.data?.message || err?.message || fallback;
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setError('');
+    setLoginLoading(true);
 
     try {
-      const { data } = await http.post("/auth/login", { email, password });
+      const { data } = await http.post('/auth/login', { email, password });
 
-      // ✅ Login succeeded → redirect to OTP page
-      navigate("/2fa", { state: { email } });
+      if (data?.token) {
+        localStorage.setItem('token', data.token);
+        if (data?.role) localStorage.setItem('userRole', data.role);
+        if (data?.id) localStorage.setItem('userId', data.id);
+        navigate('/employer-dashboard');
+        return;
+      }
+
+      // If backend requires OTP, keep the login UI and show OTP section below.
+      setOtpMode(true);
+      setOtp('');
+      setOtpNotice(`OTP sent to ${email}`);
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err, 'Login failed'));
     } finally {
-      setLoading(false);
+      setLoginLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!otp.trim()) {
+      setError('Please enter the OTP sent to your email.');
+      return;
+    }
+
+    setVerifyLoading(true);
+    try {
+      const { data } = await http.post('/auth/verify-otp', { email, otp: otp.trim() });
+
+      localStorage.setItem('token', data.token);
+      if (data?.role) localStorage.setItem('userRole', data.role);
+      if (data?.id) localStorage.setItem('userId', data.id);
+
+      navigate('/employer-dashboard');
+    } catch (err) {
+      setError(getErrorMessage(err, 'OTP verification failed'));
+    } finally {
+      setVerifyLoading(false);
     }
   };
 
@@ -41,36 +84,78 @@ export default function Login() {
 
           <form onSubmit={handleLogin} className="loginForm">
             <div className="inputGroup">
-              <label className="inputLabel">Email</label>
+              <label className="inputLabel" htmlFor="login-email">
+                Email
+              </label>
               <input
+                id="login-email"
                 type="email"
                 placeholder="example@mail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="formInput"
+                disabled={loginLoading || verifyLoading}
               />
             </div>
 
             <div className="inputGroup">
-              <label className="inputLabel">Password</label>
+              <label className="inputLabel" htmlFor="login-password">
+                Password
+              </label>
               <input
+                id="login-password"
                 type="password"
                 placeholder="••••••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="formInput"
+                disabled={loginLoading || verifyLoading}
               />
             </div>
 
-            {error && <div className="errorMessage">{error}</div>}
-            {loading && <div className="loadingMessage">Sending OTP...</div>}
+            {error && !otpMode && <div className="errorMessage">{error}</div>}
+            {loginLoading && <div className="loadingMessage">Sending OTP...</div>}
 
-            <button type="submit" className="loginButton" disabled={loading}>
-              {loading ? "Please wait..." : "Log In"}
+            <button type="submit" className="loginButton" disabled={loginLoading || verifyLoading}>
+              {loginLoading ? 'Please wait...' : 'Log In'}
             </button>
+
+            {otpMode && otpNotice && <div className="otpNotice">{otpNotice}</div>}
           </form>
+
+          {otpMode && (
+            <form onSubmit={handleVerifyOtp} className="loginForm otpForm">
+              <div className="inputGroup">
+                <label className="inputLabel" htmlFor="login-otp">
+                  Enter OTP
+                </label>
+                <input
+                  id="login-otp"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  required
+                  className="formInput"
+                  disabled={loginLoading || verifyLoading}
+                />
+              </div>
+
+              {error && <div className="errorMessage">{error}</div>}
+              {verifyLoading && <div className="loadingMessage">Verifying OTP...</div>}
+
+              <button
+                type="submit"
+                className="loginButton"
+                disabled={loginLoading || verifyLoading}
+              >
+                {verifyLoading ? 'Please wait...' : 'Verify OTP'}
+              </button>
+            </form>
+          )}
 
           <div className="partnerLink">
             <a href="/expression-of-interest" className="partnerText">

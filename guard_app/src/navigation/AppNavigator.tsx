@@ -1,53 +1,173 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import AppTabs from './AppTabs';
+import ActiveSOSScreen from '../screen/ActiveSOSScreen';
+import CertificatesScreen from '../screen/CertificatesScreen';
+import DocumentsScreen from '../screen/DocumentsScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
+import IncidentReportScreen from '../screen/IncidentReportScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
+import PayrollScreen from '../screen/PayrollScreen';
+import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
+import QRScannerScreen from '../screen/QRScannerScreen';
+import ReleaseNotesScreen from '../screen/ReleaseNotesScreen';
+import ScanResultScreen from '../screen/ScanResultScreen';
 import SettingsScreen from '../screen/SettingsScreen';
+import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
+import ShiftRequestScreen from '../screen/ShiftRequestScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
+import TermsScreen from '../screen/TermsScreen';
+import { useAppTheme } from '../theme';
 
 export type RootStackParamList = {
   AppTabs: undefined;
   Splash: undefined;
   Login: undefined;
   Signup: undefined;
+  Documents: undefined;
   Settings: undefined;
+  ReleaseNotes: undefined;
+  Payroll: undefined;
+  PrivacyPolicy: undefined;
   EditProfile: undefined;
-  Messages: undefined;
+  Messages:
+    | {
+        context?: 'shift' | 'general';
+        shiftParticipantId?: string;
+        shiftParticipantName?: string;
+        shiftTitle?: string;
+        generalParticipantId?: string;
+        generalParticipantName?: string;
+      }
+    | undefined;
   Notifications: undefined;
+  Certificates: undefined;
+  ShiftDetails: { shift: any };
+  ShiftRequests: undefined;
+  Terms: undefined;
+  IncidentReports: undefined;
+  QRScanner: undefined;
+  ScanResult: { data: string };
+  ActiveSOS:
+    | {
+        sosId?: string;
+        emergencyContact?: { name?: string; phone?: string };
+      }
+    | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+  const { colors } = useAppTheme();
+  const { t } = useTranslation();
+
   return (
-    <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      initialRouteName="Splash"
+      screenOptions={{
+        headerShown: false,
+        headerStyle: { backgroundColor: colors.card },
+        headerTintColor: colors.text,
+        headerTitleStyle: { color: colors.text },
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
       <Stack.Screen name="AppTabs" component={AppTabs} />
-      <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen
+        name="Documents"
+        component={DocumentsScreen}
+        options={{ headerShown: true, title: t('tabs.documents') }}
+      />
+      <Stack.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ headerShown: true, title: 'Settings' }}
+        options={{ headerShown: true, title: t('nav.settings') }}
+      />
+      <Stack.Screen
+        name="ReleaseNotes"
+        component={ReleaseNotesScreen}
+        options={{ headerShown: true, title: 'Release Notes' }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ headerShown: true, title: t('nav.privacyPolicy') }}
       />
       <Stack.Screen
         name="Messages"
         component={MessagesScreen}
-        options={{ headerShown: true, title: 'Messages' }}
+        options={{ headerShown: true, title: t('nav.messages') }}
       />
       <Stack.Screen
         name="Notifications"
         component={NotificationsScreen}
-        options={{ headerShown: true, title: 'Notifications' }}
+        options={{ headerShown: true, title: t('nav.notifications') }}
+      />
+      <Stack.Screen
+        name="Payroll"
+        component={PayrollScreen}
+        options={{ headerShown: true, title: 'Payroll' }}
       />
       <Stack.Screen
         name="EditProfile"
         component={EditProfileScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Certificates"
+        component={CertificatesScreen}
+        options={{ headerShown: true, title: t('nav.certificates') }}
+      />
+      <Stack.Screen
+        name="ShiftDetails"
+        component={ShiftDetailsScreen}
+        options={{ headerShown: true, title: t('nav.shiftDetails') }}
+      />
+      <Stack.Screen
+        name="ShiftRequests"
+        component={ShiftRequestScreen}
+        options={{ headerShown: true, title: t('nav.shiftRequests') }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ headerShown: true, title: 'Terms of Service' }}
+      />
+      <Stack.Screen
+        name="IncidentReports"
+        component={IncidentReportScreen}
+        options={{ headerShown: true, title: t('incidentReport.title') }}
+      />
+      <Stack.Screen
+        name="QRScanner"
+        component={QRScannerScreen}
+        options={{ headerShown: true, title: 'QR Scanner' }}
+      />
+      <Stack.Screen
+        name="ScanResult"
+        component={ScanResultScreen}
+        options={{ headerShown: true, title: 'Scan Result' }}
+      />
+      <Stack.Screen
+        name="ActiveSOS"
+        component={ActiveSOSScreen}
+        options={{
+          headerShown: true,
+          title: 'Emergency Active',
+          headerStyle: { backgroundColor: '#B00020' },
+          headerTintColor: '#FFFFFF',
+          headerTitleStyle: { color: '#FFFFFF', fontWeight: '700' },
+          headerBackVisible: false,
+          gestureEnabled: false,
+        }}
       />
     </Stack.Navigator>
   );

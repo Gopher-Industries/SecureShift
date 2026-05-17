@@ -6,16 +6,24 @@ import {
   authorizeRoles,
   authorizePermissions,
   requireSameBranchAsTargetUser,
+  requireSelfOrRoles,
   ROLES,
 } from '../middleware/rbac.js';
 import {
   getMyProfile,
   updateMyProfile,
+  getEmployerProfile,
+  updateEmployerProfile,
   adminGetUserProfile,
   adminUpdateUserProfile,
   getAllGuards,
+  getGuardScore,
   listUsers,
-  deleteUser
+  deleteUser,
+  addFavouriteGuard,
+  removeFavouriteGuard,
+  getFavouriteGuards,
+  registerPushToken
 } from '../controllers/user.controller.js';
 
 const router = express.Router();
@@ -80,6 +88,170 @@ router
 
 /**
  * @swagger
+ * /api/v1/users/push-token:
+ *   post:
+ *     summary: Register a push notification token
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *               platform:
+ *                 type: string
+ *               deviceId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token registered
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/push-token', auth, loadUser, registerPushToken);
+
+/**
+ * @swagger
+ * /api/v1/users/profile:
+ *   get:
+ *     summary: Get logged-in employer's profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved employer profile.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (only employers)
+ *   put:
+ *     summary: Update logged-in employer's profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Krish Uppal"
+ *               email:
+ *                 type: string
+ *                 example: "krish@example.com"
+ *               phone:
+ *                 type: string
+ *                 example: "+61400123456"
+ *               address:
+ *                 type: string
+ *                 example: "123 Main Street"
+ *     responses:
+ *       200:
+ *         description: Successfully updated employer profile.
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       422:
+ *         description: Validation error
+ */
+router
+  .route('/profile')
+  .get(auth, loadUser, getEmployerProfile)
+  .put(auth, loadUser, updateEmployerProfile);
+/**
+ * @swagger
+ * /api/v1/users/favourites:
+ *   get:
+ *     summary: Get favourite guards
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of favourite guards
+ *       403:
+ *         description: Only employers allowed
+ */
+router.get(
+  '/favourites',
+  auth,
+  loadUser,
+  getFavouriteGuards
+);
+
+/**
+ * @swagger
+ * /api/v1/users/favourites/{guardId}:
+ *   post:
+ *     summary: Add a guard to favourites
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guardId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Guard ID
+ *     responses:
+ *       200:
+ *         description: Guard added to favourites
+ *       403:
+ *         description: Only employers allowed
+ *       404:
+ *         description: Guard not found
+ */
+router.post(
+  '/favourites/:guardId',
+  auth,
+  loadUser,
+  addFavouriteGuard
+);
+
+/**
+ * @swagger
+ * /api/v1/users/favourites/{guardId}:
+ *   delete:
+ *     summary: Remove a guard from favourites
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guardId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Guard ID
+ *     responses:
+ *       200:
+ *         description: Guard removed from favourites
+ *       403:
+ *         description: Only employers allowed
+ */
+router.delete(
+  '/favourites/:guardId',
+  auth,
+  loadUser,
+  removeFavouriteGuard
+);
+/**
+ * @swagger
  * /api/v1/users/guards:
  *   get:
  *     summary: Get all guards (Admin + Employee only)
@@ -101,6 +273,38 @@ router.get(
   authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE),
   authorizePermissions('user:read'),
   getAllGuards
+);
+
+/**
+ * @swagger
+ * /api/v1/users/guards/{id}/score:
+ *   get:
+ *     summary: Get a guard's performance score (0–100)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Guard ID
+ *     responses:
+ *       200:
+ *         description: Guard score and breakdown
+ *       400:
+ *         description: Invalid guard ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+  '/guards/:id/score',
+  auth,
+  requireSelfOrRoles({ paramKey: 'id', roles: [ROLES.EMPLOYER, ROLES.ADMIN] }),
+  getGuardScore
 );
 
 /**

@@ -32,6 +32,3 @@ export function attach401Handler(onUnauthorized) {
 }
 
 export default http; // Export configured Axios instance
-
-
-

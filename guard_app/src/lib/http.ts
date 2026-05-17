@@ -1,11 +1,34 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 import { LocalStorage } from './localStorage';
 
-export const API_BASE_URL: string =
-  (process.env.EXPO_PUBLIC_API_BASE_URL as string) ||
-  (Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000'); // Local for android and ios simulator
+const getApiBaseUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_BASE_URL) {
+    return process.env.EXPO_PUBLIC_API_BASE_URL;
+  }
+
+  if (__DEV__) {
+    if (Platform.OS === 'web') {
+      return 'http://localhost:5000';
+    }
+
+    const hostUri = Constants.expoConfig?.hostUri;
+    if (hostUri) {
+      const ip = hostUri.split(':')[0];
+      return `http://${ip}:5000`;
+    }
+
+    if (Platform.OS === 'android') {
+      return 'http://10.0.2.2:5000';
+    }
+  }
+
+  return 'http://localhost:5000';
+};
+
+export const API_BASE_URL: string = getApiBaseUrl();
 
 export const API_PATH: string = '/api/v1';
 

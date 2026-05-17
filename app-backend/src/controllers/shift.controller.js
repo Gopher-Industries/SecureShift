@@ -1,10 +1,51 @@
 import mongoose from 'mongoose';
 import Shift from '../models/Shift.js';
+import Branch from '../models/Branch.js';
+import Guard from '../models/Guard.js';
+import Availability from '../models/Availability.js';
+import { assessGuardFatigue } from '../services/fatigue.service.js';
 import { ACTIONS } from "../middleware/logger.js";
+import { timeToMinutes, normalizeEnd } from '../utils/timeUtils.js';
 
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
 const isValidHHMM = (s) => typeof s === 'string' && HHMM.test(s);
+
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const getWeekdayName = (date) => {
+  return WEEKDAY_NAMES[new Date(date).getDay()];
+};
+
+const shiftFitsTimeSlot = (startTime, endTime, slot) => {
+  if (typeof slot !== 'string' || !slot.includes('-')) return false;
+
+  const [slotStart, slotEnd] = slot.split('-');
+  const shiftStart = timeToMinutes(startTime);
+  const shiftEnd = normalizeEnd(startTime, endTime);
+  const slotStartMinutes = timeToMinutes(slotStart);
+  const slotEndMinutes = normalizeEnd(slotStart, slotEnd);
+
+  return shiftStart >= slotStartMinutes && shiftEnd <= slotEndMinutes;
+};
+
+const getShiftDateRange = (date, startTime, endTime) => {
+  const start = new Date(date);
+  const [startHour, startMinute] = String(startTime).split(':').map(Number);
+  start.setHours(startHour, startMinute, 0, 0);
+
+  const end = new Date(date);
+  const [endHour, endMinute] = String(endTime).split(':').map(Number);
+  end.setHours(endHour, endMinute, 0, 0);
+
+  if (end <= start) end.setDate(end.getDate() + 1); // handle overnight shifts
+
+  return { start, end };
+};
+
+const rangesOverlap = (rangeA, rangeB) => {
+  return rangeA.start < rangeB.end && rangeB.start < rangeA.end;
+};
 
 // Returns true if now is at/after the shift start datetime
 const isInPastOrStarted = (shift) => {
@@ -23,10 +64,29 @@ const isInPastOrStarted = (shift) => {
  */
 export const createShift = async (req, res) => {
   try {
-    const { title, date, startTime, endTime, location, urgency, field, payRate } = req.body;
+    const {
+      title,
+      date,
+      startTime,
+      endTime,
+      location,
+      urgency,
+      field,
+      payRate,
+      description,
+      requirements,
+      shiftType,
+      breakTime,
+      detailedInstructions,
+      guardIds = [],
+      siteId,
+      status,
+    } = req.body;
 
-    if (!title || !date || !startTime || !endTime) {
-      return res.status(400).json({ message: 'title, date, startTime, endTime are required' });
+    if (!title || !date || !startTime || !endTime || !location || payRate == null) {
+      return res.status(400).json({
+        message: 'title, date, startTime, endTime, location, and payRate are required'
+      });
     }
 
     if (payRate !== undefined && (isNaN(payRate) || Number(payRate) < 0)) {
@@ -47,17 +107,212 @@ export const createShift = async (req, res) => {
       return res.status(400).json({ message: 'startTime/endTime must be HH:MM (24h)' });
     }
 
+    if (!['Day', 'Night'].includes(shiftType)) {
+      return res.status(400).json({ message: 'shiftType must be Day or Night' });
+    }
+
+    if (breakTime !== undefined) {
+      const btNum = Number(breakTime);
+      if (Number.isNaN(btNum) || btNum < 0) {
+        return res.status(400).json({ message: 'breakTime must be a non-negative number' });
+      }
+    }
+
+    if (!Array.isArray(guardIds)) {
+      return res.status(400).json({ message: 'guardIds must be an array' });
+    }
+
+    if (!siteId || !mongoose.isValidObjectId(siteId)) {
+      return res.status(400).json({ message: 'siteId must be a valid branch ID' });
+    }
+
     let loc;
     if (location && typeof location === 'object') {
-      const { street, suburb, state, postcode } = location;
+      const { street, suburb, state, postcode, latitude, longitude } = location;
       loc = {
         street: typeof street === 'string' ? street.trim() : undefined,
         suburb: typeof suburb === 'string' ? suburb.trim() : undefined,
         state: typeof state === 'string' ? state.trim() : undefined,
         postcode,
+        latitude: latitude !== undefined ? Number(latitude) : undefined,
+        longitude: longitude !== undefined ? Number(longitude) : undefined,
       };
     }
 
+    if (!loc?.street || !loc?.suburb || !loc?.state || !loc?.postcode) {
+      return res.status(400).json({
+        message: 'location must include street, suburb, state, and postcode'
+      });
+    }
+
+    if (!/^\d{4}$/.test(String(loc.postcode))) {
+      return res.status(400).json({ message: 'location.postcode must be a 4-digit string' });
+    }
+
+    if (
+      loc.latitude !== undefined &&
+      (Number.isNaN(loc.latitude) || loc.latitude < -90 || loc.latitude > 90)
+    ) {
+      return res.status(400).json({
+        message: 'location.latitude must be a number between -90 and 90'
+      });
+    }
+
+    if (
+      loc.longitude !== undefined &&
+      (Number.isNaN(loc.longitude) || loc.longitude < -180 || loc.longitude > 180)
+    ) {
+      return res.status(400).json({
+        message: 'location.longitude must be a number between -180 and 180'
+      });
+    }
+
+    const site = await Branch.findOne({
+      _id: siteId,
+      employerId: creatorId,
+      isActive: true,
+    }).lean();
+
+    if (!site) {
+      return res.status(400).json({
+        message: 'siteId does not exist or does not belong to you'
+      });
+    }
+
+    const normalizedGuardIds = [...new Set(guardIds)].map((id) => String(id));
+
+    if (!normalizedGuardIds.every((id) => mongoose.isValidObjectId(id))) {
+      return res.status(400).json({
+        message: 'guardIds must contain only valid guard IDs'
+      });
+    }
+
+    const guards = await Guard.find({
+      _id: { $in: normalizedGuardIds },
+      isDeleted: { $ne: true }
+    }).select('_id name role').lean();
+
+    if (guards.length !== normalizedGuardIds.length) {
+      return res.status(400).json({
+        message: 'One or more guardIds do not correspond to active guards'
+      });
+    }
+
+    if (normalizedGuardIds.length > 0) {
+      const shiftDay = getWeekdayName(d);
+
+      const availabilities = await Availability.find({
+        user: { $in: normalizedGuardIds }
+      }).lean();
+
+      // For each selected guard, ensure they have availability for the requested weekday and time slot.
+      for (const guardId of normalizedGuardIds) {
+        const availability = availabilities.find((a) => String(a.user) === guardId);
+
+        if (!availability) {
+          return res.status(400).json({
+            message: `Guard ${guardId} does not have availability set`
+          });
+        }
+
+        if (!availability.days.includes(shiftDay)) {
+          return res.status(400).json({
+            message: `Guard ${guardId} is not available on ${shiftDay}`
+          });
+        }
+
+        const fitsTimeSlot = availability.timeSlots.some((slot) =>
+          shiftFitsTimeSlot(startTime, endTime, slot)
+        );
+
+        if (!fitsTimeSlot) {
+          return res.status(400).json({
+            message: `Guard ${guardId} is not available for the requested time`
+          });
+        }
+      }
+
+      // Prevent assigning/selecting guards who already have overlapping shifts through accepted, applied, or preselected guard links.
+      const newShiftRange = getShiftDateRange(d, startTime, endTime);
+
+      const existingShifts = await Shift.find({
+        $or: [
+          { acceptedBy: { $in: normalizedGuardIds } },
+          { applicants: { $in: normalizedGuardIds } },
+          { guardIds: { $in: normalizedGuardIds } }
+        ],
+        status: { $ne: 'completed' }
+      }).select('_id title date startTime endTime acceptedBy applicants guardIds status').lean();
+
+      for (const existingShift of existingShifts) {
+        const existingRange = getShiftDateRange(
+          existingShift.date,
+          existingShift.startTime,
+          existingShift.endTime
+        );
+
+        if (!rangesOverlap(newShiftRange, existingRange)) {
+          continue;
+        }
+
+        const conflictingGuardId = normalizedGuardIds.find((guardId) => {
+          return (
+            String(existingShift.acceptedBy) === guardId ||
+            (existingShift.applicants || []).some((id) => String(id) === guardId) ||
+            (existingShift.guardIds || []).some((id) => String(id) === guardId)
+          );
+        });
+
+        if (conflictingGuardId) {
+          return res.status(400).json({
+            message: `Guard ${conflictingGuardId} has a conflicting shift`
+          });
+        }
+      }
+    }
+    // ✅ STATUS VALIDATION (NEW)
+    const allowedStatus = ['draft', 'open'];
+    let finalStatus = 'draft';
+
+    if (status !== undefined) {
+      if (!allowedStatus.includes(status)) {
+        return res.status(400).json({
+          message: 'Invalid status. Allowed: draft, open'
+        });
+      }
+      finalStatus = status;
+    }
+    // Enforce fatigue rules for pre-selected guards during shift creation.
+    const fatigueAssessments = await Promise.all(
+      normalizedGuardIds.map(async (guardId) => {
+        const fatigueAssessment = await assessGuardFatigue(guardId, {
+          date: d,
+          startTime,
+          endTime,
+        });
+
+        return {
+          guardId,
+          ...fatigueAssessment,
+        };
+      })
+    );
+
+    const fatiguedGuards = fatigueAssessments.filter(
+      (assessment) => assessment.isFatigued
+    );
+
+    if (fatiguedGuards.length > 0) {
+      await req.audit.log(req.user._id, ACTIONS.SHIFT_FATIGUE_BLOCKED, {
+        guardIds: fatiguedGuards.map((assessment) => assessment.guardId),
+        fatigueAssessments: fatiguedGuards,
+      });
+
+      return res.status(400).json({
+        message: 'Shift creation blocked due to guard fatigue rules',
+        fatigueAssessments: fatiguedGuards,
+      });
+    }
     const shift = await Shift.create({
       title,
       date: d,
@@ -68,15 +323,24 @@ export const createShift = async (req, res) => {
       urgency,
       field,
       payRate,
+      description,
+      requirements,
+      shiftType,
+      breakTime: breakTime !== undefined ? Number(breakTime) : undefined,
+      detailedInstructions,
+      guardIds: normalizedGuardIds,
+      siteId,
+      status: finalStatus,
     });
 
     await req.audit.log(req.user._id, ACTIONS.SHIFT_CREATED, {
       shiftId: shift._id,
       title: shift.title,
       date: shift.date,
-      payRate: shift.payRate
+      payRate: shift.payRate,
+      status: shift.status
     });
-    
+
     return res.status(201).json(shift);
   } catch (e) {
     return res.status(500).json({ message: e.message });
@@ -84,30 +348,205 @@ export const createShift = async (req, res) => {
 };
 
 /**
+ * PATCH /api/v1/shifts/:id  (employer/admin)
+ * Allows owners or admins to update editable shift fields.
+ */
+export const updateShift = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid id' });
+    }
+
+    const shift = await Shift.findById(id);
+    if (!shift) return res.status(404).json({ message: 'Shift not found' });
+
+    const uid = req.user?._id || req.user?.id;
+    const isOwner = uid && String(shift.createdBy) === String(uid);
+    const isAdmin = req.user?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Not allowed to edit this shift' });
+    }
+
+    if (shift.status === 'completed') {
+      return res.status(400).json({ message: 'Completed shifts cannot be edited' });
+    }
+    if (isInPastOrStarted(shift)) {
+      return res.status(400).json({ message: 'Cannot edit a shift that has started or is in the past' });
+    }
+
+    const updates = {};
+    const {
+      title,
+      date,
+      startTime,
+      endTime,
+      payRate,
+      urgency,
+      field,
+      location,
+      description,
+      requirements,
+      status,
+    } = req.body;
+
+    if (title !== undefined) {
+      if (typeof title !== 'string' || title.trim().length < 3) {
+        return res.status(400).json({ message: 'title must be at least 3 characters' });
+      }
+      updates.title = title.trim();
+    }
+
+    if (date !== undefined) {
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) {
+        return res.status(400).json({ message: 'date must be valid (YYYY-MM-DD)' });
+      }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (d < today) {
+        return res.status(400).json({ message: 'Shift date must be today or in the future' });
+      }
+      updates.date = d;
+    }
+
+    if (startTime !== undefined) {
+      if (!isValidHHMM(startTime)) {
+        return res.status(400).json({ message: 'startTime must be HH:MM (24h)' });
+      }
+      updates.startTime = startTime;
+    }
+
+    if (endTime !== undefined) {
+      if (!isValidHHMM(endTime)) {
+        return res.status(400).json({ message: 'endTime must be HH:MM (24h)' });
+      }
+      updates.endTime = endTime;
+    }
+
+    if (payRate !== undefined) {
+      const rateNum = Number(payRate);
+      if (Number.isNaN(rateNum) || rateNum < 0) {
+        return res.status(400).json({ message: 'payRate must be a non-negative number' });
+      }
+      updates.payRate = rateNum;
+    }
+
+    if (urgency !== undefined) {
+      const allowed = ['normal', 'priority', 'last-minute'];
+      if (!allowed.includes(urgency)) {
+        return res.status(400).json({ message: 'urgency must be normal, priority, or last-minute' });
+      }
+      updates.urgency = urgency;
+    }
+
+    if (field !== undefined) {
+      if (typeof field !== 'string' || field.trim().length === 0) {
+        return res.status(400).json({ message: 'field must be a non-empty string' });
+      }
+      updates.field = field.trim();
+    }
+
+    if (description !== undefined) {
+      if (typeof description !== 'string') {
+        return res.status(400).json({ message: 'description must be a string' });
+      }
+      updates.description = description.trim();
+    }
+
+    if (requirements !== undefined) {
+      if (typeof requirements !== 'string') {
+        return res.status(400).json({ message: 'requirements must be a string' });
+      }
+      updates.requirements = requirements.trim();
+    }
+
+    if (location !== undefined) {
+      if (typeof location !== 'object') {
+        return res.status(400).json({ message: 'location must be an object' });
+      }
+      const { street, suburb, state, postcode } = location;
+      const loc = { ...shift.location?.toObject?.() };
+      if (street !== undefined) loc.street = typeof street === 'string' ? street.trim() : street;
+      if (suburb !== undefined) loc.suburb = typeof suburb === 'string' ? suburb.trim() : suburb;
+      if (state !== undefined) loc.state = typeof state === 'string' ? state.trim() : state;
+      if (postcode !== undefined) loc.postcode = postcode;
+      updates.location = loc;
+    }
+    if (status !== undefined) {
+      const allowedStatuses = ['draft', 'open'];
+
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+          message: 'Invalid status. Allowed: draft, open'
+        });
+      }
+
+      // current status
+      const current = shift.status;
+
+      // allow same value (no-op)
+      if (status === current) {
+        updates.status = status;
+      } else {
+        // allowed transitions
+        const allowedTransitions = {
+          draft: ['open'],
+          open: ['draft'],
+        };
+
+        if (!allowedTransitions[current]?.includes(status)) {
+          return res.status(400).json({
+            message: `Invalid status transition: ${current} → ${status}`
+          });
+        }
+
+        updates.status = status;
+      }
+    }
+    Object.assign(shift, updates);
+    await shift.save();
+    await req.audit.log(req.user?._id, ACTIONS.SHIFT_UPDATED, {
+      shiftId: shift._id,
+      updates: Object.keys(updates),
+    });
+
+    return res.json({ message: 'Shift updated', shift });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
  * GET /api/v1/shifts  (dynamic by role)
+ * Guard → available (open/applied) future/today not created by guard
+ * Employer → own shifts waiting for approval (status: applied)
+ * Admin → all shifts waiting for approval (status: applied)
+ * Optional query params: ?q=&urgency=&limit=&page=
  */
 export const listAvailableShifts = async (req, res) => {
   try {
     const role = req.user?.role;
-    const uid  = req.user?._id || req.user?.id;
+    const uid = req.user?._id || req.user?.id;
     if (!role || !uid) return res.status(401).json({ message: 'Unauthorized' });
 
-    const page  = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
-    const skip  = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
     const { q, urgency } = req.query;
     const withApplicantsOnly = String(req.query.withApplicantsOnly) === 'true';
 
     let query = {};
     if (role === 'guard') {
-      const today = new Date(); today.setHours(0,0,0,0);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
       query = {
         status: { $in: ['open', 'applied'] },
         createdBy: { $ne: uid },
         date: { $gte: today },
       };
     } else if (role === 'employer') {
+      // show ALL my shifts; optionally filter to only those with applicants
       query = { createdBy: uid };
       if (withApplicantsOnly) query['applicants.0'] = { $exists: true };
     } else if (role === 'admin') {
@@ -123,14 +562,21 @@ export const listAvailableShifts = async (req, res) => {
         { field: { $regex: q, $options: 'i' } },
       ];
     }
-    if (urgency && ['normal','priority','last-minute'].includes(urgency)) {
+    if (urgency && ['normal', 'priority', 'last-minute'].includes(urgency)) {
       query.urgency = urgency;
     }
 
     const findQ = Shift.find(query)
-      .sort({ date: role === 'guard' ? 1 : -1, startTime: role === 'guard' ? 1 : -1, createdAt: -1 })
-      .skip(skip).limit(limit)
-      .populate('createdBy', 'name');
+      .sort({
+        date: role === 'guard' ? 1 : -1,
+        startTime: role === 'guard' ? 1 : -1,
+        createdAt: -1,
+      })
+      .skip(skip)
+      .limit(limit)
+      .populate('createdBy', 'name email')
+      .populate('guardIds', 'name email')
+      .populate('acceptedBy', 'name email');
 
     if (role === 'employer' || role === 'admin') {
       findQ.populate('applicants', 'name email');
@@ -138,13 +584,20 @@ export const listAvailableShifts = async (req, res) => {
 
     const [docs, total] = await Promise.all([findQ.lean(), Shift.countDocuments(query)]);
 
-    const items = (role === 'employer' || role === 'admin')
-      ? docs.map(d => ({
-          ...d,
-          applicantCount: Array.isArray(d.applicants) ? d.applicants.length : 0,
-          hasApplicants: Array.isArray(d.applicants) && d.applicants.length > 0,
-        }))
-      : docs;
+    const items = docs.map((shift) => {
+      const assignedGuards = shift.acceptedBy
+        ? [shift.acceptedBy]
+        : Array.isArray(shift.guardIds)
+          ? shift.guardIds
+          : [];
+
+      return {
+        ...shift,
+        assignedGuards,
+        applicantCount: Array.isArray(shift.applicants) ? shift.applicants.length : 0,
+        hasApplicants: Array.isArray(shift.applicants) && shift.applicants.length > 0,
+      };
+    });
 
     res.json({ page, limit, total, items });
   } catch (e) {
@@ -167,6 +620,9 @@ export const applyForShift = async (req, res) => {
 
     const shift = await Shift.findById(id);
     if (!shift) return res.status(404).json({ message: 'Shift not found' });
+    if (shift.status !== 'open') {
+      return res.status(400).json({ message: 'Can only apply to open shifts' });
+    }
 
     if (['assigned', 'completed'].includes(shift.status)) {
       return res.status(400).json({ message: `Cannot apply; shift is ${shift.status}` });
@@ -178,24 +634,47 @@ export const applyForShift = async (req, res) => {
       return res.status(400).json({ message: 'Employer cannot apply to own shift' });
     }
 
+    // sanitize & dedupe
     shift.applicants = (shift.applicants || []).filter(Boolean);
     if (shift.applicants.some(a => String(a) === String(userId))) {
       return res.status(400).json({ message: 'Already applied' });
+    }
+
+    const userShifts = await Shift.find({
+      date: shift.date,
+      _id: { $ne: id },
+      applicants: userId,
+    });
+
+    const hasOverlap = userShifts.some(existing => {
+      const newStart = timeToMinutes(shift.startTime);
+      const newEnd = normalizeEnd(shift.startTime, shift.endTime);
+      const exStart = timeToMinutes(existing.startTime);
+      const exEnd = normalizeEnd(existing.startTime, existing.endTime);
+      return newStart < exEnd && newEnd > exStart;
+    });
+
+    if (hasOverlap) {
+      return res.status(400).json({ message: 'Cannot apply; shift overlaps with existing applied shift/s' });
     }
 
     shift.applicants.push(userId);
     if (shift.status === 'open') shift.status = 'applied';
 
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, { shiftId: shift._id });
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, {
+      shiftId: shift._id
+    });
     return res.json({ message: 'Application submitted', shift });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
 };
 
+
 /**
  * PUT /api/v1/shifts/:id/approve  (employer/admin)
+ * body: { guardId, keepOthers=false }
  */
 export const approveShift = async (req, res) => {
   try {
@@ -221,7 +700,22 @@ export const approveShift = async (req, res) => {
       return res.status(400).json({ message: 'Guard did not apply for this shift' });
     }
 
-    shift.assignedGuard = guardId;
+    const fatigueAssessment = await assessGuardFatigue(guardId, shift);
+
+    if (fatigueAssessment.isFatigued) {
+      await req.audit.log(req.user._id, ACTIONS.SHIFT_FATIGUE_BLOCKED, {
+        shiftId: shift._id,
+        guardId,
+        fatigueAssessment,
+      });
+
+      return res.status(400).json({
+        message: 'Shift approval blocked due to guard fatigue rules',
+        fatigueAssessment,
+      });
+    }
+
+    shift.assignedGuard = guardId; // virtual -> acceptedBy
     shift.status = 'assigned';
     if (!keepOthers) shift.applicants = [guardId];
 
@@ -239,52 +733,14 @@ export const approveShift = async (req, res) => {
 };
 
 /**
- * PATCH /api/v1/shifts/:id/assign  (branch/admin/super)
- */
-export const assignGuard = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { guardId } = req.body;
-
-    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(guardId)) {
-      return res.status(400).json({ message: 'Invalid id(s)' });
-    }
-
-    const shift = await Shift.findById(id);
-    if (!shift) return res.status(404).json({ message: 'Shift not found' });
-
-    if (shift.status === 'completed') {
-      return res.status(400).json({ message: 'Cannot assign; shift already completed' });
-    }
-    if (isInPastOrStarted(shift)) {
-      return res.status(400).json({ message: 'Cannot assign; shift already started or in the past' });
-    }
-
-    shift.assignedGuard = guardId;
-    shift.status = 'assigned';
-    shift.applicants = [guardId];
-
-    await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_ASSIGNED, {
-      shiftId: shift._id,
-      assignedGuardId: guardId
-    });
-
-    return res.json({ message: 'Guard successfully assigned to shift', shift });
-  } catch (e) {
-    return res.status(500).json({ message: e.message });
-  }
-};
-
-/**
- * PUT /api/v1/shifts/:id/complete
+ * PUT /api/v1/shifts/:id/complete  (employer/admin)
  */
 export const completeShift = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: 'Invalid id' });
 
-    const shift = await Shift.findById(id);
+    const shift = await Shift.findById(id).populate('attendance');
     if (!shift) return res.status(404).json({ message: 'Shift not found' });
 
     const isOwner = String(shift.createdBy) === String(req.user._id);
@@ -294,9 +750,14 @@ export const completeShift = async (req, res) => {
     if (!shift.assignedGuard) return res.status(400).json({ message: 'No guard assigned' });
     if (shift.status === 'completed') return res.status(400).json({ message: 'Already completed' });
 
+    if (!shift.hasCheckedIn) return res.status(400).json({ message: 'Guard has not checked in' });
+    if (!shift.hasCheckedOut) return res.status(400).json({ message: 'Guard has not checked out' });
+
     shift.status = 'completed';
     await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, { shiftId: shift._id });
+    await req.audit.log(req.user._id, ACTIONS.SHIFT_COMPLETED, {
+      shiftId: shift._id
+    });
 
     return res.json({ message: 'Shift completed', shift });
   } catch (e) {
@@ -305,12 +766,15 @@ export const completeShift = async (req, res) => {
 };
 
 /**
- * GET /api/v1/shifts/myshifts
+ * GET /api/v1/shifts/myshifts  (?status=past)
+ * guard: applied/assigned/past
+ * employer: created
+ * admin: all
  */
 export const getMyShifts = async (req, res) => {
   try {
     const role = req.user.role;
-    const uid  = req.user._id;
+    const uid = req.user._id;
     const pastOnly = req.query.status === 'past';
 
     let query = {};
@@ -318,7 +782,7 @@ export const getMyShifts = async (req, res) => {
       query = { $or: [{ applicants: uid }, { acceptedBy: uid }] };
     } else if (role === 'employer') {
       query = { createdBy: uid };
-    }
+    } // admin sees all
 
     if (pastOnly) query = { ...query, status: 'completed' };
 
@@ -335,7 +799,8 @@ export const getMyShifts = async (req, res) => {
 };
 
 /**
- * PATCH /api/v1/shifts/:id/rate
+ * PATCH /api/v1/shifts/:id/rate  (guard/employer)
+ * body: { rating: 1..5 }
  */
 export const rateShift = async (req, res) => {
   try {
@@ -388,14 +853,15 @@ export const rateShift = async (req, res) => {
     return res.status(500).json({ message: e.message });
   }
 };
-
 /**
  * GET /api/v1/shifts/history
+ * Guard → completed shifts assigned to them
+ * Employer → posted shifts with status = completed
  */
 export const getShiftHistory = async (req, res) => {
   try {
     const role = req.user.role;
-    const uid  = req.user._id;
+    const uid = req.user._id;
 
     let query = {};
     if (role === 'guard') {
@@ -412,81 +878,6 @@ export const getShiftHistory = async (req, res) => {
       .populate('assignedGuard', 'name email');
 
     return res.json({ total: shifts.length, items: shifts });
-  } catch (e) {
-    return res.status(500).json({ message: e.message });
-  }
-};
-
-/**
- * GET /api/v1/shifts/available  (guard only)
- * Optional query params:
- *   - date=YYYY-MM-DD (returns shifts on that calendar day)
- *   - location=string  (matches street/suburb/state/postcode, case-insensitive)
- * Always:
- *   - status: 'open'
- *   - exclude shifts created by the guard
- *   - future or today when no date is supplied
- *   - sort by date ASC, then startTime ASC
- */
-export const listOpenShiftsForGuard = async (req, res) => {
-  try {
-    const uid  = req.user?._id || req.user?.id;
-    const role = req.user?.role;
-    if (!uid || role !== 'guard') {
-      return res.status(403).json({ message: 'Forbidden: guard role required' });
-    }
-
-    // Pagination
-    const page  = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
-    const skip  = (page - 1) * limit;
-
-    const { date, location } = req.query;
-
-    // Base query
-    const query = {
-      status: 'open',
-      createdBy: { $ne: uid },
-    };
-
-    // Date filter
-    if (date) {
-      const d = new Date(date);
-      if (Number.isNaN(d.getTime())) {
-        return res.status(400).json({ message: 'date must be YYYY-MM-DD' });
-      }
-      const start = new Date(d); start.setHours(0, 0, 0, 0);
-      const end   = new Date(d); end.setHours(23, 59, 59, 999);
-      query.date = { $gte: start, $lte: end };
-    } else {
-      // If no specific day requested, only show today or future
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      query.date = { $gte: today };
-    }
-
-    // Location filter (matches any location sub-field)
-    if (location && typeof location === 'string' && location.trim()) {
-      const rx = new RegExp(location.trim(), 'i');
-      query.$or = [
-        { 'location.street':   { $regex: rx } },
-        { 'location.suburb':   { $regex: rx } },
-        { 'location.state':    { $regex: rx } },
-        { 'location.postcode': { $regex: rx } },
-        // If you also store a flat text field, include it:
-        { locationText:        { $regex: rx } },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      Shift.find(query)
-        .sort({ date: 1, startTime: 1 }) // ascending
-        .skip(skip).limit(limit)
-        .populate('createdBy', 'name')
-        .lean(),
-      Shift.countDocuments(query),
-    ]);
-
-    return res.json({ page, limit, total, items });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }

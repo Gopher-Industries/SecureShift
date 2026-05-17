@@ -47,7 +47,7 @@ export async function pickImageFromGallery(): Promise<ImagePickerResult | null> 
         uri: asset.uri,
         width: asset.width,
         height: asset.height,
-        type: asset.type,
+        type: asset.type ?? undefined,
       };
     }
 
@@ -86,7 +86,7 @@ export async function takePhotoWithCamera(): Promise<ImagePickerResult | null> {
         uri: asset.uri,
         width: asset.width,
         height: asset.height,
-        type: asset.type,
+        type: asset.type ?? undefined,
       };
     }
 

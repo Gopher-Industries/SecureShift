@@ -1,11 +1,5 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
-import loadUser from '../middleware/loadUser.js';
-import {
-  authorizeRoles,
-  authorizePermissions,
-  ROLES,
-} from '../middleware/rbac.js';
+import protect from '../middleware/auth.js';
 import {
   createShift,
   applyForShift,
@@ -13,13 +7,25 @@ import {
   completeShift,
   getMyShifts,
   rateShift,
-  listAvailableShifts,
+  listAvailableShifts, // dynamic by role
   getShiftHistory,
-  assignGuard,
-  listOpenShiftsForGuard,
+  updateShift,
 } from '../controllers/shift.controller.js';
 
 const router = express.Router();
+
+/**
+ * Inline role guards (same pattern as authorizeAdmin in users.route)
+ */
+const authorizeRole = (...allowed) => (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  if (!allowed.includes(req.user.role)) {
+    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
+  }
+  next();
+};
 
 /**
  * @swagger
@@ -86,7 +92,7 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [title, date, startTime, endTime]
+ *             required: [title, date, startTime, endTime, shiftType, location, payRate, siteId]
  *             properties:
  *               title:
  *                 type: string
@@ -94,20 +100,64 @@ const router = express.Router();
  *               date:
  *                 type: string
  *                 format: date
- *                 example: "2025-08-25"
+ *                 example: "2026-04-07"
  *               startTime:
  *                 type: string
  *                 example: "20:00"
+ *                 description: "HH:MM (24h)"
  *               endTime:
  *                 type: string
  *                 example: "23:00"
+ *                 description: "HH:MM (24h). Overnight shifts are supported when endTime is earlier than or equal to startTime."
+ *               shiftType:
+ *                 type: string
+ *                 enum: [Day, Night]
+ *                 example: "Night"
+ *               status:
+ *                 type: string
+ *                 enum: [draft, open]
+ *                 example: "draft"
+ *                 description: "Shift visibility status. draft = hidden, open = visible to guards"
+ *               breakTime:
+ *                 type: number
+ *                 example: 30
+ *                 description: "Break duration in minutes"
+ *               detailedInstructions:
+ *                 type: string
+ *                 example: "Patrol the warehouse perimeter and check all entrances."
+ *               guardIds:
+ *                 type: array
+ *                 description: "Optional pre-selected guards to assign/check during shift creation"
+ *                 items:
+ *                   type: string
+ *                   example: "69c8be49d6bdc8e196c35011"
+ *               siteId:
+ *                 type: string
+ *                 example: "69c7c741658cabe0d099e4a0"
+ *                 description: "Branch/site ID that must belong to the employer"
  *               location:
  *                 type: object
+ *                 required: [street, suburb, state, postcode]
  *                 properties:
- *                   street:   { type: string, example: "10 Dock Rd" }
- *                   suburb:   { type: string, example: "Port Melbourne" }
- *                   state:    { type: string, example: "VIC" }
- *                   postcode: { type: string, example: "3207" }
+ *                   street:
+ *                     type: string
+ *                     example: "10 Dock Rd"
+ *                   suburb:
+ *                     type: string
+ *                     example: "Port Melbourne"
+ *                   state:
+ *                     type: string
+ *                     example: "VIC"
+ *                   postcode:
+ *                     type: string
+ *                     example: "3207"
+ *                     description: "4 digits (AU)"
+ *                   latitude:
+ *                     type: number
+ *                     example: -37.834
+ *                   longitude:
+ *                     type: number
+ *                     example: 144.945
  *               urgency:
  *                 type: string
  *                 enum: [normal, priority, last-minute]
@@ -118,34 +168,105 @@ const router = express.Router();
  *               payRate:
  *                 type: number
  *                 example: 30
+ *                 description: "Hourly pay rate in AUD"
+ *               description:
+ *                 type: string
+ *                 example: "Night shift at the warehouse"
+ *               requirements:
+ *                 type: string
+ *                 example: "Security experience preferred"
+ *     responses:
+ *       201: { description: Shift created }
+ *       400: { description: Validation error, unavailable guard, shift clash, or fatigue rule breach }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
  */
 router
   .route('/')
-  .get(
-    auth,
-    loadUser,
-    authorizeRoles(
-      ROLES.GUARD,
-      ROLES.EMPLOYER,
-      ROLES.BRANCH_ADMIN,
-      ROLES.ADMIN,
-      ROLES.SUPER_ADMIN
-    ),
-    authorizePermissions(['shift:read'], { any: true }),
-    listAvailableShifts
-  )
-  .post(
-    auth,
-    loadUser,
-    authorizeRoles(
-      ROLES.EMPLOYER,
-      ROLES.BRANCH_ADMIN,
-      ROLES.ADMIN,
-      ROLES.SUPER_ADMIN
-    ),
-    authorizePermissions(['shift:write'], { any: true }),
-    createShift
-  );
+  .get(protect, authorizeRole('guard', 'employer', 'admin'), listAvailableShifts)
+  .post(protect, authorizeRole('employer'), createShift);
+
+/**
+ * PATCH /api/v1/shifts/:id
+ * Allows employers (owners) or admins to update editable fields.
+ */
+router
+  .route('/:id')
+  .patch(protect, authorizeRole('employer', 'admin'), updateShift);
+
+/**
+ * @swagger
+ * /api/v1/shifts/{id}:
+ *   patch:
+ *     summary: Update a shift (Employer/Admin only)
+ *     description: |
+ *       Allows updating editable shift fields before it starts or is completed.
+ *       - Only shift owner (employer) or admin can update
+ *       - Cannot update completed shifts
+ *       - Cannot update shifts that have already started
+ *       - Supports partial updates
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Shift ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *               startTime:
+ *                 type: string
+ *                 example: "08:00"
+ *               endTime:
+ *                 type: string
+ *                 example: "16:00"
+ *               payRate:
+ *                 type: number
+ *               urgency:
+ *                 type: string
+ *                 enum: [normal, priority, last-minute]
+ *               field:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               requirements:
+ *                 type: string
+ *               location:
+ *                 type: object
+ *                 properties:
+ *                   street:
+ *                     type: string
+ *                   suburb:
+ *                     type: string
+ *                   state:
+ *                     type: string
+ *                   postcode:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Shift updated successfully
+ *       400:
+ *         description: Validation error or invalid state (past/completed)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Shift not found
+ */
 
 /**
  * @swagger
@@ -153,16 +274,25 @@ router
  *   put:
  *     summary: Apply for a shift (Guard only)
  *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Shift ID
+ *     responses:
+ *       200: { description: Application submitted }
+ *       400: { description: Duplicate application or invalid state }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ *       404: { description: Shift not found }
  */
 router
   .route('/:id/apply')
-  .put(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.GUARD),
-    authorizePermissions(['shift:apply']),
-    applyForShift
-  );
+  .put(protect, authorizeRole('guard'), applyForShift);
 
 /**
  * @swagger
@@ -170,33 +300,82 @@ router
  *   put:
  *     summary: Approve a guard (Employer/Admin)
  *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Shift ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [guardId]
+ *             properties:
+ *               guardId:
+ *                 type: string
+ *                 description: "User ID of guard"
+ *               keepOthers:
+ *                 type: boolean
+ *                 default: false
+ *     responses:
+ *       200:
+ *         description: Guard approved and shift assigned
+ *       400:
+ *         description: Invalid request, invalid shift state, guard not in applicants, or fatigue rule breach
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Shift approval blocked due to guard fatigue rules
+ *                 fatigueAssessment:
+ *                   type: object
+ *                   description: Returned when approval is blocked by fatigue monitoring rules
+ *                   properties:
+ *                     fatigueScore:
+ *                       type: number
+ *                       example: 100
+ *                     warnings:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       example:
+ *                         - Guard exceeds recommended weekly shift limit of 5 shifts
+ *                         - Guard exceeds recommended daily hour limit of 10 hours
+ *                         - Guard exceeds recommended weekly hour limit of 40 hours
+ *                     isFatigued:
+ *                       type: boolean
+ *                       example: true
+ *                     metrics:
+ *                       type: object
+ *                       properties:
+ *                         shiftsThisWeek:
+ *                           type: number
+ *                           example: 6
+ *                         hoursThisDay:
+ *                           type: number
+ *                           example: 12
+ *                         hoursThisWeek:
+ *                           type: number
+ *                           example: 48
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Shift not found
  */
 router
   .route('/:id/approve')
-  .put(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.EMPLOYER, ROLES.BRANCH_ADMIN, ROLES.ADMIN, ROLES.SUPER_ADMIN),
-    authorizePermissions(['shift:approve']),
-    approveShift
-  );
-
-/**
- * @swagger
- * /api/v1/shifts/{id}/assign:
- *   patch:
- *     summary: Assign a guard (Admin-level roles)
- *     tags: [Shifts]
- */
-router
-  .route('/:id/assign')
-  .patch(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.BRANCH_ADMIN, ROLES.ADMIN, ROLES.SUPER_ADMIN),
-    authorizePermissions(['shift:assign']),
-    assignGuard
-  );
+  .put(protect, authorizeRole('employer', 'admin'), approveShift);
 
 /**
  * @swagger
@@ -204,97 +383,121 @@ router
  *   put:
  *     summary: Mark shift as completed (Employer/Admin)
  *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Shift ID
+ *     responses:
+ *       200: { description: Shift marked as completed }
+ *       400: { description: Not assigned or already completed }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ *       404: { description: Shift not found }
  */
 router
   .route('/:id/complete')
-  .put(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.EMPLOYER, ROLES.BRANCH_ADMIN, ROLES.ADMIN, ROLES.SUPER_ADMIN),
-    authorizePermissions(['shift:complete']),
-    completeShift
-  );
+  .put(protect, authorizeRole('employer', 'admin'), completeShift);
 
 /**
  * @swagger
  * /api/v1/shifts/myshifts:
  *   get:
  *     summary: Get shifts for the logged-in user
+ *     description: |
+ *       Guard → applied/assigned/past  
+ *       Employer → created  
+ *       Admin → all  
+ *       Use `?status=past` to return only completed shifts.
  *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [past]
+ *         required: false
+ *         description: Filter completed shifts
+ *     responses:
+ *       200: { description: List of shifts }
+ *       401: { description: Unauthorized }
  */
 router
   .route('/myshifts')
-  .get(auth, loadUser, getMyShifts);
+  .get(protect, getMyShifts);
 
 /**
  * @swagger
  * /api/v1/shifts/{id}/rate:
  *   patch:
  *     summary: Submit a rating (role-aware)
+ *     description: |
+ *       • Guard: Only the **assignedGuard** can rate. Updates **guardRating** (one time, tracked by `ratedByGuard`).  
+ *       • Employer: Only the **creator (employer)** can rate. Updates **employerRating** (one time, tracked by `ratedByEmployer`).  
+ *       • Ratings are allowed **only after** the shift status is `completed`.
  *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Shift ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [rating]
+ *             properties:
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 5
+ *     responses:
+ *       200:
+ *         description: Rating saved (guardRating or employerRating based on role)
+ *       400:
+ *         description: Invalid state (not completed) or duplicate rating
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (only assigned guard or employer/creator may rate)
+ *       404:
+ *         description: Shift not found
  */
 router
   .route('/:id/rate')
-  .patch(
-    auth,
-    loadUser,
-    authorizeRoles(ROLES.GUARD, ROLES.EMPLOYER),
-    authorizePermissions(['shift:rate']),
-    rateShift
-  );
+  .patch(protect, authorizeRole('guard', 'employer'), rateShift);
 
 /**
  * @swagger
  * /api/v1/shifts/history:
  *   get:
  *     summary: Get shift history (Guard/Employer only)
- *     tags: [Shifts]
- */
-/**
- * @swagger
- * /api/v1/shifts/available:
- *   get:
- *     summary: List open shifts for guards (filter by date/location)
- *     description: >
- *       Guard-only endpoint. Returns **open** shifts not created by the guard.  
- *       If `date` is omitted, returns only today/future shifts.  
- *       Results are sorted by date ascending.
+ *     description: |
+ *       • Guard → all past/completed shifts the guard worked on.  
+ *       • Employer → all past/completed shifts the employer created.  
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: date
- *         schema: { type: string, format: date, example: "2025-09-07" }
- *         required: false
- *         description: Filter to a specific calendar day (YYYY-MM-DD)
- *       - in: query
- *         name: location
- *         schema: { type: string, example: "Port Melbourne" }
- *         required: false
- *         description: Case-insensitive match against street/suburb/state/postcode
- *       - in: query
- *         name: page
- *         schema: { type: integer, minimum: 1, default: 1 }
- *       - in: query
- *         name: limit
- *         schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
  *     responses:
- *       200: { description: Paged list of open shifts for guards }
- *       400: { description: Validation error }
+ *       200: { description: List of completed shifts for the user }
  *       401: { description: Unauthorized }
  *       403: { description: Forbidden }
  */
 router
-  .route('/available')
-  .get(
-  auth,
-  loadUser,
-  authorizeRoles(ROLES.GUARD),
-  authorizePermissions(['shift:read']),
-  listOpenShiftsForGuard
-);
-
-
+  .route('/history')
+  .get(protect, authorizeRole('guard', 'employer'), getShiftHistory);
 
 export default router;

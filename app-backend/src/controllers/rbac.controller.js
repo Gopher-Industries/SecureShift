@@ -39,7 +39,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
     'payment:read', 'payment:write',
   ],
   [ROLES.GUARD]: [
-    'shift:read', 'shift:accept', 'shift:checkin',
+    'shift:read', 'shift:accept', 'shift:checkin', 'shift:apply',
   ],
   [ROLES.CLIENT]: [
     'shift:read',

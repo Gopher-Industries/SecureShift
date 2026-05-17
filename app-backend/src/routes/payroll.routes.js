@@ -1,52 +1,39 @@
-/**
- * @file routes/payroll.routes.js
- * @description Payroll API routes for SecureShift.
- *
- * Base path: /api/v1/payroll
- *
- * ┌──────────────────────────────────────────────────────────────────────────┐
- * │ METHOD  PATH                          ROLES ALLOWED                      │
- * ├──────────────────────────────────────────────────────────────────────────┤
- * │ GET     /                             admin, branch_admin, employer,     │
- * │                                        super_admin, guard (own only)     │
- * │ POST    /approve                      admin, branch_admin, super_admin   │
- * │ POST    /process                      admin, super_admin                 │
- * │ GET     /export                       admin, branch_admin, super_admin,  │
- * │                                        employer, guard (own only)        │
- * │ POST    /attendance                   admin, branch_admin, guard (self)  │
- * │ GET     /attendance/:shiftId          admin, branch_admin, employer,     │
- * │                                        guard (own only)                  │
- * └──────────────────────────────────────────────────────────────────────────┘
- */
-
-import { Router } from 'express';
+import express from 'express';
 import auth from '../middleware/auth.js';
-import { authorizeRoles } from '../middleware/rbac.js';
-import { auditMiddleware } from '../middleware/logger.js';
 import {
-  getPayroll,
   approvePayroll,
+  downloadPayrollExport,
+  downloadPayrollCsv,
+  downloadPayrollPdf,
+  getPayroll,
   processPayroll,
-  exportPayroll,
-  generatePaySlip,
-  recordAttendance,
-  getAttendanceForShift,
 } from '../controllers/payroll.controller.js';
 
-const router = Router();
+const router = express.Router();
 
-// All payroll routes require a valid JWT
-router.use(auth);
+const authorizeRole = (...allowedRoles) => (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
 
-// Attach audit logging helper to every request
-router.use(auditMiddleware);
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
+  }
 
-// ─── GET /api/v1/payroll ──────────────────────────────────────────────────────
+  next();
+};
+
+/**
+ * @swagger
+ * tags:
+ *   name: Payroll
+ *   description: Payroll generation, approval, processing, and export
+ */
 /**
  * @swagger
  * /api/v1/payroll:
  *   get:
- *     summary: Retrieve and generate payroll summaries
+ *     summary: Generate or retrieve payroll documents for a date range
  *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
@@ -54,110 +41,51 @@ router.use(auditMiddleware);
  *       - in: query
  *         name: startDate
  *         required: true
- *         schema: { type: string, format: date }
- *         example: "2025-06-01"
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date in YYYY-MM-DD format
  *       - in: query
  *         name: endDate
  *         required: true
- *         schema: { type: string, format: date }
- *         example: "2025-06-30"
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date in YYYY-MM-DD format
  *       - in: query
  *         name: periodType
  *         required: true
- *         schema: { type: string, enum: [daily, weekly, monthly] }
+ *         schema:
+ *           type: string
+ *           enum: [daily, weekly, monthly]
  *       - in: query
  *         name: guardId
- *         schema: { type: string }
- *         description: Filter by a specific guard (optional; guards are automatically scoped to self)
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional guard filter
  *       - in: query
  *         name: department
- *         schema: { type: string }
- *         description: Filter by branch/department (optional)
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional department filter mapped from Shift.field
  *     responses:
  *       200:
- *         description: Payroll summary with per-guard breakdown
+ *         description: Payroll documents returned successfully
  *       400:
- *         description: Validation error
+ *         description: Invalid query parameters
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
-router.get(
-  '/',
-  authorizeRoles('super_admin', 'admin', 'branch_admin', 'employer', 'guard'),
-  getPayroll
-);
-
-// ─── POST /api/v1/payroll/approve ────────────────────────────────────────────
-/**
- * @swagger
- * /api/v1/payroll/approve:
- *   post:
- *     summary: Approve one or more PENDING payroll records
- *     tags: [Payroll]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [payrollIds]
- *             properties:
- *               payrollIds:
- *                 type: array
- *                 items: { type: string }
- *                 example: ["665f1a2b3c4d5e6f7a8b9c0d"]
- *     responses:
- *       200:
- *         description: Records approved
- *       400:
- *         description: Validation error or wrong status
- *       404:
- *         description: One or more records not found
- */
-router.post(
-  '/approve',
-  authorizeRoles('super_admin', 'admin', 'branch_admin'),
-  approvePayroll
-);
-
-// ─── POST /api/v1/payroll/process ────────────────────────────────────────────
-/**
- * @swagger
- * /api/v1/payroll/process:
- *   post:
- *     summary: Mark one or more APPROVED payroll records as PROCESSED
- *     tags: [Payroll]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [payrollIds]
- *             properties:
- *               payrollIds:
- *                 type: array
- *                 items: { type: string }
- *     responses:
- *       200:
- *         description: Records processed
- *       400:
- *         description: Validation error or wrong status
- */
-router.post(
-  '/process',
-  authorizeRoles('super_admin', 'admin'),
-  processPayroll
-);
-
-// ─── GET /api/v1/payroll/export ──────────────────────────────────────────────
+router.get('/', auth, authorizeRole('admin', 'employer', 'guard'), getPayroll);
 /**
  * @swagger
  * /api/v1/payroll/export:
  *   get:
- *     summary: Export payroll data as CSV or PDF
+ *     summary: Export payroll documents as CSV or PDF
  *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
@@ -165,74 +93,56 @@ router.post(
  *       - in: query
  *         name: startDate
  *         required: true
- *         schema: { type: string, format: date }
+ *         schema:
+ *           type: string
+ *           format: date
  *       - in: query
  *         name: endDate
  *         required: true
- *         schema: { type: string, format: date }
+ *         schema:
+ *           type: string
+ *           format: date
  *       - in: query
  *         name: periodType
  *         required: true
- *         schema: { type: string, enum: [daily, weekly, monthly] }
+ *         schema:
+ *           type: string
+ *           enum: [daily, weekly, monthly]
  *       - in: query
  *         name: format
- *         schema: { type: string, enum: [csv, pdf], default: csv }
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [csv, pdf]
+ *         description: Export format
  *       - in: query
  *         name: guardId
- *         schema: { type: string }
+ *         required: false
+ *         schema:
+ *           type: string
  *       - in: query
  *         name: department
- *         schema: { type: string }
- *       - in: query
- *         name: status
- *         schema: { type: string, enum: [PENDING, APPROVED, PROCESSED] }
+ *         required: false
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: File download (text/csv or application/pdf)
+ *         description: Export generated successfully
  *       400:
- *         description: Validation error
- */
-router.get(
-  '/export',
-  authorizeRoles('super_admin', 'admin', 'branch_admin', 'employer', 'guard'),
-  exportPayroll
-);
-
-// ─── GET /api/v1/payroll/:payrollId/payslip ──────────────────────────────────
-/**
- * @swagger
- * /api/v1/payroll/{payrollId}/payslip:
- *   get:
- *     summary: Download a PDF pay slip for a specific payroll record
- *     tags: [Payroll]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: payrollId
- *         required: true
- *         schema: { type: string }
- *         description: The payroll record ID
- *     responses:
- *       200:
- *         description: PDF pay slip file download
+ *         description: Invalid query parameters
+ *       401:
+ *         description: Unauthorized
  *       403:
- *         description: Guards can only access their own pay slip
- *       404:
- *         description: Payroll record not found
+ *         description: Forbidden
  */
-router.get(
-  '/:payrollId/payslip',
-  authorizeRoles('super_admin', 'admin', 'branch_admin', 'employer', 'guard'),
-  generatePaySlip
-);
-
-// ─── POST /api/v1/payroll/attendance ─────────────────────────────────────────
+router.get('/export', auth, authorizeRole('admin', 'employer', 'guard'), downloadPayrollExport);
+router.get('/export/csv', auth, authorizeRole('admin', 'employer', 'guard'), downloadPayrollCsv);
+router.get('/export/pdf', auth, authorizeRole('admin', 'employer', 'guard'), downloadPayrollPdf);
 /**
  * @swagger
- * /api/v1/payroll/attendance:
+ * /api/v1/payroll/approve:
  *   post:
- *     summary: Record clock-in / clock-out attendance for a shift
+ *     summary: Approve payroll documents in bulk
  *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
@@ -242,54 +152,57 @@ router.get(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [shiftId]
+ *             required: [payrollIds]
  *             properties:
- *               shiftId:  { type: string }
- *               guardId:  { type: string, description: "Required for admin; guards default to self" }
- *               clockIn:  { type: string, format: date-time }
- *               clockOut: { type: string, format: date-time }
- *               status:   { type: string, enum: [absent, scheduled] }
- *               notes:    { type: string }
+ *               payrollIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       200:
- *         description: Attendance recorded / updated
+ *         description: Payroll approved successfully
  *       400:
- *         description: Validation error
- *       404:
- *         description: Shift not found
+ *         description: Invalid request payload
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       409:
+ *         description: Invalid payroll state transition
  */
-router.post(
-  '/attendance',
-  authorizeRoles('super_admin', 'admin', 'branch_admin', 'guard'),
-  recordAttendance
-);
-
-// ─── GET /api/v1/payroll/attendance/:shiftId ─────────────────────────────────
+router.post('/approve', auth, authorizeRole('admin', 'employer'), approvePayroll);
 /**
  * @swagger
- * /api/v1/payroll/attendance/{shiftId}:
- *   get:
- *     summary: Retrieve attendance records for a specific shift
+ * /api/v1/payroll/process:
+ *   post:
+ *     summary: Process payroll documents in bulk
  *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: shiftId
- *         required: true
- *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [payrollIds]
+ *             properties:
+ *               payrollIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
  *       200:
- *         description: List of attendance records
+ *         description: Payroll processed successfully
  *       400:
- *         description: Invalid shiftId
- *       404:
- *         description: Shift not found
+ *         description: Invalid request payload
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       409:
+ *         description: Invalid payroll state transition
  */
-router.get(
-  '/attendance/:shiftId',
-  authorizeRoles('super_admin', 'admin', 'branch_admin', 'employer', 'guard'),
-  getAttendanceForShift
-);
+router.post('/process', auth, authorizeRole('admin', 'employer'), processPayroll);
 
 export default router;
