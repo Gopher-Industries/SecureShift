@@ -10,11 +10,33 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  TextInput,
+  Pressable,
 } from 'react-native';
 
 import { getMyAttendance, type Attendance } from '../api/attendance';
+import {
+  exportPayrollCsv,
+  getPayrollSummary,
+  type PayrollPeriodType,
+  type PayrollResponse,
+} from '../api/payroll';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+
+function toDateInputValue(date: Date) {
+  return date.toISOString().split('T')[0];
+}
+
+function getDefaultStartDate() {
+  const date = new Date();
+  date.setDate(1);
+  return toDateInputValue(date);
+}
+
+function getDefaultEndDate() {
+  return toDateInputValue(new Date());
+}
 
 function safeDate(d?: string | null) {
   if (!d) return null;
@@ -26,6 +48,10 @@ function fmtDateTime(d?: string | null) {
   const dt = safeDate(d);
   if (!dt) return '—';
   return dt.toLocaleString();
+}
+
+function fmtHours(value?: number) {
+  return Number(value ?? 0).toFixed(2);
 }
 
 function fmtShiftLabel(att: Attendance) {
@@ -49,10 +75,41 @@ export default function TimesheetsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [items, setItems] = useState<Attendance[]>([]);
 
+  const [startDate, setStartDate] = useState(getDefaultStartDate());
+  const [endDate, setEndDate] = useState(getDefaultEndDate());
+  const [periodType, setPeriodType] = useState<PayrollPeriodType>('weekly');
+  const [payroll, setPayroll] = useState<PayrollResponse | null>(null);
+  const [payrollLoading, setPayrollLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const payrollParams = {
+    startDate,
+    endDate,
+    periodType,
+  };
+
+  const loadPayroll = async () => {
+    try {
+      setPayrollLoading(true);
+      const data = await getPayrollSummary(payrollParams);
+      setPayroll(data);
+    } catch (e: unknown) {
+      if (e instanceof AxiosError) {
+        const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load payroll summary';
+        Alert.alert('Error', msg);
+      } else {
+        Alert.alert('Error', 'Failed to load payroll summary');
+      }
+    } finally {
+      setPayrollLoading(false);
+    }
+  };
+
   const load = async () => {
     try {
       const rows = await getMyAttendance();
       setItems(rows);
+      await loadPayroll();
     } catch (e: unknown) {
       if (e instanceof AxiosError) {
         const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
@@ -76,6 +133,111 @@ export default function TimesheetsScreen() {
     setRefreshing(true);
     await load();
   };
+
+  const onApplyPayrollFilter = async () => {
+    await loadPayroll();
+  };
+
+  const onExportPayroll = async () => {
+    try {
+      setExporting(true);
+      await exportPayrollCsv(payrollParams);
+      Alert.alert('Success', 'Payroll CSV export requested successfully.');
+    } catch (e: unknown) {
+      if (e instanceof AxiosError) {
+        const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to export payroll CSV';
+        Alert.alert('Error', msg);
+      } else {
+        Alert.alert('Error', 'Failed to export payroll CSV');
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const renderHeader = () => (
+    <View>
+      <View style={s.payrollCard}>
+        <Text style={s.sectionTitle}>Payroll Summary</Text>
+
+        <View style={s.inputRow}>
+          <View style={s.inputGroup}>
+            <Text style={s.inputLabel}>Start Date</Text>
+            <TextInput
+              value={startDate}
+              onChangeText={setStartDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.muted}
+              style={s.input}
+            />
+          </View>
+
+          <View style={s.inputGroup}>
+            <Text style={s.inputLabel}>End Date</Text>
+            <TextInput
+              value={endDate}
+              onChangeText={setEndDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.muted}
+              style={s.input}
+            />
+          </View>
+        </View>
+
+        <View style={s.periodRow}>
+          {(['daily', 'weekly', 'monthly'] as PayrollPeriodType[]).map((type) => (
+            <Pressable
+              key={type}
+              onPress={() => setPeriodType(type)}
+              style={[s.periodButton, periodType === type && s.periodButtonActive]}
+            >
+              <Text style={[s.periodText, periodType === type && s.periodTextActive]}>{type}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={s.actionRow}>
+          <Pressable style={s.primaryButton} onPress={onApplyPayrollFilter}>
+            <Text style={s.primaryButtonText}>
+              {payrollLoading ? 'Loading...' : 'Generate Payroll'}
+            </Text>
+          </Pressable>
+
+          <Pressable style={s.secondaryButton} onPress={onExportPayroll}>
+            <Text style={s.secondaryButtonText}>{exporting ? 'Exporting...' : 'Export CSV'}</Text>
+          </Pressable>
+        </View>
+
+        {payroll ? (
+          <View style={s.summaryGrid}>
+            <View style={s.summaryBox}>
+              <Text style={s.summaryNumber}>{payroll.summary.totalCompletedShifts}</Text>
+              <Text style={s.summaryLabel}>Completed Shifts</Text>
+            </View>
+
+            <View style={s.summaryBox}>
+              <Text style={s.summaryNumber}>{fmtHours(payroll.summary.totalHours)}</Text>
+              <Text style={s.summaryLabel}>Total Hours</Text>
+            </View>
+
+            <View style={s.summaryBox}>
+              <Text style={s.summaryNumber}>{fmtHours(payroll.summary.totalOvertimeHours)}</Text>
+              <Text style={s.summaryLabel}>Overtime Hours</Text>
+            </View>
+
+            <View style={s.summaryBox}>
+              <Text style={s.summaryNumber}>{payroll.summary.totalPendingApproval}</Text>
+              <Text style={s.summaryLabel}>Pending Approval</Text>
+            </View>
+          </View>
+        ) : (
+          <Text style={s.emptySmall}>No payroll summary loaded yet.</Text>
+        )}
+      </View>
+
+      <Text style={s.sectionTitle}>Timesheets</Text>
+    </View>
+  );
 
   const renderItem = ({ item }: { item: Attendance }) => {
     const checkedIn = !!item.checkInTime;
@@ -128,6 +290,7 @@ export default function TimesheetsScreen() {
         data={items}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={<Text style={s.empty}>No timesheet records yet.</Text>}
@@ -154,10 +317,147 @@ const getStyles = (colors: AppColors) =>
       color: colors.muted,
     },
 
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '900',
+      color: colors.text,
+      marginBottom: 12,
+    },
+
+    payrollCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+
+    inputRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 12,
+    },
+
+    inputGroup: {
+      flex: 1,
+    },
+
+    inputLabel: {
+      color: colors.text,
+      fontWeight: '800',
+      marginBottom: 6,
+    },
+
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 9,
+      color: colors.text,
+      backgroundColor: colors.bg,
+    },
+
+    periodRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 12,
+    },
+
+    periodButton: {
+      flex: 1,
+      paddingVertical: 9,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+    },
+
+    periodButtonActive: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.primary,
+    },
+
+    periodText: {
+      color: colors.muted,
+      fontWeight: '800',
+      textTransform: 'capitalize',
+    },
+
+    periodTextActive: {
+      color: colors.primary,
+    },
+
+    actionRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 14,
+    },
+
+    primaryButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+
+    primaryButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '900',
+    },
+
+    secondaryButton: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+
+    secondaryButtonText: {
+      color: colors.primary,
+      fontWeight: '900',
+    },
+
+    summaryGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+    },
+
+    summaryBox: {
+      width: '48%',
+      backgroundColor: colors.bg,
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+
+    summaryNumber: {
+      fontSize: 18,
+      fontWeight: '900',
+      color: colors.text,
+    },
+
+    summaryLabel: {
+      marginTop: 4,
+      color: colors.muted,
+      fontWeight: '700',
+    },
+
     empty: {
       textAlign: 'center',
       marginTop: 30,
       color: colors.muted,
+    },
+
+    emptySmall: {
+      color: colors.muted,
+      fontWeight: '700',
     },
 
     card: {

@@ -1,6 +1,6 @@
 import express from "express";
 import auth from "../middleware/auth.js";
-import { getPayrollSummary } from "../controllers/payroll.controller.js";
+import { exportPayrollCsv, getPayrollSummary } from "../controllers/payroll.controller.js";
 
 const router = express.Router();
 
@@ -78,6 +78,13 @@ const authorizeRole = (...allowedRoles) => (req, res, next) => {
  *       500:
  *         description: Server error
  */
+router.get(
+  "/export",
+  auth,
+  authorizeRole("admin", "employer", "guard"),
+  exportPayrollCsv,
+);
+
 router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayrollSummary);
 
 export default router;

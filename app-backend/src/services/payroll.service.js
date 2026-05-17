@@ -76,6 +76,20 @@ const calculateScheduledHours = (shift) => {
   return (scheduledEnd - scheduledStart) / (1000 * 60 * 60);
 };
 
+const escapeCsvValue = (value) => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  const stringValue = String(value);
+
+  if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
+    return `"${stringValue.replaceAll('"', '""')}"`;
+  }
+
+  return stringValue;
+};
+
 export const buildPayrollSummary = async (query, user) => {
   const { startDate, endDate, periodType, guardId, site, department } = query;
 
@@ -111,13 +125,11 @@ export const buildPayrollSummary = async (query, user) => {
     },
   };
 
-  // Role-based access rules
   if (user.role === "admin") {
     if (guardId) {
       shiftQuery.acceptedBy = guardId;
     }
   } else if (user.role === "employer") {
-    // current scoping uses shift ownership
     shiftQuery.createdBy = user._id;
 
     if (guardId) {
@@ -137,7 +149,6 @@ export const buildPayrollSummary = async (query, user) => {
     shiftQuery.location = site;
   }
 
-  // depends on current Shift model support
   if (department) {
     shiftQuery.field = department;
   }
@@ -276,4 +287,37 @@ export const buildPayrollSummary = async (query, user) => {
     periods,
     payrollDetails,
   };
+};
+
+export const buildPayrollCsv = async (query, user) => {
+  const payrollData = await buildPayrollSummary(query, user);
+
+  const headers = [
+    "shiftId",
+    "guardId",
+    "guardName",
+    "employerId",
+    "location",
+    "department",
+    "date",
+    "scheduledHours",
+    "totalHours",
+    "overtimeHours",
+    "underworkedShift",
+    "pendingApproval",
+    "attendanceStatus",
+  ];
+
+  const rows = payrollData.payrollDetails.map((item) =>
+    headers
+      .map((header) => {
+        const value =
+          header === "date" && item[header] ? new Date(item[header]).toISOString() : item[header];
+
+        return escapeCsvValue(value);
+      })
+      .join(","),
+  );
+
+  return [headers.join(","), ...rows].join("\n");
 };
