@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { getPayroll, type PayrollResponse, PayrollPeriodType } from '../api/payroll';
-import PayrollFilterModal from '../components/PayrollFilterModal';
+import PayrollFilterModal from '../components/modal/PayrollFilterModal';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 

@@ -11,8 +11,8 @@ import {
   View,
 } from 'react-native';
 
-import ErrorMessageBox from './ErrorMessageBox';
-import { useAppTheme } from '../theme';
+import ErrorMessageBox from '../ErrorMessageBox';
+import { useAppTheme } from '../../theme';
 
 type LocationPayload = {
   latitude: number;

@@ -7,7 +7,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 
 import { checkIn, checkOut, getUserAttendance } from '../api/attendance';
 import ErrorMessageBox from '../components/ErrorMessageBox';
-import LocationVerificationModal from '../components/LocationVerificationModal';
+import LocationVerificationModal from '../components/modal/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
 import { LocalStorage } from '../lib/localStorage';
 import { useAppTheme } from '../theme';
