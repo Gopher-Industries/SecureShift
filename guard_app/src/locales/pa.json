@@ -133,7 +133,30 @@
     "search": "शिफ्ट खोजें...",
     "noShifts": "कोई शिफ्ट नहीं मिली",
     "noCompleted": "कोई पूर्ण शिफ्ट नहीं मिली",
-    "accepted": "स्वीकृत"
+    "accepted": "स्वीकृत",
+
+    "alerts": {
+      "invalidDateHead": "ਅਵੈਧ ਤਾਰੀਖ",
+      "invalidDateMsg": "ਚੁਣੀ ਗਈ ਤਾਰੀਖ ਅਵੈਧ ਹੈ",
+      "missingTimeHead": "ਤਾਰੀਖ ਜਾਂ ਸਮਾਂ ਨਹੀਂ ਦਿੱਤਾ ਗਿਆ",
+      "missingTimeMsg": "ਉਹ ਤਾਰੀਖ ਅਤੇ ਸਮਾਂ ਦਰਜ ਕਰੋ ਜਿਸ 'ਤੇ ਤੁਸੀਂ ਆਪਣੀ ਸ਼ਿਫਟ ਤਬਦੀਲ ਕਰਵਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ।"
+    },
+    "approved": "ਮਨਜ਼ੂਰ",
+    "change": "ਬਦਲੋ",
+    "createRequest": "ਬੇਨਤੀ ਬਣਾਓ",
+    "leave": "ਛੁੱਟੀ",
+    "notFound": "ਕੋਈ ਸ਼ਿਫਟ ਬੇਨਤੀ ਨਹੀਂ ਮਿਲੀ",
+    "reason": "ਕਾਰਨ",
+    "reasonHint": "ਮਾਫ਼ ਕਰਨਾ, ਮੈਂ ਬਿਮਾਰ ਹਾਂ...",
+    "requestError": "ਬੇਨਤੀਆਂ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ।",
+    "requestType": "ਬੇਨਤੀ ਦੀ ਕਿਸਮ",
+    "requestedDate": "ਬੇਨਤੀ ਕੀਤੀ ਤਾਰੀਖ",
+    "requestedTime": "ਬੇਨਤੀ ਕੀਤਾ ਸਮਾਂ",
+    "selectDate": "ਤਾਰੀਖ ਚੁਣੋ",
+    "selectRequestType": "ਬੇਨਤੀ ਦੀ ਕਿਸਮ ਚੁਣੋ",
+    "selectTime": "ਸਮਾਂ ਚੁਣੋ",
+    "swap": "ਸਵੈਪ",
+    "viewRequests": "ਸਵੈਪ ਅਤੇ ਛੁੱਟੀ ਬੇਨਤੀਆਂ"
   },
   "timesheet": {
     "checkIn": "चेक इन:",
@@ -163,7 +186,8 @@
     "messages": "संदेश",
     "notifications": "सूचनाएँ",
     "certificates": "प्रमाणपत्र",
-    "shiftDetails": "शिफ्ट विवरण"
+    "shiftDetails": "शिफ्ट विवरण",
+    "shiftRequests": "ਸ਼ਿਫਟ ਬਦਲਾਅ ਬੇਨਤੀਆਂ"
   },
   "docs": {
     "title": "दस्तावेज़ अवलोकन",
