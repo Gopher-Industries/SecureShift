@@ -134,7 +134,28 @@
     "noShifts": "कोई शिफ्ट नहीं मिली",
     "noCompleted": "कोई पूर्ण शिफ्ट नहीं मिली",
     "accepted": "स्वीकृत",
-    "swapLeaveRequests": "स्वैप और छुट्टी अनुरोध"
+    "approved": "अनुमोदित",
+    "createRequest": "अनुरोध बनाएं",
+    "viewRequests": "स्वैप और छुट्टी अनुरोध",
+    "change": "बदलें",
+    "requestType": "अनुरोध प्रकार",
+    "requestedDate": "अनुरोध की तारीख",
+    "reason": "कारण",
+    "swap": "स्वैप",
+    "leave": "छुट्टी",
+    "selectRequestType": "अनुरोध प्रकार चुनें",
+    "reasonHint": "माफ करें मैं बीमार हूं...",
+    "requestedTime": "अनुरोधित समय",
+    "selectDate": "तारीख चुनें",
+    "selectTime": "समय चुनें",
+    "notFound": "कोई शिफ्ट अनुरोध नहीं मिला",
+    "requestError": "अनुरोध लोड करने में विफल।",
+    "alerts": {
+      "missingTimeHead": "तारीख या समय गुम है",
+      "missingTimeMsg": "वह तारीख और समय दर्ज करें जब आप अपनी शिफ्ट बदलना चाहते हैं।",
+      "invalidDateHead": "अमान्य तारीख",
+      "invalidDateMsg": "चुनी गई तारीख अमान्य है"
+    }
   },
   "timesheet": {
     "checkIn": "चेक इन:",
@@ -167,7 +188,8 @@
     "shiftDetails": "शिफ्ट विवरण",
     "shifts": "शिफ्ट्स",
     "home": "होम",
-    "profile": "प्रोफ़ाइल"
+    "profile": "प्रोफ़ाइल",
+    "shiftRequests": "शिफ्ट बदलाव अनुरोध"
   },
   "docs": {
     "title": "दस्तावेज़ अवलोकन",

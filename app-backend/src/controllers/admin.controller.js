@@ -538,9 +538,7 @@ export const rejectGuardLicense = async (req, res) => {
  * @access Admin
  */
 export const getSmtpSettings = async (req, res) => {
-  try {
-    const envPath = path.join(__dirname, '../../.env');
-    
+  try {    
     const settings = {
       SMTP_HOST: process.env.SMTP_HOST || '',
       SMTP_PORT: process.env.SMTP_PORT || '587',
