@@ -23,7 +23,7 @@ export const createShiftRequest = async (req, res) => {
     }
 
     // Check if guard is assigned to this shift
-    if (originalShift.acceptedBy?.toString() !== requestingGuardId.toString()) {
+    if (!originalShift.guardIds.includes(requestingGuardId.toString())) {
       return res.status(403).json({ message: 'You are not assigned to this shift' });
     }
 
