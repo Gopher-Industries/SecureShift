@@ -148,7 +148,7 @@ export default function TimesheetsScreen() {
         const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to export payroll CSV';
         Alert.alert('Error', msg);
       } else {
-        Alert.alert('Error', 'Failed to export payroll CSV');
+        Alert.alert('Error', e instanceof Error ? e.message : 'Failed to export payroll CSV');
       }
     } finally {
       setExporting(false);

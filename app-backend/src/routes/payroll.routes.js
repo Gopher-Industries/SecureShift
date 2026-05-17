@@ -79,12 +79,88 @@ const authorizeRole = (...allowedRoles) => (req, res, next) => {
  *         description: Server error
  */
 router.get(
+  "/",
+  auth,
+  authorizeRole("admin", "employer", "guard"),
+  getPayrollSummary,
+);
+
+/**
+ * @swagger
+ * /api/v1/payroll/export:
+ *   get:
+ *     summary: Export payroll summary as CSV
+ *     description: |
+ *       Exports generated payroll data as a CSV file.
+ *
+ *       Role access:
+ *       - Admin: can export payroll summaries for all guards, optionally filtered
+ *       - Employer: can export payroll summaries only for completed shifts they created
+ *       - Guard: can export only their own payroll summary
+ *     tags: [Payroll]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date in ISO format YYYY-MM-DD
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date in ISO format YYYY-MM-DD
+ *       - in: query
+ *         name: periodType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [daily, weekly, monthly]
+ *         description: Aggregation type for payroll summaries
+ *       - in: query
+ *         name: guardId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional filter for a specific guard
+ *       - in: query
+ *         name: site
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional filter for a specific site
+ *       - in: query
+ *         name: department
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional filter for a specific department
+ *     responses:
+ *       200:
+ *         description: Payroll CSV exported successfully
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *       400:
+ *         description: Invalid request parameters
+ *       401:
+ *         description: Unauthorised
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Server error
+ */
+router.get(
   "/export",
   auth,
   authorizeRole("admin", "employer", "guard"),
   exportPayrollCsv,
 );
-
-router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayrollSummary);
 
 export default router;
