@@ -16,7 +16,7 @@ import {
 
 import { getMe } from '../api/auth';
 import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
-import AddAvailabilityModal from '../components/AddAvailabilityModal';
+import AddAvailabilityModal from '../components/modal/AddAvailabilityModal';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
