@@ -101,6 +101,62 @@ const parseIncidentDateTime = (incident) => {
   return baseDate.getTime();
 };
 
+const LONG_SHIFT_HOURS = 12;
+const MIN_REST_HOURS = 12;
+
+const splitTimeRange = (value) => {
+  if (!value) return { start: null, end: null };
+  const parts = String(value)
+    .split("-")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length >= 2) return { start: parts[0], end: parts[1] };
+  return { start: parts[0] || null, end: null };
+};
+
+const parseShiftDateTime = (dateValue, timeValue) => {
+  if (!dateValue) return null;
+
+  let baseDate = null;
+  if (dateValue instanceof Date) {
+    baseDate = new Date(dateValue);
+  } else {
+    const dateStr = String(dateValue).trim();
+    if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+      const [day, month, year] = dateStr.split("-").map(Number);
+      baseDate = new Date(year, month - 1, day);
+    } else if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+      const datePart = dateStr.slice(0, 10);
+      const [year, month, day] = datePart.split("-").map(Number);
+      baseDate = new Date(year, month - 1, day);
+    } else {
+      const parsed = new Date(dateStr);
+      if (!Number.isNaN(parsed.getTime())) {
+        baseDate = parsed;
+      }
+    }
+  }
+
+  if (!baseDate || Number.isNaN(baseDate.getTime())) return null;
+  if (!timeValue) return baseDate;
+
+  const timeStr = String(timeValue).trim();
+  const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!timeMatch) return baseDate;
+
+  let hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const meridian = (timeMatch[3] || "").toUpperCase();
+
+  if (meridian === "PM" && hours < 12) hours += 12;
+  if (meridian === "AM" && hours === 12) hours = 0;
+
+  const result = new Date(baseDate);
+  result.setHours(hours, minutes, 0, 0);
+  return result;
+};
+
 const getShiftStatusCategory = (shift) => {
   const text = String(shift?.status?.text || "").toLowerCase();
   const tone = String(shift?.status?.tone || "").toLowerCase();
@@ -138,6 +194,7 @@ export default function EmployerDashboard() {
   const [incidentStatusFilter, setIncidentStatusFilter] = useState("All");
   const [incidentSeverityFilter, setIncidentSeverityFilter] = useState("All");
   const [incidentSort, setIncidentSort] = useState("Newest");
+  const [expandedGuard, setExpandedGuard] = useState(null);
 
   const [incidents, setIncidents] = useState([
     {
@@ -205,6 +262,23 @@ export default function EmployerDashboard() {
         const rawShifts = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
 
         const normalizedShifts = rawShifts.map((shift, idx) => {
+          const guardName =
+            shift.guardName ||
+            (typeof shift.guard === "string" ? shift.guard : null) ||
+            shift.guard?.name ||
+            shift.guard?.fullName ||
+            shift.acceptedBy?.name ||
+            shift.acceptedBy?.fullName ||
+            (typeof shift.acceptedBy === "string" ? shift.acceptedBy : null) ||
+            shift.assignedGuard?.name ||
+            shift.assignedGuard?.fullName ||
+            (typeof shift.assignedGuard === "string" ? shift.assignedGuard : null) ||
+            shift.user?.name ||
+            shift.user?.fullName ||
+            null;
+          const startTime = shift.startTime || shift.start || null;
+          const endTime = shift.endTime || shift.end || null;
+          const rawDate = shift.date || shift.shiftDate || null;
           const rawStatus = shift.status;
           const normalizedStatus =
             typeof rawStatus === "object" && rawStatus !== null
@@ -229,14 +303,21 @@ export default function EmployerDashboard() {
             title: shift.title || shift.role || "Shift 1",
             location: formatLocation(shift.location || shift.venue),
             date: formatShiftDate(shift.date || shift.shiftDate),
+            rawDate,
             time:
               shift.startTime && shift.endTime
                 ? `${shift.startTime} - ${shift.endTime}`
                 : shift.time || "--",
+            startTime,
+            endTime,
             status: normalizedStatus,
             payRate: shift.payRate ?? shift.rate ?? shift.hourlyRate ?? 0,
             priority:
               shift.priority || (idx % 3 === 0 ? "High" : idx % 3 === 1 ? "Medium" : "Low"),
+            guardName,
+            guard: shift.guard || null,
+            acceptedBy: shift.acceptedBy || null,
+            assignedGuard: shift.assignedGuard || null,
           };
         });
 
@@ -324,6 +405,19 @@ export default function EmployerDashboard() {
     fetchShifts();
   }, []);
 
+  useEffect(() => {
+    if (!expandedGuard) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setExpandedGuard(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [expandedGuard]);
+
   const reviews = useMemo(
     () => [
       {
@@ -393,6 +487,100 @@ export default function EmployerDashboard() {
       Open: shifts.filter((s) => getShiftStatusCategory(s) === "Open").length,
       Completed: shifts.filter((s) => getShiftStatusCategory(s) === "Completed").length,
     };
+  }, [shifts]);
+
+  const fatigueData = useMemo(() => {
+    const guardMap = new Map();
+
+    shifts.forEach((shift) => {
+      const guardName =
+        shift.guardName ||
+        (typeof shift.guard === "string" ? shift.guard : null) ||
+        shift.guard?.name ||
+        shift.guard?.fullName ||
+        shift.acceptedBy?.name ||
+        shift.acceptedBy?.fullName ||
+        (typeof shift.acceptedBy === "string" ? shift.acceptedBy : null) ||
+        shift.assignedGuard?.name ||
+        shift.assignedGuard?.fullName ||
+        (typeof shift.assignedGuard === "string" ? shift.assignedGuard : null) ||
+        shift.user?.name ||
+        shift.user?.fullName ||
+        null;
+      if (!guardName) return;
+
+      const { start: rangeStart, end: rangeEnd } = splitTimeRange(shift.time);
+      const startLabel = shift.startTime || rangeStart;
+      const endLabel = shift.endTime || rangeEnd;
+      const start = parseShiftDateTime(shift.rawDate || shift.date, startLabel);
+      const end = parseShiftDateTime(shift.rawDate || shift.date, endLabel);
+
+      if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+
+      const startTime = start.getTime();
+      let endTime = end.getTime();
+
+      if (endTime <= startTime) {
+        endTime += 24 * 60 * 60 * 1000;
+      }
+
+      const durationHours = (endTime - startTime) / (1000 * 60 * 60);
+      if (durationHours <= 0 || durationHours > 23) return;
+
+      if (!guardMap.has(guardName)) {
+        guardMap.set(guardName, []);
+      }
+
+      guardMap.get(guardName).push({
+        startTime,
+        endTime,
+        durationHours,
+        title: shift.title || "Shift",
+        date: shift.rawDate || shift.date,
+        startLabel: startLabel || "--",
+        endLabel: endLabel || "--",
+        location: shift.location,
+        status: shift.status?.text || shift.status || "Open",
+      });
+    });
+
+    const guards = Array.from(guardMap.entries()).map(([guard, guardShifts]) => {
+      const sorted = [...guardShifts].sort((a, b) => a.startTime - b.startTime);
+      let longShiftCount = 0;
+      let consecutiveCount = 0;
+      let minRestGap = Number.POSITIVE_INFINITY;
+
+      sorted.forEach((shift, idx) => {
+        if (shift.durationHours >= LONG_SHIFT_HOURS) longShiftCount += 1;
+        if (idx === 0) return;
+        const previous = sorted[idx - 1];
+        const restHours = (shift.startTime - previous.endTime) / (1000 * 60 * 60);
+        if (restHours >= 0 && restHours < MIN_REST_HOURS) consecutiveCount += 1;
+        if (restHours >= 0) minRestGap = Math.min(minRestGap, restHours);
+      });
+
+      const restRecommendation = Number.isFinite(minRestGap)
+        ? Math.min(100, Math.max(0, Math.round((minRestGap / MIN_REST_HOURS) * 100)))
+        : 100;
+
+      return {
+        guard,
+        longShiftCount,
+        consecutiveCount,
+        restRecommendation,
+        shifts: sorted,
+      };
+    });
+
+    const overworked = guards.filter(
+      (guard) => guard.longShiftCount > 0 || guard.consecutiveCount > 0
+    );
+
+    const avgRestRecommendation = guards.length
+      ? Math.round(guards.reduce((sum, guard) => sum + guard.restRecommendation, 0) / guards.length)
+      : 0;
+
+    return { guards, overworked, avgRestRecommendation };
   }, [shifts]);
 
   const filteredIncidents = useMemo(() => {
@@ -660,6 +848,140 @@ export default function EmployerDashboard() {
             </div>
           </div>
         </div>
+
+        <div className="ss-section-head">
+          <h2 className="ss-section-title">Shift Fatigue Monitoring</h2>
+          <p className="ss-section-subtitle">Fatigue signals from recent shifts</p>
+        </div>
+
+        <div className="ss-dashboard-card">
+          <div className="ss-fatigue">
+            <div className="ss-fatigue__summary">
+              <div className="ss-fatigue__title">Risk Signals</div>
+              <div className="ss-fatigue__stats">
+                <div className="ss-fatigue__stat">
+                  <div className="ss-fatigue__stat-value">{fatigueData.guards.length}</div>
+                  <div className="ss-fatigue__stat-label">Guards Monitored</div>
+                </div>
+                <div className="ss-fatigue__stat">
+                  <div className="ss-fatigue__stat-value">{fatigueData.overworked.length}</div>
+                  <div className="ss-fatigue__stat-label">Overworked Guards</div>
+                </div>
+                <div className="ss-fatigue__stat">
+                  <div className="ss-fatigue__stat-value">{fatigueData.avgRestRecommendation}%</div>
+                  <div className="ss-fatigue__stat-label">Avg Rest Recommendation</div>
+                </div>
+              </div>
+              <div className="ss-fatigue__note">
+                Long shift threshold: {LONG_SHIFT_HOURS}h · Minimum rest target: {MIN_REST_HOURS}h
+              </div>
+            </div>
+
+            <div className="ss-fatigue__list">
+              <div className="ss-fatigue__title">Overworked Guards</div>
+              {fatigueData.overworked.length === 0 ? (
+                <div className="ss-fatigue__empty">No fatigue risks detected yet.</div>
+              ) : (
+                <div className="ss-fatigue__rows">
+                  {fatigueData.overworked.map((guard) => {
+                    const isExpanded = expandedGuard?.guard === guard.guard;
+                    return (
+                      <div
+                        className={`ss-fatigue__row ${isExpanded ? "is-expanded" : ""}`}
+                        key={guard.guard}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setExpandedGuard(isExpanded ? null : guard)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setExpandedGuard(isExpanded ? null : guard);
+                          }
+                        }}
+                      >
+                        <div className="ss-fatigue__guard">
+                          <div className="ss-fatigue__guard-name">{guard.guard}</div>
+                          <div className="ss-fatigue__guard-sub">
+                            Rest recommendation {guard.restRecommendation}%
+                          </div>
+                        </div>
+                        <div className="ss-fatigue__metric">
+                          <span className="ss-fatigue__metric-value">{guard.longShiftCount}</span>
+                          <span className="ss-fatigue__metric-label">Long Shifts</span>
+                        </div>
+                        <div className="ss-fatigue__metric">
+                          <span className="ss-fatigue__metric-value">{guard.consecutiveCount}</span>
+                          <span className="ss-fatigue__metric-label">Consecutive Shifts</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {expandedGuard && (
+          <div
+            className="ss-fatigue__modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setExpandedGuard(null)}
+          >
+            <div className="ss-fatigue__modal" onClick={(event) => event.stopPropagation()}>
+              <div className="ss-fatigue__modal-header">
+                <div>
+                  <div className="ss-fatigue__modal-title">{expandedGuard.guard}</div>
+                  <div className="ss-fatigue__guard-sub">
+                    Rest recommendation {expandedGuard.restRecommendation}%
+                  </div>
+                </div>
+                <button
+                  className="ss-fatigue__modal-close"
+                  onClick={() => setExpandedGuard(null)}
+                  aria-label="Close fatigue details"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="ss-fatigue__detail">
+                {expandedGuard.shifts.map((shiftItem, index) => {
+                  const locationText =
+                    typeof shiftItem.location === "string"
+                      ? shiftItem.location
+                      : shiftItem.location
+                        ? [
+                            shiftItem.location.street,
+                            shiftItem.location.suburb,
+                            shiftItem.location.state,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")
+                        : "No location";
+
+                  const dateText = shiftItem.date
+                    ? new Date(`${shiftItem.date}T00:00:00`).toLocaleDateString()
+                    : "--";
+
+                  return (
+                    <div className="ss-fatigue__detail-row" key={index}>
+                      <div className="ss-fatigue__detail-title">{shiftItem.title}</div>
+                      <div className="ss-fatigue__detail-meta">
+                        <span>{dateText}</span>
+                        <span>
+                          {shiftItem.startLabel} - {shiftItem.endLabel}
+                        </span>
+                        <span>{locationText}</span>
+                        <span>Status: {shiftItem.status}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="ss-section-head">
           <h2 className="ss-section-title">Incident Reports</h2>
