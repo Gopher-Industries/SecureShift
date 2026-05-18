@@ -22,8 +22,11 @@ export async function getGuardScore(guardId: string): Promise<GuardScore> {
   }
 
   try {
-    const { data } = await http.get<GuardScore>(`/users/guards/${guardId}/score`);
-    return data;
+   const response = await http.get<{ success: boolean; data: GuardScore }>(
+  `/users/guards/${guardId}/score`
+);
+
+return response.data.data;
   } catch (error) {
     console.log('FULL SCORE ERROR:', error);
 
