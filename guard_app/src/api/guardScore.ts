@@ -22,11 +22,11 @@ export async function getGuardScore(guardId: string): Promise<GuardScore> {
   }
 
   try {
-   const response = await http.get<{ success: boolean; data: GuardScore }>(
-  `/users/guards/${guardId}/score`
-);
+    const response = await http.get<{ success: boolean; data: GuardScore }>(
+      `/users/guards/${guardId}/score`
+    );
 
-return response.data.data;
+    return response.data.data;
   } catch (error) {
     console.log('FULL SCORE ERROR:', error);
 
@@ -36,8 +36,7 @@ return response.data.data;
     }
 
     throw new Error(
-      `Failed to fetch guard score (${
-        axios.isAxiosError(error) ? error.response?.status : 'unknown'
+      `Failed to fetch guard score (${axios.isAxiosError(error) ? error.response?.status : 'unknown'
       })`,
     );
   }
