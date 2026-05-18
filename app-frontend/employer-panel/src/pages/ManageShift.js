@@ -674,7 +674,12 @@ const ManageShift = ({ language }) => {
                   </div>
                   <div style={detailField}>
                     <label style={detailLabel}>Status</label>
-                    <select name="status" value={detailForm.status} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing}>
+                    <select
+  name="status"
+  value={detailForm.status}
+  style={inputStyle}
+  disabled
+>
                       {editableStatuses.map((statusOption) => (
                         <option key={statusOption} value={statusOption}>{statusOption}</option>
                       ))}
