@@ -23,7 +23,7 @@ export async function getGuardScore(guardId: string): Promise<GuardScore> {
 
   try {
     const response = await http.get<{ success: boolean; data: GuardScore }>(
-      `/users/guards/${guardId}/score`
+      `/users/guards/${guardId}/score`,
     );
 
     return response.data.data;
@@ -36,7 +36,8 @@ export async function getGuardScore(guardId: string): Promise<GuardScore> {
     }
 
     throw new Error(
-      `Failed to fetch guard score (${axios.isAxiosError(error) ? error.response?.status : 'unknown'
+      `Failed to fetch guard score (${
+        axios.isAxiosError(error) ? error.response?.status : 'unknown'
       })`,
     );
   }
