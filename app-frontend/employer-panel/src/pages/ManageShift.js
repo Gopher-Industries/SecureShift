@@ -591,36 +591,78 @@ const ManageShift = ({ language }) => {
                 <div style={detailGrid}>
                   <div style={detailField}>
                     <label style={detailLabel}>Job Title</label>
-                    <input name="title" value={detailForm.title} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="Job title" />
+                    <input
+  name="title"
+  value={detailForm.title}
+  style={inputStyle}
+  readOnly
+/>
                     {formErrors.title && <span style={inlineError}>{formErrors.title}</span>}
                   </div>
                   <div style={detailField}>
                     <label style={detailLabel}>Date</label>
-                    <input type="date" name="date" value={detailForm.date} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
+                    <input
+  type="date"
+  name="date"
+  value={detailForm.date}
+  style={inputStyle}
+  readOnly
+/>
                     {formErrors.date && <span style={inlineError}>{formErrors.date}</span>}
                   </div>
                   <div style={detailField}>
                     <label style={detailLabel}>Start Time</label>
-                    <input type="time" name="startTime" value={detailForm.startTime} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
+                    <input
+  type="time"
+  name="startTime"
+  value={detailForm.startTime}
+  style={inputStyle}
+  readOnly
+/>
                     {formErrors.startTime && <span style={inlineError}>{formErrors.startTime}</span>}
                   </div>
                   <div style={detailField}>
                     <label style={detailLabel}>End Time</label>
-                    <input type="time" name="endTime" value={detailForm.endTime} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} />
+                    <input
+  type="time"
+  name="endTime"
+  value={detailForm.endTime}
+  style={inputStyle}
+  readOnly
+/>
                     {formErrors.endTime && <span style={inlineError}>{formErrors.endTime}</span>}
                   </div>
                   <div style={detailField}>
                     <label style={detailLabel}>Location</label>
-                    <input name="street" value={detailForm.street} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="Street" />
+                   <input
+  name="street"
+  value={detailForm.street}
+  style={inputStyle}
+  readOnly
+  placeholder="Street"
+/>
                   </div>
                   <div style={detailField}>
                     <label style={detailLabel}>Pay Rate</label>
-                    <input type="number" name="payRate" value={detailForm.payRate} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="0.00" />
+                    <input
+  type="number"
+  name="payRate"
+  value={detailForm.payRate}
+  style={inputStyle}
+  readOnly
+  placeholder="0.00"
+/>
                     {formErrors.payRate && <span style={inlineError}>{formErrors.payRate}</span>}
                   </div>
                   <div style={detailField}>
                     <label style={detailLabel}>Field</label>
-                    <input name="field" value={detailForm.field} onChange={handleDetailChange} style={inputStyle} disabled={!isEditing} placeholder="e.g. Security" />
+                    <input
+  name="field"
+  value={detailForm.field}
+  style={inputStyle}
+  readOnly
+  placeholder="e.g. Security"
+/>
                   </div>
                   <div style={detailField}>
                     <label style={detailLabel}>Urgency</label>
@@ -640,16 +682,26 @@ const ManageShift = ({ language }) => {
                     {formErrors.status && <span style={inlineError}>{formErrors.status}</span>}
                   </div>
                 </div>
+     
+                  <div style={detailField}>
+  <label style={detailLabel}>Assigned Guards</label>
+
+  {selectedShift?.assignedGuards?.length > 0 ? (
+    selectedShift.assignedGuards.map((guard) => (
+      <div key={guard._id} style={{ marginBottom: "6px" }}>
+        {guard.name} ({guard.email})
+      </div>
+    ))
+  ) : (
+    <p>No guards assigned</p>
+  )}
+</div>
+
                 <div style={detailActions}>
-                  {!isEditing ? (
-                    <button style={primaryButton} onClick={() => { setFeedback(''); setIsEditing(true); }}>Edit Shift</button>
-                  ) : (
-                    <>
-                      <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>{saving ? 'Saving...' : 'Save changes'}</button>
-                      <button style={secondaryButton} onClick={closeShiftModal}>Cancel edit</button>
-                    </>
-                  )}
-                </div>
+  <button style={secondaryButton} onClick={closeShiftModal}>
+    Close
+  </button>
+</div>
               </>
             )}
 
