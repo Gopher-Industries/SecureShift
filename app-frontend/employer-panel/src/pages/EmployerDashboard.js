@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EmployerDashboard.css";
-import translations from '../i18n/translations';
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -121,7 +120,6 @@ const getShiftStatusCategory = (shift) => {
 
 export default function EmployerDashboard() {
   const [view, setView] = useState("list");
-  const overviewScroller = useRef(null);
   const reviewScroller = useRef(null);
   const navigate = useNavigate();
 
@@ -295,6 +293,7 @@ export default function EmployerDashboard() {
             status: { text: "Open", tone: "confirmed" },
             payRate: 23,
             priority: "High",
+            assignedGuards: 2,
           },
           {
             id: 2,
@@ -305,6 +304,7 @@ export default function EmployerDashboard() {
             status: { text: "Open", tone: "confirmed" },
             payRate: 23,
             priority: "High",
+            assignedGuards: 1,
           },
           {
             id: 3,
@@ -315,6 +315,7 @@ export default function EmployerDashboard() {
             status: { text: "Open", tone: "confirmed" },
             payRate: 23,
             priority: "High",
+            assignedGuards: 3,
           },
           {
             id: 4,
@@ -325,6 +326,7 @@ export default function EmployerDashboard() {
             status: { text: "Open", tone: "confirmed" },
             payRate: 23,
             priority: "High",
+            assignedGuards: 2,
           },
           {
             id: 5,
@@ -335,6 +337,7 @@ export default function EmployerDashboard() {
             status: { text: "Open", tone: "confirmed" },
             payRate: 23,
             priority: "High",
+            assignedGuards: 2,
           },
           {
             id: 6,
@@ -345,6 +348,7 @@ export default function EmployerDashboard() {
             status: { text: "Pending", tone: "pending" },
             payRate: 25,
             priority: "Medium",
+            assignedGuards: 1,
           },
           {
             id: 7,
@@ -355,6 +359,7 @@ export default function EmployerDashboard() {
             status: { text: "Completed", tone: "completed" },
             payRate: 24,
             priority: "Low",
+            assignedGuards: 4,
           },
         ]);
       } finally {
@@ -482,10 +487,10 @@ export default function EmployerDashboard() {
     );
   }, [incidents]);
 
-  const scrollByAmount = (ref, amt) => {
-    if (!ref.current) return;
-    ref.current.scrollBy({ left: amt, behavior: "smooth" });
-  };
+  const pendingRequestCount = useMemo(
+    () => requests.filter((req) => req.status === "Pending").length,
+    [requests]
+  );
 
   const updateIncident = (id, newStatus, newSeverity, newComments) => {
     setIncidents((prev) =>
@@ -508,6 +513,8 @@ export default function EmployerDashboard() {
     setRequests((prev) =>
       prev.map((req) => (req.id === id ? { ...req, status: newStatus } : req))
     );
+  };
+
   const scrollByAmount = (ref, amt) => {
     if (!ref.current) return;
     ref.current.scrollBy({ left: amt, behavior: "smooth" });
@@ -712,6 +719,62 @@ export default function EmployerDashboard() {
         </div>
 
         <div className="ss-section-head">
+          <h2 className="ss-section-title">Shift Swap / Leave Requests</h2>
+          <p className="ss-section-subtitle">
+            {pendingRequestCount} pending · {requests.length} total
+          </p>
+        </div>
+
+        <div className="ss-dashboard-card">
+          <div className="ss-requests-list">
+            {requests.map((req) => (
+              <div className="ss-request-row" key={req.id}>
+                <div className="ss-request-left">
+                  <div className="ss-request-type">{req.type}</div>
+                  <div className="ss-request-employee">
+                    {req.employee} — {req.shift}
+                  </div>
+                  <div className="ss-request-reason">{req.reason}</div>
+                </div>
+
+                <div className="ss-request-middle">
+                  <div className="ss-datetime-line">
+                    <IconCalendar className="ss-ico" />
+                    {req.requestDate}
+                  </div>
+                </div>
+
+                <div className="ss-request-actions">
+                  <span
+                    className={`ss-badge ss-badge--status-${String(req.status).toLowerCase()}`}
+                  >
+                    {req.status}
+                  </span>
+
+                  <button
+                    type="button"
+                    className="ss-primary"
+                    onClick={() => updateRequestStatus(req.id, "Approved")}
+                    disabled={req.status === "Approved"}
+                  >
+                    Approve
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ss-secondary ss-secondary--danger"
+                    onClick={() => updateRequestStatus(req.id, "Rejected")}
+                    disabled={req.status === "Rejected"}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="ss-section-head">
           <h2 className="ss-section-title">Incident Reports</h2>
           <p className="ss-section-subtitle">
             {incidentSummary.pending} pending · {incidentSummary.total} total
@@ -857,7 +920,11 @@ export default function EmployerDashboard() {
 
       {selectedIncident && (
         <div className="create-shift-modal-backdrop" onClick={() => setSelectedIncident(null)}>
-          <div className="create-shift-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
+          <div
+            className="create-shift-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "700px" }}
+          >
             <div className="create-shift-header">
               <div>
                 <h1>
@@ -952,7 +1019,11 @@ export default function EmployerDashboard() {
               >
                 Save as Pending
               </button>
-              <button className="secondary" style={{ color: "#666" }} onClick={() => setSelectedIncident(null)}>
+              <button
+                className="secondary"
+                style={{ color: "#666" }}
+                onClick={() => setSelectedIncident(null)}
+              >
                 Close
               </button>
             </div>
