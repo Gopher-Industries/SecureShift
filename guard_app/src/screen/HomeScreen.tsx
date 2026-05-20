@@ -181,7 +181,7 @@ export default function HomeScreen() {
         if (score) {
           setGuardScore(score);
         }
-      } catch (scoreErr) {}
+      } catch {}
 
       const { data: myShifts } = await http.get<Shift[]>('/shifts/myshifts');
 
