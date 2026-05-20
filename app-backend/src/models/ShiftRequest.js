@@ -1,4 +1,5 @@
-﻿import mongoose from 'mongoose';
+﻿// models/ShiftRequest.js
+import mongoose from 'mongoose';
 
 const { Schema, model } = mongoose;
 
@@ -96,9 +97,6 @@ const shiftRequestSchema = new Schema(
       type: Date,
       default: null,
     },
-    employerNotifiedAt: Date,
-    adminNotifiedAt: Date,
-    targetNotifiedAt: Date,
   },
   {
     timestamps: true,
@@ -107,7 +105,7 @@ const shiftRequestSchema = new Schema(
   }
 );
 
-// Compound indexes for efficient queries
+// Compound indexes
 shiftRequestSchema.index({ requestingGuardId: 1, status: 1, createdAt: -1 });
 shiftRequestSchema.index({ originalShiftId: 1, status: 1 });
 shiftRequestSchema.index({ targetGuardId: 1, status: 1 });
