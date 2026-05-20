@@ -28,9 +28,6 @@ export async function getGuardScore(guardId: string): Promise<GuardScore> {
 
     return response.data.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-    }
-
     throw new Error(
       `Failed to fetch guard score (${
         axios.isAxiosError(error) ? error.response?.status : 'unknown'
@@ -38,6 +35,7 @@ export async function getGuardScore(guardId: string): Promise<GuardScore> {
     );
   }
 }
+
 export async function fetchGuardScore(guardId?: string): Promise<GuardScore | null> {
   if (!guardId) return null;
 
