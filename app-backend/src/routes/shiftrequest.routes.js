@@ -19,7 +19,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/shiftrequests/requests:
+ * /api/v1/shifts/request:
  *   post:
  *     summary: Create a shift request (SWAP or LEAVE)
  *     tags: [ShiftRequests]
@@ -62,11 +62,11 @@ const router = express.Router();
  *       400:
  *         description: Validation error
  */
-router.post('/requests', protect, createShiftRequest);
+router.post('/shifts/request', protect, createShiftRequest);
 
 /**
  * @swagger
- * /api/v1/shiftrequests/requests:
+ * /api/v1/shifts/requests:
  *   get:
  *     summary: Get shift requests (role-based)
  *     tags: [ShiftRequests]
@@ -97,11 +97,11 @@ router.post('/requests', protect, createShiftRequest);
  *       200:
  *         description: List of shift requests
  */
-router.get('/requests', protect, getShiftRequests);
+router.get('/shifts/requests', protect, getShiftRequests);
 
 /**
  * @swagger
- * /api/v1/shiftrequests/requests/{id}:
+ * /api/v1/shifts/request/{id}:
  *   get:
  *     summary: Get a shift request by ID
  *     tags: [ShiftRequests]
@@ -119,11 +119,11 @@ router.get('/requests', protect, getShiftRequests);
  *       404:
  *         description: Request not found
  */
-router.get('/requests/:id', protect, getShiftRequestById);
+router.get('/shifts/request/:id', protect, getShiftRequestById);
 
 /**
  * @swagger
- * /api/v1/shiftrequests/requests/{id}:
+ * /api/v1/shifts/request/{id}:
  *   patch:
  *     summary: Update shift request (approve/reject or target response)
  *     tags: [ShiftRequests]
@@ -156,11 +156,11 @@ router.get('/requests/:id', protect, getShiftRequestById);
  *       200:
  *         description: Request updated
  */
-router.patch('/requests/:id', protect, updateShiftRequest);
+router.patch('/shifts/request/:id', protect, updateShiftRequest);
 
 /**
  * @swagger
- * /api/v1/shiftrequests/requests/{id}:
+ * /api/v1/shifts/request/{id}:
  *   delete:
  *     summary: Cancel a pending request (guard only)
  *     tags: [ShiftRequests]
@@ -178,6 +178,6 @@ router.patch('/requests/:id', protect, updateShiftRequest);
  *       400:
  *         description: Cannot cancel approved/rejected request
  */
-router.delete('/requests/:id', protect, cancelShiftRequest);
+router.delete('/shifts/request/:id', protect, cancelShiftRequest);
 
 export default router;

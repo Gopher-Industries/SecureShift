@@ -1,40 +1,38 @@
-﻿import ShiftRequest from '../models/ShiftRequest.js';
+﻿import mongoose from 'mongoose';
+import ShiftRequest from '../models/ShiftRequest.js';
 import Shift from '../models/Shift.js';
 import User from '../models/User.js';
 
 /**
  * Create a shift request (SWAP or LEAVE)
- * POST /api/v1/shifts/requests
+ * POST /api/v1/shifts/request
  */
 export const createShiftRequest = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     const { type, targetGuardId, originalShiftId, replacementShiftId, leaveStartDate, leaveEndDate, reason } = req.body;
     const requestingGuardId = req.user._id;
 
-    // Validate guard role
     if (req.user.role !== 'guard') {
       return res.status(403).json({ message: 'Only guards can create shift requests' });
     }
 
-    // Validate original shift exists and belongs to the guard
     const originalShift = await Shift.findById(originalShiftId);
     if (!originalShift) {
       return res.status(404).json({ message: 'Original shift not found' });
     }
 
-    // Check if guard is assigned to this shift
-    if (!originalShift.guardIds.includes(requestingGuardId.toString())) {
+    if (!originalShift.guardIds || !originalShift.guardIds.includes(requestingGuardId.toString())) {
       return res.status(403).json({ message: 'You are not assigned to this shift' });
     }
 
-    // Check if shift is in the future
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (originalShift.date < today) {
       return res.status(400).json({ message: 'Cannot request changes for past shifts' });
     }
 
-    // Check for pending requests on this shift
     const existingRequest = await ShiftRequest.findOne({
       originalShiftId,
       status: 'PENDING',
@@ -44,13 +42,11 @@ export const createShiftRequest = async (req, res) => {
       return res.status(400).json({ message: 'You already have a pending request for this shift' });
     }
 
-    // SWAP-specific validations
     if (type === 'SWAP') {
       if (!targetGuardId) {
         return res.status(400).json({ message: 'Target guard is required for swap requests' });
       }
 
-      // Validate target guard exists and is a guard
       const targetGuard = await User.findById(targetGuardId);
       if (!targetGuard || targetGuard.role !== 'guard') {
         return res.status(404).json({ message: 'Target guard not found' });
@@ -60,13 +56,12 @@ export const createShiftRequest = async (req, res) => {
         return res.status(400).json({ message: 'Cannot swap shift with yourself' });
       }
 
-      // If replacement shift provided, validate it
       if (replacementShiftId) {
         const replacementShift = await Shift.findById(replacementShiftId);
         if (!replacementShift) {
           return res.status(404).json({ message: 'Replacement shift not found' });
         }
-        if (replacementShift.acceptedBy?.toString() !== targetGuardId.toString()) {
+        if (!replacementShift.guardIds || !replacementShift.guardIds.includes(targetGuardId.toString())) {
           return res.status(403).json({ message: 'Replacement shift must belong to the target guard' });
         }
         if (replacementShift.date < today) {
@@ -75,14 +70,12 @@ export const createShiftRequest = async (req, res) => {
       }
     }
 
-    // LEAVE-specific validations
     if (type === 'LEAVE') {
       if (!leaveStartDate || !leaveEndDate) {
         return res.status(400).json({ message: 'Leave start and end dates are required' });
       }
     }
 
-    // Create request
     const shiftRequest = await ShiftRequest.create({
       type,
       requestingGuardId,
@@ -94,7 +87,6 @@ export const createShiftRequest = async (req, res) => {
       reason,
     });
 
-    // Populate references for response
     const populatedRequest = await ShiftRequest.findById(shiftRequest._id)
       .populate('requestingGuardId', 'name email')
       .populate('targetGuardId', 'name email')
@@ -109,6 +101,8 @@ export const createShiftRequest = async (req, res) => {
   } catch (error) {
     console.error('Create shift request error:', error);
     res.status(500).json({ message: error.message || 'Failed to create shift request' });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -121,24 +115,20 @@ export const getShiftRequests = async (req, res) => {
     const { status, type, page = 1, limit = 20 } = req.query;
     const filter = {};
 
-    // Role-based filtering
     if (req.user.role === 'guard') {
       filter.$or = [
         { requestingGuardId: req.user._id },
         { targetGuardId: req.user._id },
       ];
     } else if (req.user.role === 'employer') {
-      // Employer sees requests for shifts they created
       const employerShifts = await Shift.find({ createdBy: req.user._id }).distinct('_id');
       filter.originalShiftId = { $in: employerShifts };
     }
-    // Admin sees all - no filter
 
-    // Add optional filters
     if (status) filter.status = status;
     if (type) filter.type = type;
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const [requests, total] = await Promise.all([
       ShiftRequest.find(filter)
@@ -149,7 +139,7 @@ export const getShiftRequests = async (req, res) => {
         .populate('approvedBy', 'name email')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(parseInt(limit, 10)),
       ShiftRequest.countDocuments(filter),
     ]);
 
@@ -157,10 +147,10 @@ export const getShiftRequests = async (req, res) => {
       success: true,
       data: requests,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
-        pages: Math.ceil(total / parseInt(limit)),
+        pages: Math.ceil(total / parseInt(limit, 10)),
       },
     });
   } catch (error) {
@@ -171,7 +161,7 @@ export const getShiftRequests = async (req, res) => {
 
 /**
  * Get single shift request by ID
- * GET /api/v1/shifts/requests/:id
+ * GET /api/v1/shifts/request/:id
  */
 export const getShiftRequestById = async (req, res) => {
   try {
@@ -186,15 +176,19 @@ export const getShiftRequestById = async (req, res) => {
       return res.status(404).json({ message: 'Shift request not found' });
     }
 
-    // Authorization: check if user has permission to view
-    const isGuard = req.user.role === 'guard' &&
-      (request.requestingGuardId._id.toString() === req.user._id.toString() ||
-        request.targetGuardId?._id.toString() === req.user._id.toString());
+    let hasAccess = false;
 
-    const isEmployer = req.user.role === 'employer';
-    const isAdmin = req.user.role === 'admin';
+    if (req.user.role === 'guard') {
+      hasAccess = request.requestingGuardId._id.toString() === req.user._id.toString() ||
+        (request.targetGuardId && request.targetGuardId._id.toString() === req.user._id.toString());
+    } else if (req.user.role === 'employer') {
+      const shift = await Shift.findById(request.originalShiftId);
+      hasAccess = shift && shift.createdBy.toString() === req.user._id.toString();
+    } else if (req.user.role === 'admin') {
+      hasAccess = true;
+    }
 
-    if (!isGuard && !isEmployer && !isAdmin) {
+    if (!hasAccess) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -207,9 +201,12 @@ export const getShiftRequestById = async (req, res) => {
 
 /**
  * Update shift request status (APPROVE/REJECT)
- * PATCH /api/v1/shifts/requests/:id
+ * PATCH /api/v1/shifts/request/:id
  */
 export const updateShiftRequest = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { id } = req.params;
     const { status, rejectionReason, targetResponse } = req.body;
@@ -217,18 +214,18 @@ export const updateShiftRequest = async (req, res) => {
     const request = await ShiftRequest.findById(id)
       .populate('requestingGuardId', 'name email')
       .populate('targetGuardId', 'name email')
-      .populate('originalShiftId', 'title date startTime endTime acceptedBy')
-      .populate('replacementShiftId', 'title date startTime endTime acceptedBy');
+      .populate('originalShiftId')
+      .populate('replacementShiftId');
 
     if (!request) {
+      await session.abortTransaction();
       return res.status(404).json({ message: 'Shift request not found' });
     }
 
-    // Authorization and workflow logic
     const isAdmin = req.user.role === 'admin';
     const isEmployer = req.user.role === 'employer';
     const isTargetGuard = request.type === 'SWAP' &&
-      request.targetGuardId?._id.toString() === req.user._id.toString();
+      request.targetGuardId && request.targetGuardId._id.toString() === req.user._id.toString();
 
     // Handle target guard response for SWAP requests
     if (targetResponse && request.type === 'SWAP' && isTargetGuard && request.status === 'PENDING') {
@@ -242,7 +239,8 @@ export const updateShiftRequest = async (req, res) => {
         request.approvedAt = new Date();
       }
 
-      await request.save();
+      await request.save({ session });
+      await session.commitTransaction();
 
       return res.json({
         success: true,
@@ -253,38 +251,78 @@ export const updateShiftRequest = async (req, res) => {
 
     // Handle approval/rejection by employer/admin
     if (status && (isAdmin || isEmployer) && request.status === 'PENDING') {
+      // Employer ownership check
+      if (isEmployer) {
+        const shift = await Shift.findById(request.originalShiftId);
+        if (!shift || shift.createdBy.toString() !== req.user._id.toString()) {
+          await session.abortTransaction();
+          return res.status(403).json({ message: 'You can only approve requests for shifts you own' });
+        }
+      }
+
       // Check if this is a SWAP request that needs target acceptance
       if (request.type === 'SWAP' && request.targetResponse !== 'ACCEPTED') {
+        await session.abortTransaction();
         return res.status(400).json({
           message: 'Cannot approve swap until target guard accepts the swap'
         });
       }
 
       if (status === 'APPROVED') {
-        // Execute the shift change
+        // Execute the shift change within transaction
         const originalShift = request.originalShiftId;
 
         if (request.type === 'SWAP') {
-          // Swap shifts between two guards
           const targetGuard = request.targetGuardId;
-
-          // Swap assignments
           const originalGuardId = originalShift.acceptedBy;
+
+          // Update original shift
           originalShift.acceptedBy = targetGuard._id;
-          await originalShift.save();
+
+          // Update guardIds array if your model uses it
+          if (originalShift.guardIds && Array.isArray(originalShift.guardIds)) {
+            const originalGuardIndex = originalShift.guardIds.indexOf(originalGuardId);
+            const targetGuardIndex = originalShift.guardIds.indexOf(targetGuard._id);
+
+            if (originalGuardIndex !== -1) {
+              originalShift.guardIds[originalGuardIndex] = targetGuard._id;
+            }
+          }
+
+          await originalShift.save({ session });
 
           // If replacement shift exists, swap that too
           if (request.replacementShiftId) {
             const replacementShift = request.replacementShiftId;
             replacementShift.acceptedBy = originalGuardId;
-            await replacementShift.save();
+
+            if (replacementShift.guardIds && Array.isArray(replacementShift.guardIds)) {
+              const targetIndex = replacementShift.guardIds.indexOf(targetGuard._id);
+              const originalIndex = replacementShift.guardIds.indexOf(originalGuardId);
+
+              if (targetIndex !== -1 && originalIndex !== -1) {
+                replacementShift.guardIds[targetIndex] = originalGuardId;
+                replacementShift.guardIds[originalIndex] = targetGuard._id;
+              }
+            }
+
+            await replacementShift.save({ session });
           }
         } else if (request.type === 'LEAVE') {
           // Mark shift as open for reassignment
           originalShift.status = 'open';
           originalShift.acceptedBy = null;
           originalShift.applicants = [];
-          await originalShift.save();
+
+          // Remove from guardIds if present
+          if (originalShift.guardIds && Array.isArray(originalShift.guardIds)) {
+            const guardIndex = originalShift.guardIds.indexOf(request.requestingGuardId._id);
+            if (guardIndex !== -1) {
+              originalShift.guardIds.splice(guardIndex, 1);
+            }
+          }
+
+          await originalShift.save({ session });
         }
 
         request.status = 'APPROVED';
@@ -297,10 +335,13 @@ export const updateShiftRequest = async (req, res) => {
         request.approvedAt = new Date();
       }
 
-      await request.save();
+      await request.save({ session });
     } else if (status && !isAdmin && !isEmployer) {
+      await session.abortTransaction();
       return res.status(403).json({ message: 'Only employers or admins can approve/reject requests' });
     }
+
+    await session.commitTransaction();
 
     const updatedRequest = await ShiftRequest.findById(id)
       .populate('requestingGuardId', 'name email')
@@ -314,14 +355,17 @@ export const updateShiftRequest = async (req, res) => {
       message: `Request ${request.status.toLowerCase()}`,
     });
   } catch (error) {
+    await session.abortTransaction();
     console.error('Update shift request error:', error);
     res.status(500).json({ message: error.message || 'Failed to update shift request' });
+  } finally {
+    session.endSession();
   }
 };
 
 /**
  * Cancel a pending request (guard only)
- * DELETE /api/v1/shifts/requests/:id
+ * DELETE /api/v1/shifts/request/:id
  */
 export const cancelShiftRequest = async (req, res) => {
   try {
@@ -331,7 +375,6 @@ export const cancelShiftRequest = async (req, res) => {
       return res.status(404).json({ message: 'Shift request not found' });
     }
 
-    // Only the requesting guard can cancel
     if (request.requestingGuardId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Only the requesting guard can cancel this request' });
     }
