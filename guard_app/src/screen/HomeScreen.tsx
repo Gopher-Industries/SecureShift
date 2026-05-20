@@ -5,7 +5,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getGuardScore, GuardScore } from '../api/guardScore';
+import { fetchGuardScore, GuardScore } from '../api/guardScore';
 import { getUserProfile } from '../api/profile';
 import {
   Button,
@@ -177,13 +177,11 @@ export default function HomeScreen() {
       try {
         const profile = await getUserProfile();
         const guardId = profile?._id;
-        if (guardId) {
-          const score = await getGuardScore(guardId);
+        const score = await fetchGuardScore(guardId);
+        if (score) {
           setGuardScore(score);
         }
-      } catch (scoreErr) {
-        console.log('Score error:', scoreErr);
-      }
+      } catch (scoreErr) {}
 
       const { data: myShifts } = await http.get<Shift[]>('/shifts/myshifts');
 

@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 
 import { getUserProfile } from '../api/profile';
-import { getGuardScore, GuardScore } from '../api/guardScore';
+import { fetchGuardScore, GuardScore } from '../api/guardScore';
 import { LocalStorage } from '../lib/localStorage';
 import { LicenseStatus } from '../models/License';
 import { UserProfile } from '../models/UserProfile';
@@ -58,13 +58,10 @@ export default function ProfileScreen({ navigation, route }: any) {
 
       const guardId = profile?._id;
 
-      if (guardId) {
-        try {
-          const score = await getGuardScore(guardId);
-          setGuardScore(score);
-        } catch (scoreError) {
-          console.log('GUARD SCORE ERROR:', scoreError);
-        }
+      const score = await fetchGuardScore(guardId);
+
+      if (score) {
+        setGuardScore(score);
       }
     } catch (e: any) {
       setError(e?.message || 'Failed to load profile');
