@@ -39,7 +39,7 @@ export default function ScanResultScreen() {
           <Text style={[styles.content, { color: colors.text }]}>{formattedData}</Text>
         </View>
         {!isJson && (
-          <Text style={[styles.warning, { color: colors.status.warning }]}>
+          <Text style={[styles.warning, { color: colors.status.rejected }]}>
             Note: The scanned content is not a valid JSON.
           </Text>
         )}
