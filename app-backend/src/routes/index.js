@@ -31,6 +31,6 @@ router.use('/attendance', shiftAttendanceRoutes);
 router.use("/incidents", incidentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payroll', payrollRoutes);
-router.use('/shiftrequests', shiftRequestRoutes);
+router.use('/shifts', shiftRequestRoutes); // Shift request routes are nested under /shifts
 router.use('/equipment', equipmentRoutes);
 export default router;

@@ -62,7 +62,7 @@ const router = express.Router();
  *       400:
  *         description: Validation error
  */
-router.post('/shifts/request', protect, createShiftRequest);
+router.post('/request', protect, createShiftRequest);
 
 /**
  * @swagger
@@ -97,7 +97,7 @@ router.post('/shifts/request', protect, createShiftRequest);
  *       200:
  *         description: List of shift requests
  */
-router.get('/shifts/requests', protect, getShiftRequests);
+router.get('/requests', protect, getShiftRequests);
 
 /**
  * @swagger
@@ -119,7 +119,7 @@ router.get('/shifts/requests', protect, getShiftRequests);
  *       404:
  *         description: Request not found
  */
-router.get('/shifts/request/:id', protect, getShiftRequestById);
+router.get('/request/:id', protect, getShiftRequestById);
 
 /**
  * @swagger
@@ -156,7 +156,7 @@ router.get('/shifts/request/:id', protect, getShiftRequestById);
  *       200:
  *         description: Request updated
  */
-router.patch('/shifts/request/:id', protect, updateShiftRequest);
+router.patch('/request/:id', protect, updateShiftRequest);
 
 /**
  * @swagger
@@ -178,6 +178,6 @@ router.patch('/shifts/request/:id', protect, updateShiftRequest);
  *       400:
  *         description: Cannot cancel approved/rejected request
  */
-router.delete('/shifts/request/:id', protect, cancelShiftRequest);
+router.delete('/request/:id', protect, cancelShiftRequest);
 
 export default router;

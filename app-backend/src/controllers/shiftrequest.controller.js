@@ -211,7 +211,9 @@ export const updateShiftRequest = async (req, res) => {
     const { id } = req.params;
     const { status, rejectionReason, targetResponse } = req.body;
 
+    // Added .session(session) to bind to the transaction.
     const request = await ShiftRequest.findById(id)
+      .session(session)
       .populate('requestingGuardId', 'name email')
       .populate('targetGuardId', 'name email')
       .populate('originalShiftId')
@@ -224,10 +226,13 @@ export const updateShiftRequest = async (req, res) => {
 
     const isAdmin = req.user.role === 'admin';
     const isEmployer = req.user.role === 'employer';
-    const isTargetGuard = request.type === 'SWAP' &&
-      request.targetGuardId && request.targetGuardId._id.toString() === req.user._id.toString();
 
-    // Handle target guard response for SWAP requests
+    // Safely check target guard ID existence
+    const isTargetGuard = request.type === 'SWAP' &&
+      request.targetGuardId &&
+      request.targetGuardId._id.toString() === req.user._id.toString();
+
+    // 1. Handle target guard response for SWAP requests
     if (targetResponse && request.type === 'SWAP' && isTargetGuard && request.status === 'PENDING') {
       request.targetResponse = targetResponse;
       request.targetRespondedAt = new Date();
@@ -249,12 +254,20 @@ export const updateShiftRequest = async (req, res) => {
       });
     }
 
-    // Handle approval/rejection by employer/admin
+    // 2. Handle approval/rejection by employer/admin
     if (status && (isAdmin || isEmployer) && request.status === 'PENDING') {
+
+      const originalShiftId = request.originalShiftId?._id || request.originalShiftId;
+      const originalShift = await Shift.findById(originalShiftId).session(session);
+
+      if (!originalShift) {
+        await session.abortTransaction();
+        return res.status(404).json({ message: 'Original shift not found' });
+      }
+
       // Employer ownership check
       if (isEmployer) {
-        const shift = await Shift.findById(request.originalShiftId);
-        if (!shift || shift.createdBy.toString() !== req.user._id.toString()) {
+        if (originalShift.createdBy.toString() !== req.user._id.toString()) {
           await session.abortTransaction();
           return res.status(403).json({ message: 'You can only approve requests for shifts you own' });
         }
@@ -269,45 +282,51 @@ export const updateShiftRequest = async (req, res) => {
       }
 
       if (status === 'APPROVED') {
-        // Execute the shift change within transaction
-        const originalShift = request.originalShiftId;
-
         if (request.type === 'SWAP') {
-          const targetGuard = request.targetGuardId;
-          const originalGuardId = originalShift.acceptedBy;
+          const targetGuardId = request.targetGuardId._id;
+          const requestingGuardId = request.requestingGuardId._id;
 
           // Update original shift
-          originalShift.acceptedBy = targetGuard._id;
+          originalShift.acceptedBy = targetGuardId;
 
-          // Update guardIds array if your model uses it
+          // Use .findIndex and .toString() instead of .indexOf() for ObjectIds
           if (originalShift.guardIds && Array.isArray(originalShift.guardIds)) {
-            const originalGuardIndex = originalShift.guardIds.indexOf(originalGuardId);
-            const targetGuardIndex = originalShift.guardIds.indexOf(targetGuard._id);
+            const originalGuardIndex = originalShift.guardIds.findIndex(
+              id => id.toString() === requestingGuardId.toString()
+            );
 
             if (originalGuardIndex !== -1) {
-              originalShift.guardIds[originalGuardIndex] = targetGuard._id;
+              originalShift.guardIds[originalGuardIndex] = targetGuardId;
+            } else {
+              originalShift.guardIds.push(targetGuardId); // Fallback
             }
           }
-
           await originalShift.save({ session });
 
-          // If replacement shift exists, swap that too
+          // If replacement shift exists, execute logic properly
           if (request.replacementShiftId) {
-            const replacementShift = request.replacementShiftId;
-            replacementShift.acceptedBy = originalGuardId;
+            const replacementShiftId = request.replacementShiftId?._id || request.replacementShiftId;
+            const replacementShift = await Shift.findById(replacementShiftId).session(session);
 
-            if (replacementShift.guardIds && Array.isArray(replacementShift.guardIds)) {
-              const targetIndex = replacementShift.guardIds.indexOf(targetGuard._id);
-              const originalIndex = replacementShift.guardIds.indexOf(originalGuardId);
+            if (replacementShift) {
+              replacementShift.acceptedBy = requestingGuardId;
 
-              if (targetIndex !== -1 && originalIndex !== -1) {
-                replacementShift.guardIds[targetIndex] = originalGuardId;
-                replacementShift.guardIds[originalIndex] = targetGuard._id;
+              if (replacementShift.guardIds && Array.isArray(replacementShift.guardIds)) {
+                // Looking for targetGuardId in replacementShift, NOT requestingGuardId
+                const targetGuardIndex = replacementShift.guardIds.findIndex(
+                  id => id.toString() === targetGuardId.toString()
+                );
+
+                if (targetGuardIndex !== -1) {
+                  replacementShift.guardIds[targetGuardIndex] = requestingGuardId;
+                } else {
+                  replacementShift.guardIds.push(requestingGuardId);
+                }
               }
+              await replacementShift.save({ session });
             }
-
-            await replacementShift.save({ session });
           }
+
         } else if (request.type === 'LEAVE') {
           // Mark shift as open for reassignment
           originalShift.status = 'open';
@@ -316,18 +335,22 @@ export const updateShiftRequest = async (req, res) => {
 
           // Remove from guardIds if present
           if (originalShift.guardIds && Array.isArray(originalShift.guardIds)) {
-            const guardIndex = originalShift.guardIds.indexOf(request.requestingGuardId._id);
+            const requestingGuardId = request.requestingGuardId?._id || request.requestingGuardId;
+            const guardIndex = originalShift.guardIds.findIndex(
+              id => id.toString() === requestingGuardId.toString()
+            );
+
             if (guardIndex !== -1) {
               originalShift.guardIds.splice(guardIndex, 1);
             }
           }
-
           await originalShift.save({ session });
         }
 
         request.status = 'APPROVED';
         request.approvedBy = req.user._id;
         request.approvedAt = new Date();
+
       } else if (status === 'REJECTED') {
         request.status = 'REJECTED';
         request.rejectionReason = rejectionReason || 'No reason provided';
@@ -336,13 +359,19 @@ export const updateShiftRequest = async (req, res) => {
       }
 
       await request.save({ session });
+
     } else if (status && !isAdmin && !isEmployer) {
       await session.abortTransaction();
       return res.status(403).json({ message: 'Only employers or admins can approve/reject requests' });
+    } else if (!status && !targetResponse) {
+      // Prevent empty payload from blindly succeeding
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'Invalid payload. "status" or "targetResponse" is required.' });
     }
 
     await session.commitTransaction();
 
+    // Fetch the fully updated doc outside the transaction context for the response
     const updatedRequest = await ShiftRequest.findById(id)
       .populate('requestingGuardId', 'name email')
       .populate('targetGuardId', 'name email')
@@ -352,14 +381,18 @@ export const updateShiftRequest = async (req, res) => {
     res.json({
       success: true,
       data: updatedRequest,
-      message: `Request ${request.status.toLowerCase()}`,
+      message: `Request ${updatedRequest.status.toLowerCase()}`,
     });
+
   } catch (error) {
-    await session.abortTransaction();
+    // Ensure we only abort if a transaction is currently active
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     console.error('Update shift request error:', error);
     res.status(500).json({ message: error.message || 'Failed to update shift request' });
   } finally {
-    session.endSession();
+    await session.endSession();
   }
 };
 

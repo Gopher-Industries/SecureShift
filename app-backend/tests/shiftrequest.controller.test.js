@@ -1,16 +1,19 @@
 import request from 'supertest';
+import app from "../src/app.js"; // your Express app
 import mongoose from 'mongoose';
-import { app } from '../app.js';
-import User from '../models/User.js';
-import Shift from '../models/Shift.js';
-import ShiftRequest from '../models/ShiftRequest.js';
+import User from '../src/models/User.js';
+import Shift from '../src/models/Shift.js';
+import ShiftRequest from '../src/models/ShiftRequest.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "@jest/globals";
 
 describe('ShiftRequest API', () => {
-  let guardToken, employerToken, adminToken;
-  let guard1, guard2, employer, admin;
-  let shift1, shift2;
+  let guardToken, employerToken;
+  let guard1, guard2, employer;
+  let shift;
 
   beforeAll(async () => {
+    await mongoose.connect(process.env.MONGO_URI);
+
     guard1 = await User.create({
       name: 'Test Guard 1',
       email: 'guard1@test.com',
@@ -32,17 +35,9 @@ describe('ShiftRequest API', () => {
       role: 'employer'
     });
 
-    admin = await User.create({
-      name: 'Test Admin',
-      email: 'admin@test.com',
-      password: 'password123',
-      role: 'admin'
-    });
-
-    // 创建测试班次
-    shift1 = await Shift.create({
+    shift = await Shift.create({
       title: 'Morning Shift',
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天后
+      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       startTime: '09:00',
       endTime: '17:00',
       location: 'Site A',
@@ -52,32 +47,9 @@ describe('ShiftRequest API', () => {
       status: 'assigned'
     });
 
-    shift2 = await Shift.create({
-      title: 'Evening Shift',
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      startTime: '17:00',
-      endTime: '01:00',
-      location: 'Site B',
-      createdBy: employer._id,
-      guardIds: [guard2._id],
-      acceptedBy: guard2._id,
-      status: 'assigned'
-    });
-
-    const guardLogin = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: 'guard1@test.com', password: 'password123' });
-    guardToken = guardLogin.body.token;
-
-    const employerLogin = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: 'employer@test.com', password: 'password123' });
-    employerToken = employerLogin.body.token;
-
-    const adminLogin = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ email: 'admin@test.com', password: 'password123' });
-    adminToken = adminLogin.body.token;
+    // fake tokens (replace with real auth helper if you have JWT)
+    employerToken = `Bearer employer-token-${employer._id}`;
+    guardToken = `Bearer guard-token-${guard1._id}`;
   });
 
   afterAll(async () => {
@@ -91,11 +63,11 @@ describe('ShiftRequest API', () => {
     it('should allow guard to create SWAP request', async () => {
       const res = await request(app)
         .post('/api/v1/shifts/request')
-        .set('Authorization', `Bearer ${guardToken}`)
+        .set('Authorization', guardToken)
         .send({
           type: 'SWAP',
           targetGuardId: guard2._id,
-          originalShiftId: shift1._id,
+          originalShiftId: shift._id,
           reason: 'Need to swap due to personal emergency'
         });
 
@@ -107,11 +79,11 @@ describe('ShiftRequest API', () => {
     it('should block duplicate pending request', async () => {
       const res = await request(app)
         .post('/api/v1/shifts/request')
-        .set('Authorization', `Bearer ${guardToken}`)
+        .set('Authorization', guardToken)
         .send({
           type: 'SWAP',
           targetGuardId: guard2._id,
-          originalShiftId: shift1._id,
+          originalShiftId: shift._id,
           reason: 'Another swap request'
         });
 
@@ -122,11 +94,11 @@ describe('ShiftRequest API', () => {
     it('should block non-guard from creating request', async () => {
       const res = await request(app)
         .post('/api/v1/shifts/request')
-        .set('Authorization', `Bearer ${employerToken}`)
+        .set('Authorization', employerToken)
         .send({
           type: 'SWAP',
           targetGuardId: guard2._id,
-          originalShiftId: shift1._id,
+          originalShiftId: shift._id,
           reason: 'Employer trying to swap'
         });
 
@@ -142,7 +114,7 @@ describe('ShiftRequest API', () => {
         type: 'SWAP',
         requestingGuardId: guard1._id,
         targetGuardId: guard2._id,
-        originalShiftId: shift1._id,
+        originalShiftId: shift._id,
         reason: 'Test swap request',
         status: 'PENDING'
       });
@@ -157,7 +129,7 @@ describe('ShiftRequest API', () => {
 
       const res = await request(app)
         .patch(`/api/v1/shifts/request/${swapRequestId}`)
-        .set('Authorization', `Bearer ${guard2Token}`)
+        .set('Authorization', guard2Token)
         .send({ targetResponse: 'ACCEPTED' });
 
       expect(res.status).toBe(200);
@@ -165,14 +137,13 @@ describe('ShiftRequest API', () => {
     });
 
     it('should allow employer to approve after target acceptance', async () => {
-      // First, target guard accepts
       await ShiftRequest.findByIdAndUpdate(swapRequestId, {
         targetResponse: 'ACCEPTED'
       });
 
       const res = await request(app)
         .patch(`/api/v1/shifts/request/${swapRequestId}`)
-        .set('Authorization', `Bearer ${employerToken}`)
+        .set('Authorization', employerToken)
         .send({ status: 'APPROVED' });
 
       expect(res.status).toBe(200);
@@ -184,7 +155,7 @@ describe('ShiftRequest API', () => {
     it('should return employer-owned shifts only', async () => {
       const res = await request(app)
         .get('/api/v1/shifts/requests')
-        .set('Authorization', `Bearer ${employerToken}`);
+        .set('Authorization', employerToken);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -199,7 +170,7 @@ describe('ShiftRequest API', () => {
       const request = await ShiftRequest.create({
         type: 'LEAVE',
         requestingGuardId: guard1._id,
-        originalShiftId: shift1._id,
+        originalShiftId: shift._id,
         leaveStartDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         leaveEndDate: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000),
         reason: 'Vacation',
@@ -208,7 +179,7 @@ describe('ShiftRequest API', () => {
 
       const res = await request(app)
         .delete(`/api/v1/shifts/request/${request._id}`)
-        .set('Authorization', `Bearer ${guardToken}`);
+        .set('Authorization', guardToken);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -218,7 +189,7 @@ describe('ShiftRequest API', () => {
       const request = await ShiftRequest.create({
         type: 'LEAVE',
         requestingGuardId: guard1._id,
-        originalShiftId: shift1._id,
+        originalShiftId: shift._id,
         leaveStartDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         leaveEndDate: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000),
         reason: 'Sick leave',
@@ -229,7 +200,7 @@ describe('ShiftRequest API', () => {
 
       const res = await request(app)
         .delete(`/api/v1/shifts/request/${request._id}`)
-        .set('Authorization', `Bearer ${guardToken}`);
+        .set('Authorization', guardToken);
 
       expect(res.status).toBe(400);
     });
