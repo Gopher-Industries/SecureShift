@@ -2,23 +2,17 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  ScrollView,
-  Modal,
-  TextInput,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 
 import { getMe } from '../api/auth';
 import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
-import AddAvailabilityModal from '../components/modal/AddAvailabilityModal';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
+import AvailabilitySimpleView from '../components/view/AvailabilitySimpleView';
+import AvailabilityWeeklyView from '../components/view/AvailabilityWeeklyView';
+import AvailabilityMonthlyView from '../components/view/AvailabilityMonthlyView';
+import AvailabilityCalendarModal from '../components/calendar/AvailabilityCalendarModal';
+import AvailabilityViewToggle from '../components/toggle/AvailabilityViewToggle';
 
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -99,18 +93,6 @@ export default function AvailabilityScreen() {
 
   const getMonthEnd = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  };
-
-  const parseTimeRange = (slot: string) => {
-    const [start, end] = slot.split('-');
-    if (!start || !end) return null;
-    const [startHour, startMin] = start.split(':').map(Number);
-    const [endHour, endMin] = end.split(':').map(Number);
-    if ([startHour, startMin, endHour, endMin].some((n) => Number.isNaN(n))) return null;
-    return {
-      startMinutes: startHour * 60 + startMin,
-      endMinutes: endHour * 60 + endMin,
-    };
   };
 
   const persistAvailability = async (
@@ -296,205 +278,6 @@ export default function AvailabilityScreen() {
 
   const goToToday = () => setCurrentDate(new Date());
 
-  const renderSimpleMode = () => (
-    <View style={styles.container}>
-      {error && <Text style={styles.errorText}>{error}</Text>}
-
-      <Text style={styles.sectionTitle}>{t('avail.daysAvailable')}</Text>
-      <View style={styles.daysRow}>
-        {WEEK_DAYS.map((day) => {
-          const selected = days.includes(day);
-          return (
-            <TouchableOpacity
-              key={day}
-              style={[styles.dayChip, selected && styles.dayChipSelected]}
-              onPress={() => toggleDay(day)}
-            >
-              <Text style={selected ? styles.dayChipTextSelected : styles.dayChipText}>
-                {getLocalizedDay(day, true)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      <Text style={styles.sectionTitle}>{t('avail.timeSlots')}</Text>
-
-      {timeSlots.length === 0 ? (
-        <Text style={styles.helperTextMuted}>{t('avail.noSlotsAdded')}</Text>
-      ) : (
-        timeSlots.map((slot) => (
-          <View key={slot} style={styles.slotRow}>
-            <Text style={styles.slotItem}>
-              • {getOrderedShortDays()} - {slot}
-            </Text>
-            <TouchableOpacity onPress={() => handleRemoveSlot(slot)} style={styles.removeButton}>
-              <Text style={styles.removeButtonText}>{t('avail.removeBtn')}</Text>
-            </TouchableOpacity>
-          </View>
-        ))
-      )}
-
-      <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => setModalVisible(true)}>
-          <Text style={styles.primaryButtonText}>{t('avail.addAvailability')}</Text>
-        </TouchableOpacity>
-
-        <View style={styles.spacer} />
-
-        <TouchableOpacity style={styles.secondaryButton} onPress={clearSlots}>
-          <Text style={styles.secondaryButtonText}>{t('avail.clearSlots')}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.saveButtonWrapper}>
-        <TouchableOpacity
-          style={[styles.primaryButton, saving && styles.primaryButtonDisabled]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <Text style={styles.primaryButtonText}>
-            {saving ? t('avail.saving') : t('avail.save')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <AddAvailabilityModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onAddSlot={handleAddSlot}
-      />
-    </View>
-  );
-
-  const renderWeeklyMode = () => (
-    <ScrollView style={styles.calendarContainer}>
-      <View style={styles.weekHeader}>
-        {weekDays.map((day, idx) => (
-          <View key={idx} style={styles.weekDay}>
-            <Text style={styles.weekDayName}>
-              {getLocalizedDay(WEEK_DAYS[day.getDay() === 0 ? 6 : day.getDay() - 1], true)}
-            </Text>
-            <Text style={styles.weekDayDate}>{day.getDate()}</Text>
-          </View>
-        ))}
-      </View>
-
-      <ScrollView style={styles.timeGrid}>
-        {TIME_SLOTS.map((hour) => (
-          <View key={hour} style={styles.timeRow}>
-            <View style={styles.timeLabel}>
-              <Text style={styles.timeLabelText}>{hour.toString().padStart(2, '0')}:00</Text>
-            </View>
-
-            {weekDays.map((day, idx) => {
-              const daySlots = getSlotsForDate(day);
-              const hourStartMinutes = hour * 60;
-              const hourEndMinutes = hour * 60 + 60;
-              const hasSlot = daySlots.some((slot) => {
-                const range = parseTimeRange(slot);
-                if (!range) return false;
-                return range.startMinutes < hourEndMinutes && range.endMinutes > hourStartMinutes;
-              });
-
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.timeCell, hasSlot && styles.timeCellFilled]}
-                  onPress={() => {
-                    setSelectedDate(day);
-                    setShowCalendarModal(true);
-                  }}
-                >
-                  {hasSlot && <View style={styles.slotIndicator} />}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
-      </ScrollView>
-
-      <View style={styles.slotsSummary}>
-        <Text style={styles.slotsSummaryTitle}>{t('avail.thisWeek')}</Text>
-        {weekDays.map((day, idx) => {
-          const daySlots = getSlotsForDate(day);
-          if (daySlots.length === 0) return null;
-
-          return (
-            <View key={idx} style={styles.daySummary}>
-              <Text style={styles.daySummaryDay}>
-                {getLocalizedDay(WEEK_DAYS[day.getDay() === 0 ? 6 : day.getDay() - 1], true)}{' '}
-                {day.getDate()}
-              </Text>
-              {daySlots.map((slot) => (
-                <View key={slot} style={styles.slotItemRow}>
-                  <Text style={styles.slotTime}>{slot}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveCalendarSlot(slot)}>
-                    <Text style={styles.removeButtonText}>{t('avail.removeBtn')}</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          );
-        })}
-      </View>
-    </ScrollView>
-  );
-
-  const renderMonthlyMode = () => (
-    <ScrollView style={styles.calendarContainer}>
-      <View style={styles.monthGrid}>
-        <View style={styles.monthWeekHeader}>
-          {SHORT_DAYS.map((_, idx) => (
-            <View key={idx} style={styles.monthWeekDay}>
-              <Text style={styles.monthWeekDayText}>{getLocalizedDay(WEEK_DAYS[idx], true)}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.monthDaysGrid}>
-          {monthDays.map((dayObj, idx) => {
-            const daySlots = getSlotsForDate(dayObj.date);
-            const hasSlots = daySlots.length > 0;
-            const isToday = formatDate(dayObj.date) === formatDate(new Date());
-
-            return (
-              <TouchableOpacity
-                key={idx}
-                style={[
-                  styles.monthDay,
-                  !dayObj.inMonth && styles.monthDayDim,
-                  isToday && styles.monthDayToday,
-                ]}
-                onPress={() => {
-                  setSelectedDate(dayObj.date);
-                  setShowCalendarModal(true);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.monthDayNumber,
-                    !dayObj.inMonth && styles.monthDayNumberDim,
-                    isToday && styles.monthDayNumberToday,
-                  ]}
-                >
-                  {dayObj.date.getDate()}
-                </Text>
-                {hasSlots && (
-                  <View style={styles.monthSlotIndicators}>
-                    {daySlots.slice(0, 3).map((slot) => (
-                      <View key={slot} style={styles.monthSlotDot} />
-                    ))}
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-    </ScrollView>
-  );
-
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -513,32 +296,7 @@ export default function AvailabilityScreen() {
 
   return (
     <View style={styles.fullContainer}>
-      <View style={styles.viewToggle}>
-        <TouchableOpacity
-          style={[styles.toggleBtn, viewMode === 'simple' && styles.toggleBtnActive]}
-          onPress={() => setViewMode('simple')}
-        >
-          <Text style={[styles.toggleText, viewMode === 'simple' && styles.toggleTextActive]}>
-            {t('avail.simple')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleBtn, viewMode === 'weekly' && styles.toggleBtnActive]}
-          onPress={() => setViewMode('weekly')}
-        >
-          <Text style={[styles.toggleText, viewMode === 'weekly' && styles.toggleTextActive]}>
-            {t('avail.weekly')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleBtn, viewMode === 'monthly' && styles.toggleBtnActive]}
-          onPress={() => setViewMode('monthly')}
-        >
-          <Text style={[styles.toggleText, viewMode === 'monthly' && styles.toggleTextActive]}>
-            {t('avail.monthly')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <AvailabilityViewToggle viewMode={viewMode} onChange={setViewMode} colors={colors} t={t} />
 
       {viewMode !== 'simple' && (
         <View style={styles.navigation}>
@@ -558,75 +316,70 @@ export default function AvailabilityScreen() {
         </View>
       )}
 
-      {viewMode === 'simple' && renderSimpleMode()}
-      {viewMode === 'weekly' && renderWeeklyMode()}
-      {viewMode === 'monthly' && renderMonthlyMode()}
+      {viewMode === 'simple' && (
+        <AvailabilitySimpleView
+          error={error}
+          days={days}
+          timeSlots={timeSlots}
+          saving={saving}
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+          toggleDay={toggleDay}
+          handleRemoveSlot={handleRemoveSlot}
+          clearSlots={clearSlots}
+          handleSave={handleSave}
+          handleAddSlot={handleAddSlot}
+          getLocalizedDay={getLocalizedDay}
+          getOrderedShortDays={getOrderedShortDays}
+          weekDays={WEEK_DAYS}
+          colors={colors}
+          t={t}
+        />
+      )}
+      {viewMode === 'weekly' && (
+        <AvailabilityWeeklyView
+          weekDays={weekDays}
+          timeSlotsRange={TIME_SLOTS}
+          getSlotsForDate={getSlotsForDate}
+          getLocalizedDay={getLocalizedDay}
+          setSelectedDate={setSelectedDate}
+          setShowCalendarModal={setShowCalendarModal}
+          handleRemoveCalendarSlot={handleRemoveCalendarSlot}
+          colors={colors}
+          t={t}
+        />
+      )}
+      {viewMode === 'monthly' && (
+        <AvailabilityMonthlyView
+          monthDays={monthDays}
+          formatDate={formatDate}
+          getSlotsForDate={getSlotsForDate}
+          setSelectedDate={setSelectedDate}
+          setShowCalendarModal={setShowCalendarModal}
+          getLocalizedDay={getLocalizedDay}
+          colors={colors}
+          t={t}
+        />
+      )}
 
-      <Modal visible={showCalendarModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t('avail.addAvailTitle')}</Text>
-
-            {selectedDate && (
-              <View style={styles.modalField}>
-                <Text style={styles.modalLabel}>{t('avail.date')}</Text>
-                <Text style={styles.modalValue}>
-                  {selectedDate.toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>{t('avail.from')}</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={fromTime}
-                onChangeText={setFromTime}
-                placeholder="09:00"
-                placeholderTextColor={colors.muted}
-              />
-            </View>
-
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>{t('avail.to')}</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={toTime}
-                onChangeText={setToTime}
-                placeholder="17:00"
-                placeholderTextColor={colors.muted}
-              />
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalBtnCancel}
-                onPress={() => {
-                  setShowCalendarModal(false);
-                  setSelectedDate(null);
-                  setFromTime('09:00');
-                  setToTime('17:00');
-                }}
-              >
-                <Text style={styles.modalBtnCancelText}>{t('avail.cancel')}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalBtnAdd}
-                onPress={handleAddCalendarSlot}
-                disabled={saving}
-              >
-                <Text style={styles.modalBtnAddText}>{t('avail.addBtn')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <AvailabilityCalendarModal
+        visible={showCalendarModal}
+        selectedDate={selectedDate}
+        fromTime={fromTime}
+        toTime={toTime}
+        setFromTime={setFromTime}
+        setToTime={setToTime}
+        onClose={() => {
+          setShowCalendarModal(false);
+          setSelectedDate(null);
+          setFromTime('09:00');
+          setToTime('17:00');
+        }}
+        onAdd={handleAddCalendarSlot}
+        saving={saving}
+        colors={colors}
+        t={t}
+      />
     </View>
   );
 }
@@ -634,7 +387,6 @@ export default function AvailabilityScreen() {
 const getStyles = (colors: AppColors) =>
   StyleSheet.create({
     fullContainer: { flex: 1, backgroundColor: colors.bg },
-    container: { flex: 1, padding: 16, backgroundColor: colors.bg },
     centered: {
       flex: 1,
       justifyContent: 'center',
@@ -643,25 +395,6 @@ const getStyles = (colors: AppColors) =>
     },
     loadingText: { marginTop: 8, color: colors.text },
     errorText: { color: colors.status.rejected, marginBottom: 12 },
-
-    // View Toggle
-    viewToggle: {
-      flexDirection: 'row',
-      backgroundColor: colors.primarySoft,
-      borderRadius: 8,
-      padding: 4,
-      margin: 16,
-      marginBottom: 7,
-      shadowColor: '#000',
-      shadowOpacity: 0.12,
-      shadowOffset: { width: 0, height: 8 },
-      shadowRadius: 16,
-      elevation: 8,
-    },
-    toggleBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6 },
-    toggleBtnActive: { backgroundColor: colors.primary },
-    toggleText: { fontSize: 14, fontWeight: '600', color: colors.muted },
-    toggleTextActive: { color: colors.white },
 
     navigation: {
       flexDirection: 'row',
@@ -683,204 +416,4 @@ const getStyles = (colors: AppColors) =>
     },
     todayBtnText: { fontSize: 14, fontWeight: '600', color: colors.primary },
     navDate: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '600', color: colors.text },
-
-    // Simple Mode (existing)
-    sectionTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 8, color: colors.text },
-    helperTextMuted: { color: colors.muted, marginBottom: 8 },
-    daysRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
-    dayChip: {
-      paddingHorizontal: 8.35,
-      paddingVertical: 6,
-      borderRadius: 8,
-      marginHorizontal: 3,
-      marginVertical: 6,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    dayChipSelected: {
-      backgroundColor: colors.primarySoft,
-      borderColor: colors.primary,
-    },
-    dayChipText: { color: '#000' },
-    dayChipTextSelected: { color: '#003f88', fontWeight: '600' },
-    slotRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 6,
-      marginBottom: 8,
-      shadowColor: '#000',
-      shadowOpacity: 0.12,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 16,
-      elevation: 2,
-    },
-    slotItem: { color: colors.text },
-    removeButton: {
-      paddingHorizontal: 7,
-      paddingVertical: 4,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.status.rejected,
-      backgroundColor: colors.card,
-    },
-    removeButtonText: { color: colors.status.rejected, fontSize: 12, fontWeight: '600' },
-    actionsRow: { flexDirection: 'row', marginTop: 12 },
-    spacer: { width: 8 },
-    primaryButton: {
-      flex: 1,
-      backgroundColor: colors.primary,
-      borderRadius: 10,
-      paddingVertical: 12,
-      alignItems: 'center',
-    },
-    primaryButtonDisabled: { opacity: 0.6 },
-    primaryButtonText: { color: colors.white, fontWeight: '700' },
-    secondaryButton: {
-      flex: 1,
-      borderRadius: 10,
-      paddingVertical: 12,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    secondaryButtonText: { color: colors.text, fontWeight: '600' },
-    saveButtonWrapper: { marginTop: 24, height: 44 },
-
-    calendarContainer: { flex: 1, backgroundColor: colors.bg },
-
-    weekHeader: {
-      flexDirection: 'row',
-      backgroundColor: colors.card,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    weekDay: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-    weekDayName: { fontSize: 12, fontWeight: '600', color: colors.muted, marginBottom: 4 },
-    weekDayDate: { fontSize: 16, fontWeight: '700', color: colors.text },
-
-    timeGrid: { flex: 1 },
-    timeRow: {
-      flexDirection: 'row',
-      height: 60,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    timeLabel: {
-      width: 60,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.primarySoft,
-    },
-    timeLabelText: { fontSize: 12, color: colors.muted, fontWeight: '500' },
-
-    timeCell: {
-      flex: 1,
-      borderLeftWidth: 1,
-      borderLeftColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    timeCellFilled: { backgroundColor: colors.primarySoft },
-    slotIndicator: { flex: 1, backgroundColor: colors.primary, opacity: 0.3 },
-
-    slotsSummary: {
-      backgroundColor: colors.card,
-      padding: 16,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
-    slotsSummaryTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 12 },
-    daySummary: { marginBottom: 16 },
-    daySummaryDay: { fontSize: 14, fontWeight: '600', color: colors.muted, marginBottom: 8 },
-
-    slotItemRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      backgroundColor: colors.primarySoft,
-      borderRadius: 6,
-      marginBottom: 4,
-    },
-    slotTime: { fontSize: 14, color: colors.text, fontWeight: '500' },
-
-    monthGrid: { backgroundColor: colors.card, padding: 8 },
-    monthWeekHeader: { flexDirection: 'row', marginBottom: 8 },
-    monthWeekDay: { flex: 1, alignItems: 'center' },
-    monthWeekDayText: { fontSize: 12, fontWeight: '600', color: colors.muted },
-
-    monthDaysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-    monthDay: {
-      width: '14.28%',
-      aspectRatio: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 4,
-      backgroundColor: colors.card,
-    },
-    monthDayDim: { opacity: 0.3 },
-    monthDayToday: { backgroundColor: colors.primarySoft },
-    monthDayNumber: { fontSize: 14, fontWeight: '600', color: colors.text },
-    monthDayNumberDim: { color: colors.muted },
-    monthDayNumberToday: { color: colors.primary },
-    monthSlotIndicators: { flexDirection: 'row', gap: 2, marginTop: 4 },
-    monthSlotDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.primary },
-
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    modalContent: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      padding: 24,
-      width: '85%',
-      maxWidth: 400,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    modalTitle: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 20 },
-    modalField: { marginBottom: 16 },
-    modalLabel: { fontSize: 14, fontWeight: '600', color: colors.muted, marginBottom: 8 },
-    modalValue: { fontSize: 16, color: colors.text, fontWeight: '500' },
-    modalInput: {
-      backgroundColor: colors.primarySoft,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      padding: 12,
-      fontSize: 16,
-      color: colors.text,
-    },
-    modalButtons: { flexDirection: 'row', gap: 12, marginTop: 24 },
-    modalBtnCancel: {
-      flex: 1,
-      paddingVertical: 12,
-      alignItems: 'center',
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    modalBtnCancelText: { fontSize: 16, fontWeight: '600', color: colors.muted },
-    modalBtnAdd: {
-      flex: 1,
-      paddingVertical: 12,
-      alignItems: 'center',
-      borderRadius: 8,
-      backgroundColor: colors.primary,
-    },
-    modalBtnAddText: { fontSize: 16, fontWeight: '600', color: colors.white },
   });
