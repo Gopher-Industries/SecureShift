@@ -253,7 +253,7 @@ export default function ShiftDetailsScreen() {
         };
 
         setAttendance(next);
-        setAttendanceForShift(shift._id, next).catch(() => { });
+        setAttendanceForShift(shift._id, next).catch(() => {});
 
         Alert.alert('Success', 'Checked in successfully ✅');
       } else {
@@ -276,7 +276,7 @@ export default function ShiftDetailsScreen() {
         };
 
         setAttendance(next);
-        setAttendanceForShift(shift._id, next).catch(() => { });
+        setAttendanceForShift(shift._id, next).catch(() => {});
 
         Alert.alert('Success', 'Checked out successfully ✅');
       }
@@ -325,7 +325,7 @@ export default function ShiftDetailsScreen() {
       if (normalizedMsg.includes('already checked in')) {
         const synced: AttendanceState = { checkInTime: new Date().toISOString() };
         setAttendance(synced);
-        setAttendanceForShift(shift._id, synced).catch(() => { });
+        setAttendanceForShift(shift._id, synced).catch(() => {});
         return;
       }
 
@@ -341,8 +341,9 @@ export default function ShiftDetailsScreen() {
         actionType === 'check-in' ? 'Unable to check in' : 'Unable to check out',
         msg.trim().length > 0
           ? msg
-          : `Something went wrong while trying to ${actionType === 'check-in' ? 'check in' : 'check out'
-          }. Please try again.`,
+          : `Something went wrong while trying to ${
+              actionType === 'check-in' ? 'check in' : 'check out'
+            }. Please try again.`,
       );
     }
   };
