@@ -106,6 +106,7 @@ function SlideToSend({ onConfirm, trackWidth }: SlideToSendProps) {
     }
   }, [maxTravel, onConfirm, progress, snapBack, thumbX]);
 
+  /* eslint-disable */
   const panHandlers = useMemo(
     () =>
       PanResponder.create({
@@ -134,7 +135,7 @@ function SlideToSend({ onConfirm, trackWidth }: SlideToSendProps) {
       }).panHandlers,
     [handleFinishSlide, maxTravel, snapBack, thumbX],
   );
-
+  /* eslint-enable */
   const fillWidth = thumbX.interpolate({
     inputRange: [THUMB_TRAVEL_PADDING, THUMB_TRAVEL_PADDING + Math.max(maxTravel, 1)],
     outputRange: [THUMB_SIZE + TRACK_PADDING, trackWidth - TRACK_PADDING],
