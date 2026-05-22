@@ -7,6 +7,7 @@ import ShiftRequestModal from './ShiftRequestModal';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
 import type { AppColors } from '../../theme/colors';
+import { formatAttendanceTime } from '../functions/formatAttendanceTime';
 
 type Props = {
   shift: AppliedShift | CompletedShift | AllShift | null;
@@ -31,6 +32,8 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
         : status === 'Available'
           ? colors.primary
           : colors.muted;
+
+  const hasAttendance = Boolean(shift.attendance?.checkInTime || shift.attendance?.checkOutTime);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -100,6 +103,29 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
                 </View>
               </View>
             </View>
+            {hasAttendance ? (
+              <View style={s.modalRequirements}>
+                <Text style={s.modalRequirementsTitle}>Attendance History</Text>
+
+                {shift.attendance?.checkInTime ? (
+                  <View style={s.modalDetail}>
+                    <Text style={s.modalLabel}>✅ Checked In</Text>
+                    <Text style={s.modalValue}>
+                      {formatAttendanceTime(shift.attendance.checkInTime)}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {shift.attendance?.checkOutTime ? (
+                  <View style={s.modalDetail}>
+                    <Text style={s.modalLabel}>✅ Checked Out</Text>
+                    <Text style={s.modalValue}>
+                      {formatAttendanceTime(shift.attendance.checkOutTime)}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
           </View>
         </Pressable>
       </Pressable>

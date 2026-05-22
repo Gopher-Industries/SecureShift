@@ -8,6 +8,10 @@ export type AppliedShift = {
   date: string;
   time: string;
   status?: 'Pending' | 'Confirmed' | 'Rejected';
+  attendance?: {
+    checkInTime?: string;
+    checkOutTime?: string;
+  };
 };
 
 export type CompletedShift = {
@@ -21,6 +25,10 @@ export type CompletedShift = {
   rated: boolean;
   rating: number;
   status?: 'Completed';
+  attendance?: {
+    checkInTime?: string;
+    checkOutTime?: string;
+  };
 };
 
 export type AllShift = {
@@ -32,6 +40,10 @@ export type AllShift = {
   date: string;
   time: string;
   status?: 'Available' | 'Pending' | 'Confirmed';
+  attendance?: {
+    checkInTime?: string;
+    checkOutTime?: string;
+  };
 };
 
 export type ShiftCardItem = AppliedShift | CompletedShift | AllShift;
