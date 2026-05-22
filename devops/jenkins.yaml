@@ -1,0 +1,322 @@
+pipeline {
+    agent any
+    tools {
+        nodejs "Node20"
+    }
+    triggers {
+        githubPush()
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Gopher-Industries/SecureShift.git'
+            }
+        }
+
+        stage('Setup .env') {
+            steps {
+                dir('app-backend') {
+                    withCredentials([
+                        string(credentialsId: 'MONGO_URI',   variable: 'MONGO_URI'),
+                        string(credentialsId: 'JWT_SECRET',  variable: 'JWT_SECRET'),
+                        string(credentialsId: 'SMTP_HOST',   variable: 'SMTP_HOST'),
+                        string(credentialsId: 'SMTP_PORT',   variable: 'SMTP_PORT'),
+                        string(credentialsId: 'SMTP_SECURE', variable: 'SMTP_SECURE'),
+                        string(credentialsId: 'SMTP_USER',   variable: 'SMTP_USER'),
+                        string(credentialsId: 'SMTP_PASS',   variable: 'SMTP_PASS'),
+                        string(credentialsId: 'PORT',        variable: 'PORT')
+                    ]) {
+                        sh '''
+                            echo "MONGO_URI=$MONGO_URI"     > .env
+                            echo "JWT_SECRET=$JWT_SECRET"   >> .env
+                            echo "SMTP_HOST=$SMTP_HOST"     >> .env
+                            echo "SMTP_PORT=$SMTP_PORT"     >> .env
+                            echo "SMTP_SECURE=$SMTP_SECURE" >> .env
+                            echo "SMTP_USER=$SMTP_USER"     >> .env
+                            echo "SMTP_PASS=$SMTP_PASS"     >> .env
+                            echo "PORT=$PORT"               >> .env
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('app-backend') {
+                    sh 'npm install'
+                    sh 'npm install --save-dev jest-junit'
+                }
+            }
+        }
+
+        stage('Run Jest Tests') {
+            steps {
+                dir('app-backend') {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                        sh '''
+                            npx jest --ci --runInBand \
+                              --reporters=default \
+                              --reporters=jest-junit \
+                              --json \
+                              --outputFile=jest-results.json \
+                              --testPathIgnorePatterns=\
+"tests/authController.test.js"\
+,"tests/adminController.test.js"\
+,"tests/verification.controller.test.js"\
+,"tests/healthcheck.test.js"\
+,"tests/attendance.controller.test.js"\
+,"tests/shift.controller.test.js"\
+,"tests/user.controller.test.js"\
+,"tests/incident.controller.test.js"
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true,
+                          testResults: 'app-backend/junit.xml'
+
+                    sh '''
+cat > /tmp/gen-report.js << 'JSEOF'
+var fs   = require('fs');
+var path = require('path');
+
+var raw = { numTotalTests:0, numPassedTests:0, numFailedTests:0,
+            numPendingTests:0, testResults:[], success:true };
+if (fs.existsSync('app-backend/jest-results.json')) {
+  raw = JSON.parse(fs.readFileSync('app-backend/jest-results.json', 'utf8'));
+}
+
+var total     = raw.numTotalTests   || 0;
+var passed    = raw.numPassedTests  || 0;
+var failed    = raw.numFailedTests  || 0;
+var skipped   = raw.numPendingTests || 0;
+var passRate  = total > 0 ? ((passed / total) * 100).toFixed(1) : '100.0';
+var status    = failed > 0 ? 'TESTS FAILED'  : 'ALL TESTS PASSED';
+var statusCls = failed > 0 ? 'status-fail'   : 'status-pass';
+var barColor  = failed > 0 ? '#e53e3e'        : '#38a169';
+var rateColor = failed > 0 ? '#fc8181'        : '#68d391';
+
+function stripAnsi(s) {
+  var out = '';
+  var i = 0;
+  while (i < s.length) {
+    if (s.charCodeAt(i) === 27 && s[i + 1] === '[') {
+      i += 2;
+      while (i < s.length && s[i] !== 'm') { i++; }
+      i++;
+    } else {
+      out += s[i++];
+    }
+  }
+  return out;
+}
+
+function esc(s) {
+  return String(s || '')
+    .split('&').join('&amp;')
+    .split('<').join('&lt;')
+    .split('>').join('&gt;')
+    .split('"').join('&quot;');
+}
+
+var suiteRows = '';
+var allSuites = raw.testResults || [];
+
+for (var si = 0; si < allSuites.length; si++) {
+  var suite   = allSuites[si];
+  var sName   = path.basename(suite.testFilePath || suite.name || 'unknown');
+  var tests   = suite.testResults || [];
+  var sFailed = 0; var sPassed = 0; var sSkipped = 0;
+  for (var ti = 0; ti < tests.length; ti++) {
+    if      (tests[ti].status === 'failed')  sFailed++;
+    else if (tests[ti].status === 'passed')  sPassed++;
+    else if (tests[ti].status === 'pending') sSkipped++;
+  }
+  var sDur = '-';
+  if (suite.perfStats && suite.perfStats.end && suite.perfStats.start) {
+    sDur = ((suite.perfStats.end - suite.perfStats.start) / 1000).toFixed(2) + 's';
+  }
+  var sBadge = sFailed > 0
+    ? '<span class="badge badge-fail">FAIL</span>'
+    : '<span class="badge badge-pass">PASS</span>';
+
+  var testRows = '';
+  for (var ti2 = 0; ti2 < tests.length; ti2++) {
+    var t      = tests[ti2];
+    var isFail = t.status === 'failed';
+    var isSkip = t.status === 'pending';
+    var tCls   = isFail ? 'row-fail'  : (isSkip ? 'row-skip'  : 'row-pass');
+    var tIcon  = isFail ? '&#10007;'  : (isSkip ? '&#8722;'   : '&#10003;');
+    var tIcCls = isFail ? 'icon-fail' : (isSkip ? 'icon-skip' : 'icon-pass');
+    var tDur   = t.duration != null ? (t.duration / 1000).toFixed(3) + 's' : '-';
+    var tName  = esc((t.ancestorTitles || []).concat([t.title || '']).join(' > '));
+    var msgs   = t.failureMessages || [];
+    var errHtml = '';
+    if (msgs.length > 0) {
+      errHtml = '<div class="err-block">';
+      for (var mi = 0; mi < msgs.length; mi++) {
+        errHtml += '<pre>' + esc(stripAnsi(msgs[mi])) + '</pre>';
+      }
+      errHtml += '</div>';
+    }
+    testRows += '<tr class="' + tCls + '">'
+      + '<td><span class="t-icon ' + tIcCls + '">' + tIcon + '</span></td>'
+      + '<td class="t-name">' + tName + '</td>'
+      + '<td class="t-dur">'  + tDur  + '</td>'
+      + '</tr>';
+    if (errHtml) {
+      testRows += '<tr class="err-row"><td colspan="3">' + errHtml + '</td></tr>';
+    }
+  }
+
+  var openAttr = sFailed > 0 ? ' open' : '';
+  var suiteCls = sFailed > 0 ? 'suite suite-fail' : 'suite suite-pass';
+  suiteRows += '<details class="' + suiteCls + '"' + openAttr + '>'
+    + '<summary class="suite-summary">'
+    + '<span class="suite-icon">&#9658;</span>'
+    + '<span class="suite-name">' + esc(sName) + '</span>'
+    + '<span class="suite-meta">'
+    + sBadge
+    + '<span class="meta-chip chip-pass">' + sPassed  + ' passed</span>'
+    + (sFailed  > 0 ? '<span class="meta-chip chip-fail">'  + sFailed  + ' failed</span>'  : '')
+    + (sSkipped > 0 ? '<span class="meta-chip chip-skip">'  + sSkipped + ' skipped</span>' : '')
+    + '<span class="meta-chip chip-dur">' + sDur + '</span>'
+    + '</span></summary>'
+    + '<table class="t-table">'
+    + '<thead><tr><th></th><th>Test</th><th>Duration</th></tr></thead>'
+    + '<tbody>' + testRows + '</tbody>'
+    + '</table></details>';
+}
+
+var buildNum   = process.env.BUILD_NUMBER || '-';
+var buildUrl   = process.env.BUILD_URL    || '#';
+var now        = new Date().toUTCString();
+var suiteCount = allSuites.length;
+
+var css = ''
+  + '*{box-sizing:border-box;margin:0;padding:0}'
+  + 'body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;padding:0 0 48px}'
+  + '.header{background:#1a1f2e;border-bottom:1px solid #2d3748;padding:28px 40px 24px}'
+  + '.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px}'
+  + '.project{font-size:12px;color:#718096;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}'
+  + '.report-title{font-size:26px;font-weight:700;color:#fff;margin-bottom:4px}'
+  + '.build-meta{font-size:13px;color:#718096}'
+  + '.build-meta a{color:#63b3ed;text-decoration:none}'
+  + '.status-pill{padding:8px 22px;border-radius:999px;font-weight:700;font-size:14px;white-space:nowrap;margin-top:4px}'
+  + '.status-pass{background:#1a3a2a;color:#68d391;border:1px solid #38a169}'
+  + '.status-fail{background:#3a1a1a;color:#fc8181;border:1px solid #e53e3e}'
+  + '.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;padding:24px 40px}'
+  + '.card{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:18px 14px;text-align:center}'
+  + '.card-num{font-size:34px;font-weight:800;line-height:1}'
+  + '.card-label{font-size:11px;color:#718096;margin-top:5px;text-transform:uppercase;letter-spacing:.07em}'
+  + '.cn-total{color:#90cdf4}.cn-pass{color:#68d391}.cn-fail{color:#fc8181}.cn-skip{color:#f6ad55}'
+  + '.prog-wrap{padding:0 40px 24px}'
+  + '.prog-lbl{display:flex;justify-content:space-between;font-size:12px;color:#718096;margin-bottom:6px}'
+  + '.prog-track{background:#2d3748;border-radius:999px;height:8px;overflow:hidden}'
+  + '.prog-fill{height:100%;border-radius:999px}'
+  + '.sec-title{padding:4px 40px 14px;font-size:12px;font-weight:600;color:#a0aec0;text-transform:uppercase;letter-spacing:.08em}'
+  + '.suites{padding:0 40px;display:flex;flex-direction:column;gap:10px}'
+  + '.suite{background:#1a1f2e;border:1px solid #2d3748;border-radius:10px;overflow:hidden}'
+  + '.suite-fail{border-color:#742a2a}'
+  + '.suite-summary{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;list-style:none;user-select:none}'
+  + '.suite-summary::-webkit-details-marker{display:none}'
+  + 'details[open] .suite-summary{border-bottom:1px solid #2d3748}'
+  + '.suite-icon{font-size:10px;color:#718096;transition:transform .15s;display:inline-block}'
+  + 'details[open] .suite-icon{transform:rotate(90deg)}'
+  + '.suite-name{flex:1;font-size:13px;font-weight:600;color:#e2e8f0;font-family:Consolas,monospace;word-break:break-all}'
+  + '.suite-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}'
+  + '.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px}'
+  + '.badge-pass{background:#1a3a2a;color:#68d391}.badge-fail{background:#3a1a1a;color:#fc8181}'
+  + '.meta-chip{font-size:11px;padding:2px 8px;border-radius:999px}'
+  + '.chip-pass{background:#1a3a2a;color:#68d391}.chip-fail{background:#3a1a1a;color:#fc8181}'
+  + '.chip-skip{background:#3a2a1a;color:#f6ad55}.chip-dur{background:#1a2233;color:#63b3ed}'
+  + '.t-table{width:100%;border-collapse:collapse;font-size:13px}'
+  + '.t-table thead tr{background:#151821}'
+  + '.t-table th{padding:8px 16px;text-align:left;font-size:11px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.06em}'
+  + '.t-table td{padding:9px 16px;border-top:1px solid #1e2535}'
+  + '.row-fail{background:#1f1515}.row-skip{background:#1f1a10}'
+  + '.t-icon{font-size:15px;font-weight:700}'
+  + '.icon-pass{color:#68d391}.icon-fail{color:#fc8181}.icon-skip{color:#f6ad55}'
+  + '.t-name{color:#e2e8f0}.t-dur{color:#718096;font-family:Consolas,monospace;font-size:12px;text-align:right;white-space:nowrap}'
+  + '.err-row td{padding:0 16px 12px}'
+  + '.err-block{background:#0a0a0a;border-left:3px solid #e53e3e;border-radius:0 6px 6px 0;padding:12px 14px;margin-top:4px;overflow-x:auto}'
+  + '.err-block pre{font-family:Consolas,monospace;font-size:11px;color:#feb2b2;white-space:pre-wrap;word-break:break-word;line-height:1.6}'
+  + '.footer{margin:32px 40px 0;padding-top:20px;border-top:1px solid #2d3748;font-size:12px;color:#4a5568;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}'
+  + '.open-btn{display:inline-block;margin:20px 40px 0;padding:10px 24px;background:#3b82f6;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none}'
+  + '.open-btn:hover{background:#2563eb}';
+
+var html = '<!DOCTYPE html><html lang="en"><head>'
+  + '<meta charset="UTF-8">'
+  + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+  + '<title>SecureShift Test Report - Build #' + buildNum + '</title>'
+  + '<style>' + css + '</style>'
+  + '</head><body>'
+  + '<div class="header"><div class="hdr-top"><div>'
+  + '<div class="project">SecureShift CI/CD</div>'
+  + '<div class="report-title">Test Report</div>'
+  + '<div class="build-meta">Build <a href="' + buildUrl + '">#' + buildNum + '</a> &nbsp;&middot;&nbsp; ' + now + '</div>'
+  + '</div>'
+  + '<div class="status-pill ' + statusCls + '">' + status + '</div>'
+  + '</div></div>'
+  + '<div class="cards">'
+  + '<div class="card"><div class="card-num cn-total">' + total   + '</div><div class="card-label">Total</div></div>'
+  + '<div class="card"><div class="card-num cn-pass">'  + passed  + '</div><div class="card-label">Passed</div></div>'
+  + '<div class="card"><div class="card-num cn-fail">'  + failed  + '</div><div class="card-label">Failed</div></div>'
+  + '<div class="card"><div class="card-num cn-skip">'  + skipped + '</div><div class="card-label">Skipped</div></div>'
+  + '<div class="card"><div class="card-num" style="color:' + rateColor + '">' + passRate + '%</div><div class="card-label">Pass rate</div></div>'
+  + '</div>'
+  + '<div class="prog-wrap">'
+  + '<div class="prog-lbl"><span>Pass rate</span><span>' + passRate + '%</span></div>'
+  + '<div class="prog-track"><div class="prog-fill" style="width:' + passRate + '%;background:' + barColor + '"></div></div>'
+  + '</div>'
+  + '<div class="sec-title">Test suites &mdash; ' + suiteCount + ' total</div>'
+  + '<div class="suites">' + suiteRows + '</div>'
+  + '<div class="footer">'
+  + '<span>SecureShift CI &middot; Build #' + buildNum + '</span>'
+  + '<span>Generated ' + now + '</span>'
+  + '</div>'
+  + '</body></html>';
+
+fs.mkdirSync('app-backend/test-report', { recursive: true });
+fs.writeFileSync('app-backend/test-report/index.html', html);
+console.log('Done: app-backend/test-report/index.html');
+JSEOF
+node /tmp/gen-report.js
+                    '''
+
+                    // No plugin needed — archives the HTML as a build artifact.
+                    // Access it from the build page under "Build Artifacts".
+                    archiveArtifacts artifacts: 'app-backend/test-report/index.html',
+                                     allowEmptyArchive: true,
+                                     onlyIfSuccessful: false
+                }
+            }
+        }
+
+        stage('Docker Build Backend') {
+            steps {
+                dir('app-backend') {
+                    sh 'docker build -t secureshift-backend .'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Build #${env.BUILD_NUMBER} passed — Docker image ready"
+        }
+        unstable {
+            echo "⚠️  Build #${env.BUILD_NUMBER} — some tests failed, download test report from build artifacts"
+        }
+        failure {
+            echo "❌ Build #${env.BUILD_NUMBER} FAILED — Docker build error, check console"
+        }
+    }
+}

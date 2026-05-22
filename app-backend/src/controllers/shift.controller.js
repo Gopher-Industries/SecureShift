@@ -585,17 +585,42 @@ export const listAvailableShifts = async (req, res) => {
     const [docs, total] = await Promise.all([findQ.lean(), Shift.countDocuments(query)]);
 
     const items = docs.map((shift) => {
-      const assignedGuards = shift.acceptedBy
-        ? [shift.acceptedBy]
-        : Array.isArray(shift.guardIds)
-          ? shift.guardIds
-          : [];
-
+      const preselectedGuards = Array.isArray(shift.guardIds)
+        ? shift.guardIds
+        : [];
+    
+      const approvedGuards = shift.acceptedBy
+        ? Array.isArray(shift.acceptedBy)
+          ? shift.acceptedBy
+          : [shift.acceptedBy]
+        : [];
+    
+      const assignedGuards = [...preselectedGuards, ...approvedGuards]
+        .filter(Boolean)
+        .filter((guard, index, array) => {
+          const guardId = String(guard?._id || guard);
+          return (
+            guardId &&
+            array.findIndex(
+              (item) => String(item?._id || item) === guardId
+            ) === index
+          );
+        })
+        .map((guard) => ({
+          _id: guard._id,
+          name: guard.name,
+          email: guard.email,
+        }));
+    
       return {
         ...shift,
         assignedGuards,
-        applicantCount: Array.isArray(shift.applicants) ? shift.applicants.length : 0,
-        hasApplicants: Array.isArray(shift.applicants) && shift.applicants.length > 0,
+        applicantCount: Array.isArray(shift.applicants)
+          ? shift.applicants.length
+          : 0,
+        hasApplicants:
+          Array.isArray(shift.applicants) &&
+          shift.applicants.length > 0,
       };
     });
 

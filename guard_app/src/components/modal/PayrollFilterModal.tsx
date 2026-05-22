@@ -14,9 +14,9 @@ import {
   View,
 } from 'react-native';
 
-import { type PayrollPeriodType } from '../api/payroll';
-import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
+import { type PayrollPeriodType } from '../../api/payroll';
+import { useAppTheme } from '../../theme';
+import { AppColors } from '../../theme/colors';
 
 export interface FilterPayrollProps {
   visible: boolean;
