@@ -7,7 +7,6 @@ import {
   Alert,
   Dimensions,
   FlatList,
-  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -23,6 +22,7 @@ import ShiftCard from '../components/card/ShiftCard';
 import ShiftDetailsModal from '../components/modal/ShiftDetailsModal';
 import ViewToggle from '../components/toggle/ViewToggle';
 import { useAppTheme } from '../theme';
+import { getUserAttendance } from '../api/attendance';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
@@ -33,7 +33,11 @@ type Props = {
   navigation: any;
 };
 
-function mapMineShifts(shifts: ShiftDto[], myUid: string): AppliedShift[] {
+function mapMineShifts(
+  shifts: ShiftDto[],
+  myUid: string,
+  attendanceRecords: any[] = [],
+): AppliedShift[] {
   return shifts
     .filter((s) => s.status !== 'completed')
     .map((s) => {
@@ -43,6 +47,12 @@ function mapMineShifts(shifts: ShiftDto[], myUid: string): AppliedShift[] {
       const applicants = Array.isArray(s.applicants)
         ? s.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
         : [];
+
+      const attendance = attendanceRecords.find((record) => {
+        const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
+
+        return String(recordShiftId) === String(s._id);
+      });
 
       let status: AppliedShift['status'];
       if (s.status === 'assigned' && acceptedId === myUid) status = 'Confirmed';
@@ -58,24 +68,44 @@ function mapMineShifts(shifts: ShiftDto[], myUid: string): AppliedShift[] {
         date: s.date,
         time: `${s.startTime} - ${s.endTime}`,
         status,
+        attendance: attendance
+          ? {
+              checkInTime: attendance.clockIn ?? undefined,
+              checkOutTime: attendance.clockOut ?? undefined,
+            }
+          : undefined,
       };
     });
 }
 
-function mapCompleted(shifts: ShiftDto[]): CompletedShift[] {
+function mapCompleted(shifts: ShiftDto[], attendanceRecords: any[] = []): CompletedShift[] {
   return shifts
     .filter((s) => s.status === 'completed')
-    .map((s) => ({
-      id: s._id,
-      title: s.title,
-      company: s.createdBy?.company ?? '—',
-      site: s.location ? `${s.location.suburb ?? ''} ${s.location.state ?? ''}`.trim() : '—',
-      rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
-      date: s.date,
-      time: `${s.startTime} - ${s.endTime}`,
-      rated: false,
-      rating: 0,
-    }));
+    .map((s) => {
+      const attendance = attendanceRecords.find((record) => {
+        const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
+
+        return String(recordShiftId) === String(s._id);
+      });
+
+      return {
+        id: s._id,
+        title: s.title,
+        company: s.createdBy?.company ?? '—',
+        site: s.location ? `${s.location.suburb ?? ''} ${s.location.state ?? ''}`.trim() : '—',
+        rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
+        date: s.date,
+        time: `${s.startTime} - ${s.endTime}`,
+        rated: false,
+        rating: 0,
+        attendance: attendance
+          ? {
+              checkInTime: attendance.clockIn ?? undefined,
+              checkOutTime: attendance.clockOut ?? undefined,
+            }
+          : undefined,
+      };
+    });
 }
 
 function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
@@ -142,21 +172,18 @@ function AllTab({ navigation }: Props) {
     setRefreshing(false);
   };
 
-  const handleApply = useCallback(
-    async (shiftId: string) => {
-      try {
-        setApplyingId(shiftId);
-        await applyToShift(shiftId);
-        Alert.alert('Success', 'Shift applied successfully');
-        await fetchData();
-      } catch (error: any) {
-        Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
-      } finally {
-        setApplyingId(null);
-      }
-    },
-    [fetchData],
-  );
+  const handleApply = async (shiftId: string) => {
+    try {
+      setApplyingId(shiftId);
+      await applyToShift(shiftId);
+      Alert.alert('Success', 'Shift applied successfully');
+      await fetchData();
+    } catch (error: any) {
+      Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
+    } finally {
+      setApplyingId(null);
+    }
+  };
 
   const filtered = rows.filter((r) =>
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
@@ -165,22 +192,6 @@ function AllTab({ navigation }: Props) {
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
   };
-
-  const keyExtractor = useCallback((i: AllShift) => i.id, []);
-
-  const renderItem = useCallback(
-    ({ item }: { item: AllShift }) => (
-      <ShiftCard
-        shift={item}
-        onPress={() => setSelectedShift(item)}
-        colors={colors}
-        showApply
-        onApply={() => handleApply(item.id)}
-        applying={applyingId === item.id}
-      />
-    ),
-    [colors, applyingId, handleApply],
-  );
 
   return (
     <View style={s.screen}>
@@ -208,13 +219,18 @@ function AllTab({ navigation }: Props) {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          initialNumToRender={8}
-          maxToRenderPerBatch={6}
-          windowSize={9}
-          removeClippedSubviews={Platform.OS === 'android'}
+          keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <ShiftCard
+              shift={item}
+              onPress={() => setSelectedShift(item)}
+              colors={colors}
+              showApply
+              onApply={() => handleApply(item.id)}
+              applying={applyingId === item.id}
+            />
+          )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
         />
@@ -251,8 +267,9 @@ function AppliedTab({ navigation }: Props) {
         setRows([]);
         return;
       }
-      const mine = await myShifts();
-      setRows(mapMineShifts(mine, myUid));
+      const [mine, attendanceRecords] = await Promise.all([myShifts(), getUserAttendance(myUid)]);
+
+      setRows(mapMineShifts(mine, myUid, attendanceRecords));
     } finally {
       setLoading(false);
     }
@@ -273,15 +290,6 @@ function AppliedTab({ navigation }: Props) {
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
   };
-
-  const keyExtractor = useCallback((i: AppliedShift) => i.id, []);
-
-  const renderItem = useCallback(
-    ({ item }: { item: AppliedShift }) => (
-      <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
-    ),
-    [colors],
-  );
 
   return (
     <View style={s.screen}>
@@ -309,13 +317,11 @@ function AppliedTab({ navigation }: Props) {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          initialNumToRender={8}
-          maxToRenderPerBatch={6}
-          windowSize={9}
-          removeClippedSubviews={Platform.OS === 'android'}
+          keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
+          )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
         />
@@ -346,8 +352,16 @@ function CompletedTab({ navigation }: Props) {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const resp = await myShifts('past');
-      setRows(mapCompleted(resp));
+
+      const me = await getMe();
+      const myUid = me?._id ?? me?.id;
+
+      const [resp, attendanceRecords] = await Promise.all([
+        myShifts('past'),
+        myUid ? getUserAttendance(myUid) : Promise.resolve([]),
+      ]);
+
+      setRows(mapCompleted(resp, attendanceRecords));
     } finally {
       setLoading(false);
     }
@@ -368,15 +382,6 @@ function CompletedTab({ navigation }: Props) {
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
   };
-
-  const keyExtractor = useCallback((i: CompletedShift) => i.id, []);
-
-  const renderItem = useCallback(
-    ({ item }: { item: CompletedShift }) => (
-      <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
-    ),
-    [colors],
-  );
 
   return (
     <View style={s.screen}>
@@ -408,13 +413,11 @@ function CompletedTab({ navigation }: Props) {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          initialNumToRender={8}
-          maxToRenderPerBatch={6}
-          windowSize={9}
-          removeClippedSubviews={Platform.OS === 'android'}
+          keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
+          )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noCompleted')}</Text>}
         />
