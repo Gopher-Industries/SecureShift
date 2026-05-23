@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import { getUserProfile } from '../api/profile';
+import { fetchGuardScore, GuardScore } from '../api/guardScore';
 import { LocalStorage } from '../lib/localStorage';
 import { LicenseStatus } from '../models/License';
 import { UserProfile } from '../models/UserProfile';
@@ -31,6 +32,7 @@ export default function ProfileScreen({ navigation, route }: any) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [guardScore, setGuardScore] = useState<GuardScore | null>(null);
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfile', { userProfile: data });
@@ -53,6 +55,14 @@ export default function ProfileScreen({ navigation, route }: any) {
 
       const profile = await getUserProfile();
       setData(profile);
+
+      const guardId = profile?._id;
+
+      const score = await fetchGuardScore(guardId);
+
+      if (score) {
+        setGuardScore(score);
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to load profile');
     } finally {
@@ -153,12 +163,18 @@ export default function ProfileScreen({ navigation, route }: any) {
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={[styles.statValue, { color: '#4F46E5' }]}>140</Text>
+              <Text style={[styles.statValue, { color: '#4F46E5' }]}>
+                {guardScore?.totalShifts ?? 0}
+              </Text>
               <Text style={styles.statLabel}>{t('profile.totalShifts')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: '#facc15' }]}>
-                {data?.rating ? data.rating.toFixed(1) : '0.0'}
+                {guardScore?.rating
+                  ? guardScore.rating.toFixed(1)
+                  : guardScore?.score
+                    ? guardScore.score.toFixed(1)
+                    : '0.0'}
               </Text>
               <Text style={styles.statLabel}>{t('profile.rating')}</Text>
             </View>

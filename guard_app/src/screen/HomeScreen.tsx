@@ -5,6 +5,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { fetchGuardScore, GuardScore } from '../api/guardScore';
+import { getUserProfile } from '../api/profile';
 import {
   Button,
   Dimensions,
@@ -124,6 +126,7 @@ export default function HomeScreen() {
   const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
   const [upcomingShifts, setUpcomingShifts] = useState<Shift[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [guardScore, setGuardScore] = useState<GuardScore | null>(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -171,6 +174,16 @@ export default function HomeScreen() {
     try {
       const { data: u } = await http.get<User>('/users/me');
       setUser(u);
+      try {
+        const profile = await getUserProfile();
+        const guardId = profile?._id;
+        const score = await fetchGuardScore(guardId);
+        if (score) {
+          setGuardScore(score);
+        }
+      } catch {
+        setGuardScore(null);
+      }
 
       const { data: myShifts } = await http.get<Shift[]>('/shifts/myshifts');
 
@@ -253,7 +266,7 @@ export default function HomeScreen() {
             <StatCard
               icon={<MaterialCommunityIcons name="trending-up" size={18} color="#7C5CFC" />}
               label={t('home.currentRating')}
-              value={metrics.rating}
+              value={guardScore?.score != null ? guardScore.score.toFixed(1) : '0.0'}
               extraStyle={styles.tintPurple}
               colors={colors}
             />
