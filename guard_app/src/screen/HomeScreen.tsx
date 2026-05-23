@@ -266,13 +266,7 @@ export default function HomeScreen() {
             <StatCard
               icon={<MaterialCommunityIcons name="trending-up" size={18} color="#7C5CFC" />}
               label={t('home.currentRating')}
-              value={
-                guardScore?.rating
-                  ? guardScore.rating.toFixed(1)
-                  : guardScore?.score
-                    ? guardScore.score.toFixed(1)
-                    : '0.0'
-              }
+              value={guardScore?.score != null ? guardScore.score.toFixed(1) : '0.0'}
               extraStyle={styles.tintPurple}
               colors={colors}
             />

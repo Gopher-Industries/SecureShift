@@ -1,20 +1,13 @@
 import axios from 'axios';
-
 import http from '../lib/http';
 
-export type GuardScore = {
-  guardId?: string;
-  score?: number;
-  rating?: number;
-  performanceScore?: number;
-  currentRating?: number;
-  completedShifts?: number;
-  totalShifts?: number;
-  attendanceRate?: number;
-  punctualityRate?: number;
-  summary?: string;
-  message?: string;
+type ApiGuardScore = {
+  guardId: string;
+  score: number;
+  breakdown: unknown; // exists in API, not in use
 };
+
+export type GuardScore = Pick<ApiGuardScore, 'guardId' | 'score'>;
 
 export async function getGuardScore(guardId: string): Promise<GuardScore> {
   if (!guardId || guardId === 'undefined' || guardId === 'null') {
@@ -22,9 +15,10 @@ export async function getGuardScore(guardId: string): Promise<GuardScore> {
   }
 
   try {
-    const response = await http.get<{ success: boolean; data: GuardScore }>(
-      `/users/guards/${guardId}/score`,
-    );
+    const response = await http.get<{
+      success: boolean;
+      data: ApiGuardScore;
+    }>(`/users/guards/${guardId}/score`);
 
     return response.data.data;
   } catch (error) {
