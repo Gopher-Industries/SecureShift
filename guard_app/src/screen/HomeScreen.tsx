@@ -22,8 +22,6 @@ import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
-import { showLocalNotification } from '../utils/notificationHelpers';
-import { LocalStorage } from '../lib/localStorage';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -135,6 +133,18 @@ export default function HomeScreen() {
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
+            onPress={() => navigation.navigate('IncidentReports')}
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Ionicons name="alert-circle-outline" size={22} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Payroll')}
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Ionicons name="card-outline" size={22} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => navigation.navigate('Messages')}
             style={{ paddingHorizontal: 8 }}
           >
@@ -199,8 +209,6 @@ export default function HomeScreen() {
     setRefreshing(true);
     await load();
     setRefreshing(false);
-    const token = await LocalStorage.getToken();
-    console.log('Refreshed home data. Current token:', token);
   };
 
   return (
@@ -312,16 +320,6 @@ export default function HomeScreen() {
               <Text style={styles.emptyText}>{t('home.noUpcoming')}</Text>
             )}
           </View>
-
-          <View style={{ justifyContent: 'center', padding: 20 }}>
-            <Button
-              title={t('homeExtras.testNotif')}
-              onPress={async () => {
-                await showLocalNotification(t('homeExtras.notifTitle'), t('homeExtras.notifBody'));
-              }}
-            />
-          </View>
-
           <View style={styles.spacer} />
         </View>
       </ScrollView>
