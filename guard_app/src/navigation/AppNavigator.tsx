@@ -7,6 +7,7 @@ import EditProfileScreen from '../screen/EditProfileScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import NotificationsScreen from '../screen/notifications';
+import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
 import SettingsScreen from '../screen/SettingsScreen';
 import ShiftDetailsScreen from '../screen/ShiftDetailsScreen';
@@ -23,6 +24,7 @@ export type RootStackParamList = {
   Settings: undefined;
   PrivacyPolicy: undefined;
   EditProfile: undefined;
+  Payroll: undefined;
   Messages:
     | {
         context?: 'shift' | 'general';
@@ -88,6 +90,11 @@ export default function AppNavigator() {
         name="Certificates"
         component={CertificatesScreen}
         options={{ headerShown: true, title: 'Certificates' }}
+      />
+      <Stack.Screen
+        name="Payroll"
+        component={PayrollScreen}
+        options={{ headerShown: true, title: 'Payroll' }}
       />
       <Stack.Screen
         name="ShiftDetails"

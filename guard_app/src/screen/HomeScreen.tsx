@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 // src/screen/HomeScreen.tsx
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useLayoutEffect, useState } from 'react';
@@ -131,6 +131,12 @@ export default function HomeScreen() {
       headerTintColor: colors.white,
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Payroll')}
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Ionicons name="cash-outline" size={22} color={colors.white} />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => navigation.navigate('Messages')}
             style={{ paddingHorizontal: 8 }}

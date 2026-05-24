@@ -45,18 +45,31 @@ export type PayrollResponse = {
 };
 
 export async function getPayrollSummary(params: PayrollSummaryParams) {
-  const { data } = await http.get<PayrollResponse>('/payroll', { params });
+  const { data } = await http.get<PayrollResponse>('/payroll', {
+    params,
+  });
+
   return data;
 }
 
 export async function exportPayrollCsv(params: PayrollSummaryParams) {
   const token = await LocalStorage.getToken();
-  const searchParams = new URLSearchParams(params).toString();
+
+  const searchParams = new URLSearchParams({
+    startDate: params.startDate,
+    endDate: params.endDate,
+    periodType: params.periodType,
+  }).toString();
+
   const url = `${API_BASE_URL}${API_PATH}/payroll/export?${searchParams}`;
 
   if (Platform.OS === 'web') {
     const response = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : undefined,
     });
 
     if (!response.ok) {
@@ -64,26 +77,46 @@ export async function exportPayrollCsv(params: PayrollSummaryParams) {
     }
 
     const blob = await response.blob();
+
     const downloadUrl = window.URL.createObjectURL(blob);
+
     const link = document.createElement('a');
 
     link.href = downloadUrl;
+
     link.download = `payroll-export-${params.startDate}-to-${params.endDate}.csv`;
+
+    document.body.appendChild(link);
+
     link.click();
 
+    document.body.removeChild(link);
+
     window.URL.revokeObjectURL(downloadUrl);
+
     return;
   }
 
-  const response = await http.get<string>('/payroll/export', {
-    params,
-    responseType: 'text',
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : undefined,
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to export payroll CSV');
+  }
+
+  const csvContent = await response.text();
 
   const fileUri = `${FileSystem.Paths.cache.uri}payroll-export-${params.startDate}-to-${params.endDate}.csv`;
 
   const file = new FileSystem.File(fileUri);
-  await file.write(response.data);
+
+  await file.write(csvContent);
 
   const canShare = await Sharing.isAvailableAsync();
 
