@@ -2,6 +2,8 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./EmployerDashboard.css";
 import translations from '../i18n/translations';
+import Header from '../components/Header';
+
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -119,10 +121,13 @@ const getShiftStatusCategory = (shift) => {
   return "All";
 };
 
-export default function EmployerDashboard() {
+export default function EmployerDashboard({language}) {
+  const t = translations[language || "en"] || translations.en; //changes made
   const [view, setView] = useState("list");
   const reviewScroller = useRef(null);
   const navigate = useNavigate();
+
+  
 
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -465,12 +470,13 @@ export default function EmployerDashboard() {
 
   return (
     <div className="ss-page">
+      
       <main className="ss-main">
         <div className="ss-overview-head">
           <div>
-            <h2 className="ss-h1">Overview</h2>
+            <h2 className="ss-h1">{t.overview}</h2> 
             <p className="ss-overview-subtitle">
-              {shifts.length} shifts · last updated just now
+              {shifts.length} {t.shifts} · last updated just now
             </p>
           </div>
 
@@ -662,7 +668,7 @@ export default function EmployerDashboard() {
         </div>
 
         <div className="ss-section-head">
-          <h2 className="ss-section-title">Incident Reports</h2>
+          <h2 className="ss-section-title">{t.incidentReports}</h2> 
           <p className="ss-section-subtitle">
             {incidentSummary.pending} pending · {incidentSummary.total} total
           </p>
@@ -766,7 +772,7 @@ export default function EmployerDashboard() {
         </div>
 
         <div className="ss-section-head ss-section-head--reviews">
-          <h2 className="ss-section-title">Recent Reviews</h2>
+          <h2 className="ss-section-title">{t.recentReviews}</h2> //changes made
           <div className="ss-review-arrows">
             <button className="ss-mini-arrow" onClick={() => scrollByAmount(reviewScroller, -300)} type="button">
               ‹
