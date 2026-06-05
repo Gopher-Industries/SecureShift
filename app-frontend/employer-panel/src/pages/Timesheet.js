@@ -103,36 +103,48 @@ export default function Timesheet({ language }) {
   const [sortBy, setSortBy] = useState(Sort.DateDesc);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await http.get("/shifts/myshifts");
-        const list = Array.isArray(data) ? data : [];
-        const assignedShifts = list.filter((s) => s.acceptedBy);
-        const attendanceLists = await Promise.all(
-          assignedShifts.map((s) =>
-            http
-              .get(`/payroll/attendance/${s._id}`)
-              .then((r) => r.data)
-              .catch(() => ({ records: [] }))
-          )
-        );
-        if (cancelled) return;
-        setRows(buildRows(assignedShifts, attendanceLists));
-      } catch (err) {
-        if (cancelled) return;
-        setError(
-          err?.response?.data?.message ||
-            err.message ||
-            "Failed to load timesheets"
-        );
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+ useEffect(() => { //Changes made
+  let cancelled = false;
+
+  (async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // This was changed from the old endpoint to /attendance/timesheets
+      // as part of the Auto Timesheet Generation feature.
+      // This makes the Timesheet tab display real auto-generated data.
+      const { data } = await http.get("/attendance/timesheets");   //  NEW ENDPOINT
+
+      if (cancelled) return;
+
+      // Transform data to match the table structure
+      const formattedRows = Array.isArray(data.timesheets) 
+        ? data.timesheets.map(ts => ({
+            id: ts._id,
+            guard: ts.guardId?.name || "Unknown Guard",
+            shiftDate: formatDate(ts.date),
+            location: "N/A",                    // You can improve later
+            clockIn: formatTime(ts.checkInTime),
+            clockOut: formatTime(ts.checkOutTime),
+            totalHours: formatHoursWorked(ts.hoursWorked),
+            payRate: "--",
+            status: "Completed",
+            totalPayment: ts.hoursWorked ? `$${(ts.hoursWorked * 25).toFixed(2)}` : "--", // assuming $25/hr
+          }))
+        : [];
+
+      setRows(formattedRows);
+    } catch (err) {
+      if (cancelled) return;
+      setError(err?.response?.data?.message || "Failed to load timesheets");
+      console.error(err);
+    } finally {
+      if (!cancelled) setLoading(false);
+    }
+  })();
+
+  return () => { cancelled = true; };
+}, []);
 
   const summary = useMemo(() => {
     const counts = { Active: 0, Late: 0, Absent: 0, Completed: 0 };
