@@ -119,26 +119,140 @@ export const checkOut = async (req, res) => {
       return res.status(403).json({ message: "Not assigned to this shift" });
     }
 
-    const attendance = await ShiftAttendance.findOne({ guard: guardId, shift: shiftId });
+    const attendance = await ShiftAttendance.findOne({ 
+      guardId: guardId, 
+      shiftId: shiftId 
+    });
+
     if (!attendance) {
       return res.status(404).json({ message: "No check-in record found" });
     }
 
-    if (attendance.clockOut) {
+    if (attendance.checkOutTime) {
       return res.status(400).json({ message: "Already checked out" });
     }
 
-    attendance.clockOut = new Date();
-    attendance.recordedBy = guardId;
+    attendance.checkOutTime = new Date();
 
     await attendance.save();
 
-    return res.status(200).json({ message: "Check-out recorded", attendance });
+    // AUTO TIMESHEET GENERATION 
+    // When a guard checks out, we automatically:
+    // 1. Calculate hours worked
+    // 2. Create a new Timesheet record
+    // 3. Save it to the database
+    const checkInTime = new Date(attendance.checkInTime);
+    const checkOutTime = new Date(attendance.checkOutTime);
+    const hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60); // in hours
+
+    const Timesheet = (await import("../models/Timesheet.js")).default;
+
+    const timesheet = new Timesheet({
+      guardId,
+      shiftId,
+      date: checkInTime,                    // Store full date
+      checkInTime: checkInTime,
+      checkOutTime: checkOutTime,
+      hoursWorked: parseFloat(hoursWorked.toFixed(2)),
+    });
+
+    await timesheet.save();
+
+
+    return res.status(200).json({ 
+      message: "Check-out recorded successfully", 
+      attendance,
+      timesheet: {
+        id: timesheet._id,
+        hoursWorked: timesheet.hoursWorked
+      }
+    });
   } catch (error) {
+    console.error("Checkout Error:", error);
     return res.status(500).json({ message: error.message });
   }
 };
-// GET /api/v1/attendance/:userId
+
+// GET /api/v1/timesheets
+export const getTimesheets = async (req, res) => {
+  try {
+    const { guardId, startDate, endDate } = req.query;
+    const Timesheet = (await import("../models/Timesheet.js")).default;
+
+    let filter = {};
+
+    if (guardId) {
+      filter.guardId = guardId;
+    }
+    if (startDate) {
+      filter.date = { $gte: new Date(startDate) };
+    }
+    if (endDate) {
+      filter.date = filter.date || {};
+      filter.date.$lte = new Date(endDate);
+    }
+
+    const timesheets = await Timesheet.find(filter)
+      .populate('guardId', 'name email')   // Optional: show guard info
+      .populate('shiftId', 'date startTime endTime')
+      .sort({ date: -1 });
+
+    res.status(200).json({
+      message: "Timesheets retrieved successfully",
+      count: timesheets.length,
+      timesheets
+    });
+  } catch (error) {
+    console.error("Get Timesheets Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+// export const checkOut = async (req, res) => {
+//   try {
+//     const { latitude, longitude } = req.body;
+//     const { shiftId } = req.params;
+//     const guardId = req.user?._id || req.user?.id;
+
+//     if (latitude === undefined || longitude === undefined) {
+//       return res.status(400).json({ message: "Invalid location coordinates" });
+//     }
+
+//     const latNum = Number(latitude);
+//     const lngNum = Number(longitude);
+
+//     if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+//       return res.status(400).json({ message: "Invalid location coordinates" });
+//     }
+
+//     const shift = await Shift.findById(shiftId);
+//     if (!shift) {
+//       return res.status(404).json({ message: "Shift not found" });
+//     }
+
+//     if (String(shift.assignedGuard) !== String(guardId)) {
+//       return res.status(403).json({ message: "Not assigned to this shift" });
+//     }
+
+//     const attendance = await ShiftAttendance.findOne({ guard: guardId, shift: shiftId });
+//     if (!attendance) {
+//       return res.status(404).json({ message: "No check-in record found" });
+//     }
+
+//     if (attendance.clockOut) {
+//       return res.status(400).json({ message: "Already checked out" });
+//     }
+
+//     attendance.clockOut = new Date();
+//     attendance.recordedBy = guardId;
+
+//     await attendance.save();
+
+//     return res.status(200).json({ message: "Check-out recorded", attendance });
+//   } catch (error) {
+//     return res.status(500).json({ message: error.message });
+//   }
+// };
+// // GET /api/v1/attendance/:userId
 export const getAttendanceByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
