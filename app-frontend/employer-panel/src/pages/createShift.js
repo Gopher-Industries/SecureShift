@@ -419,6 +419,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
     const issues = findConflicts(values);
     setBlockingIssues(issues);
     if (issues.length) return;
+    
 
     const selectedSite = sites.find((s) => s.id === values.siteId);
     const payload = {
@@ -444,7 +445,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
         };
       })(),
     };
-
+    
     try {
       await http.post('/shifts', payload);
       setPreviewData(null);
@@ -454,7 +455,79 @@ const CreateShift = ({ isModal = false, onClose }) => {
       setBlockingIssues([message]);
     }
   };
+const saveAsDraft = async () => { //Allows employer to save the shift form as a draft (even if incomplete)
+                                  //Step 1: Get current form values using react-hook-form
+  const values = getValues();
+  const selectedSite = sites.find((s) => s.id === values.siteId); // Step 2: Find selected site from the list we fetched earlier
 
+  console.log("Selected Site:", selectedSite);
+  console.log("Form Location:", values.location);
+
+  // Build location object
+  let shiftLocation = {
+    street: '',
+    suburb: '',
+    state: '',
+    postcode: ''
+  };
+
+  if (selectedSite) {
+    // Most common case: User selected a saved site
+    const addressStr = selectedSite.address || selectedSite.street || '';
+    
+    
+    const parts = addressStr.split(',').map(p => p.trim()); // Parse Australian address format: "Street, Suburb, State Postcode"
+    
+    shiftLocation.street = parts[0] || '';
+    
+    if (parts.length >= 2) {
+      const suburbPart = parts[1];
+      shiftLocation.suburb = suburbPart;
+    }
+    if (parts.length >= 3) {
+      const statePart = parts[2].split(' ')[0] || '';
+      shiftLocation.state = statePart;
+      // Extract postcode (last 4 digits)
+      const postcodeMatch = addressStr.match(/\b\d{4}\b/);
+      if (postcodeMatch) shiftLocation.postcode = postcodeMatch[0];
+    }
+  } else if (values.location) { // for manual location entry
+    const parts = values.location.split(',').map(p => p.trim());
+    shiftLocation.street = parts[0] || values.location;
+    if (parts.length >= 2) shiftLocation.suburb = parts[1];
+    if (parts.length >= 3) shiftLocation.state = parts[2].split(' ')[0] || '';
+    const postcodeMatch = values.location.match(/\b\d{4}\b/);
+    if (postcodeMatch) shiftLocation.postcode = postcodeMatch[0];
+  }
+// Step 4: Prepare to match backend expectations
+  const draftPayload = {
+    title: values.title || 'Untitled Shift Draft',
+    siteId: values.siteId || null,
+    siteName: selectedSite?.name,
+    date: values.date,
+    startTime: values.startTime,
+    endTime: values.endTime,
+    breakMinutes: Number(values.breakMinutes) || 30,
+    payRate: Number(values.payRate) || 0,
+    shiftType: values.shiftType === 'night' ? 'Night' : 'Day',
+    description: values.instructions || '',
+    guards: values.guards || [],
+    status: "draft", // Marks as draft in MongoDB
+    location: shiftLocation,
+  };
+
+  console.log("Full Payload:", draftPayload);
+
+  try { // sends request to backend
+    await http.post('/shifts/draft', draftPayload);
+    alert('Draft Shift saved successfully!');
+    setBlockingIssues([]); // Clear any previous errors
+  } catch (err) {
+    console.error("Save Draft Error:", err.response?.data || err);
+    const message = err?.response?.data?.message || 'Failed to save draft';
+    setBlockingIssues([message]);
+  }
+};
   const renderFieldError = (field) =>
     errors[field] ? <span className="cs-field__error">{errors[field]?.message}</span> : null;
 
@@ -689,13 +762,18 @@ const CreateShift = ({ isModal = false, onClose }) => {
           </div>
 
           <div className="cs-actions">
-            <button type="button" className="cs-ghost" onClick={() => navigate('/manage-shift')}>
-              Save draft
-            </button>
-            <button type="submit" className="cs-primary">
-              Preview shift
-            </button>
-          </div>
+              <button 
+                type="button" 
+                className="cs-ghost" 
+                onClick={saveAsDraft} //calls saveAsDraft
+                disabled={isSubmitting}
+              >
+                Save draft
+              </button>
+              <button type="submit" className="cs-primary">
+                Preview shift
+              </button>
+                  </div>
         </section>
 
         <aside className="cs-card cs-card--map">
