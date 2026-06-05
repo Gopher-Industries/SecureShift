@@ -1,5 +1,5 @@
 import express from "express";
-import { checkIn, checkOut, getAttendanceByUserId } from "../controllers/shiftattendance.controller.js";
+import { checkIn, checkOut, getAttendanceByUserId, getTimesheets } from "../controllers/shiftattendance.controller.js";
 import auth from "../middleware/auth.js";
 
 const router = express.Router();
@@ -136,6 +136,9 @@ router.post("/checkout/:shiftId", auth, checkOut);
  *       500:
  *         description: Server error
  */
+// Get all timesheets (with optional filters)
+router.get("/timesheets", auth, getTimesheets);  // This endpoint is used for the employer panel timesheet page
 router.get("/:userId", auth, getAttendanceByUserId);
+
 
 export default router;
