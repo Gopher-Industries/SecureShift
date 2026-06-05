@@ -185,6 +185,12 @@ router
   .route('/')
   .get(protect, authorizeRole('guard', 'employer', 'admin'), listAvailableShifts)
   .post(protect, authorizeRole('employer'), createShift);
+  /**
+ * POST /api/v1/shifts/draft
+ * Save a shift as draft (Employer only)
+ */
+router.post('/draft', protect, authorizeRole('employer'), createShift);  // Added this route for Draft button
+
 
 /**
  * PATCH /api/v1/shifts/:id
