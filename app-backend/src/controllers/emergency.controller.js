@@ -2,10 +2,10 @@
 import Emergency from "../models/Emergency.js";
 import Notification from "../models/Notification.js";
 
-// 🔴 Trigger SOS (Main Endpoint) - Improved Version
+// 🔴 Trigger SOS (Main Endpoint) - Final Merged & Improved Version
 export const triggerSOS = async (req, res) => {
   try {
-    // ✅ Improved: Safe guardId extraction (works with or without auth during testing)
+    // ✅ Merged: Safe guardId extraction (works with real auth + fallback for testing)
     const guardId = req.user?.id || req.user?._id || "67a1b2c3d4e5f67890123456";
 
     const { latitude, longitude, message: optionalMessage } = req.body;
@@ -39,7 +39,7 @@ export const triggerSOS = async (req, res) => {
       message: optionalMessage || "",
     });
 
-    // ✅ Improved: Safe notification creation (won't break SOS if Notification model has issues)
+    // ✅ Improved: Safe Notification creation (won't crash the whole SOS if Notification model fails)
     try {
       await Notification.create({
         title: "🚨 SOS Alert",
@@ -49,7 +49,7 @@ export const triggerSOS = async (req, res) => {
         relatedId: sos._id,
       });
     } catch (notifError) {
-      console.warn("Notification creation skipped:", notifError.message);
+      console.warn("⚠️ Notification creation skipped:", notifError.message);
     }
 
     console.log("✅ SOS Triggered Successfully! ID:", sos._id);
@@ -74,7 +74,7 @@ export const triggerSOS = async (req, res) => {
   }
 };
 
-// 📜 Get SOS history - Kept mostly as you wrote
+// 📜 Get SOS history
 export const getSOSHistory = async (req, res) => {
   try {
     const data = await Emergency.find()
@@ -91,7 +91,7 @@ export const getSOSHistory = async (req, res) => {
   }
 };
 
-// ✅ Update SOS status - Kept mostly as you wrote
+// ✅ Update SOS status
 export const updateSOSStatus = async (req, res) => {
   try {
     const { id } = req.params;
