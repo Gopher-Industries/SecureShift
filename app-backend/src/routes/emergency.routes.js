@@ -1,3 +1,4 @@
+// routes/emergency.routes.js
 import express from "express";
 import {
   triggerSOS,
@@ -5,10 +6,7 @@ import {
   updateSOSStatus,
 } from "../controllers/emergency.controller.js";
 
-// ✅ correct auth import
 import auth from "../middleware/auth.js";
-
-// ✅ correct role import (your file)
 import { allowRoles } from "../middleware/role.js";
 
 const router = express.Router();
@@ -17,18 +15,17 @@ const router = express.Router();
  * @swagger
  * tags:
  *   name: Emergency
- *   description: SOS Emergency Management APIs
+ *   description: SOS / Panic Button Management APIs
  */
 
 /**
  * @swagger
  * /api/v1/emergency/sos:
  *   post:
- *     summary: Trigger SOS alert
+ *     summary: Trigger SOS / Panic Button
  *     tags: [Emergency]
- *     security:
- *       - bearerAuth: []
- *     description: Guard triggers an emergency SOS alert with location details
+ *     description: Security Guard triggers real-time emergency SOS with live location 
+ *                  (Auth temporarily disabled for Capstone testing)
  *     requestBody:
  *       required: true
  *       content:
@@ -47,30 +44,29 @@ const router = express.Router();
  *                 example: 144.9631
  *               message:
  *                 type: string
- *                 example: "Emergency at site"
+ *                 example: "Suspicious activity at main gate"
  *     responses:
  *       201:
  *         description: SOS triggered successfully
+ *       400:
+ *         description: Missing latitude/longitude
+ *       429:
+ *         description: Rate limit (spam prevention)
  */
-router.post(
-  "/sos",
-  auth,
-  allowRoles("guard"),
-  triggerSOS
-);
+router.post("/sos", auth, allowRoles("guard"), triggerSOS);   // Added for Panic/SoS notification
 
 /**
  * @swagger
  * /api/v1/emergency/sos:
  *   get:
- *     summary: Get SOS history
+ *     summary: Get all SOS history
  *     tags: [Emergency]
  *     security:
  *       - bearerAuth: []
- *     description: Admin or employer can view SOS logs
+ *     description: Admin and Employer can view SOS logs
  *     responses:
  *       200:
- *         description: SOS history fetched
+ *         description: SOS history retrieved successfully
  */
 router.get(
   "/sos",
@@ -87,7 +83,7 @@ router.get(
  *     tags: [Emergency]
  *     security:
  *       - bearerAuth: []
- *     description: Admin/Employer resolves SOS
+ *     description: Admin or Employer updates SOS status (e.g. resolved)
  *     parameters:
  *       - in: path
  *         name: id
@@ -103,10 +99,12 @@ router.get(
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [ACTIVE, RESOLVED]
+ *                 enum: ["ACTIVE", "RESOLVED"]
  *     responses:
  *       200:
- *         description: SOS updated
+ *         description: SOS status updated
+ *       404:
+ *         description: SOS not found
  */
 router.put(
   "/sos/:id",
