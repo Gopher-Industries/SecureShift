@@ -1,23 +1,30 @@
+// models/Emergency.js
 import mongoose from "mongoose";
 
 const emergencySchema = new mongoose.Schema(
   {
     guardId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Guard",           //  Changed from "User" to "Guard" - better reference
       required: true,
     },
     latitude: {
       type: Number,
       required: true,
+      min: -90,               //  Added validation
+      max: 90,
     },
     longitude: {
       type: Number,
       required: true,
+      min: -180,              //  Added validation
+      max: 180,
     },
     message: {
       type: String,
       default: "",
+      trim: true,             //  Added
+      maxlength: 500,         //  Added
     },
     status: {
       type: String,
@@ -25,7 +32,9 @@ const emergencySchema = new mongoose.Schema(
       default: "ACTIVE",
     },
   },
-  { timestamps: true }
+  { 
+    timestamps: true          //  Already good
+  }
 );
 
 export default mongoose.model("Emergency", emergencySchema);
