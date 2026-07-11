@@ -1,12 +1,12 @@
-db = db.getSiblingDB('secure_db');
+db = db.getSiblingDB('secureshift_local');
 
 db.createUser({
-  user: "admin",
-  pwd: "adminpass",
+  user: "secureshift_app",
+  pwd: "secureshift_app_password",
   roles: [
     {
       role: "readWrite",
-      db: "secure_db"
+      db: "secureshift_local"
     }
   ]
 });
