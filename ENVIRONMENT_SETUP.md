@@ -4,6 +4,19 @@ This document explains the local development environment variables for SecureShi
 
 ## Docker Compose Local Setup
 
+### One-Time Migration for Existing Docker Users
+
+If you previously ran the old SecureShift Docker Compose setup, reset your local Docker database once before starting this updated stack. This PR changes the local MongoDB database name and credentials, and existing `mongo-data` volumes retain the old users. MongoDB init scripts, including `mongo-init.js`, do not rerun against an existing volume.
+
+Run this once:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+`docker compose down -v` permanently deletes the local Docker MongoDB volume and its local data. Fresh clones and new users do not need this reset. After this one-time migration, normal shutdown should use `docker compose down` without `-v`.
+
 For the backend, employer frontend, and MongoDB, the canonical local Docker startup path is:
 
 ```bash
@@ -34,7 +47,7 @@ Use `docker compose down` to stop containers while keeping the local MongoDB dat
 
 Most users do not need to configure anything before starting Docker Compose. If a default host port is already occupied, copy `.env.example` to `.env` and set only the port you need to change. For example, set `BACKEND_HOST_PORT=5001` when port 5000 is occupied. On macOS, AirPlay Receiver can sometimes use port 5000.
 
-The Docker Compose backend uses local-only credentials:
+The Docker Compose backend uses local-only credentials supplied by `docker-compose.yml`. Docker Compose does not read `app-backend/.env.example`; use that template only when running the backend directly outside Docker.
 
 ```bash
 MONGO_URI=mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local

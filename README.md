@@ -32,7 +32,9 @@ Make sure you have the following installed:
 
 ## Configuration
 
-The Compose setup is self-contained for local development. It uses local-only MongoDB credentials defined in `docker-compose.yml` and mirrored in `app-backend/.env.example`.
+The Compose setup is self-contained for local development. Docker Compose supplies the backend environment through `docker-compose.yml`; it does not read `app-backend/.env.example`.
+
+Use `app-backend/.env.example` only when you run the backend directly outside Docker.
 
 These values are deliberately non-production values:
 
@@ -47,6 +49,21 @@ Do not use these credentials outside local Docker onboarding, and do not commit 
 Most users do not need to configure anything before starting Docker Compose. If a default host port is already occupied, copy `.env.example` to `.env` and set only the port you need to change. For example, set `BACKEND_HOST_PORT=5001` when port 5000 is occupied. On macOS, AirPlay Receiver can sometimes use port 5000.
 
 ## Running the Project
+
+### One-Time Migration for Existing Docker Users
+
+Fresh clones and new users do not need this reset.
+
+If you previously ran the old SecureShift Docker Compose setup, reset your local Docker database once before starting this updated stack. This update changes the local MongoDB database name and credentials, while existing `mongo-data` volumes retain the old users. MongoDB init scripts, including `mongo-init.js`, do not rerun against an existing volume.
+
+Run this once:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+`docker compose down -v` permanently deletes the local Docker MongoDB volume and its local data. After this one-time migration, use `docker compose down` without `-v` for normal shutdown.
 
 To build and start all containers (backend, frontend, and MongoDB), run the following command from the root directory:
 
