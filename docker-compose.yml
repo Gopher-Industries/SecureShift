@@ -4,44 +4,63 @@ services:
       context: ./app-backend
     container_name: secureshift-backend
     ports:
-      - "5000:5000"
-    env_file:
-      - ./app-backend/.env
+      - "${BACKEND_HOST_PORT:-5000}:5000"
+    environment:
+      NODE_ENV: development
+      PORT: "5000"
+      MONGO_URI: mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
+      JWT_SECRET: local-dev-jwt-secret-change-me
+      LICENCE_ENC_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      EMAIL_ENABLED: "false"
+      SMTP_HOST: localhost
+      SMTP_PORT: "587"
+      SMTP_SECURE: "false"
+      SMTP_USER: local@example.test
+      SMTP_PASS: local-dev-password
+      SMTP_FROM_EMAIL: local@example.test
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - secureshift
     command: npm start
-    
+
   mongodb:
     image: mongo:6
     container_name: secureshift-db
     ports:
-      - "27017:27017"
+      - "${MONGODB_HOST_PORT:-27017}:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: Govardhanan_DB
-      MONGO_INITDB_ROOT_PASSWORD: Gova@1234
-      MONGO_INITDB_DATABASE: secureShift_DB
+      MONGO_INITDB_ROOT_USERNAME: secureshift_root
+      MONGO_INITDB_ROOT_PASSWORD: secureshift_root_password
+      MONGO_INITDB_DATABASE: secureshift_local
     volumes:
       - mongo-data:/data/db
       - ./app-backend/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })' >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     restart: unless-stopped
     networks:
       - secureshift
-      
 
   frontend-employer:
     build:
       context: ./app-frontend/employer-panel
     container_name: secureshift-frontend-employer
     ports:
-      - "3000:3000"
+      - "${FRONTEND_HOST_PORT:-3000}:3000"
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:${BACKEND_HOST_PORT:-5000}/api/v1
     restart: unless-stopped
     networks:
       - secureshift
     command: npm start
-      
+
 volumes:
   mongo-data:
 
