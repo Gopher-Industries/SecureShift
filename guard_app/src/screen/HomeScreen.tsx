@@ -1,9 +1,12 @@
 /* eslint-disable react-native/no-inline-styles */
 // src/screen/HomeScreen.tsx
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useLayoutEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { fetchGuardScore, GuardScore } from '../api/guardScore';
+import { getUserProfile } from '../api/profile';
 import {
   Button,
   Dimensions,
@@ -21,7 +24,6 @@ import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
-import { showLocalNotification } from '../utils/notificationHelpers';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -112,6 +114,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { isDark, colors } = useAppTheme();
   const styles = getStyles(colors);
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
   const [metrics, setMetrics] = useState<Metrics>({
@@ -123,6 +126,7 @@ export default function HomeScreen() {
   const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
   const [upcomingShifts, setUpcomingShifts] = useState<Shift[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [guardScore, setGuardScore] = useState<GuardScore | null>(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -132,10 +136,16 @@ export default function HomeScreen() {
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
+            onPress={() => navigation.navigate('IncidentReports')}
+            style={{ paddingHorizontal: 8 }}
+          >
+            <Ionicons name="alert-circle-outline" size={22} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => navigation.navigate('Payroll')}
             style={{ paddingHorizontal: 8 }}
           >
-            <Ionicons name="cash-outline" size={22} color={colors.white} />
+            <Ionicons name="card-outline" size={22} color={colors.white} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => navigation.navigate('Messages')}
@@ -164,6 +174,16 @@ export default function HomeScreen() {
     try {
       const { data: u } = await http.get<User>('/users/me');
       setUser(u);
+      try {
+        const profile = await getUserProfile();
+        const guardId = profile?._id;
+        const score = await fetchGuardScore(guardId);
+        if (score) {
+          setGuardScore(score);
+        }
+      } catch {
+        setGuardScore(null);
+      }
 
       const { data: myShifts } = await http.get<Shift[]>('/shifts/myshifts');
 
@@ -213,36 +233,40 @@ export default function HomeScreen() {
       >
         <View style={styles.canvas}>
           <View style={styles.heading}>
-            <Text style={styles.h1}>Welcome back, {user?.name || 'Guard'}!</Text>
-            <Text style={styles.h2}>Here’s your dashboard</Text>
+            <Text style={styles.h1}>
+              {user?.name
+                ? t('home.welcome', { name: user.name })
+                : t('home.welcomeFallback', 'Welcome back, Guard!')}
+            </Text>
+            <Text style={styles.h2}>{t('home.dashboard')}</Text>
           </View>
 
           <View style={styles.grid}>
             <StatCard
               icon={<Ionicons name="calendar-outline" size={18} color={colors.primary} />}
-              label="Confirmed shifts"
+              label={t('home.confirmedShifts')}
               value={metrics.confirmed}
               extraStyle={styles.tintBlue}
               colors={colors}
             />
             <StatCard
               icon={<Ionicons name="time-outline" size={18} color="#C99A06" />}
-              label="Pending Applications"
+              label={t('home.pendingApps')}
               value={metrics.pending}
               extraStyle={styles.tintYellow}
               colors={colors}
             />
             <StatCard
               icon={<Feather name="dollar-sign" size={18} color={colors.success} />}
-              label="Today’s Earning"
+              label={t('home.todayEarning')}
               value={`$${metrics.earnings.toFixed(0)}`}
               extraStyle={styles.tintGreen}
               colors={colors}
             />
             <StatCard
               icon={<MaterialCommunityIcons name="trending-up" size={18} color="#7C5CFC" />}
-              label="Current Rating"
-              value={metrics.rating}
+              label={t('home.currentRating')}
+              value={guardScore?.score != null ? guardScore.score.toFixed(1) : '0.0'}
               extraStyle={styles.tintPurple}
               colors={colors}
             />
@@ -252,7 +276,7 @@ export default function HomeScreen() {
             <View style={styles.cardHead}>
               <View style={styles.cardHeadLeft}>
                 <Feather name="calendar" size={16} color={colors.muted} />
-                <Text style={styles.cardHeadTxt}>Today’s Schedule</Text>
+                <Text style={styles.cardHeadTxt}>{t('home.todaySchedule')}</Text>
               </View>
             </View>
 
@@ -260,9 +284,7 @@ export default function HomeScreen() {
               todayShifts.map((s, i) => (
                 <TouchableOpacity
                   key={`${s.title}-${i}`}
-                  onPress={() =>
-                    navigation.navigate('ShiftDetails', { shift: s as any, refresh: load })
-                  }
+                  onPress={() => navigation.navigate('ShiftDetails', { shift: s as any })}
                 >
                   <RowItem
                     title={s.title}
@@ -274,7 +296,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               ))
             ) : (
-              <Text style={styles.emptyText}>No shifts scheduled for today</Text>
+              <Text style={styles.emptyText}>{t('home.noShiftsToday')}</Text>
             )}
           </View>
 
@@ -282,12 +304,12 @@ export default function HomeScreen() {
             <View style={styles.cardHead}>
               <View style={styles.cardHeadLeft}>
                 <Feather name="clock" size={16} color={colors.muted} />
-                <Text style={styles.cardHeadTxt}>Upcoming Shifts</Text>
+                <Text style={styles.cardHeadTxt}>{t('home.upcomingShifts')}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => navigation.navigate('AppTabs' as any, { screen: 'Shifts' })}
               >
-                <Text style={styles.viewAll}>View All ›</Text>
+                <Text style={styles.viewAll}>{t('home.viewAll')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -295,9 +317,7 @@ export default function HomeScreen() {
               upcomingShifts.slice(0, 2).map((s, i) => (
                 <TouchableOpacity
                   key={`${s.title}-${i}`}
-                  onPress={() =>
-                    navigation.navigate('ShiftDetails', { shift: s as any, refresh: load })
-                  }
+                  onPress={() => navigation.navigate('ShiftDetails', { shift: s as any })}
                 >
                   <RowItem
                     title={s.title}
@@ -310,22 +330,9 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               ))
             ) : (
-              <Text style={styles.emptyText}>No upcoming shifts</Text>
+              <Text style={styles.emptyText}>{t('home.noUpcoming')}</Text>
             )}
           </View>
-
-          <View style={{ justifyContent: 'center', padding: 20 }}>
-            <Button
-              title="Test Notification"
-              onPress={async () => {
-                await showLocalNotification(
-                  'Shift Assigned',
-                  'You have been assigned to Hospital Complex shift.',
-                );
-              }}
-            />
-          </View>
-
           <View style={styles.spacer} />
         </View>
       </ScrollView>
