@@ -7,6 +7,11 @@ import { assessGuardFatigue } from '../services/fatigue.service.js';
 import { ACTIONS } from "../middleware/logger.js";
 import { timeToMinutes, normalizeEnd } from '../utils/timeUtils.js';
 
+import {
+  applyForShiftService,
+  approveShiftService,
+} from '../services/shiftApplication.service.js';
+
 // Helpers
 const HHMM = /^([0-1]\d|2[0-3]):([0-5]\d)$/;
 const isValidHHMM = (s) => typeof s === 'string' && HHMM.test(s);
@@ -635,64 +640,15 @@ export const listAvailableShifts = async (req, res) => {
  */
 export const applyForShift = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: 'Invalid id' });
-
-    const userId = req.user?._id || req.user?.id;
-    if (!userId || !mongoose.isValidObjectId(String(userId))) {
-      return res.status(401).json({ message: 'Authenticated user id missing from context' });
-    }
-
-    const shift = await Shift.findById(id);
-    if (!shift) return res.status(404).json({ message: 'Shift not found' });
-    if (shift.status !== 'open') {
-      return res.status(400).json({ message: 'Can only apply to open shifts' });
-    }
-
-    if (['assigned', 'completed'].includes(shift.status)) {
-      return res.status(400).json({ message: `Cannot apply; shift is ${shift.status}` });
-    }
-    if (isInPastOrStarted(shift)) {
-      return res.status(400).json({ message: 'Cannot apply; shift already started or in the past' });
-    }
-    if (String(shift.createdBy) === String(userId)) {
-      return res.status(400).json({ message: 'Employer cannot apply to own shift' });
-    }
-
-    // sanitize & dedupe
-    shift.applicants = (shift.applicants || []).filter(Boolean);
-    if (shift.applicants.some(a => String(a) === String(userId))) {
-      return res.status(400).json({ message: 'Already applied' });
-    }
-
-    const userShifts = await Shift.find({
-      date: shift.date,
-      _id: { $ne: id },
-      applicants: userId,
+    const result = await applyForShiftService({
+      shiftId: req.params.id,
+      userId: req.user?._id || req.user?.id,
+      audit: req.audit,
     });
 
-    const hasOverlap = userShifts.some(existing => {
-      const newStart = timeToMinutes(shift.startTime);
-      const newEnd = normalizeEnd(shift.startTime, shift.endTime);
-      const exStart = timeToMinutes(existing.startTime);
-      const exEnd = normalizeEnd(existing.startTime, existing.endTime);
-      return newStart < exEnd && newEnd > exStart;
-    });
-
-    if (hasOverlap) {
-      return res.status(400).json({ message: 'Cannot apply; shift overlaps with existing applied shift/s' });
-    }
-
-    shift.applicants.push(userId);
-    if (shift.status === 'open') shift.status = 'applied';
-
-    await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPLIED, {
-      shiftId: shift._id
-    });
-    return res.json({ message: 'Application submitted', shift });
+    return res.json(result);
   } catch (e) {
-    return res.status(500).json({ message: e.message });
+    return res.status(e.statusCode || 500).json({ message: e.message });
   }
 };
 
@@ -703,57 +659,17 @@ export const applyForShift = async (req, res) => {
  */
 export const approveShift = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { guardId, keepOthers = false } = req.body;
-    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(guardId))
-      return res.status(400).json({ message: 'Invalid id(s)' });
-
-    const shift = await Shift.findById(id);
-    if (!shift) return res.status(404).json({ message: 'Shift not found' });
-
-    const isOwner = String(shift.createdBy) === String(req.user._id);
-    const isAdmin = req.user.role === 'admin';
-    if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Not allowed' });
-
-    if (['assigned', 'completed'].includes(shift.status)) {
-      return res.status(400).json({ message: `Already ${shift.status}` });
-    }
-    if (isInPastOrStarted(shift)) {
-      return res.status(400).json({ message: 'Cannot approve; shift already started or in the past' });
-    }
-    if (!shift.applicants.some(a => String(a) === String(guardId))) {
-      return res.status(400).json({ message: 'Guard did not apply for this shift' });
-    }
-
-    const fatigueAssessment = await assessGuardFatigue(guardId, shift);
-
-    if (fatigueAssessment.isFatigued) {
-      await req.audit.log(req.user._id, ACTIONS.SHIFT_FATIGUE_BLOCKED, {
-        shiftId: shift._id,
-        guardId,
-        fatigueAssessment,
-      });
-
-      return res.status(400).json({
-        message: 'Shift approval blocked due to guard fatigue rules',
-        fatigueAssessment,
-      });
-    }
-
-    shift.assignedGuard = guardId; // virtual -> acceptedBy
-    shift.status = 'assigned';
-    if (!keepOthers) shift.applicants = [guardId];
-
-    await shift.save();
-    await req.audit.log(req.user._id, ACTIONS.SHIFT_APPROVED, {
-      shiftId: shift._id,
-      approvedGuardId: guardId,
-      keepOthers
+    const result = await approveShiftService({
+      shiftId: req.params.id,
+      guardId: req.body.guardId,
+      keepOthers: req.body.keepOthers ?? false,
+      user: req.user,
+      audit: req.audit,
     });
 
-    return res.json({ message: 'Guard approved', shift });
+    return res.json(result);
   } catch (e) {
-    return res.status(500).json({ message: e.message });
+    return res.status(e.statusCode || 500).json({ message: e.message });
   }
 };
 
