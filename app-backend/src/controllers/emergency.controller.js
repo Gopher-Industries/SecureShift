@@ -58,7 +58,7 @@ export const getSOSHistory = async (req, res) => {
       count: data.length,
       data,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -87,7 +87,7 @@ export const updateSOSStatus = async (req, res) => {
       message: "Status updated",
       data: sos,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Internal server error" });
   }
 };
