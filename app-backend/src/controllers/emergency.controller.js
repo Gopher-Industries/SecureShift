@@ -14,7 +14,9 @@ export const triggerSOS = async (req, res) => {
     }
 
     // 🚫 Prevent spam (1 min cooldown)
-    const lastSOS = await Emergency.findOne({ guardId }).sort({ createdAt: -1 });
+    const lastSOS = await Emergency.findOne({ guardId }).sort({
+      createdAt: -1,
+    });
 
     if (lastSOS && Date.now() - new Date(lastSOS.createdAt).getTime() < 60000) {
       return res.status(429).json({
@@ -58,7 +60,7 @@ export const getSOSHistory = async (req, res) => {
       count: data.length,
       data,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -76,7 +78,7 @@ export const updateSOSStatus = async (req, res) => {
     const sos = await Emergency.findByIdAndUpdate(
       id,
       { status },
-      { new: true }
+      { new: true },
     );
 
     if (!sos) {
@@ -87,7 +89,7 @@ export const updateSOSStatus = async (req, res) => {
       message: "Status updated",
       data: sos,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Internal server error" });
   }
 };
