@@ -14,7 +14,9 @@ export const triggerSOS = async (req, res) => {
     }
 
     // 🚫 Prevent spam (1 min cooldown)
-    const lastSOS = await Emergency.findOne({ guardId }).sort({ createdAt: -1 });
+    const lastSOS = await Emergency.findOne({ guardId }).sort({
+      createdAt: -1,
+    });
 
     if (lastSOS && Date.now() - new Date(lastSOS.createdAt).getTime() < 60000) {
       return res.status(429).json({
@@ -76,7 +78,7 @@ export const updateSOSStatus = async (req, res) => {
     const sos = await Emergency.findByIdAndUpdate(
       id,
       { status },
-      { new: true }
+      { new: true },
     );
 
     if (!sos) {
