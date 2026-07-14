@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
   createShiftRequest,
+  getShiftRequestById,
   getShiftRequests,
   updateShiftRequest,
 } from '../src/controllers/shiftrequest.controller.js';
 import {
   createShiftRequest as createShiftRequestService,
+  getShiftRequestForUser,
   listShiftRequestsForUser,
   reviewShiftRequest,
 } from '../src/services/shiftrequest.service.js';
@@ -66,6 +68,28 @@ describe('shiftrequest.controller', () => {
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       ...result,
+    });
+  });
+
+  it('returns one shift request by resource id', async () => {
+    const req = {
+      user: { _id: 'guard-1', role: 'guard' },
+      params: { id: 'request-1' },
+    };
+    const res = response();
+    const data = { _id: 'request-1', type: 'LEAVE' };
+
+    getShiftRequestForUser.mockResolvedValue(data);
+
+    await getShiftRequestById(req, res);
+
+    expect(getShiftRequestForUser).toHaveBeenCalledWith({
+      user: req.user,
+      requestId: 'request-1',
+    });
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data,
     });
   });
 

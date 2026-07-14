@@ -206,6 +206,12 @@ describe('shiftrequest.service', () => {
         applicants: [guardId],
         save: jest.fn().mockResolvedValue(true),
       };
+      const originalShiftState = {
+        status: shift.status,
+        acceptedBy: shift.acceptedBy,
+        guardIds: [...shift.guardIds],
+        applicants: [...shift.applicants],
+      };
 
       ShiftRequest.findById.mockResolvedValue(request);
       Branch.find.mockReturnValue(distinctResult([]));
@@ -219,9 +225,7 @@ describe('shiftrequest.service', () => {
 
       expect(result.status).toBe('APPROVED');
       expect(result.reviewedBy).toBe(employerId);
-      expect(shift.status).toBe('assigned');
-      expect(shift.acceptedBy).toBe(guardId);
-      expect(shift.guardIds).toEqual([guardId]);
+      expect(shift).toEqual(expect.objectContaining(originalShiftState));
       expect(shift.save).not.toHaveBeenCalled();
       expect(request.save).toHaveBeenCalled();
     });

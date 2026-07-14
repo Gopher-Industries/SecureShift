@@ -314,6 +314,8 @@ export const reviewShiftRequest = async ({ user, requestId, status, rejectionRea
     throw new ServiceError(403, 'You can only review requests for shifts in your employment scope');
   }
 
+  // Product-approved narrow behavior: record the decision only.
+  // Do not mutate shift assignment, roster, availability, notifications, or target-guard state here.
   request.status = status;
   request.reviewedBy = uid;
   request.reviewedAt = new Date();

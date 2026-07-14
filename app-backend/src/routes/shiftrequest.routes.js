@@ -11,15 +11,12 @@ import {
 const router = express.Router();
 
 router
-  .route('/request')
-  .post(protect, authorizeRoles('guard'), createShiftRequest);
-
-router
-  .route('/requests')
+  .route('/')
+  .post(protect, authorizeRoles('guard'), createShiftRequest)
   .get(protect, authorizeRoles('guard', 'employer', 'admin'), getShiftRequests);
 
 router
-  .route('/request/:id')
+  .route('/:id')
   .get(protect, authorizeRoles('guard', 'employer', 'admin'), getShiftRequestById)
   .patch(protect, authorizeRoles('employer', 'admin'), updateShiftRequest);
 

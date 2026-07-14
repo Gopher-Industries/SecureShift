@@ -32,7 +32,7 @@ router.use('/attendance', shiftAttendanceRoutes);
 router.use("/incidents", incidentRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payroll', payrollRoutes);
-router.use('/shifts', shiftRequestRoutes);
+router.use('/shift-requests', shiftRequestRoutes);
 router.use('/equipment', equipmentRoutes);
 router.use("/emergency", emergencyRoutes);
 export default router;
