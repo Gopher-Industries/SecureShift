@@ -111,7 +111,7 @@ const getShiftStartDateTime = (shift) => {
   return start;
 };
 
-const calculateScheduledHours = (shift) => {
+export const calculateScheduledHours = (shift) => {
   if (!shift?.date || !shift?.startTime || !shift?.endTime) {
     return 0;
   }
@@ -144,7 +144,7 @@ const calculateScheduledHours = (shift) => {
   return roundHours(hours);
 };
 
-const calculateAttendanceHours = (attendance) => {
+export const calculateAttendanceHours = (attendance) => {
   if (!attendance?.checkInTime || !attendance?.checkOutTime) {
     return null;
   }
