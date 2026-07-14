@@ -60,6 +60,13 @@ const ensureObjectId = (value, fieldName) => {
   }
 };
 
+const roundHours = (value) => Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
+
+const calculatePayableHours = (actualHours, shift) => {
+  const breakMinutes = Number.isFinite(shift?.breakTime) ? shift.breakTime : 0;
+  return roundHours(actualHours - breakMinutes / 60);
+};
+
 const buildShiftQuery = (filters, user) => {
   const { userId, role } = getUserContext(user);
   const range = parseDateRange(filters, { required: true });
@@ -169,7 +176,7 @@ const buildValidTimesheetRecord = (shift, attendance) => {
     checkOutTime: attendance.checkOutTime,
     scheduledHours: calculateScheduledHours(shift),
     actualHours,
-    payableHours: actualHours,
+    payableHours: calculatePayableHours(actualHours, shift),
     attendanceBased: true,
   };
 };

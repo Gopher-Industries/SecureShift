@@ -164,8 +164,67 @@ describe('Timesheet service', () => {
       attendanceId: String(attendance._id),
       scheduledHours: 7.5,
       actualHours: 8.25,
-      payableHours: 8.25,
+      payableHours: 7.75,
       attendanceBased: true,
+    });
+  });
+
+  test('preserves overtime by not capping payable hours at scheduled hours', async () => {
+    const shift = await createShift({
+      breakTime: 30,
+      startTime: '09:00',
+      endTime: '17:00',
+    });
+    await createAttendance(shift, {
+      checkInTime: new Date('2026-12-10T08:30:00.000Z'),
+      checkOutTime: new Date('2026-12-10T19:00:00.000Z'),
+    });
+
+    const result = await generateTimesheets(
+      { startDate: '2026-12-01', endDate: '2026-12-31' },
+      { _id: employer._id, role: 'employer' }
+    );
+
+    expect(result.timesheets[0]).toMatchObject({
+      scheduledHours: 7.5,
+      actualHours: 10.5,
+      payableHours: 10,
+    });
+  });
+
+  test('deducts shift break time from payable hours when attendance is complete', async () => {
+    const shift = await createShift({ breakTime: 60 });
+    await createAttendance(shift, {
+      checkInTime: new Date('2026-12-10T09:00:00.000Z'),
+      checkOutTime: new Date('2026-12-10T17:00:00.000Z'),
+    });
+
+    const result = await generateTimesheets(
+      { startDate: '2026-12-01', endDate: '2026-12-31' },
+      { _id: employer._id, role: 'employer' }
+    );
+
+    expect(result.timesheets[0]).toMatchObject({
+      actualHours: 8,
+      payableHours: 7,
+    });
+  });
+
+  test('does not allow payable hours to become negative after break deduction', async () => {
+    const shift = await createShift({ breakTime: 60 });
+    await createAttendance(shift, {
+      checkInTime: new Date('2026-12-10T09:00:00.000Z'),
+      checkOutTime: new Date('2026-12-10T09:30:00.000Z'),
+    });
+
+    const result = await generateTimesheets(
+      { startDate: '2026-12-01', endDate: '2026-12-31' },
+      { _id: employer._id, role: 'employer' }
+    );
+
+    expect(result.timesheets[0]).toMatchObject({
+      actualHours: 0.5,
+      payableHours: 0,
     });
   });
 

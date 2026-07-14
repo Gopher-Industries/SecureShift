@@ -134,6 +134,38 @@ npm run test
 
 Unit and integration tests are managed via Jest (or Mocha/Chai if used).
 
+## Timesheet API
+
+Generated timesheets are exposed under `/api/v1/timesheets`.
+
+| Method | Path | Roles | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/timesheets/generate` | `admin`, `employer`, `guard` | Generate or refresh timesheets for a completed-shift date range. Body requires `startDate` and `endDate` in `YYYY-MM-DD` format. |
+| `GET` | `/api/v1/timesheets` | `admin`, `employer`, `guard` | List generated timesheets visible to the current user. Supports optional `startDate`, `endDate`, `guardId`, `page`, and `limit` query parameters. |
+| `GET` | `/api/v1/timesheets/:id` | `admin`, `employer`, `guard` | Retrieve one generated timesheet in the current user's scope. |
+
+Timesheet generation only uses shifts that are `completed`, assigned through `acceptedBy`,
+and have completed attendance with `guardId`, `shiftId`, `checkInTime`, and `checkOutTime`.
+Generation is idempotent: each `shiftId` and `guardId` pair has one timesheet, and repeated
+generation updates that record rather than creating duplicates.
+
+RBAC visibility follows the current backend ownership rules:
+
+- Admins can generate and view all timesheets.
+- Guards can generate and view only their own timesheets.
+- Employers can generate and view timesheets for shifts where `Shift.createdBy` is their user ID.
+
+The standard shift creation flow validates `siteId` against an active `Branch.employerId` owned by
+the creating employer, then stores that employer in `Shift.createdBy`. A branch-based ownership
+case remains possible for imported/admin-created data: if a shift is attached to a branch owned by
+an employer but `createdBy` is a different user, the timesheet scope follows `createdBy` and will
+not treat the branch owner as the timesheet employer.
+
+Payable hours are attendance-based. `actualHours` is the raw check-in to check-out duration.
+`Shift.breakTime` is stored in minutes and is treated as an unpaid break, so timesheets calculate
+`payableHours` as `max(actualHours - breakTime / 60, 0)`. Payable hours are not capped at scheduled
+hours, preserving legitimate overtime.
+
 ## Local development seed data
 
 The seed commands are for local development only. They refuse production, Atlas/SRV, remote hosts,
