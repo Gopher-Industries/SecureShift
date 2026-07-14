@@ -157,6 +157,75 @@ Approving or rejecting a shift request currently records the decision on the `Sh
 
 ---
 
+## SOS / Emergency API
+
+The backend exposes two authenticated SOS endpoint families:
+
+- Legacy emergency family: `/api/v1/emergency/sos`
+- Guard App family: `/api/v1/sos`
+
+Both families use the same controller/service logic. Calling one alias does not call the other alias
+or create duplicate writes.
+
+| Method | Path | Roles | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/emergency/sos` | `guard` | Create an SOS using the legacy emergency route. |
+| `POST` | `/api/v1/sos/trigger` | `guard` | Create an SOS using the Guard App route contract. |
+| `GET` | `/api/v1/emergency/sos` | `admin`, `employer` | List SOS records visible to the authenticated admin or employer. |
+| `GET` | `/api/v1/emergency/sos/active` | `guard`, `employer`, `admin` | Get the latest active SOS in the authenticated user's scope. |
+| `GET` | `/api/v1/sos/active` | `guard`, `employer`, `admin` | Guard App alias for active SOS lookup. |
+| `GET` | `/api/v1/emergency/sos/:id` | `guard`, `employer`, `admin` | Get one SOS in the authenticated user's scope. |
+| `GET` | `/api/v1/sos/:id` | `guard`, `employer`, `admin` | Guard App alias for one SOS status. |
+| `POST` | `/api/v1/emergency/sos/:id/location` | `guard` | Update location for an active SOS owned by the guard. |
+| `POST` | `/api/v1/sos/:id/location` | `guard` | Guard App alias for location update. |
+| `POST` | `/api/v1/emergency/sos/:id/note` | `guard` | Add or replace guard-provided SOS context. |
+| `POST` | `/api/v1/sos/:id/note` | `guard` | Guard App alias for note update. |
+| `POST` | `/api/v1/emergency/sos/:id/cancel` | `guard` | Cancel an active SOS owned by the guard. |
+| `POST` | `/api/v1/sos/:id/cancel` | `guard` | Guard App alias for cancellation. |
+| `PUT` | `/api/v1/emergency/sos/:id` | `admin`, `employer` | Transition SOS status in the authenticated user's scope. |
+
+SOS responses include both the existing backend `data` field and the Guard App `sos` field. The
+Guard App shape includes `_id`, `guardId`, optional `shiftId`, `triggeredAt`, lower-case status,
+`location`, `history`, `note`, `emergencyContact`, `cancelledAt`, and `resolvedAt`.
+
+### SOS roles and visibility
+
+- Guards can create SOS records and can read, update location, add notes, or cancel only their own
+  SOS records.
+- Employers can read or transition only SOS records tied to shifts where `Shift.createdBy` is their
+  user ID.
+- Admins can read or transition SOS records across the system.
+- SOS records without `shiftId` are intentionally not visible to employers. The Guard App must send
+  `shiftId` during SOS creation when employer visibility is required.
+
+### SOS status transitions
+
+SOS records use controlled backend statuses:
+
+- `ACTIVE -> ESCALATED`
+- `ACTIVE -> RESOLVED`
+- `ACTIVE -> CANCELLED`
+- `ESCALATED -> RESOLVED`
+- `ESCALATED -> CANCELLED`
+
+`RESOLVED` and `CANCELLED` are terminal. Terminal records cannot be reactivated, cancelled again,
+resolved again, or updated with new notes/location.
+
+The backend allows only one active SOS per guard at a time. `ACTIVE` and `ESCALATED` both count as
+active. After any SOS creation, the guard has a 60-second creation cooldown even if the prior SOS has
+already reached a terminal status.
+
+### SOS limitations
+
+- The Guard App currently has `USE_MOCK_SOS = true` in `guard_app/src/api/sos.ts`; until that flag
+  changes, the mobile UI continues to use its local mock flow instead of these backend endpoints.
+- The SOS backend does not place automatic phone calls.
+- The SOS backend does not contact emergency services or any external dispatch provider.
+- Firebase/APNs and broader notification infrastructure are intentionally out of scope for the SOS
+  backend completion.
+
+---
+
 ## 🧪 Testing
 
 ```bash
