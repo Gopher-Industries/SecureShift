@@ -525,6 +525,39 @@ const ensureScopedPayrollDocs = async (payrollIds, user) => {
 
 const formatCurrency = (value) => `$${Number(value || 0).toFixed(2)}`;
 
+export const syncPayrollForShiftIds = async ({ shiftIds, periodType }) => {
+  const uniqueShiftIds = Array.from(new Set((shiftIds || []).map(String)));
+
+  if (!uniqueShiftIds.length) {
+    throw createHttpError(400, 'shiftIds must be a non-empty array');
+  }
+
+  if (!ALLOWED_PERIOD_TYPES.has(periodType)) {
+    throw createHttpError(400, 'periodType must be one of daily, weekly, or monthly');
+  }
+
+  const shifts = await Shift.find({
+    _id: { $in: uniqueShiftIds },
+    status: 'completed',
+    acceptedBy: { $ne: null },
+  })
+    .populate('acceptedBy', 'name')
+    .populate('createdBy', 'name')
+    .sort({ date: 1, startTime: 1 });
+
+  if (shifts.length !== uniqueShiftIds.length) {
+    throw createHttpError(404, 'One or more scoped payroll shifts were not found or incomplete');
+  }
+
+  const attendanceRecords = await ShiftAttendance.find({
+    shiftId: { $in: uniqueShiftIds },
+  });
+  const computedEntries = buildComputedEntries(shifts, attendanceRecords);
+  const groups = buildPayrollGroups(computedEntries, periodType);
+
+  return syncPayrollDocuments(groups);
+};
+
 export const getPayrollRecords = async (query, user) => {
   const userContext = getUserContext(user);
   const range = parseDateRange(query);

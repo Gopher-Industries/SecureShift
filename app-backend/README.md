@@ -134,6 +134,71 @@ npm run test
 
 Unit and integration tests are managed via Jest (or Mocha/Chai if used).
 
+## Local development seed data
+
+The seed commands are for local development only. They refuse production, Atlas/SRV, remote hosts,
+and every database except the exact names `secureshift_local`, `secureshift_dev`, and
+`secureshift_test`. The seed CLI uses only the explicit `MONGO_URI`; it never uses the server
+connection fallback.
+
+### Backend outside Docker, MongoDB in Docker
+
+Start MongoDB from the repository root:
+
+```bash
+docker compose up -d mongodb
+```
+
+When Node runs directly on the host, use `localhost` and the published MongoDB port. In
+`app-backend/.env`, configure the authenticated URI and explicitly enable local seeding:
+
+```env
+NODE_ENV=development
+SEED_ALLOW_LOCAL=true
+MONGO_URI=mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshift_local
+```
+
+Then run from `app-backend`:
+
+```bash
+npm run seed
+SEED_RESET_CONFIRM=SecureShiftLocalReset npm run seed:reset
+```
+
+### Seed alongside Docker Compose
+
+Containers on the Compose network reach MongoDB by its service hostname, `mongodb`, rather than
+`localhost`. The backend service already has this authenticated internal URI:
+
+```env
+MONGO_URI=mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
+```
+
+From the repository root, run one-off backend containers with the required seed opt-in:
+
+```bash
+docker compose run --rm -e SEED_ALLOW_LOCAL=true backend npm run seed
+docker compose run --rm -e SEED_ALLOW_LOCAL=true -e SEED_RESET_CONFIRM=SecureShiftLocalReset backend npm run seed:reset
+```
+
+The seed is idempotent and uses stable ObjectIds. Running it again updates the same local records.
+Reset deletes only those stable seed IDs and requires the exact confirmation value shown above.
+
+All test accounts use the local-only password `SecureShift1!`:
+
+| Role | Scenario | Email |
+| --- | --- | --- |
+| Admin | Admin access | `admin.local@secureshift.test` |
+| Employer | Operations employer | `ops.local@secureshift.test` |
+| Employer | Venue employer | `venue.local@secureshift.test` |
+| Guard | Approved licence | `mia.guard@secureshift.test` |
+| Guard | Pending licence | `noah.guard@secureshift.test` |
+| Guard | Rejected licence | `isha.guard@secureshift.test` |
+| Guard | Expired licence | `liam.guard@secureshift.test` |
+
+Employer and guard login still uses the normal OTP flow. This seed does not bypass OTP. Admin login
+uses the existing admin authentication endpoint.
+
 ---
 
 ## 📄 License
