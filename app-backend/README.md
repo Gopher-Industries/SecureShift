@@ -124,6 +124,37 @@ You can explore, test, and understand the structure of all API endpoints there.
 - API docs with Swagger UI
 - Fully containerized backend with Docker
 
+## Shift Request API
+
+Base path: `/api/v1/shift-requests`
+
+| Method | Endpoint | Roles | Description |
+| --- | --- | --- | --- |
+| `POST` | `/` | Guard | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard. |
+| `GET` | `/` | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters. |
+| `GET` | `/:id` | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope. |
+| `PATCH` | `/:id` | Employer, Admin | Approve or reject a pending shift request with `{ "status": "APPROVED" }` or `{ "status": "REJECTED", "rejectionReason": "..." }`. |
+
+### Roles and scoping
+
+- Guards can create requests only for shifts they are assigned to through `guardIds` or `acceptedBy`.
+- Guards can list and view only their own submitted shift requests.
+- Employers can list, view, approve, or reject requests for shifts they created or shifts attached to active branches they own.
+- Admins can list, view, approve, or reject shift requests across the system.
+
+### Status transitions
+
+Shift requests start as `PENDING`. The only allowed terminal transitions are:
+
+- `PENDING -> APPROVED`
+- `PENDING -> REJECTED`
+
+Terminal requests cannot transition again.
+
+### Approval limitation
+
+Approving or rejecting a shift request currently records the decision on the `ShiftRequest` only. It does not alter shift assignment, guard rosters, availability, notifications, replacement-shift ownership, or target-guard state. Any roster-changing workflow requires separate product sign-off and implementation.
+
 ---
 
 ## 🧪 Testing
