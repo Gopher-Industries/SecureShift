@@ -20,7 +20,7 @@ const allSkills = [
 const availabilityOptions = ['Available', 'Unavailable', 'On Leave'];
 
 // NEW: read API base from env (Vite or CRA) ---------------------------------
-const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api/v1';
 // NEW
 
 function GuardProfiles({ language }) {
@@ -62,7 +62,7 @@ function GuardProfiles({ language }) {
         setError(''); // NEW
 
         const token = localStorage.getItem('token'); // NEW (if you use JWT)
-        const res = await fetch(`${API_BASE}/api/v1/users/guards`, {
+        const res = await fetch(`${API_BASE}/users/guards`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
