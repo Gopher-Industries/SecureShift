@@ -1,21 +1,19 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import User from '../models/User.js';
-import Employer from '../models/Employer.js';
-import { sendEmployerCredentials } from '../utils/sendEmail.js';
-import { sendOTP } from '../utils/sendEmail.js';
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import User from "../models/User.js";
+import Employer from "../models/Employer.js";
+import { sendEmployerCredentials } from "../utils/sendEmail.js";
+import { sendOTP } from "../utils/sendEmail.js";
 import { ACTIONS } from "../middleware/logger.js";
-import EOI from '../models/eoi.js';
+import EOI from "../models/eoi.js";
 
-import Guard from '../models/Guard.js'; // use the discriminator so license fields persist
+import Guard from "../models/Guard.js"; // use the discriminator so license fields persist
 
 // ---------- Helpers ----------
 const generateToken = (user) => {
-  return jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
+  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: "1h",
+  });
 };
 
 const generateOTP = () => {
@@ -29,22 +27,25 @@ export const register = async (req, res) => {
 
   try {
     // Guards must use the dedicated /auth/register/guard route
-    if (role === 'guard') {
+    if (role === "guard") {
       return res.status(400).json({
-        message: 'Guards must register using /auth/register/guard with a license upload.',
+        message:
+          "Guards must register using /auth/register/guard with a license upload.",
       });
     }
 
     // Unique email check
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
+      return res.status(400).json({ message: "Email already registered" });
     }
 
     let newUser;
-    if (role === 'employer') {
+    if (role === "employer") {
       if (!ABN) {
-        return res.status(400).json({ message: 'ABN is required for employers' });
+        return res
+          .status(400)
+          .json({ message: "ABN is required for employers" });
       }
 
       newUser = new Employer({
@@ -62,9 +63,11 @@ export const register = async (req, res) => {
     }
 
     await newUser.save();
-    await req.audit.log(newUser._id, ACTIONS.PROFILE_CREATED, { registered: true });
+    await req.audit.log(newUser._id, ACTIONS.PROFILE_CREATED, {
+      registered: true,
+    });
 
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -81,20 +84,26 @@ export const registerGuardWithLicense = async (req, res) => {
   try {
     // Must have a file (handled by Multer in the route)
     if (!req.file) {
-      return res.status(400).json({ message: 'License image is required (form-data field: "license").' });
+      return res
+        .status(400)
+        .json({
+          message: 'License image is required (form-data field: "license").',
+        });
     }
 
     const { name, email, password } = req.body;
 
     // Basic presence checks
     if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required.' });
+      return res
+        .status(400)
+        .json({ message: "Name, email, and password are required." });
     }
 
     // Uniqueness check
     const existing = await Guard.findOne({ email });
     if (existing) {
-      return res.status(400).json({ message: 'Email already registered.' });
+      return res.status(400).json({ message: "Email already registered." });
     }
 
     // Build license URL from saved file (served via /uploads)
@@ -105,10 +114,10 @@ export const registerGuardWithLicense = async (req, res) => {
       name,
       email,
       password,
-      role: 'guard',
+      role: "guard",
       license: {
         imageUrl,
-        status: 'pending',
+        status: "pending",
         verifiedAt: null,
         verifiedBy: null,
         rejectionReason: null,
@@ -119,13 +128,13 @@ export const registerGuardWithLicense = async (req, res) => {
     const { password: _pw, ...safe } = guard.toObject();
 
     return res.status(201).json({
-      message: 'Guard registered successfully. License submitted for review.',
+      message: "Guard registered successfully. License submitted for review.",
       user: safe,
     });
   } catch (err) {
     // Handle a common case where address might be stringified JSON but invalid
     if (err instanceof SyntaxError) {
-      return res.status(400).json({ message: 'Invalid address JSON format.' });
+      return res.status(400).json({ message: "Invalid address JSON format." });
     }
     return res.status(500).json({ message: err.message });
   }
@@ -137,14 +146,17 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid credentials" });
 
-    if (user.role === 'admin') {
-      return res.status(403).json({ message: 'Admins must use a different login method' });
+    if (user.role === "admin") {
+      return res
+        .status(403)
+        .json({ message: "Admins must use a different login method" });
     }
 
     const otp = generateOTP();
@@ -166,14 +178,13 @@ export const login = async (req, res) => {
     await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
 
     if (emailSent) {
-      return res.status(200).json({ message: 'OTP sent to your email' });
+      return res.status(200).json({ message: "OTP sent to your email" });
     }
 
     return res.status(200).json({
-      message: 'OTP generated successfully',
-      warning: 'Email failed. Check server console for OTP.',
+      message: "OTP generated successfully",
+      warning: "Email failed. Check server console for OTP.",
     });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -185,12 +196,12 @@ export const verifyOTP = async (req, res) => {
   const { email, otp } = req.body;
 
   try {
-    const user = await User.findOne({ email }).select('+otp +otpExpiresAt');
-    if (!user) return res.status(401).json({ message: 'Invalid email or OTP' });
+    const user = await User.findOne({ email }).select("+otp +otpExpiresAt");
+    if (!user) return res.status(401).json({ message: "Invalid email or OTP" });
 
     const now = new Date();
     if (user.otp !== otp || now > user.otpExpiresAt) {
-      return res.status(401).json({ message: 'Invalid or expired OTP' });
+      return res.status(401).json({ message: "Invalid or expired OTP" });
     }
 
     user.otp = undefined;
@@ -199,7 +210,9 @@ export const verifyOTP = async (req, res) => {
     await user.save();
 
     const token = generateToken(user);
-    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_VERIFIED" });
+    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, {
+      step: "OTP_VERIFIED",
+    });
 
     res.status(200).json({
       token,
@@ -218,7 +231,7 @@ export const submitEOI = async (eoiData) => {
   // This is a service-style function, called from the router after GridFS upload
   const newEOI = new EOI(eoiData);
   await newEOI.save();
-  
+
   // Create employer account if not exists, then email credentials
   const email = eoiData.contactEmail;
   const abnAcn = eoiData.abnAcn;
@@ -235,12 +248,12 @@ export const submitEOI = async (eoiData) => {
     const tempPassword = generateStrongTempPassword();
 
     // If ABN looks valid (11 digits), create Employer; otherwise fallback to base User with role employer
-    const isValidABN = /^\d{11}$/.test(abnAcn || '');
+    const isValidABN = /^\d{11}$/.test(abnAcn || "");
     const baseUserData = {
-      name: contactPerson || companyName || 'Employer',
+      name: contactPerson || companyName || "Employer",
       email,
       password: tempPassword,
-      role: 'employer',
+      role: "employer",
       phone,
     };
 
@@ -253,14 +266,21 @@ export const submitEOI = async (eoiData) => {
 
     // Send credentials email (do not block on failure)
     try {
-      await sendEmployerCredentials(email, tempPassword, contactPerson, companyName);
+      await sendEmployerCredentials(
+        email,
+        tempPassword,
+        contactPerson,
+        companyName,
+      );
       credentialsEmailSent = true;
     } catch (err) {
       // Log and continue; EOI still created
-      console.error('Failed to send employer credentials:', err.message);
+      console.error("Failed to send employer credentials:", err.message);
     }
   } else {
-    console.warn(`submitEOI: User with email ${email} already exists; skipping account creation and credential email.`);
+    console.warn(
+      `submitEOI: User with email ${email} already exists; skipping account creation and credential email.`,
+    );
   }
 
   // Return EOI and status flags
@@ -269,17 +289,19 @@ export const submitEOI = async (eoiData) => {
 
 // Local helper to ensure password meets validation rules
 const generateStrongTempPassword = () => {
-  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lower = 'abcdefghijklmnopqrstuvwxyz';
-  const digits = '0123456789';
-  const special = '!@#$%^&*()-_=+[]{};:,.?';
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const digits = "0123456789";
+  const special = "!@#$%^&*()-_=+[]{};:,.?";
   const all = upper + lower + digits + special;
 
   const pick = (chars) => chars[Math.floor(Math.random() * chars.length)];
   const required = [pick(upper), pick(lower), pick(digits), pick(special)];
 
   const length = 12;
-  const remaining = Array.from({ length: length - required.length }, () => pick(all));
+  const remaining = Array.from({ length: length - required.length }, () =>
+    pick(all),
+  );
   const passwordChars = required.concat(remaining);
 
   // Shuffle
@@ -287,5 +309,5 @@ const generateStrongTempPassword = () => {
     const j = Math.floor(Math.random() * (i + 1));
     [passwordChars[i], passwordChars[j]] = [passwordChars[j], passwordChars[i]];
   }
-  return passwordChars.join('');
+  return passwordChars.join("");
 };

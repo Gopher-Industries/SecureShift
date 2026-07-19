@@ -1,17 +1,17 @@
 import User from "../models/User.js";
 import Message from "../models/Message.js";
 import { validationResult } from "express-validator";
-import { ACTIONS } from '../middleware/logger.js';
+import { ACTIONS } from "../middleware/logger.js";
 
 // Utility function to escape HTML to prevent XSS attacks
 const escapeHtml = (unsafe) => {
-  if (!unsafe) return '';
+  if (!unsafe) return "";
   return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 };
 
 /**
@@ -24,7 +24,7 @@ const sendMessage = async (req, res, next) => {
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      const error = new Error('Validation errors');
+      const error = new Error("Validation errors");
       error.status = 400;
       error.details = errors.array();
       throw error;
@@ -35,7 +35,7 @@ const sendMessage = async (req, res, next) => {
 
     // Prevent sending message to self
     if (senderId === receiverId) {
-      const error = new Error('Cannot send message to yourself');
+      const error = new Error("Cannot send message to yourself");
       error.status = 400;
       throw error;
     }
@@ -43,7 +43,7 @@ const sendMessage = async (req, res, next) => {
     // Validate receiver exists
     const receiver = await User.findById(receiverId);
     if (!receiver) {
-      const error = new Error('Receiver not found ' + receiverId);
+      const error = new Error("Receiver not found " + receiverId);
       error.status = 404;
       throw error;
     }
@@ -52,14 +52,16 @@ const sendMessage = async (req, res, next) => {
     // employer-to-employer and admin messaging blocked.
     const senderRole = req.user.role;
     const receiverRole = receiver.role;
-    
-    const validCommunication = 
-      (senderRole === 'guard' && receiverRole === 'guard') ||
-      (senderRole === 'guard' && receiverRole === 'employer') ||
-      (senderRole === 'employer' && receiverRole === 'guard');
+
+    const validCommunication =
+      (senderRole === "guard" && receiverRole === "guard") ||
+      (senderRole === "guard" && receiverRole === "employer") ||
+      (senderRole === "employer" && receiverRole === "guard");
 
     if (!validCommunication) {
-      const error = new Error('Messages can only be sent between guards, or between guards and employers');
+      const error = new Error(
+        "Messages can only be sent between guards, or between guards and employers",
+      );
       error.status = 403;
       throw error;
     }
@@ -68,24 +70,24 @@ const sendMessage = async (req, res, next) => {
     const message = new Message({
       sender: senderId,
       receiver: receiverId,
-      content: content.trim()
+      content: content.trim(),
     });
 
     await message.save();
 
     // Populate sender and receiver details for response
     await message.populate([
-      { path: 'sender', select: 'email name role' },
-      { path: 'receiver', select: 'email name role' }
+      { path: "sender", select: "email name role" },
+      { path: "receiver", select: "email name role" },
     ]);
     await req.audit.log(req.user.id, ACTIONS.MESSAGE_SENT, {
       messageId: message._id,
       receiverId: receiverId,
-      contentSnippet: escapeHtml(message.content.slice(0, 50)) // optional short preview
+      contentSnippet: escapeHtml(message.content.slice(0, 50)), // optional short preview
     });
 
     const escapedContent = escapeHtml(message.content);
-    
+
     res.status(201).json({
       success: true,
       data: {
@@ -95,11 +97,10 @@ const sendMessage = async (req, res, next) => {
         content: escapedContent,
         timestamp: message.timestamp,
         isRead: message.isRead,
-      }
+      },
     });
-
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.error("Error sending message:", error);
     next(error);
   }
 };
@@ -114,28 +115,27 @@ const getInboxMessages = async (req, res, next) => {
 
     // Get messages received by the user
     const messages = await Message.find({ receiver: userId })
-      .populate('sender', 'email name role')
-      .populate('receiver', 'email name role')
+      .populate("sender", "email name role")
+      .populate("receiver", "email name role")
       .sort({ timestamp: -1 });
 
     // Get unread count
     const unreadCount = await Message.getUnreadCount(userId);
 
-    const safeMessages = messages.map(msg => ({
+    const safeMessages = messages.map((msg) => ({
       ...msg.toObject(),
-      content: escapeHtml(msg.content)
+      content: escapeHtml(msg.content),
     }));
 
     res.status(200).json({
       success: true,
-      message: 'Inbox messages retrieved successfully',
+      message: "Inbox messages retrieved successfully",
       data: {
         messages: safeMessages,
         totalMessages: messages.length,
-        unreadCount
-      }
+        unreadCount,
+      },
     });
-
   } catch (error) {
     next(error);
   }
@@ -151,24 +151,23 @@ const getSentMessages = async (req, res, next) => {
 
     // Get messages sent by the user
     const messages = await Message.find({ sender: userId })
-      .populate('sender', 'email name role')
-      .populate('receiver', 'email name role')
+      .populate("sender", "email name role")
+      .populate("receiver", "email name role")
       .sort({ timestamp: -1 });
 
-    const safeMessages = messages.map(msg => ({
+    const safeMessages = messages.map((msg) => ({
       ...msg.toObject(),
-      content: escapeHtml(msg.content)
+      content: escapeHtml(msg.content),
     }));
 
     res.status(200).json({
       success: true,
-      message: 'Sent messages retrieved successfully',
+      message: "Sent messages retrieved successfully",
       data: {
         messages: safeMessages,
-        totalMessages: messages.length
-      }
+        totalMessages: messages.length,
+      },
     });
-
   } catch (error) {
     next(error);
   }
@@ -186,7 +185,7 @@ const getConversation = async (req, res, next) => {
     // Validate other user exists
     const otherUser = await User.findById(otherUserId);
     if (!otherUser) {
-      const error = new Error('User not found');
+      const error = new Error("User not found");
       error.status = 404;
       throw error;
     }
@@ -197,26 +196,25 @@ const getConversation = async (req, res, next) => {
     // Mark messages as read (messages received by current user from other user)
     await Message.markAsRead(currentUserId, otherUserId);
 
-    const safeMessages = messages.map(msg => ({
+    const safeMessages = messages.map((msg) => ({
       ...msg.toObject(),
-      content: escapeHtml(msg.content)
+      content: escapeHtml(msg.content),
     }));
 
     res.status(200).json({
       success: true,
-      message: 'Conversation retrieved successfully',
+      message: "Conversation retrieved successfully",
       data: {
         conversation: {
           participant: {
             id: otherUser._id,
             name: otherUser.name,
-            email: otherUser.email
+            email: otherUser.email,
           },
-          messages: safeMessages.reverse() // Reverse to show oldest first
-        }
-      }
+          messages: safeMessages.reverse(), // Reverse to show oldest first
+        },
+      },
     });
-
   } catch (error) {
     next(error);
   }
@@ -233,14 +231,14 @@ const markMessageAsRead = async (req, res, next) => {
 
     const message = await Message.findById(messageId);
     if (!message) {
-      const error = new Error('Message not found');
+      const error = new Error("Message not found");
       error.status = 404;
       throw error;
     }
 
     // Only receiver can mark message as read
     if (message.receiver.toString() !== userId) {
-      const error = new Error('Unauthorized to mark this message as read');
+      const error = new Error("Unauthorized to mark this message as read");
       error.status = 403;
       throw error;
     }
@@ -250,18 +248,17 @@ const markMessageAsRead = async (req, res, next) => {
 
     await req.audit.log(req.user.id, ACTIONS.MESSAGE_READ, {
       messageId: message._id,
-      senderId: message.sender
+      senderId: message.sender,
     });
 
     res.status(200).json({
       success: true,
-      message: 'Message marked as read',
+      message: "Message marked as read",
       data: {
         messageId: message._id,
-        isRead: message.isRead
-      }
+        isRead: message.isRead,
+      },
     });
-
   } catch (error) {
     next(error);
   }
@@ -278,20 +275,19 @@ const getMessageStats = async (req, res, next) => {
     const [unreadCount, sentCount, receivedCount] = await Promise.all([
       Message.countDocuments({ receiver: userId, isRead: false }),
       Message.countDocuments({ sender: userId }),
-      Message.countDocuments({ receiver: userId })
+      Message.countDocuments({ receiver: userId }),
     ]);
 
     res.status(200).json({
       success: true,
-      message: 'Message statistics retrieved successfully',
+      message: "Message statistics retrieved successfully",
       data: {
         unreadMessages: unreadCount,
         sentMessages: sentCount,
         receivedMessages: receivedCount,
-        totalMessages: sentCount + receivedCount
-      }
+        totalMessages: sentCount + receivedCount,
+      },
     });
-
   } catch (error) {
     next(error);
   }
@@ -303,5 +299,5 @@ export {
   getSentMessages,
   getConversation,
   markMessageAsRead,
-  getMessageStats
+  getMessageStats,
 };

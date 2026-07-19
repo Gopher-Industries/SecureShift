@@ -1,11 +1,11 @@
-import mongoose from 'mongoose';
-import Shift from '../models/Shift.js';
-import ShiftAttendance from '../models/ShiftAttendance.js';
-import Timesheet from '../models/Timesheet.js';
+import mongoose from "mongoose";
+import Shift from "../models/Shift.js";
+import ShiftAttendance from "../models/ShiftAttendance.js";
+import Timesheet from "../models/Timesheet.js";
 import {
   calculateAttendanceHours,
   calculateScheduledHours,
-} from './payroll.service.js';
+} from "./payroll.service.js";
 
 const ISO_DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -19,25 +19,30 @@ const isValidISODateOnly = (value) => {
   if (!ISO_DATE_ONLY_REGEX.test(value)) return false;
 
   const date = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  return (
+    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
 };
 
 const parseDateRange = ({ startDate, endDate }, { required = false } = {}) => {
   if (!startDate && !endDate && !required) return null;
 
   if (!startDate || !endDate) {
-    throw createHttpError(400, 'startDate and endDate are required');
+    throw createHttpError(400, "startDate and endDate are required");
   }
 
   if (!isValidISODateOnly(startDate) || !isValidISODateOnly(endDate)) {
-    throw createHttpError(400, 'startDate and endDate must be valid ISO dates in YYYY-MM-DD format');
+    throw createHttpError(
+      400,
+      "startDate and endDate must be valid ISO dates in YYYY-MM-DD format",
+    );
   }
 
   const start = new Date(`${startDate}T00:00:00.000Z`);
   const end = new Date(`${endDate}T23:59:59.999Z`);
 
   if (start > end) {
-    throw createHttpError(400, 'startDate cannot be after endDate');
+    throw createHttpError(400, "startDate cannot be after endDate");
   }
 
   return { start, end };
@@ -48,7 +53,7 @@ const getUserContext = (user) => {
   const role = user?.role;
 
   if (!userId || !role) {
-    throw createHttpError(401, 'Unauthorized');
+    throw createHttpError(401, "Unauthorized");
   }
 
   return { userId, role };
@@ -60,7 +65,8 @@ const ensureObjectId = (value, fieldName) => {
   }
 };
 
-const roundHours = (value) => Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
+const roundHours = (value) =>
+  Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
 
 const calculatePayableHours = (actualHours, shift) => {
   const breakMinutes = Number.isFinite(shift?.breakTime) ? shift.breakTime : 0;
@@ -72,10 +78,10 @@ const buildShiftQuery = (filters, user) => {
   const range = parseDateRange(filters, { required: true });
   const { guardId } = filters;
 
-  ensureObjectId(guardId, 'guardId');
+  ensureObjectId(guardId, "guardId");
 
   const query = {
-    status: 'completed',
+    status: "completed",
     acceptedBy: { $ne: null },
     date: {
       $gte: range.start,
@@ -83,18 +89,21 @@ const buildShiftQuery = (filters, user) => {
     },
   };
 
-  if (role === 'guard') {
+  if (role === "guard") {
     if (guardId && String(guardId) !== String(userId)) {
-      throw createHttpError(403, 'Guards can only generate their own timesheets');
+      throw createHttpError(
+        403,
+        "Guards can only generate their own timesheets",
+      );
     }
     query.acceptedBy = userId;
-  } else if (role === 'employer') {
+  } else if (role === "employer") {
     query.createdBy = userId;
     if (guardId) query.acceptedBy = guardId;
-  } else if (role === 'admin') {
+  } else if (role === "admin") {
     if (guardId) query.acceptedBy = guardId;
   } else {
-    throw createHttpError(403, 'Forbidden: unsupported role');
+    throw createHttpError(403, "Forbidden: unsupported role");
   }
 
   return query;
@@ -104,22 +113,22 @@ const buildTimesheetQuery = (filters, user) => {
   const { userId, role } = getUserContext(user);
   const { guardId } = filters;
 
-  ensureObjectId(guardId, 'guardId');
+  ensureObjectId(guardId, "guardId");
 
   const query = {};
 
-  if (role === 'guard') {
+  if (role === "guard") {
     if (guardId && String(guardId) !== String(userId)) {
-      throw createHttpError(403, 'Guards can only access their own timesheets');
+      throw createHttpError(403, "Guards can only access their own timesheets");
     }
     query.guardId = userId;
-  } else if (role === 'employer') {
+  } else if (role === "employer") {
     query.employerId = userId;
     if (guardId) query.guardId = guardId;
-  } else if (role === 'admin') {
+  } else if (role === "admin") {
     if (guardId) query.guardId = guardId;
   } else {
-    throw createHttpError(403, 'Forbidden: unsupported role');
+    throw createHttpError(403, "Forbidden: unsupported role");
   }
 
   const range = parseDateRange(filters);
@@ -155,7 +164,7 @@ const buildValidTimesheetRecord = (shift, attendance) => {
   const actualHours = calculateAttendanceHours(attendance);
 
   if (
-    shift.status !== 'completed' ||
+    shift.status !== "completed" ||
     !guardId ||
     !employerId ||
     !attendance?._id ||
@@ -183,10 +192,10 @@ const buildValidTimesheetRecord = (shift, attendance) => {
 
 const populateTimesheetQuery = (query) =>
   query
-    .populate('guardId', 'name email')
-    .populate('employerId', 'name email')
-    .populate('shiftId', 'title date startTime endTime status')
-    .populate('attendanceId', 'checkInTime checkOutTime');
+    .populate("guardId", "name email")
+    .populate("employerId", "name email")
+    .populate("shiftId", "title date startTime endTime status")
+    .populate("attendanceId", "checkInTime checkOutTime");
 
 export const generateTimesheets = async (filters, user) => {
   const shiftQuery = buildShiftQuery(filters, user);
@@ -204,7 +213,10 @@ export const generateTimesheets = async (filters, user) => {
   const attendanceMap = new Map();
 
   for (const attendance of attendanceRecords) {
-    attendanceMap.set(`${String(attendance.shiftId)}:${String(attendance.guardId)}`, attendance);
+    attendanceMap.set(
+      `${String(attendance.shiftId)}:${String(attendance.guardId)}`,
+      attendance,
+    );
   }
 
   const records = shifts
@@ -212,7 +224,7 @@ export const generateTimesheets = async (filters, user) => {
       const guardId = shift.acceptedBy?._id || shift.acceptedBy;
       return buildValidTimesheetRecord(
         shift,
-        attendanceMap.get(`${String(shift._id)}:${String(guardId)}`)
+        attendanceMap.get(`${String(shift._id)}:${String(guardId)}`),
       );
     })
     .filter(Boolean);
@@ -237,7 +249,7 @@ export const generateTimesheets = async (filters, user) => {
         upsert: true,
       },
     })),
-    { ordered: false }
+    { ordered: false },
   );
 
   const docs = await populateTimesheetQuery(
@@ -246,7 +258,7 @@ export const generateTimesheets = async (filters, user) => {
         shiftId: record.shiftId,
         guardId: record.guardId,
       })),
-    }).sort({ shiftDate: 1, createdAt: 1 })
+    }).sort({ shiftDate: 1, createdAt: 1 }),
   );
 
   return {
@@ -264,7 +276,10 @@ export const listTimesheetsForUser = async (filters, user) => {
 
   const [docs, total] = await Promise.all([
     populateTimesheetQuery(
-      Timesheet.find(query).sort({ shiftDate: -1, createdAt: -1 }).skip(skip).limit(limit)
+      Timesheet.find(query)
+        .sort({ shiftDate: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
     ),
     Timesheet.countDocuments(query),
   ]);
@@ -279,7 +294,7 @@ export const listTimesheetsForUser = async (filters, user) => {
 
 export const getTimesheetForUser = async (timesheetId, user) => {
   if (!mongoose.isValidObjectId(timesheetId)) {
-    throw createHttpError(400, 'Invalid timesheet id');
+    throw createHttpError(400, "Invalid timesheet id");
   }
 
   const query = buildTimesheetQuery({}, user);
@@ -288,7 +303,7 @@ export const getTimesheetForUser = async (timesheetId, user) => {
   const timesheet = await populateTimesheetQuery(Timesheet.findOne(query));
 
   if (!timesheet) {
-    throw createHttpError(404, 'Timesheet not found');
+    throw createHttpError(404, "Timesheet not found");
   }
 
   return serializeTimesheet(timesheet);

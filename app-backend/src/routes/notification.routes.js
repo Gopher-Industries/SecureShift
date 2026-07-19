@@ -1,14 +1,14 @@
-import express from 'express';
-import auth from '../middleware/auth.js';
-import loadUser from '../middleware/loadUser.js';
+import express from "express";
+import auth from "../middleware/auth.js";
+import loadUser from "../middleware/loadUser.js";
 import {
   getNotifications,
   createNotification,
   getNotificationById,
   markAsRead,
   markAllAsRead,
-  getUnreadCount
-} from '../controllers/notification.controller.js';
+  getUnreadCount,
+} from "../controllers/notification.controller.js";
 
 const router = express.Router();
 
@@ -42,7 +42,7 @@ const router = express.Router();
  *                 unreadCount:
  *                   type: integer
  */
-router.get('/unread-count', auth, loadUser, getUnreadCount);
+router.get("/unread-count", auth, loadUser, getUnreadCount);
 
 /**
  * @swagger
@@ -56,7 +56,7 @@ router.get('/unread-count', auth, loadUser, getUnreadCount);
  *       200:
  *         description: All notifications marked as read
  */
-router.patch('/read-all', auth, loadUser, markAllAsRead);
+router.patch("/read-all", auth, loadUser, markAllAsRead);
 
 /* =========================================================
     MAIN ROUTES
@@ -95,7 +95,7 @@ router.patch('/read-all', auth, loadUser, markAllAsRead);
  *       200:
  *         description: Notifications fetched successfully
  */
-router.get('/', auth, loadUser, getNotifications);
+router.get("/", auth, loadUser, getNotifications);
 
 /**
  * @swagger
@@ -125,7 +125,7 @@ router.get('/', auth, loadUser, getNotifications);
  *               data:
  *                 type: object
  */
-router.post('/', auth, loadUser, createNotification);
+router.post("/", auth, loadUser, createNotification);
 
 /* =========================================================
    PARAM ROUTES 
@@ -140,7 +140,7 @@ router.post('/', auth, loadUser, createNotification);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/:id', auth, loadUser, getNotificationById);
+router.get("/:id", auth, loadUser, getNotificationById);
 
 /**
  * @swagger
@@ -151,6 +151,6 @@ router.get('/:id', auth, loadUser, getNotificationById);
  *     security:
  *       - bearerAuth: []
  */
-router.patch('/:id/read', auth, loadUser, markAsRead);
+router.patch("/:id/read", auth, loadUser, markAsRead);
 
 export default router;

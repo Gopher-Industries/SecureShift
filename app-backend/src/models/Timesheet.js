@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
@@ -6,25 +6,25 @@ const timesheetSchema = new Schema(
   {
     shiftId: {
       type: Schema.Types.ObjectId,
-      ref: 'Shift',
+      ref: "Shift",
       required: true,
       index: true,
     },
     guardId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
     employerId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
     attendanceId: {
       type: Schema.Types.ObjectId,
-      ref: 'ShiftAttendance',
+      ref: "ShiftAttendance",
       required: true,
     },
     shiftDate: {
@@ -64,13 +64,13 @@ const timesheetSchema = new Schema(
       default: Date.now,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 timesheetSchema.index({ shiftId: 1, guardId: 1 }, { unique: true });
 timesheetSchema.index({ employerId: 1, shiftDate: -1 });
 timesheetSchema.index({ guardId: 1, shiftDate: -1 });
 
-const Timesheet = model('Timesheet', timesheetSchema);
+const Timesheet = model("Timesheet", timesheetSchema);
 
 export default Timesheet;

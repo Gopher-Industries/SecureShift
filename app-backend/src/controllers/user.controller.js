@@ -1,7 +1,7 @@
-import mongoose from 'mongoose';
-import User from '../models/User.js';
+import mongoose from "mongoose";
+import User from "../models/User.js";
 import { ACTIONS } from "../middleware/logger.js";
-import { computeGuardScore } from '../services/guardScore.service.js';
+import { computeGuardScore } from "../services/guardScore.service.js";
 
 /**
  * @desc    View logged-in user's profile
@@ -9,7 +9,7 @@ import { computeGuardScore } from '../services/guardScore.service.js';
  * @access  Private (all roles)
  */
 export const getMyProfile = async (req, res) => {
-  const user = await User.findById(req.user.id).select('-password');
+  const user = await User.findById(req.user.id).select("-password");
   res.json(user);
 };
 
@@ -20,7 +20,7 @@ export const getMyProfile = async (req, res) => {
  */
 export const listUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    const users = await User.find().select("-password");
     res.json({ total: users.length, users });
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -34,14 +34,14 @@ export const listUsers = async (req, res) => {
  */
 export const updateMyProfile = async (req, res) => {
   const fieldsToUpdate = { ...req.body };
-  delete fieldsToUpdate.role;       // prevent role changes
-  delete fieldsToUpdate.password;   // don’t allow password here
+  delete fieldsToUpdate.role; // prevent role changes
+  delete fieldsToUpdate.password; // don’t allow password here
 
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
     fieldsToUpdate,
-    { new: true, runValidators: true }
-  ).select('-password');
+    { new: true, runValidators: true },
+  ).select("-password");
 
   res.json(updatedUser);
 };
@@ -52,8 +52,8 @@ export const updateMyProfile = async (req, res) => {
  * @access  Private/Admin
  */
 export const adminGetUserProfile = async (req, res) => {
-  const user = await User.findById(req.params.id).select('-password');
-  if (!user) return res.status(404).json({ message: 'User not found' });
+  const user = await User.findById(req.params.id).select("-password");
+  if (!user) return res.status(404).json({ message: "User not found" });
   res.json(user);
 };
 
@@ -64,15 +64,15 @@ export const adminGetUserProfile = async (req, res) => {
  */
 export const adminUpdateUserProfile = async (req, res) => {
   const fieldsToUpdate = { ...req.body };
-  delete fieldsToUpdate.password;   // separate password endpoint if needed
+  delete fieldsToUpdate.password; // separate password endpoint if needed
 
   const updatedUser = await User.findByIdAndUpdate(
     req.params.id,
     fieldsToUpdate,
-    { new: true, runValidators: true }
-  ).select('-password');
+    { new: true, runValidators: true },
+  ).select("-password");
 
-  if (!updatedUser) return res.status(404).json({ message: 'User not found' });
+  if (!updatedUser) return res.status(404).json({ message: "User not found" });
 
   await req.audit.log(req.user.id, ACTIONS.PROFILE_UPDATED, {
     updatedUserId: req.params.id,
@@ -88,7 +88,7 @@ export const adminUpdateUserProfile = async (req, res) => {
  * @access  Private/Admin,Employee
  */
 export const getAllGuards = async (req, res) => {
-  const guards = await User.find({ role: 'guard' }).select('-password');
+  const guards = await User.find({ role: "guard" }).select("-password");
   res.json(guards);
 };
 
@@ -101,7 +101,7 @@ export const deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     await req.audit?.log(req.user.id, ACTIONS.USER_DELETED, {
@@ -109,7 +109,7 @@ export const deleteUser = async (req, res) => {
       deletedUserEmail: user.email,
     });
 
-    return res.json({ message: 'User deleted successfully' });
+    return res.json({ message: "User deleted successfully" });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
@@ -122,13 +122,13 @@ export const deleteUser = async (req, res) => {
  */
 export const getEmployerProfile = async (req, res) => {
   try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Access denied.' });
+    if (req.user.role !== "employer") {
+      return res.status(403).json({ message: "Access denied." });
     }
 
-    const employer = await User.findById(req.user.id).select('-password');
+    const employer = await User.findById(req.user.id).select("-password");
     if (!employer) {
-      return res.status(404).json({ message: 'Employer not found' });
+      return res.status(404).json({ message: "Employer not found" });
     }
 
     res.status(200).json(employer);
@@ -144,8 +144,8 @@ export const getEmployerProfile = async (req, res) => {
  */
 export const updateEmployerProfile = async (req, res) => {
   try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Access denied.' });
+    if (req.user.role !== "employer") {
+      return res.status(403).json({ message: "Access denied." });
     }
 
     const fieldsToUpdate = { ...req.body };
@@ -155,10 +155,11 @@ export const updateEmployerProfile = async (req, res) => {
     const updatedEmployer = await User.findByIdAndUpdate(
       req.user.id,
       fieldsToUpdate,
-      { new: true, runValidators: true }
-    ).select('-password');
+      { new: true, runValidators: true },
+    ).select("-password");
 
-    if (!updatedEmployer) return res.status(404).json({ message: 'Employer not found' });
+    if (!updatedEmployer)
+      return res.status(404).json({ message: "Employer not found" });
     res.status(200).json(updatedEmployer);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -174,13 +175,13 @@ export const registerPushToken = async (req, res) => {
   try {
     const { token, platform, deviceId } = req.body;
 
-    if (!token || typeof token !== 'string') {
-      return res.status(400).json({ message: 'Push token is required.' });
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "Push token is required." });
     }
 
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const existing = user.pushTokens?.find((item) => item.token === token);
@@ -202,7 +203,7 @@ export const registerPushToken = async (req, res) => {
 
     await user.save();
 
-    return res.status(200).json({ message: 'Push token registered.' });
+    return res.status(200).json({ message: "Push token registered." });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
@@ -214,15 +215,17 @@ export const registerPushToken = async (req, res) => {
  */
 export const addFavouriteGuard = async (req, res) => {
   try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Only employers can favourite guards.' });
+    if (req.user.role !== "employer") {
+      return res
+        .status(403)
+        .json({ message: "Only employers can favourite guards." });
     }
 
     const { guardId } = req.params;
 
     const guard = await User.findById(guardId);
-    if (!guard || guard.role !== 'guard') {
-      return res.status(404).json({ message: 'Guard not found' });
+    if (!guard || guard.role !== "guard") {
+      return res.status(404).json({ message: "Guard not found" });
     }
 
     const employer = await User.findById(req.user.id);
@@ -232,12 +235,16 @@ export const addFavouriteGuard = async (req, res) => {
       await employer.save();
     }
 
-    res.status(200).json({ message: 'Guard added to favourites', favourites: employer.favourites });
+    res
+      .status(200)
+      .json({
+        message: "Guard added to favourites",
+        favourites: employer.favourites,
+      });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 /**
  * @desc    Remove a guard from favourites
@@ -246,8 +253,10 @@ export const addFavouriteGuard = async (req, res) => {
  */
 export const removeFavouriteGuard = async (req, res) => {
   try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Only employers can modify favourites.' });
+    if (req.user.role !== "employer") {
+      return res
+        .status(403)
+        .json({ message: "Only employers can modify favourites." });
     }
 
     const { guardId } = req.params;
@@ -255,17 +264,21 @@ export const removeFavouriteGuard = async (req, res) => {
     const employer = await User.findById(req.user.id);
 
     employer.favourites = employer.favourites.filter(
-      (id) => id.toString() !== guardId
+      (id) => id.toString() !== guardId,
     );
 
     await employer.save();
 
-    res.status(200).json({ message: 'Guard removed from favourites', favourites: employer.favourites });
+    res
+      .status(200)
+      .json({
+        message: "Guard removed from favourites",
+        favourites: employer.favourites,
+      });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 /**
  * @desc    Get guard performance score (0–100)
@@ -277,7 +290,7 @@ export const getGuardScore = async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid guard ID' });
+      return res.status(400).json({ message: "Invalid guard ID" });
     }
 
     const result = await computeGuardScore(id);
@@ -294,12 +307,16 @@ export const getGuardScore = async (req, res) => {
  */
 export const getFavouriteGuards = async (req, res) => {
   try {
-    if (req.user.role !== 'employer') {
-      return res.status(403).json({ message: 'Only employers can view favourites.' });
+    if (req.user.role !== "employer") {
+      return res
+        .status(403)
+        .json({ message: "Only employers can view favourites." });
     }
 
-    const employer = await User.findById(req.user.id)
-      .populate('favourites', '-password');
+    const employer = await User.findById(req.user.id).populate(
+      "favourites",
+      "-password",
+    );
 
     res.status(200).json(employer.favourites);
   } catch (err) {
