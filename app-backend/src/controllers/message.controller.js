@@ -3,6 +3,17 @@ import Message from "../models/Message.js";
 import { validationResult } from "express-validator";
 import { ACTIONS } from '../middleware/logger.js';
 
+// Utility function to escape HTML to prevent XSS attacks
+const escapeHtml = (unsafe) => {
+  if (!unsafe) return '';
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 /**
  * Send a new message
  * @route POST /api/v1/messages
@@ -70,16 +81,18 @@ const sendMessage = async (req, res, next) => {
     await req.audit.log(req.user.id, ACTIONS.MESSAGE_SENT, {
       messageId: message._id,
       receiverId: receiverId,
-      contentSnippet: message.content.slice(0, 50) // optional short preview
+      contentSnippet: escapeHtml(message.content.slice(0, 50)) // optional short preview
     });
 
+    const escapedContent = escapeHtml(message.content);
+    
     res.status(201).json({
       success: true,
       data: {
         messageId: message._id,
         sender: message.sender,
         receiver: message.receiver,
-        content: message.content,
+        content: escapedContent,
         timestamp: message.timestamp,
         isRead: message.isRead,
       }
@@ -103,16 +116,21 @@ const getInboxMessages = async (req, res, next) => {
     const messages = await Message.find({ receiver: userId })
       .populate('sender', 'email name role')
       .populate('receiver', 'email name role')
-      .sort({ timestamp: -1 })
+      .sort({ timestamp: -1 });
 
     // Get unread count
     const unreadCount = await Message.getUnreadCount(userId);
+
+    const safeMessages = messages.map(msg => ({
+      ...msg.toObject(),
+      content: escapeHtml(msg.content)
+    }));
 
     res.status(200).json({
       success: true,
       message: 'Inbox messages retrieved successfully',
       data: {
-        messages,
+        messages: safeMessages,
         totalMessages: messages.length,
         unreadCount
       }
@@ -137,13 +155,16 @@ const getSentMessages = async (req, res, next) => {
       .populate('receiver', 'email name role')
       .sort({ timestamp: -1 });
 
-
+    const safeMessages = messages.map(msg => ({
+      ...msg.toObject(),
+      content: escapeHtml(msg.content)
+    }));
 
     res.status(200).json({
       success: true,
       message: 'Sent messages retrieved successfully',
       data: {
-        messages,
+        messages: safeMessages,
         totalMessages: messages.length
       }
     });
@@ -176,6 +197,11 @@ const getConversation = async (req, res, next) => {
     // Mark messages as read (messages received by current user from other user)
     await Message.markAsRead(currentUserId, otherUserId);
 
+    const safeMessages = messages.map(msg => ({
+      ...msg.toObject(),
+      content: escapeHtml(msg.content)
+    }));
+
     res.status(200).json({
       success: true,
       message: 'Conversation retrieved successfully',
@@ -186,7 +212,7 @@ const getConversation = async (req, res, next) => {
             name: otherUser.name,
             email: otherUser.email
           },
-          messages: messages.reverse() // Reverse to show oldest first
+          messages: safeMessages.reverse() // Reverse to show oldest first
         }
       }
     });
