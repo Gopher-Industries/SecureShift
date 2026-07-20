@@ -25,7 +25,7 @@ const emergencySchema = new mongoose.Schema(
       default: "ACTIVE",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Emergency", emergencySchema);

@@ -1,5 +1,9 @@
 import express from "express";
-import { checkIn, checkOut, getAttendanceByUserId } from "../controllers/shiftattendance.controller.js";
+import {
+  checkIn,
+  checkOut,
+  getAttendanceByUserId,
+} from "../controllers/shiftattendance.controller.js";
 import auth from "../middleware/auth.js";
 
 const router = express.Router();

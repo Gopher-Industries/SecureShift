@@ -1,10 +1,10 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const payrollEntrySchema = new mongoose.Schema(
   {
     shiftId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Shift',
+      ref: "Shift",
       required: true,
     },
     shiftDate: {
@@ -66,24 +66,24 @@ const payrollEntrySchema = new mongoose.Schema(
       default: false,
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const payrollSchema = new mongoose.Schema(
   {
     guardId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     employerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     periodType: {
       type: String,
-      enum: ['daily', 'weekly', 'monthly'],
+      enum: ["daily", "weekly", "monthly"],
       required: true,
     },
     periodStart: {
@@ -136,8 +136,8 @@ const payrollSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'PROCESSED'],
-      default: 'PENDING',
+      enum: ["PENDING", "APPROVED", "PROCESSED"],
+      default: "PENDING",
       index: true,
     },
     entries: {
@@ -150,7 +150,7 @@ const payrollSchema = new mongoose.Schema(
     },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
     },
     processedAt: {
@@ -159,21 +159,21 @@ const payrollSchema = new mongoose.Schema(
     },
     processedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 payrollSchema.index(
   { guardId: 1, employerId: 1, periodType: 1, periodStart: 1, periodEnd: 1 },
-  { unique: true }
+  { unique: true },
 );
 
 payrollSchema.index({ employerId: 1, periodStart: 1, periodEnd: 1 });
 payrollSchema.index({ guardId: 1, periodStart: 1, periodEnd: 1 });
 
-const Payroll = mongoose.model('Payroll', payrollSchema);
+const Payroll = mongoose.model("Payroll", payrollSchema);
 
 export default Payroll;

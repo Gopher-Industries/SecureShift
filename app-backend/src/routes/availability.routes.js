@@ -1,6 +1,6 @@
-import express from 'express';
-import * as availabilityController from '../controllers/availability.controller.js';
-import auth from '../middleware/auth.js';
+import express from "express";
+import * as availabilityController from "../controllers/availability.controller.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -50,11 +50,7 @@ const router = express.Router();
  *       200:
  *         description: Availability saved successfully
  */
-router.post(
-  '/',
-  auth,
-  availabilityController.createOrUpdateAvailability
-);
+router.post("/", auth, availabilityController.createOrUpdateAvailability);
 
 /**
  * =========================
@@ -78,11 +74,7 @@ router.post(
  *       200:
  *         description: Availability found
  */
-router.get(
-  '/:userId',
-  auth,
-  availabilityController.getAvailability
-);
+router.get("/:userId", auth, availabilityController.getAvailability);
 
 /**
  * =========================
@@ -119,10 +111,6 @@ router.get(
  *       404:
  *         description: Availability not found
  */
-router.patch(
-  '/status',
-  auth,
-  availabilityController.updateAvailabilityStatus
-);
+router.patch("/status", auth, availabilityController.updateAvailabilityStatus);
 
 export default router;

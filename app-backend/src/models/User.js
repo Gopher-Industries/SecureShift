@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 // Define the base user schema
 const userSchema = new mongoose.Schema(
@@ -13,7 +13,8 @@ const userSchema = new mongoose.Schema(
         validator: function (value) {
           return /^[A-Za-z\s'-]+$/.test(value);
         },
-        message: "Name can only contain letters, spaces, hyphens (-), and apostrophes (').",
+        message:
+          "Name can only contain letters, spaces, hyphens (-), and apostrophes (').",
       },
     },
 
@@ -27,7 +28,7 @@ const userSchema = new mongoose.Schema(
         validator: function (value) {
           return /^\S+@\S+\.\S+$/.test(value);
         },
-        message: 'Please enter a valid email address.',
+        message: "Please enter a valid email address.",
       },
     },
 
@@ -41,14 +42,34 @@ const userSchema = new mongoose.Schema(
           return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/.test(value);
         },
         message:
-          'Password must be at least 6 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.',
+          "Password must be at least 6 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.",
       },
+    },
+
+    otpFailedAttempts: {
+      type: Number,
+      default: 0,
+    },
+
+    otpLockedUntil: {
+      type: Date,
+      default: null,
+    },
+
+    refreshTokenUsed: {
+      type: Boolean,
+      default: false,
+    },
+
+    refreshTokenRevokedAt: {
+      type: Date,
+      default: null,
     },
 
     role: {
       type: String,
       required: true,
-      enum: ['guard', 'employer', 'admin'],
+      enum: ["guard", "employer", "admin"],
     },
 
     phone: {
@@ -57,10 +78,11 @@ const userSchema = new mongoose.Schema(
         validator: function (value) {
           return /^(\+?\d{8,15})?$/.test(value);
         },
-        message: 'Phone number must be between 8 to 15 digits and can optionally start with +',
+        message:
+          "Phone number must be between 8 to 15 digits and can optionally start with +",
       },
     },
-    
+
     address: {
       street: { type: String, trim: true },
       suburb: { type: String, trim: true },
@@ -71,11 +93,11 @@ const userSchema = new mongoose.Schema(
           validator: function (value) {
             return /^\d{4}$/.test(value); // Australian postcode exactly 4 digits
           },
-          message: 'Postcode must be a 4-digit number.',
-        }
-      }
+          message: "Postcode must be a 4-digit number.",
+        },
+      },
     },
-    
+
     otp: {
       type: String,
       select: false,
@@ -89,11 +111,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    
+
     favourites: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // referencing guards
+        ref: "User", // referencing guards
       },
     ],
 
@@ -109,27 +131,29 @@ const userSchema = new mongoose.Schema(
     // soft delete fields
     isDeleted: { type: Boolean, default: false, index: true }, // marks user as deactivated
     deletedAt: { type: Date, default: null }, // when it was deactivated
-    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // who did it
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    }, // who did it
     deleteReason: { type: String, default: null }, // optional reason
   },
   {
     timestamps: true,
-    discriminatorKey: 'role', // Extend this schema for Guard, Employer, Admin
-  }
-
-  
+    discriminatorKey: "role", // Extend this schema for Guard, Employer, Admin
+  },
 );
 
 // Hash password
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
 
   try {
-    const salt = await bcrypt.genSalt(10); 
-    this.password = await bcrypt.hash(this.password, salt); 
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (err) {
-    next(err); 
+    next(err);
   }
 });
 
@@ -138,5 +162,5 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 export default User;

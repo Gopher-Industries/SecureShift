@@ -288,7 +288,7 @@ router.post(
   "/:id/attachments",
   authorizePermissions("incident:update"),
   upload.single("file"),
-  uploadAttachment
+  uploadAttachment,
 );
 
 /**
@@ -327,7 +327,7 @@ router.post(
 router.get(
   "/:id/attachments/:attachmentId",
   authorizePermissions("incident:view"),
-  getAttachment
+  getAttachment,
 );
 
 export default router;
