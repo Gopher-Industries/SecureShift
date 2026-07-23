@@ -75,7 +75,12 @@ export const getSOSStatus = async (req, res) => {
 
 export const updateSOSStatus = async (req, res) => {
   try {
-    const sos = await transitionSOS(req.user, req.params.id, req.body.status, req.body.message);
+    const sos = await transitionSOS(
+      req.user,
+      req.params.id,
+      req.body.status,
+      req.body.message,
+    );
     return sendSOS(res, 200, "Status updated", sos);
   } catch (error) {
     return handleError(res, error);
@@ -84,7 +89,11 @@ export const updateSOSStatus = async (req, res) => {
 
 export const updateSOSLocation = async (req, res) => {
   try {
-    const sos = await updateSOSLocationForUser(req.user, req.params.id, req.body);
+    const sos = await updateSOSLocationForUser(
+      req.user,
+      req.params.id,
+      req.body,
+    );
     return sendSOS(res, 200, "SOS location updated", sos);
   } catch (error) {
     return handleError(res, error);
@@ -93,7 +102,11 @@ export const updateSOSLocation = async (req, res) => {
 
 export const addSOSNote = async (req, res) => {
   try {
-    const sos = await updateSOSNoteForUser(req.user, req.params.id, req.body.note);
+    const sos = await updateSOSNoteForUser(
+      req.user,
+      req.params.id,
+      req.body.note,
+    );
     return sendSOS(res, 200, "SOS note updated", sos);
   } catch (error) {
     return handleError(res, error);

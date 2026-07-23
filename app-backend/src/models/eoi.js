@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const eoiSchema = new mongoose.Schema(
   {
@@ -24,7 +24,7 @@ const eoiSchema = new mongoose.Schema(
       lowercase: true,
       validate: {
         validator: (value) => /^\S+@\S+\.\S+$/.test(value),
-        message: 'Invalid email format',
+        message: "Invalid email format",
       },
     },
     phone: {
@@ -32,7 +32,7 @@ const eoiSchema = new mongoose.Schema(
       required: true,
       validate: {
         validator: (value) => /^(\+?\d{8,15})$/.test(value),
-        message: 'Phone number must be 8–15 digits, optionally starting with +',
+        message: "Phone number must be 8–15 digits, optionally starting with +",
       },
     },
     description: {
@@ -47,12 +47,12 @@ const eoiSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const EOI = mongoose.model('EOI', eoiSchema);
+const EOI = mongoose.model("EOI", eoiSchema);
 export default EOI;

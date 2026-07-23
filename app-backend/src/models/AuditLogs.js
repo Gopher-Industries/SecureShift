@@ -1,14 +1,17 @@
-import mongoose from 'mongoose';
-
+import mongoose from "mongoose";
 
 const AuditLogSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+    },
     action: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     metadata: { type: Object },
   },
-  { versionKey: false }
+  { versionKey: false },
 );
 
 // Static method to purge logs older than a given number of days

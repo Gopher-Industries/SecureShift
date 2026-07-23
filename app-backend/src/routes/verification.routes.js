@@ -1,11 +1,11 @@
 // src/routes/verification.routes.js
-import { Router } from 'express';
-import auth from '../middleware/auth.js';
+import { Router } from "express";
+import auth from "../middleware/auth.js";
 import {
   startVerification,
   getStatus,
-  recheckVerification
-} from '../controllers/verification.controller.js';
+  recheckVerification,
+} from "../controllers/verification.controller.js";
 
 const router = Router();
 
@@ -40,17 +40,17 @@ const router = Router();
  *       200:
  *         description: Verification started
  */
-router.post('/start', auth, startVerification);
+router.post("/start", auth, startVerification);
 
 /**
  * GET current status snapshot for a guard
  */
-router.get('/status/:guardId', auth, getStatus);
+router.get("/status/:guardId", auth, getStatus);
 
 /**
  * Force a recheck
  */
-router.post('/recheck/:guardId', auth, recheckVerification);
+router.post("/recheck/:guardId", auth, recheckVerification);
 
 /**
  * Admin-only: (later) you may add endpoints for admins to list manual verifications:
