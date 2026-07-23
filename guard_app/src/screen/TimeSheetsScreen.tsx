@@ -32,16 +32,7 @@ function fmtDateTime(d?: string | null) {
 }
 
 function fmtShiftLabel(att: Attendance) {
-  const s = att.shiftId;
-
-  if (s && typeof s === 'object') {
-    const title = s.title ?? 'Shift';
-    const date = s.date ? new Date(s.date).toDateString() : '';
-    const time = s.startTime && s.endTime ? `${s.startTime} - ${s.endTime}` : '';
-    return [title, date, time].filter(Boolean).join(' • ');
-  }
-
-  return `Shift ID: ${String(att.shiftId)}`;
+  return `Shift ID: ${att.shiftId}`;
 }
 
 export default function TimesheetsScreen() {
@@ -110,7 +101,7 @@ export default function TimesheetsScreen() {
         style={s.card}
         onPress={() =>
           navigation.navigate('ShiftDetails', {
-            shiftId: typeof item.shiftId === 'object' ? item.shiftId?._id : item.shiftId,
+            shiftId: item.shiftId,
           })
         }
       >

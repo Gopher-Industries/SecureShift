@@ -22,7 +22,7 @@ import ShiftCard from '../components/card/ShiftCard';
 import ShiftDetailsModal from '../components/modal/ShiftDetailsModal';
 import ViewToggle from '../components/toggle/ViewToggle';
 import { useAppTheme } from '../theme';
-import { getUserAttendance } from '../api/attendance';
+import { getUserAttendance, type Attendance } from '../api/attendance';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
@@ -36,7 +36,7 @@ type Props = {
 function mapMineShifts(
   shifts: ShiftDto[],
   myUid: string,
-  attendanceRecords: any[] = [],
+  attendanceRecords: Attendance[] = [],
 ): AppliedShift[] {
   return shifts
     .filter((s) => s.status !== 'completed')
@@ -48,11 +48,9 @@ function mapMineShifts(
         ? s.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
         : [];
 
-      const attendance = attendanceRecords.find((record) => {
-        const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
-
-        return String(recordShiftId) === String(s._id);
-      });
+      const attendance = attendanceRecords.find(
+        (record) => String(record.shiftId) === String(s._id),
+      );
 
       let status: AppliedShift['status'];
       if (s.status === 'assigned' && acceptedId === myUid) status = 'Confirmed';
@@ -70,23 +68,21 @@ function mapMineShifts(
         status,
         attendance: attendance
           ? {
-              checkInTime: attendance.clockIn ?? undefined,
-              checkOutTime: attendance.clockOut ?? undefined,
+              checkInTime: attendance.checkInTime ?? undefined,
+              checkOutTime: attendance.checkOutTime ?? undefined,
             }
           : undefined,
       };
     });
 }
 
-function mapCompleted(shifts: ShiftDto[], attendanceRecords: any[] = []): CompletedShift[] {
+function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []): CompletedShift[] {
   return shifts
     .filter((s) => s.status === 'completed')
     .map((s) => {
-      const attendance = attendanceRecords.find((record) => {
-        const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
-
-        return String(recordShiftId) === String(s._id);
-      });
+      const attendance = attendanceRecords.find(
+        (record) => String(record.shiftId) === String(s._id),
+      );
 
       return {
         id: s._id,
@@ -100,8 +96,8 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: any[] = []): Comple
         rating: 0,
         attendance: attendance
           ? {
-              checkInTime: attendance.clockIn ?? undefined,
-              checkOutTime: attendance.clockOut ?? undefined,
+              checkInTime: attendance.checkInTime ?? undefined,
+              checkOutTime: attendance.checkOutTime ?? undefined,
             }
           : undefined,
       };
