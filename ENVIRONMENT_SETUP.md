@@ -89,6 +89,25 @@ Both applications now have centralized Axios instances that:
 
 - **Employer Panel**: Uses `REACT_APP_API_BASE_URL`
 
+- **Guard App**: Uses `EXPO_PUBLIC_API_BASE_URL`
+
+### Guard App Environment Variable
+
+The Guard App supports overriding the backend URL using the `EXPO_PUBLIC_API_BASE_URL` environment variable.
+
+Create a `.env` file inside the `guard_app` directory:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=http://YOUR_LAN_IP:5000
+```
+
+**Notes:**
+
+- On a physical phone, use your computer's LAN IP address.
+- On the Android emulator, use `http://10.0.2.2:5000`.
+- Do not include `/api/v1` because the app appends it automatically.
+- See `guard_app/.env.example` for the template.
+
 ### Updated Files
 
 
