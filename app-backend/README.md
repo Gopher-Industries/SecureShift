@@ -40,12 +40,14 @@ The backend service for **SecureShift**, a shift management platform connecting 
 ## 🚀 Setup Instructions
 
 ### 1. Clone the repository
+
 ```bash
 git clone https://github.com/musahex/secureshift-backend.git
 cd secureshift-backend
 ```
 
 ### 2. Install dependencies
+
 ```bash
 npm install
 ```
@@ -55,7 +57,9 @@ npm install
 Create a `.env` file in the root:
 
 ```env
+# MONGO_URI is REQUIRED. The backend will not start without it.
 MONGO_URI=
+
 JWT_SECRET=
 SMTP_HOST=
 SMTP_PORT=
@@ -65,6 +69,7 @@ SMTP_PASS=
 ```
 
 ### 4. Start the server
+
 ```bash
 npm start
 ```
@@ -76,21 +81,25 @@ Visit: [http://localhost:5000/api-docs](http://localhost:5000/api-docs) for Swag
 ## 🐳 Docker Usage
 
 ### Build the image
+
 ```bash
 docker build -t musahx/secureshift-backend .
 ```
 
 ### Run the container
+
 ```bash
 docker run -p 5000:5000 --env-file .env musahx/secureshift-backend
 ```
 
 ### Push to Docker Hub
+
 ```bash
 docker push musahx/secureshift-backend
 ```
 
 ### Run Docker Compose
+
 ```bash
 docker compose build
 docker compose up
@@ -102,7 +111,7 @@ docker compose up
 
 ## 📘 API Documentation
 
-API is documented using **Swagger UI**.  
+API is documented using **Swagger UI**.
 Once the server is running, open:
 
 ```
@@ -128,12 +137,12 @@ You can explore, test, and understand the structure of all API endpoints there.
 
 Base path: `/api/v1/shift-requests`
 
-| Method | Endpoint | Roles | Description |
-| --- | --- | --- | --- |
-| `POST` | `/` | Guard | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard. |
-| `GET` | `/` | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters. |
-| `GET` | `/:id` | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope. |
-| `PATCH` | `/:id` | Employer, Admin | Approve or reject a pending shift request with `{ "status": "APPROVED" }` or `{ "status": "REJECTED", "rejectionReason": "..." }`. |
+| Method    | Endpoint | Roles                  | Description                                                                                                                            |
+| --------- | -------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST`  | `/`    | Guard                  | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard.                                                |
+| `GET`   | `/`    | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters.         |
+| `GET`   | `/:id` | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope.                                                                    |
+| `PATCH` | `/:id` | Employer, Admin        | Approve or reject a pending shift request with `{ "status": "APPROVED" }` or `{ "status": "REJECTED", "rejectionReason": "..." }`. |
 
 ### Roles and scoping
 
@@ -238,11 +247,11 @@ Unit and integration tests are managed via Jest (or Mocha/Chai if used).
 
 Generated timesheets are exposed under `/api/v1/timesheets`.
 
-| Method | Path | Roles | Description |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/timesheets/generate` | `admin`, `employer`, `guard` | Generate or refresh timesheets for a completed-shift date range. Body requires `startDate` and `endDate` in `YYYY-MM-DD` format. |
-| `GET` | `/api/v1/timesheets` | `admin`, `employer`, `guard` | List generated timesheets visible to the current user. Supports optional `startDate`, `endDate`, `guardId`, `page`, and `limit` query parameters. |
-| `GET` | `/api/v1/timesheets/:id` | `admin`, `employer`, `guard` | Retrieve one generated timesheet in the current user's scope. |
+| Method   | Path                            | Roles                              | Description                                                                                                                                                 |
+| -------- | ------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/api/v1/timesheets/generate` | `admin`, `employer`, `guard` | Generate or refresh timesheets for a completed-shift date range. Body requires `startDate` and `endDate` in `YYYY-MM-DD` format.                      |
+| `GET`  | `/api/v1/timesheets`          | `admin`, `employer`, `guard` | List generated timesheets visible to the current user. Supports optional `startDate`, `endDate`, `guardId`, `page`, and `limit` query parameters. |
+| `GET`  | `/api/v1/timesheets/:id`      | `admin`, `employer`, `guard` | Retrieve one generated timesheet in the current user's scope.                                                                                               |
 
 Timesheet generation only uses shifts that are `completed`, assigned through `acceptedBy`,
 and have completed attendance with `guardId`, `shiftId`, `checkInTime`, and `checkOutTime`.
@@ -318,15 +327,15 @@ Reset deletes only those stable seed IDs and requires the exact confirmation val
 
 All test accounts use the local-only password `SecureShift1!`:
 
-| Role | Scenario | Email |
-| --- | --- | --- |
-| Admin | Admin access | `admin.local@secureshift.test` |
-| Employer | Operations employer | `ops.local@secureshift.test` |
-| Employer | Venue employer | `venue.local@secureshift.test` |
-| Guard | Approved licence | `mia.guard@secureshift.test` |
-| Guard | Pending licence | `noah.guard@secureshift.test` |
-| Guard | Rejected licence | `isha.guard@secureshift.test` |
-| Guard | Expired licence | `liam.guard@secureshift.test` |
+| Role     | Scenario            | Email                            |
+| -------- | ------------------- | -------------------------------- |
+| Admin    | Admin access        | `admin.local@secureshift.test` |
+| Employer | Operations employer | `ops.local@secureshift.test`   |
+| Employer | Venue employer      | `venue.local@secureshift.test` |
+| Guard    | Approved licence    | `mia.guard@secureshift.test`   |
+| Guard    | Pending licence     | `noah.guard@secureshift.test`  |
+| Guard    | Rejected licence    | `isha.guard@secureshift.test`  |
+| Guard    | Expired licence     | `liam.guard@secureshift.test`  |
 
 Employer and guard login still uses the normal OTP flow. This seed does not bypass OTP. Admin login
 uses the existing admin authentication endpoint.
