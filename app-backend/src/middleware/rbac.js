@@ -14,7 +14,7 @@ export const ROLES = {
   BRANCH_ADMIN: 'branch_admin',
   EMPLOYER: 'employer',
   GUARD: 'guard',
-  CLIENT: 'client',
+  CLIENT: 'client'
 };
 
 // Default fallback permissions (if Role docs are missing)
