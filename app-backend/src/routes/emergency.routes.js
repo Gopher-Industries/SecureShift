@@ -4,6 +4,7 @@ import {
   getSOSHistory,
   updateSOSStatus,
 } from "../controllers/emergency.controller.js";
+import { registerSOSInteractionRoutes } from "./sos.route-set.js";
 
 // ✅ correct auth import
 import auth from "../middleware/auth.js";
@@ -79,6 +80,8 @@ router.get(
   getSOSHistory
 );
 
+registerSOSInteractionRoutes(router, "/sos");
+
 /**
  * @swagger
  * /api/v1/emergency/sos/{id}:
@@ -87,7 +90,7 @@ router.get(
  *     tags: [Emergency]
  *     security:
  *       - bearerAuth: []
- *     description: Admin/Employer resolves SOS
+ *     description: Admin/Employer transitions SOS status
  *     parameters:
  *       - in: path
  *         name: id
@@ -103,7 +106,7 @@ router.get(
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [ACTIVE, RESOLVED]
+ *                 enum: [ACTIVE, ESCALATED, RESOLVED, CANCELLED]
  *     responses:
  *       200:
  *         description: SOS updated
