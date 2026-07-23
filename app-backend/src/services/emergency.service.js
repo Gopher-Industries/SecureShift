@@ -45,32 +45,44 @@ const parseOptionalTimestamp = (value) => {
   if (value === undefined || value === null || value === "") return new Date();
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw new EmergencyServiceError(400, "timestamp must be a valid date/time value");
+    throw new EmergencyServiceError(
+      400,
+      "timestamp must be a valid date/time value",
+    );
   }
   return date;
 };
 
-const normalizeText = (value) => (typeof value === "string" ? value.trim() : "");
+const normalizeText = (value) =>
+  typeof value === "string" ? value.trim() : "";
 
 const validateTextLength = (value, fieldName, maxLength) => {
   if (value.length > maxLength) {
-    throw new EmergencyServiceError(400, `${fieldName} must be ${maxLength} characters or fewer`);
+    throw new EmergencyServiceError(
+      400,
+      `${fieldName} must be ${maxLength} characters or fewer`,
+    );
   }
 };
 
-const isValidLatitude = (value) => value !== null && value >= -90 && value <= 90;
-const isValidLongitude = (value) => value !== null && value >= -180 && value <= 180;
+const isValidLatitude = (value) =>
+  value !== null && value >= -90 && value <= 90;
+const isValidLongitude = (value) =>
+  value !== null && value >= -180 && value <= 180;
 
 export const normalizeStatus = (status) => {
   if (typeof status !== "string") return null;
   return status.toUpperCase();
 };
 
-const mapHistoryStatus = (status) => STATUS_TO_GUARD_STATUS[status] || "pending";
+const mapHistoryStatus = (status) =>
+  STATUS_TO_GUARD_STATUS[status] || "pending";
 
 const toISOStringOrNow = (value) => {
   const date = value ? new Date(value) : new Date();
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+  return Number.isNaN(date.getTime())
+    ? new Date().toISOString()
+    : date.toISOString();
 };
 
 const getStatusMessage = (status) => {
@@ -89,7 +101,10 @@ const getStatusMessage = (status) => {
 
 export const serializeSOS = (sos) => {
   const plain = typeof sos.toObject === "function" ? sos.toObject() : sos;
-  const latestLocationAt = plain.locationUpdates?.at(-1)?.timestamp || plain.updatedAt || plain.createdAt;
+  const latestLocationAt =
+    plain.locationUpdates?.at(-1)?.timestamp ||
+    plain.updatedAt ||
+    plain.createdAt;
 
   return {
     _id: String(plain._id),
@@ -101,7 +116,9 @@ export const serializeSOS = (sos) => {
     location: {
       latitude: plain.latitude,
       longitude: plain.longitude,
-      timestamp: latestLocationAt ? new Date(latestLocationAt).getTime() : undefined,
+      timestamp: latestLocationAt
+        ? new Date(latestLocationAt).getTime()
+        : undefined,
     },
     history: (plain.statusHistory || []).map((entry) => ({
       status: mapHistoryStatus(entry.status),
@@ -113,8 +130,12 @@ export const serializeSOS = (sos) => {
       name: "Emergency Services",
       phone: "000",
     },
-    cancelledAt: plain.cancelledAt ? new Date(plain.cancelledAt).toISOString() : null,
-    resolvedAt: plain.resolvedAt ? new Date(plain.resolvedAt).toISOString() : null,
+    cancelledAt: plain.cancelledAt
+      ? new Date(plain.cancelledAt).toISOString()
+      : null,
+    resolvedAt: plain.resolvedAt
+      ? new Date(plain.resolvedAt).toISOString()
+      : null,
   };
 };
 
@@ -168,7 +189,10 @@ const validateCoordinates = (body) => {
 export const createSOS = async (user, body) => {
   const guardId = getUserId(user);
   if (!guardId) {
-    throw new EmergencyServiceError(401, "Authenticated user id missing from context");
+    throw new EmergencyServiceError(
+      401,
+      "Authenticated user id missing from context",
+    );
   }
 
   const { latitude, longitude } = validateCoordinates(body);
@@ -190,14 +214,24 @@ export const createSOS = async (user, body) => {
   }).sort({ createdAt: -1 });
 
   if (activeSOS) {
-    throw new EmergencyServiceError(409, "An active SOS already exists for this guard", {
-      sos: activeSOS,
-    });
+    throw new EmergencyServiceError(
+      409,
+      "An active SOS already exists for this guard",
+      {
+        sos: activeSOS,
+      },
+    );
   }
 
   const lastSOS = await Emergency.findOne({ guardId }).sort({ createdAt: -1 });
-  if (lastSOS && Date.now() - new Date(lastSOS.createdAt).getTime() < COOLDOWN_MS) {
-    throw new EmergencyServiceError(429, "SOS already triggered recently. Please wait.");
+  if (
+    lastSOS &&
+    Date.now() - new Date(lastSOS.createdAt).getTime() < COOLDOWN_MS
+  ) {
+    throw new EmergencyServiceError(
+      429,
+      "SOS already triggered recently. Please wait.",
+    );
   }
 
   const sos = await Emergency.create({
@@ -207,7 +241,9 @@ export const createSOS = async (user, body) => {
     longitude,
     message,
     note,
-    statusHistory: [{ status: "ACTIVE", message: "SOS triggered", by: guardId }],
+    statusHistory: [
+      { status: "ACTIVE", message: "SOS triggered", by: guardId },
+    ],
     locationUpdates: [{ latitude, longitude, timestamp }],
   });
 
@@ -223,7 +259,9 @@ export const listSOS = async (user) => {
 };
 
 export const getActiveSOSForUser = async (user) => {
-  const query = await buildScopedEmergencyQuery(user, { status: { $in: ACTIVE_STATUSES } });
+  const query = await buildScopedEmergencyQuery(user, {
+    status: { $in: ACTIVE_STATUSES },
+  });
   const sos = await Emergency.findOne(query).sort({ createdAt: -1 });
   if (!sos) {
     throw new EmergencyServiceError(404, "No active SOS found");
@@ -233,7 +271,12 @@ export const getActiveSOSForUser = async (user) => {
 
 export const getSOSById = async (user, id) => findScopedSOSById(user, id);
 
-export const transitionSOS = async (user, id, statusInput, messageInput = "") => {
+export const transitionSOS = async (
+  user,
+  id,
+  statusInput,
+  messageInput = "",
+) => {
   const status = normalizeStatus(statusInput);
   const message = normalizeText(messageInput);
 
@@ -244,7 +287,10 @@ export const transitionSOS = async (user, id, statusInput, messageInput = "") =>
 
   const sos = await findScopedSOSById(user, id);
   if (!canTransition(sos.status, status)) {
-    throw new EmergencyServiceError(409, `Cannot transition SOS from ${sos.status} to ${status}`);
+    throw new EmergencyServiceError(
+      409,
+      `Cannot transition SOS from ${sos.status} to ${status}`,
+    );
   }
 
   sos.status = status;
@@ -267,7 +313,10 @@ export const updateSOSLocationForUser = async (user, id, body) => {
   const sos = await findScopedSOSById(user, id);
 
   if (TERMINAL_STATUSES.includes(sos.status)) {
-    throw new EmergencyServiceError(409, "Cannot update location for an inactive SOS");
+    throw new EmergencyServiceError(
+      409,
+      "Cannot update location for an inactive SOS",
+    );
   }
 
   sos.latitude = latitude;
@@ -287,7 +336,10 @@ export const updateSOSNoteForUser = async (user, id, noteInput) => {
 
   const sos = await findScopedSOSById(user, id);
   if (TERMINAL_STATUSES.includes(sos.status)) {
-    throw new EmergencyServiceError(409, "Cannot add a note to an inactive SOS");
+    throw new EmergencyServiceError(
+      409,
+      "Cannot add a note to an inactive SOS",
+    );
   }
 
   sos.note = note;
@@ -301,4 +353,5 @@ export const updateSOSNoteForUser = async (user, id, noteInput) => {
   return sos;
 };
 
-export const cancelSOSForUser = async (user, id) => transitionSOS(user, id, "CANCELLED", "SOS cancelled by guard");
+export const cancelSOSForUser = async (user, id) =>
+  transitionSOS(user, id, "CANCELLED", "SOS cancelled by guard");

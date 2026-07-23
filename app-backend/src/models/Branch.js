@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const branchSchema = new mongoose.Schema(
   {
@@ -12,14 +12,18 @@ const branchSchema = new mongoose.Schema(
       postcode: { type: String, trim: true },
       country: { type: String, trim: true },
     },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    employerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    employerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     isActive: { type: Boolean, default: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 branchSchema.index({ code: 1, employerId: 1 }, { unique: true });
 
-const Branch = mongoose.model('Branch', branchSchema);
+const Branch = mongoose.model("Branch", branchSchema);
 export default Branch;

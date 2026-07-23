@@ -1,15 +1,26 @@
 // routes/admin.routes.js
-import express from 'express';
+import express from "express";
 
 import {
-    adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs,
-    getUserById, getAllMessages, deleteUserById, deleteMessageById,
-    listPendingDocuments, verifyGuardLicense, rejectGuardLicense,
-    getSmtpSettings, updateSmtpSettings, testSmtpSettings,
-} from '../controllers/admin.controller.js';
+  adminLogin,
+  getAllUsers,
+  getAllShifts,
+  getAuditLogs,
+  purgeAuditLogs,
+  getUserById,
+  getAllMessages,
+  deleteUserById,
+  deleteMessageById,
+  listPendingDocuments,
+  verifyGuardLicense,
+  rejectGuardLicense,
+  getSmtpSettings,
+  updateSmtpSettings,
+  testSmtpSettings,
+} from "../controllers/admin.controller.js";
 
-import auth from '../middleware/auth.js';
-import { adminOnly } from '../middleware/role.js';
+import auth from "../middleware/auth.js";
+import { adminOnly } from "../middleware/role.js";
 
 const router = express.Router();
 
@@ -49,7 +60,7 @@ const router = express.Router();
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', adminLogin);
+router.post("/login", adminLogin);
 
 /**
  * @swagger
@@ -66,7 +77,7 @@ router.post('/login', adminLogin);
  *       403:
  *         description: Forbidden
  */
-router.get('/users', auth, adminOnly, getAllUsers);
+router.get("/users", auth, adminOnly, getAllUsers);
 
 /**
  * @swagger
@@ -82,7 +93,7 @@ router.get('/users', auth, adminOnly, getAllUsers);
  *       403:
  *         description: Forbidden
  */
-router.get('/shifts', auth, adminOnly, getAllShifts);
+router.get("/shifts", auth, adminOnly, getAllShifts);
 
 /**
  * @swagger
@@ -143,7 +154,7 @@ router.get('/shifts', auth, adminOnly, getAllShifts);
  *       500:
  *         description: Server error
  */
-router.get('/audit-logs', auth, adminOnly, getAuditLogs);
+router.get("/audit-logs", auth, adminOnly, getAuditLogs);
 
 /**
  * @swagger
@@ -170,7 +181,7 @@ router.get('/audit-logs', auth, adminOnly, getAuditLogs);
  *       500:
  *         description: Server error
  */
-router.delete('/audit-logs/purge', auth, adminOnly, purgeAuditLogs);
+router.delete("/audit-logs/purge", auth, adminOnly, purgeAuditLogs);
 
 /**
  * @swagger
@@ -195,7 +206,7 @@ router.delete('/audit-logs/purge', auth, adminOnly, purgeAuditLogs);
  *       403:
  *         description: Forbidden
  */
-router.get('/users/:id', auth, adminOnly, getUserById);
+router.get("/users/:id", auth, adminOnly, getUserById);
 
 /**
  * @swagger
@@ -247,7 +258,7 @@ router.get('/users/:id', auth, adminOnly, getUserById);
  *       403:
  *         description: Forbidden
  */
-router.get('/messages', auth, adminOnly, getAllMessages);
+router.get("/messages", auth, adminOnly, getAllMessages);
 
 /**
  * @swagger
@@ -286,7 +297,7 @@ router.get('/messages', auth, adminOnly, getAllMessages);
  *       404:
  *         description: User not found
  */
-router.delete('/users/:id', auth, adminOnly, deleteUserById);
+router.delete("/users/:id", auth, adminOnly, deleteUserById);
 
 /**
  * @swagger
@@ -323,8 +334,7 @@ router.delete('/users/:id', auth, adminOnly, deleteUserById);
  *       404:
  *         description: Message not found
  */
-router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
-
+router.delete("/messages/:id", auth, adminOnly, deleteMessageById);
 
 /**
  * @swagger
@@ -343,7 +353,7 @@ router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
  *        schema:
  *          type: string
  *          enum: [license, id_card, passport, firstAid, certificate, rsa, other]
- *          description: Filter by document type 
+ *          description: Filter by document type
  *    tags: [Admin]
  *    security:
  *      - bearerAuth: []
@@ -357,8 +367,7 @@ router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
  *      500:
  *        description: Server error
  */
-router.get('/guards/pending', auth, adminOnly, listPendingDocuments);
-
+router.get("/guards/pending", auth, adminOnly, listPendingDocuments);
 
 /**
  * @swagger
@@ -388,7 +397,7 @@ router.get('/guards/pending', auth, adminOnly, listPendingDocuments);
  *       500:
  *         description: Server error
  */
-router.patch('/guards/:id/license/verify', auth, adminOnly, verifyGuardLicense);
+router.patch("/guards/:id/license/verify", auth, adminOnly, verifyGuardLicense);
 
 /**
  * @swagger
@@ -428,7 +437,7 @@ router.patch('/guards/:id/license/verify', auth, adminOnly, verifyGuardLicense);
  *       500:
  *         description: Server error
  */
-router.patch('/guards/:id/license/reject', auth, adminOnly, rejectGuardLicense);
+router.patch("/guards/:id/license/reject", auth, adminOnly, rejectGuardLicense);
 
 /**
  * @swagger
@@ -446,7 +455,7 @@ router.patch('/guards/:id/license/reject', auth, adminOnly, rejectGuardLicense);
  *       403:
  *         description: Forbidden (admin only)
  */
-router.get('/smtp-settings', auth, adminOnly, getSmtpSettings);
+router.get("/smtp-settings", auth, adminOnly, getSmtpSettings);
 
 /**
  * @swagger
@@ -492,7 +501,7 @@ router.get('/smtp-settings', auth, adminOnly, getSmtpSettings);
  *       403:
  *         description: Forbidden (admin only)
  */
-router.put('/smtp-settings', auth, adminOnly, updateSmtpSettings);
+router.put("/smtp-settings", auth, adminOnly, updateSmtpSettings);
 
 /**
  * @swagger
@@ -527,6 +536,6 @@ router.put('/smtp-settings', auth, adminOnly, updateSmtpSettings);
  *       500:
  *         description: Failed to send test email
  */
-router.post('/smtp-settings/test', auth, adminOnly, testSmtpSettings);
+router.post("/smtp-settings/test", auth, adminOnly, testSmtpSettings);
 
 export default router;

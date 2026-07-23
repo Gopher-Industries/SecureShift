@@ -1,14 +1,14 @@
 // app-backend/src/routes/user.routes.js
-import express from 'express';
-import auth from '../middleware/auth.js';
-import loadUser from '../middleware/loadUser.js';
+import express from "express";
+import auth from "../middleware/auth.js";
+import loadUser from "../middleware/loadUser.js";
 import {
   authorizeRoles,
   authorizePermissions,
   requireSameBranchAsTargetUser,
   requireSelfOrRoles,
   ROLES,
-} from '../middleware/rbac.js';
+} from "../middleware/rbac.js";
 import {
   getMyProfile,
   updateMyProfile,
@@ -23,8 +23,8 @@ import {
   addFavouriteGuard,
   removeFavouriteGuard,
   getFavouriteGuards,
-  registerPushToken
-} from '../controllers/user.controller.js';
+  registerPushToken,
+} from "../controllers/user.controller.js";
 
 const router = express.Router();
 
@@ -82,7 +82,7 @@ const router = express.Router();
  *         description: Validation error
  */
 router
-  .route('/me')
+  .route("/me")
   .get(auth, loadUser, getMyProfile)
   .put(auth, loadUser, updateMyProfile);
 
@@ -117,7 +117,7 @@ router
  *       401:
  *         description: Unauthorized
  */
-router.post('/push-token', auth, loadUser, registerPushToken);
+router.post("/push-token", auth, loadUser, registerPushToken);
 
 /**
  * @swagger
@@ -169,7 +169,7 @@ router.post('/push-token', auth, loadUser, registerPushToken);
  *         description: Validation error
  */
 router
-  .route('/profile')
+  .route("/profile")
   .get(auth, loadUser, getEmployerProfile)
   .put(auth, loadUser, updateEmployerProfile);
 /**
@@ -186,12 +186,7 @@ router
  *       403:
  *         description: Only employers allowed
  */
-router.get(
-  '/favourites',
-  auth,
-  loadUser,
-  getFavouriteGuards
-);
+router.get("/favourites", auth, loadUser, getFavouriteGuards);
 
 /**
  * @swagger
@@ -216,12 +211,7 @@ router.get(
  *       404:
  *         description: Guard not found
  */
-router.post(
-  '/favourites/:guardId',
-  auth,
-  loadUser,
-  addFavouriteGuard
-);
+router.post("/favourites/:guardId", auth, loadUser, addFavouriteGuard);
 
 /**
  * @swagger
@@ -244,12 +234,7 @@ router.post(
  *       403:
  *         description: Only employers allowed
  */
-router.delete(
-  '/favourites/:guardId',
-  auth,
-  loadUser,
-  removeFavouriteGuard
-);
+router.delete("/favourites/:guardId", auth, loadUser, removeFavouriteGuard);
 /**
  * @swagger
  * /api/v1/users/guards:
@@ -267,12 +252,12 @@ router.delete(
  *         description: Forbidden
  */
 router.get(
-  '/guards',
+  "/guards",
   auth,
   loadUser,
   authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE),
-  authorizePermissions('user:read'),
-  getAllGuards
+  authorizePermissions("user:read"),
+  getAllGuards,
 );
 
 /**
@@ -301,10 +286,10 @@ router.get(
  *         description: Forbidden
  */
 router.get(
-  '/guards/:id/score',
+  "/guards/:id/score",
   auth,
-  requireSelfOrRoles({ paramKey: 'id', roles: [ROLES.EMPLOYER, ROLES.ADMIN] }),
-  getGuardScore
+  requireSelfOrRoles({ paramKey: "id", roles: [ROLES.EMPLOYER, ROLES.ADMIN] }),
+  getGuardScore,
 );
 
 /**
@@ -324,12 +309,12 @@ router.get(
  *         description: Forbidden
  */
 router.get(
-  '/',
+  "/",
   auth,
   loadUser,
   authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
-  authorizePermissions('user:read', { any: true }),
-  listUsers
+  authorizePermissions("user:read", { any: true }),
+  listUsers,
 );
 
 /**
@@ -399,28 +384,28 @@ router.get(
  *         description: Forbidden
  */
 router
-  .route('/:userId')
+  .route("/:userId")
   .get(
     auth,
     loadUser,
     authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN),
-    authorizePermissions('user:read'),
-    adminGetUserProfile
+    authorizePermissions("user:read"),
+    adminGetUserProfile,
   )
   .put(
     auth,
     loadUser,
     authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
-    authorizePermissions('user:write'),
-    requireSameBranchAsTargetUser({ paramKey: 'userId' }),
-    adminUpdateUserProfile
+    authorizePermissions("user:write"),
+    requireSameBranchAsTargetUser({ paramKey: "userId" }),
+    adminUpdateUserProfile,
   )
   .delete(
     auth,
     loadUser,
     authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN),
-    authorizePermissions('user:delete'),
-    deleteUser
+    authorizePermissions("user:delete"),
+    deleteUser,
   );
 
 export default router;

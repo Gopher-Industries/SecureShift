@@ -10,33 +10,29 @@
  * - timestamps enabled
  */
 
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
 const timeSlotRegex = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
 
 const VALID_DAYS = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
 ];
 
-const VALID_STATUSES = [
-  'AVAILABLE',
-  'BUSY',
-  'OFF_DUTY',
-];
+const VALID_STATUSES = ["AVAILABLE", "BUSY", "OFF_DUTY"];
 
 const AvailabilitySchema = new Schema(
   {
     user: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       unique: true,
       required: true,
       index: true,
@@ -53,8 +49,7 @@ const AvailabilitySchema = new Schema(
             v.every((day) => VALID_DAYS.includes(day))
           );
         },
-        message:
-          'Days must contain valid weekday values.',
+        message: "Days must contain valid weekday values.",
       },
     },
 
@@ -72,10 +67,10 @@ const AvailabilitySchema = new Schema(
               return false;
             }
 
-            const [start, end] = ts.split('-');
+            const [start, end] = ts.split("-");
 
             const toMinutes = (time) => {
-              const [hh, mm] = time.split(':').map(Number);
+              const [hh, mm] = time.split(":").map(Number);
               return hh * 60 + mm;
             };
 
@@ -94,7 +89,7 @@ const AvailabilitySchema = new Schema(
     status: {
       type: String,
       enum: VALID_STATUSES,
-      default: 'OFF_DUTY',
+      default: "OFF_DUTY",
       required: true,
     },
 
@@ -108,14 +103,14 @@ const AvailabilitySchema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 /**
  * Automatically update status timestamp
  * whenever status changes
  */
-AvailabilitySchema.pre('findOneAndUpdate', function (next) {
+AvailabilitySchema.pre("findOneAndUpdate", function (next) {
   const update = this.getUpdate();
 
   if (update.status) {
@@ -128,17 +123,14 @@ AvailabilitySchema.pre('findOneAndUpdate', function (next) {
 /**
  * Ensure lastStatusUpdatedAt updates on save
  */
-AvailabilitySchema.pre('save', function (next) {
-  if (this.isModified('status')) {
+AvailabilitySchema.pre("save", function (next) {
+  if (this.isModified("status")) {
     this.lastStatusUpdatedAt = Date.now();
   }
 
   next();
 });
 
-const Availability = mongoose.model(
-  'Availability',
-  AvailabilitySchema
-);
+const Availability = mongoose.model("Availability", AvailabilitySchema);
 
 export default Availability;

@@ -109,7 +109,7 @@ const emergencySchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 emergencySchema.index({ guardId: 1, status: 1, createdAt: -1 });

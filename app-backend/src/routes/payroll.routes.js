@@ -1,5 +1,5 @@
-import express from 'express';
-import auth from '../middleware/auth.js';
+import express from "express";
+import auth from "../middleware/auth.js";
 import {
   approvePayroll,
   downloadPayrollExport,
@@ -7,21 +7,25 @@ import {
   downloadPayrollPdf,
   getPayroll,
   processPayroll,
-} from '../controllers/payroll.controller.js';
+} from "../controllers/payroll.controller.js";
 
 const router = express.Router();
 
-const authorizeRole = (...allowedRoles) => (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
+const authorizeRole =
+  (...allowedRoles) =>
+  (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-  if (!allowedRoles.includes(req.user.role)) {
-    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
-  }
+    if (!allowedRoles.includes(req.user.role)) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: insufficient permissions" });
+    }
 
-  next();
-};
+    next();
+  };
 
 /**
  * @swagger
@@ -80,7 +84,7 @@ const authorizeRole = (...allowedRoles) => (req, res, next) => {
  *       403:
  *         description: Forbidden
  */
-router.get('/', auth, authorizeRole('admin', 'employer', 'guard'), getPayroll);
+router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayroll);
 /**
  * @swagger
  * /api/v1/payroll/export:
@@ -135,9 +139,24 @@ router.get('/', auth, authorizeRole('admin', 'employer', 'guard'), getPayroll);
  *       403:
  *         description: Forbidden
  */
-router.get('/export', auth, authorizeRole('admin', 'employer', 'guard'), downloadPayrollExport);
-router.get('/export/csv', auth, authorizeRole('admin', 'employer', 'guard'), downloadPayrollCsv);
-router.get('/export/pdf', auth, authorizeRole('admin', 'employer', 'guard'), downloadPayrollPdf);
+router.get(
+  "/export",
+  auth,
+  authorizeRole("admin", "employer", "guard"),
+  downloadPayrollExport,
+);
+router.get(
+  "/export/csv",
+  auth,
+  authorizeRole("admin", "employer", "guard"),
+  downloadPayrollCsv,
+);
+router.get(
+  "/export/pdf",
+  auth,
+  authorizeRole("admin", "employer", "guard"),
+  downloadPayrollPdf,
+);
 /**
  * @swagger
  * /api/v1/payroll/approve:
@@ -170,7 +189,12 @@ router.get('/export/pdf', auth, authorizeRole('admin', 'employer', 'guard'), dow
  *       409:
  *         description: Invalid payroll state transition
  */
-router.post('/approve', auth, authorizeRole('admin', 'employer'), approvePayroll);
+router.post(
+  "/approve",
+  auth,
+  authorizeRole("admin", "employer"),
+  approvePayroll,
+);
 /**
  * @swagger
  * /api/v1/payroll/process:
@@ -203,6 +227,11 @@ router.post('/approve', auth, authorizeRole('admin', 'employer'), approvePayroll
  *       409:
  *         description: Invalid payroll state transition
  */
-router.post('/process', auth, authorizeRole('admin', 'employer'), processPayroll);
+router.post(
+  "/process",
+  auth,
+  authorizeRole("admin", "employer"),
+  processPayroll,
+);
 
 export default router;
