@@ -55,6 +55,7 @@ npm install
 Create a `.env` file in the root:
 
 ```env
+# REQUIRED - MongoDB connection string
 MONGO_URI=
 JWT_SECRET=
 SMTP_HOST=
