@@ -1,95 +1,110 @@
-import Emergency from "../models/Emergency.js";
-import Notification from "../models/Notification.js";
+import {
+  cancelSOSForUser,
+  createSOS,
+  EmergencyServiceError,
+  getActiveSOSForUser,
+  getSOSById,
+  listSOS,
+  serializeSOS,
+  transitionSOS,
+  updateSOSLocationForUser,
+  updateSOSNoteForUser,
+} from "../services/emergency.service.js";
 
-// 🔴 Trigger SOS
+const sendSOS = (res, statusCode, message, sos) => {
+  res.status(statusCode).json({
+    message,
+    data: sos,
+    sos: serializeSOS(sos),
+  });
+};
+
+const handleError = (res, error) => {
+  if (error instanceof EmergencyServiceError) {
+    const response = { message: error.message };
+    if (error.details?.sos) {
+      response.data = error.details.sos;
+      response.sos = serializeSOS(error.details.sos);
+    }
+    return res.status(error.statusCode).json(response);
+  }
+
+  console.error("Emergency controller error:", error);
+  return res.status(500).json({ message: "Internal server error" });
+};
+
 export const triggerSOS = async (req, res) => {
   try {
-    const guardId = req.user.id;
-    const { latitude, longitude, message } = req.body;
-
-    if (!latitude || !longitude) {
-      return res.status(400).json({
-        message: "Latitude and longitude are required",
-      });
-    }
-
-    // 🚫 Prevent spam (1 min cooldown)
-    const lastSOS = await Emergency.findOne({ guardId }).sort({
-      createdAt: -1,
-    });
-
-    if (lastSOS && Date.now() - new Date(lastSOS.createdAt).getTime() < 60000) {
-      return res.status(429).json({
-        message: "SOS already triggered recently. Please wait.",
-      });
-    }
-
-    const sos = await Emergency.create({
-      guardId,
-      latitude,
-      longitude,
-      message,
-    });
-
-    // 🔔 Notification (basic)
-    await Notification.create({
-      title: "🚨 SOS Alert",
-      message: `Guard ${guardId} triggered SOS`,
-      type: "SOS",
-      priority: "HIGH",
-    });
-
-    res.status(201).json({
-      message: "SOS triggered successfully",
-      data: sos,
-    });
+    const sos = await createSOS(req.user, req.body);
+    return sendSOS(res, 201, "SOS triggered successfully", sos);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    return handleError(res, error);
   }
 };
 
-// 📜 Get SOS history
 export const getSOSHistory = async (req, res) => {
   try {
-    const data = await Emergency.find()
-      .populate("guardId", "name email")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
+    const data = await listSOS(req.user);
+    return res.status(200).json({
       count: data.length,
       data,
+      sos: data.map(serializeSOS),
     });
-  } catch {
-    res.status(500).json({ message: "Internal server error" });
+  } catch (error) {
+    return handleError(res, error);
   }
 };
 
-// ✅ Update SOS status
+export const getActiveSOS = async (req, res) => {
+  try {
+    const sos = await getActiveSOSForUser(req.user);
+    return res.status(200).json({ data: sos, sos: serializeSOS(sos) });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const getSOSStatus = async (req, res) => {
+  try {
+    const sos = await getSOSById(req.user, req.params.id);
+    return res.status(200).json({ data: sos, sos: serializeSOS(sos) });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
 export const updateSOSStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
+    const sos = await transitionSOS(req.user, req.params.id, req.body.status, req.body.message);
+    return sendSOS(res, 200, "Status updated", sos);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
 
-    if (!["ACTIVE", "RESOLVED"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
+export const updateSOSLocation = async (req, res) => {
+  try {
+    const sos = await updateSOSLocationForUser(req.user, req.params.id, req.body);
+    return sendSOS(res, 200, "SOS location updated", sos);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
 
-    const sos = await Emergency.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true },
-    );
+export const addSOSNote = async (req, res) => {
+  try {
+    const sos = await updateSOSNoteForUser(req.user, req.params.id, req.body.note);
+    return sendSOS(res, 200, "SOS note updated", sos);
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
 
-    if (!sos) {
-      return res.status(404).json({ message: "SOS not found" });
-    }
-
-    res.status(200).json({
-      message: "Status updated",
-      data: sos,
-    });
-  } catch {
-    res.status(500).json({ message: "Internal server error" });
+export const cancelSOS = async (req, res) => {
+  try {
+    const sos = await cancelSOSForUser(req.user, req.params.id);
+    return sendSOS(res, 200, "SOS cancelled", sos);
+  } catch (error) {
+    return handleError(res, error);
   }
 };
