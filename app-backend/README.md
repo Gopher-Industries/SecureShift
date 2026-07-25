@@ -40,7 +40,6 @@ The backend service for **SecureShift**, a shift management platform connecting 
 ## 🚀 Setup Instructions
 
 ### 1. Clone the repository
-
 ```bash
 git clone https://github.com/musahex/secureshift-backend.git
 cd secureshift-backend
