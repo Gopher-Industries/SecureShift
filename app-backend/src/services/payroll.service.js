@@ -1,13 +1,15 @@
-import PDFDocument from 'pdfkit';
-import Payroll from '../models/Payroll.js';
-import Shift from '../models/Shift.js';
-import ShiftAttendance from '../models/ShiftAttendance.js';
+import PDFDocument from "pdfkit";
+import Payroll from "../models/Payroll.js";
+import Shift from "../models/Shift.js";
+import ShiftAttendance from "../models/ShiftAttendance.js";
 
 const ISO_DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-const ALLOWED_PERIOD_TYPES = new Set(['daily', 'weekly', 'monthly']);
+const ALLOWED_PERIOD_TYPES = new Set(["daily", "weekly", "monthly"]);
 
-const roundHours = (value) => Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
-const roundMoney = (value) => Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
+const roundHours = (value) =>
+  Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
+const roundMoney = (value) =>
+  Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
 
 const createHttpError = (statusCode, message) => {
   const error = new Error(message);
@@ -19,27 +21,38 @@ const isValidISODateOnly = (value) => {
   if (!ISO_DATE_ONLY_REGEX.test(value)) return false;
 
   const date = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  return (
+    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
 };
 
 const parseDateRange = ({ startDate, endDate, periodType }) => {
   if (!startDate || !endDate || !periodType) {
-    throw createHttpError(400, 'startDate, endDate, and periodType are required');
+    throw createHttpError(
+      400,
+      "startDate, endDate, and periodType are required",
+    );
   }
 
   if (!isValidISODateOnly(startDate) || !isValidISODateOnly(endDate)) {
-    throw createHttpError(400, 'startDate and endDate must be valid ISO dates in YYYY-MM-DD format');
+    throw createHttpError(
+      400,
+      "startDate and endDate must be valid ISO dates in YYYY-MM-DD format",
+    );
   }
 
   if (!ALLOWED_PERIOD_TYPES.has(periodType)) {
-    throw createHttpError(400, 'periodType must be one of daily, weekly, or monthly');
+    throw createHttpError(
+      400,
+      "periodType must be one of daily, weekly, or monthly",
+    );
   }
 
   const start = new Date(`${startDate}T00:00:00.000Z`);
   const end = new Date(`${endDate}T23:59:59.999Z`);
 
   if (start > end) {
-    throw createHttpError(400, 'startDate cannot be after endDate');
+    throw createHttpError(400, "startDate cannot be after endDate");
   }
 
   return { start, end };
@@ -50,7 +63,7 @@ const getUserContext = (user) => {
   const role = user?.role;
 
   if (!userId || !role) {
-    throw createHttpError(401, 'Unauthorised user context');
+    throw createHttpError(401, "Unauthorised user context");
   }
 
   return { userId, role };
@@ -70,14 +83,18 @@ const getPeriodBoundsForDate = (dateValue, periodType) => {
   const date = new Date(dateValue);
   date.setUTCHours(0, 0, 0, 0);
 
-  if (periodType === 'daily') {
+  if (periodType === "daily") {
     const periodStart = new Date(date);
     const periodEnd = new Date(date);
     periodEnd.setUTCHours(23, 59, 59, 999);
-    return { periodStart, periodEnd, label: periodStart.toISOString().slice(0, 10) };
+    return {
+      periodStart,
+      periodEnd,
+      label: periodStart.toISOString().slice(0, 10),
+    };
   }
 
-  if (periodType === 'weekly') {
+  if (periodType === "weekly") {
     const periodStart = getWeekStart(date);
     const periodEnd = new Date(periodStart);
     periodEnd.setUTCDate(periodEnd.getUTCDate() + 6);
@@ -89,18 +106,24 @@ const getPeriodBoundsForDate = (dateValue, periodType) => {
     };
   }
 
-  const periodStart = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-  const periodEnd = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+  const periodStart = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1),
+  );
+  const periodEnd = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0, 23, 59, 59, 999),
+  );
 
   return {
     periodStart,
     periodEnd,
-    label: `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, '0')}`,
+    label: `${periodStart.getUTCFullYear()}-${String(periodStart.getUTCMonth() + 1).padStart(2, "0")}`,
   };
 };
 
 const getShiftStartDateTime = (shift) => {
-  const [hour, minute] = String(shift.startTime || '').split(':').map(Number);
+  const [hour, minute] = String(shift.startTime || "")
+    .split(":")
+    .map(Number);
   const start = new Date(shift.date);
 
   if (Number.isNaN(hour) || Number.isNaN(minute)) {
@@ -116,8 +139,10 @@ export const calculateScheduledHours = (shift) => {
     return 0;
   }
 
-  const [startHour, startMinute] = String(shift.startTime).split(':').map(Number);
-  const [endHour, endMinute] = String(shift.endTime).split(':').map(Number);
+  const [startHour, startMinute] = String(shift.startTime)
+    .split(":")
+    .map(Number);
+  const [endHour, endMinute] = String(shift.endTime).split(":").map(Number);
 
   if (
     Number.isNaN(startHour) ||
@@ -139,7 +164,8 @@ export const calculateScheduledHours = (shift) => {
   }
 
   const breakMinutes = Number.isFinite(shift.breakTime) ? shift.breakTime : 0;
-  const hours = (scheduledEnd - scheduledStart) / (1000 * 60 * 60) - breakMinutes / 60;
+  const hours =
+    (scheduledEnd - scheduledStart) / (1000 * 60 * 60) - breakMinutes / 60;
 
   return roundHours(hours);
 };
@@ -150,7 +176,8 @@ export const calculateAttendanceHours = (attendance) => {
   }
 
   const hours =
-    (new Date(attendance.checkOutTime) - new Date(attendance.checkInTime)) / (1000 * 60 * 60);
+    (new Date(attendance.checkOutTime) - new Date(attendance.checkInTime)) /
+    (1000 * 60 * 60);
 
   if (!Number.isFinite(hours) || hours <= 0) {
     return null;
@@ -164,7 +191,7 @@ const buildShiftQuery = (query, userContext, range) => {
   const { userId, role } = userContext;
 
   const shiftQuery = {
-    status: 'completed',
+    status: "completed",
     acceptedBy: { $ne: null },
     date: {
       $gte: range.start,
@@ -172,18 +199,18 @@ const buildShiftQuery = (query, userContext, range) => {
     },
   };
 
-  if (role === 'guard') {
+  if (role === "guard") {
     if (guardId && String(guardId) !== String(userId)) {
-      throw createHttpError(403, 'Guards can only access their own payroll');
+      throw createHttpError(403, "Guards can only access their own payroll");
     }
     shiftQuery.acceptedBy = userId;
-  } else if (role === 'employer') {
+  } else if (role === "employer") {
     shiftQuery.createdBy = userId;
     if (guardId) shiftQuery.acceptedBy = guardId;
-  } else if (role === 'admin') {
+  } else if (role === "admin") {
     if (guardId) shiftQuery.acceptedBy = guardId;
   } else {
-    throw createHttpError(403, 'Forbidden: unsupported role');
+    throw createHttpError(403, "Forbidden: unsupported role");
   }
 
   if (department) {
@@ -194,13 +221,17 @@ const buildShiftQuery = (query, userContext, range) => {
 };
 
 const escapeCsv = (value) => {
-  const stringValue = value == null ? '' : String(value);
+  const stringValue = value == null ? "" : String(value);
   return `"${stringValue.replace(/"/g, '""')}"`;
 };
 
 const ensurePayrollIds = (payrollIds) => {
-  if (!Array.isArray(payrollIds) || payrollIds.length === 0 || payrollIds.some((id) => !id)) {
-    throw createHttpError(400, 'payrollIds must be a non-empty array');
+  if (
+    !Array.isArray(payrollIds) ||
+    payrollIds.length === 0 ||
+    payrollIds.some((id) => !id)
+  ) {
+    throw createHttpError(400, "payrollIds must be a non-empty array");
   }
 
   return payrollIds;
@@ -265,17 +296,24 @@ const applyDailyOvertime = (records) => {
     const totalHours = group.reduce((sum, item) => sum + item.payableHours, 0);
     let remainingOvertime = Math.max(0, totalHours - 8);
 
-    for (let index = group.length - 1; index >= 0 && remainingOvertime > 0; index -= 1) {
+    for (
+      let index = group.length - 1;
+      index >= 0 && remainingOvertime > 0;
+      index -= 1
+    ) {
       const item = group[index];
       const allocated = Math.min(remainingOvertime, item.payableHours);
       item.dailyOvertimeHours = roundHours(allocated);
-      item.ordinaryAfterDailyHours = roundHours(item.payableHours - item.dailyOvertimeHours);
+      item.ordinaryAfterDailyHours = roundHours(
+        item.payableHours - item.dailyOvertimeHours,
+      );
       remainingOvertime = roundHours(remainingOvertime - allocated);
     }
 
     for (const item of group) {
       if (item.dailyOvertimeHours == null) item.dailyOvertimeHours = 0;
-      if (item.ordinaryAfterDailyHours == null) item.ordinaryAfterDailyHours = roundHours(item.payableHours);
+      if (item.ordinaryAfterDailyHours == null)
+        item.ordinaryAfterDailyHours = roundHours(item.payableHours);
     }
   }
 };
@@ -292,12 +330,22 @@ const applyWeeklyOvertime = (records) => {
 
   for (const group of groups.values()) {
     group.sort((a, b) => a.shiftStartAt - b.shiftStartAt);
-    const ordinaryPool = group.reduce((sum, item) => sum + item.ordinaryAfterDailyHours, 0);
+    const ordinaryPool = group.reduce(
+      (sum, item) => sum + item.ordinaryAfterDailyHours,
+      0,
+    );
     let remainingWeeklyOvertime = Math.max(0, ordinaryPool - 38);
 
-    for (let index = group.length - 1; index >= 0 && remainingWeeklyOvertime > 0; index -= 1) {
+    for (
+      let index = group.length - 1;
+      index >= 0 && remainingWeeklyOvertime > 0;
+      index -= 1
+    ) {
       const item = group[index];
-      const allocated = Math.min(remainingWeeklyOvertime, item.ordinaryAfterDailyHours);
+      const allocated = Math.min(
+        remainingWeeklyOvertime,
+        item.ordinaryAfterDailyHours,
+      );
       item.weeklyOvertimeHours = roundHours(allocated);
       remainingWeeklyOvertime = roundHours(remainingWeeklyOvertime - allocated);
     }
@@ -310,11 +358,21 @@ const applyWeeklyOvertime = (records) => {
 
 const computeDerivedAmounts = (records) => {
   for (const record of records) {
-    record.overtimeHours = roundHours(record.dailyOvertimeHours + record.weeklyOvertimeHours);
-    record.ordinaryHours = roundHours(record.payableHours - record.overtimeHours);
-    record.ordinaryAmount = roundMoney(record.ordinaryHours * record.hourlyRate);
-    record.overtimeAmount = roundMoney(record.overtimeHours * record.hourlyRate * 1.5);
-    record.totalAmount = roundMoney(record.ordinaryAmount + record.overtimeAmount);
+    record.overtimeHours = roundHours(
+      record.dailyOvertimeHours + record.weeklyOvertimeHours,
+    );
+    record.ordinaryHours = roundHours(
+      record.payableHours - record.overtimeHours,
+    );
+    record.ordinaryAmount = roundMoney(
+      record.ordinaryHours * record.hourlyRate,
+    );
+    record.overtimeAmount = roundMoney(
+      record.overtimeHours * record.hourlyRate * 1.5,
+    );
+    record.totalAmount = roundMoney(
+      record.ordinaryAmount + record.overtimeAmount,
+    );
   }
 };
 
@@ -322,7 +380,10 @@ const buildComputedEntries = (shifts, attendanceRecords) => {
   const attendanceMap = new Map();
 
   for (const attendance of attendanceRecords) {
-    attendanceMap.set(`${String(attendance.shiftId)}:${String(attendance.guardId)}`, attendance);
+    attendanceMap.set(
+      `${String(attendance.shiftId)}:${String(attendance.guardId)}`,
+      attendance,
+    );
   }
 
   const records = [];
@@ -342,7 +403,9 @@ const buildComputedEntries = (shifts, attendanceRecords) => {
       shiftDate: shift.date,
       shiftStartAt: getShiftStartDateTime(shift),
       department: shift.field || null,
-      hourlyRate: roundMoney(Number.isFinite(shift.payRate) ? shift.payRate : 0),
+      hourlyRate: roundMoney(
+        Number.isFinite(shift.payRate) ? shift.payRate : 0,
+      ),
       scheduledHours,
       actualHours: roundHours(actualHours ?? scheduledHours),
       payableHours: roundHours(actualHours ?? scheduledHours),
@@ -368,7 +431,7 @@ const buildPayrollGroups = (records, periodType) => {
       periodType,
       bounds.periodStart.toISOString(),
       bounds.periodEnd.toISOString(),
-    ].join(':');
+    ].join(":");
 
     if (!groups.has(key)) {
       groups.set(key, {
@@ -406,19 +469,35 @@ const buildPayrollGroups = (records, periodType) => {
       totalAmount: record.totalAmount,
       attendanceBased: record.attendanceBased,
     });
-    group.totalScheduledHours = roundHours(group.totalScheduledHours + record.scheduledHours);
-    group.totalActualHours = roundHours(group.totalActualHours + record.actualHours);
-    group.totalPayableHours = roundHours(group.totalPayableHours + record.payableHours);
-    group.totalOrdinaryHours = roundHours(group.totalOrdinaryHours + record.ordinaryHours);
-    group.totalOvertimeHours = roundHours(group.totalOvertimeHours + record.overtimeHours);
-    group.totalOrdinaryAmount = roundMoney(group.totalOrdinaryAmount + record.ordinaryAmount);
-    group.totalOvertimeAmount = roundMoney(group.totalOvertimeAmount + record.overtimeAmount);
+    group.totalScheduledHours = roundHours(
+      group.totalScheduledHours + record.scheduledHours,
+    );
+    group.totalActualHours = roundHours(
+      group.totalActualHours + record.actualHours,
+    );
+    group.totalPayableHours = roundHours(
+      group.totalPayableHours + record.payableHours,
+    );
+    group.totalOrdinaryHours = roundHours(
+      group.totalOrdinaryHours + record.ordinaryHours,
+    );
+    group.totalOvertimeHours = roundHours(
+      group.totalOvertimeHours + record.overtimeHours,
+    );
+    group.totalOrdinaryAmount = roundMoney(
+      group.totalOrdinaryAmount + record.ordinaryAmount,
+    );
+    group.totalOvertimeAmount = roundMoney(
+      group.totalOvertimeAmount + record.overtimeAmount,
+    );
     group.totalAmount = roundMoney(group.totalAmount + record.totalAmount);
   }
 
   return Array.from(groups.values()).map((group) => ({
     ...group,
-    entries: group.entries.sort((a, b) => new Date(a.shiftDate) - new Date(b.shiftDate)),
+    entries: group.entries.sort(
+      (a, b) => new Date(a.shiftDate) - new Date(b.shiftDate),
+    ),
   }));
 };
 
@@ -448,13 +527,13 @@ const syncPayrollDocuments = async (groups) => {
             totalAmount: group.totalAmount,
           },
           $setOnInsert: {
-            status: 'PENDING',
+            status: "PENDING",
           },
         },
         upsert: true,
       },
     })),
-    { ordered: false }
+    { ordered: false },
   );
 
   return Payroll.find({
@@ -466,8 +545,8 @@ const syncPayrollDocuments = async (groups) => {
       periodEnd: group.periodEnd,
     })),
   })
-    .populate('guardId', 'name')
-    .populate('employerId', 'name')
+    .populate("guardId", "name")
+    .populate("employerId", "name")
     .sort({ periodStart: 1, createdAt: 1 });
 };
 
@@ -475,13 +554,27 @@ const buildSummary = (payrollDocs) => {
   return payrollDocs.reduce(
     (summary, doc) => {
       summary.count += 1;
-      summary.totalScheduledHours = roundHours(summary.totalScheduledHours + doc.totalScheduledHours);
-      summary.totalActualHours = roundHours(summary.totalActualHours + doc.totalActualHours);
-      summary.totalPayableHours = roundHours(summary.totalPayableHours + doc.totalPayableHours);
-      summary.totalOrdinaryHours = roundHours(summary.totalOrdinaryHours + doc.totalOrdinaryHours);
-      summary.totalOvertimeHours = roundHours(summary.totalOvertimeHours + doc.totalOvertimeHours);
-      summary.totalOrdinaryAmount = roundMoney(summary.totalOrdinaryAmount + doc.totalOrdinaryAmount);
-      summary.totalOvertimeAmount = roundMoney(summary.totalOvertimeAmount + doc.totalOvertimeAmount);
+      summary.totalScheduledHours = roundHours(
+        summary.totalScheduledHours + doc.totalScheduledHours,
+      );
+      summary.totalActualHours = roundHours(
+        summary.totalActualHours + doc.totalActualHours,
+      );
+      summary.totalPayableHours = roundHours(
+        summary.totalPayableHours + doc.totalPayableHours,
+      );
+      summary.totalOrdinaryHours = roundHours(
+        summary.totalOrdinaryHours + doc.totalOrdinaryHours,
+      );
+      summary.totalOvertimeHours = roundHours(
+        summary.totalOvertimeHours + doc.totalOvertimeHours,
+      );
+      summary.totalOrdinaryAmount = roundMoney(
+        summary.totalOrdinaryAmount + doc.totalOrdinaryAmount,
+      );
+      summary.totalOvertimeAmount = roundMoney(
+        summary.totalOvertimeAmount + doc.totalOvertimeAmount,
+      );
       summary.totalAmount = roundMoney(summary.totalAmount + doc.totalAmount);
       return summary;
     },
@@ -495,28 +588,35 @@ const buildSummary = (payrollDocs) => {
       totalOrdinaryAmount: 0,
       totalOvertimeAmount: 0,
       totalAmount: 0,
-    }
+    },
   );
 };
 
 const ensureScopedPayrollDocs = async (payrollIds, user) => {
   const { userId, role } = getUserContext(user);
-  const docs = await Payroll.find({ _id: { $in: ensurePayrollIds(payrollIds) } })
-    .populate('guardId', 'name')
-    .populate('employerId', 'name');
+  const docs = await Payroll.find({
+    _id: { $in: ensurePayrollIds(payrollIds) },
+  })
+    .populate("guardId", "name")
+    .populate("employerId", "name");
 
   if (docs.length !== payrollIds.length) {
-    throw createHttpError(404, 'One or more payroll records were not found');
+    throw createHttpError(404, "One or more payroll records were not found");
   }
 
-  if (role === 'guard') {
-    throw createHttpError(403, 'Guards cannot approve or process payroll');
+  if (role === "guard") {
+    throw createHttpError(403, "Guards cannot approve or process payroll");
   }
 
-  if (role === 'employer') {
-    const invalid = docs.some((doc) => String(doc.employerId._id || doc.employerId) !== String(userId));
+  if (role === "employer") {
+    const invalid = docs.some(
+      (doc) => String(doc.employerId._id || doc.employerId) !== String(userId),
+    );
     if (invalid) {
-      throw createHttpError(403, 'Forbidden: one or more payroll records are outside your scope');
+      throw createHttpError(
+        403,
+        "Forbidden: one or more payroll records are outside your scope",
+      );
     }
   }
 
@@ -529,24 +629,30 @@ export const syncPayrollForShiftIds = async ({ shiftIds, periodType }) => {
   const uniqueShiftIds = Array.from(new Set((shiftIds || []).map(String)));
 
   if (!uniqueShiftIds.length) {
-    throw createHttpError(400, 'shiftIds must be a non-empty array');
+    throw createHttpError(400, "shiftIds must be a non-empty array");
   }
 
   if (!ALLOWED_PERIOD_TYPES.has(periodType)) {
-    throw createHttpError(400, 'periodType must be one of daily, weekly, or monthly');
+    throw createHttpError(
+      400,
+      "periodType must be one of daily, weekly, or monthly",
+    );
   }
 
   const shifts = await Shift.find({
     _id: { $in: uniqueShiftIds },
-    status: 'completed',
+    status: "completed",
     acceptedBy: { $ne: null },
   })
-    .populate('acceptedBy', 'name')
-    .populate('createdBy', 'name')
+    .populate("acceptedBy", "name")
+    .populate("createdBy", "name")
     .sort({ date: 1, startTime: 1 });
 
   if (shifts.length !== uniqueShiftIds.length) {
-    throw createHttpError(404, 'One or more scoped payroll shifts were not found or incomplete');
+    throw createHttpError(
+      404,
+      "One or more scoped payroll shifts were not found or incomplete",
+    );
   }
 
   const attendanceRecords = await ShiftAttendance.find({
@@ -564,8 +670,8 @@ export const getPayrollRecords = async (query, user) => {
   const shiftQuery = buildShiftQuery(query, userContext, range);
 
   const shifts = await Shift.find(shiftQuery)
-    .populate('acceptedBy', 'name')
-    .populate('createdBy', 'name')
+    .populate("acceptedBy", "name")
+    .populate("createdBy", "name")
     .sort({ date: 1, startTime: 1 });
 
   if (!shifts.length) {
@@ -608,8 +714,11 @@ export const approvePayrollRecords = async (payrollIds, user) => {
   const userId = user._id || user.id;
 
   for (const doc of docs) {
-    if (doc.status !== 'PENDING') {
-      throw createHttpError(409, 'Only payroll records in PENDING status can be approved');
+    if (doc.status !== "PENDING") {
+      throw createHttpError(
+        409,
+        "Only payroll records in PENDING status can be approved",
+      );
     }
   }
 
@@ -617,16 +726,18 @@ export const approvePayrollRecords = async (payrollIds, user) => {
     { _id: { $in: docs.map((doc) => doc._id) } },
     {
       $set: {
-        status: 'APPROVED',
+        status: "APPROVED",
         approvedAt: new Date(),
         approvedBy: userId,
       },
-    }
+    },
   );
 
-  const updatedDocs = await Payroll.find({ _id: { $in: docs.map((doc) => doc._id) } })
-    .populate('guardId', 'name')
-    .populate('employerId', 'name')
+  const updatedDocs = await Payroll.find({
+    _id: { $in: docs.map((doc) => doc._id) },
+  })
+    .populate("guardId", "name")
+    .populate("employerId", "name")
     .sort({ periodStart: 1, createdAt: 1 });
 
   return updatedDocs.map(serializePayroll);
@@ -637,8 +748,11 @@ export const processPayrollRecords = async (payrollIds, user) => {
   const userId = user._id || user.id;
 
   for (const doc of docs) {
-    if (doc.status !== 'APPROVED') {
-      throw createHttpError(409, 'Only payroll records in APPROVED status can be processed');
+    if (doc.status !== "APPROVED") {
+      throw createHttpError(
+        409,
+        "Only payroll records in APPROVED status can be processed",
+      );
     }
   }
 
@@ -646,16 +760,18 @@ export const processPayrollRecords = async (payrollIds, user) => {
     { _id: { $in: docs.map((doc) => doc._id) } },
     {
       $set: {
-        status: 'PROCESSED',
+        status: "PROCESSED",
         processedAt: new Date(),
         processedBy: userId,
       },
-    }
+    },
   );
 
-  const updatedDocs = await Payroll.find({ _id: { $in: docs.map((doc) => doc._id) } })
-    .populate('guardId', 'name')
-    .populate('employerId', 'name')
+  const updatedDocs = await Payroll.find({
+    _id: { $in: docs.map((doc) => doc._id) },
+  })
+    .populate("guardId", "name")
+    .populate("employerId", "name")
     .sort({ periodStart: 1, createdAt: 1 });
 
   return updatedDocs.map(serializePayroll);
@@ -665,36 +781,38 @@ export const exportPayrollCsv = async (query, user) => {
   const result = await getPayrollRecords(query, user);
   const rows = [
     [
-      'payrollId',
-      'guardId',
-      'guardName',
-      'employerId',
-      'employerName',
-      'periodType',
-      'periodStart',
-      'periodEnd',
-      'status',
-      'totalScheduledHours',
-      'totalActualHours',
-      'totalPayableHours',
-      'totalOrdinaryHours',
-      'totalOvertimeHours',
-      'totalAmount',
-      'entryCount',
-    ].map(escapeCsv).join(','),
+      "payrollId",
+      "guardId",
+      "guardName",
+      "employerId",
+      "employerName",
+      "periodType",
+      "periodStart",
+      "periodEnd",
+      "status",
+      "totalScheduledHours",
+      "totalActualHours",
+      "totalPayableHours",
+      "totalOrdinaryHours",
+      "totalOvertimeHours",
+      "totalAmount",
+      "entryCount",
+    ]
+      .map(escapeCsv)
+      .join(","),
   ];
 
   for (const item of result.payroll) {
     rows.push(
       [
         item.id,
-        item.guard?.id || '',
-        item.guard?.name || '',
-        item.employer?.id || '',
-        item.employer?.name || '',
+        item.guard?.id || "",
+        item.guard?.name || "",
+        item.employer?.id || "",
+        item.employer?.name || "",
         item.periodType,
-        item.periodStart ? new Date(item.periodStart).toISOString() : '',
-        item.periodEnd ? new Date(item.periodEnd).toISOString() : '',
+        item.periodStart ? new Date(item.periodStart).toISOString() : "",
+        item.periodEnd ? new Date(item.periodEnd).toISOString() : "",
         item.status,
         item.totalScheduledHours,
         item.totalActualHours,
@@ -703,26 +821,28 @@ export const exportPayrollCsv = async (query, user) => {
         item.totalOvertimeHours,
         item.totalAmount,
         item.entries.length,
-      ].map(escapeCsv).join(',')
+      ]
+        .map(escapeCsv)
+        .join(","),
     );
   }
 
-  return rows.join('\n');
+  return rows.join("\n");
 };
 
 export const exportPayrollPdf = async (query, user) => {
   const result = await getPayrollRecords(query, user);
-  const doc = new PDFDocument({ margin: 40, size: 'A4' });
+  const doc = new PDFDocument({ margin: 40, size: "A4" });
   const buffers = [];
 
-  doc.on('data', (chunk) => buffers.push(chunk));
+  doc.on("data", (chunk) => buffers.push(chunk));
 
   const finishPromise = new Promise((resolve, reject) => {
-    doc.on('end', () => resolve(Buffer.concat(buffers)));
-    doc.on('error', reject);
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
   });
 
-  doc.fontSize(18).text('Payroll Report');
+  doc.fontSize(18).text("Payroll Report");
   doc.moveDown(0.5);
   doc.fontSize(10).text(`Period: ${query.startDate} to ${query.endDate}`);
   doc.text(`Grouping: ${query.periodType}`);
@@ -734,25 +854,29 @@ export const exportPayrollPdf = async (query, user) => {
   doc.moveDown();
 
   for (const payroll of result.payroll) {
-    doc.fontSize(12).text(
-      `${payroll.guard?.name || 'Unknown guard'} | ${payroll.periodType} | ${formatCurrency(payroll.totalAmount)}`,
-      { underline: true }
-    );
+    doc
+      .fontSize(12)
+      .text(
+        `${payroll.guard?.name || "Unknown guard"} | ${payroll.periodType} | ${formatCurrency(payroll.totalAmount)}`,
+        { underline: true },
+      );
     doc.fontSize(10).text(`Status: ${payroll.status}`);
-    doc.text(`Employer: ${payroll.employer?.name || 'Unknown employer'}`);
+    doc.text(`Employer: ${payroll.employer?.name || "Unknown employer"}`);
     doc.text(
-      `Period: ${new Date(payroll.periodStart).toISOString().slice(0, 10)} to ${new Date(payroll.periodEnd)
+      `Period: ${new Date(payroll.periodStart).toISOString().slice(0, 10)} to ${new Date(
+        payroll.periodEnd,
+      )
         .toISOString()
-        .slice(0, 10)}`
+        .slice(0, 10)}`,
     );
     doc.text(
-      `Hours: ordinary ${payroll.totalOrdinaryHours}, overtime ${payroll.totalOvertimeHours}, payable ${payroll.totalPayableHours}`
+      `Hours: ordinary ${payroll.totalOrdinaryHours}, overtime ${payroll.totalOvertimeHours}, payable ${payroll.totalPayableHours}`,
     );
     doc.moveDown(0.25);
 
     for (const entry of payroll.entries) {
       doc.text(
-        `- ${new Date(entry.shiftDate).toISOString().slice(0, 10)} | Shift ${entry.shiftId} | ${entry.payableHours}h | ${formatCurrency(entry.totalAmount)}`
+        `- ${new Date(entry.shiftDate).toISOString().slice(0, 10)} | Shift ${entry.shiftId} | ${entry.payableHours}h | ${formatCurrency(entry.totalAmount)}`,
       );
     }
 

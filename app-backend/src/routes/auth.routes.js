@@ -1,9 +1,15 @@
-import express from 'express';
-import multer from 'multer';
-import { MongoClient, GridFSBucket } from 'mongodb';
-import path from 'path';
-import { upload as imageUpload } from '../config/multer.js'; //
-import { register, registerGuardWithLicense, login, verifyOTP, submitEOI } from '../controllers/auth.controller.js';
+import express from "express";
+import multer from "multer";
+import { MongoClient, GridFSBucket } from "mongodb";
+import path from "path";
+import { upload as imageUpload } from "../config/multer.js"; //
+import {
+  register,
+  registerGuardWithLicense,
+  login,
+  verifyOTP,
+  submitEOI,
+} from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
@@ -74,7 +80,7 @@ const router = express.Router();
  *         description: Missing required fields (e.g., ABN for employers) or email already registered
  */
 
-router.post('/register', register);
+router.post("/register", register);
 
 /**
  * @swagger
@@ -108,7 +114,11 @@ router.post('/register', register);
  *       500:
  *         description: Server error
  */
-router.post('/register/guard', imageUpload.single('license'), registerGuardWithLicense);
+router.post(
+  "/register/guard",
+  imageUpload.single("license"),
+  registerGuardWithLicense,
+);
 
 /**
  * @swagger
@@ -150,7 +160,7 @@ router.post('/register/guard', imageUpload.single('license'), registerGuardWithL
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', login);
+router.post("/login", login);
 
 /**
  * @swagger
@@ -176,7 +186,7 @@ router.post('/login', login);
  *       401:
  *         description: Invalid or expired OTP
  */
-router.post('/verify-otp', verifyOTP);
+router.post("/verify-otp", verifyOTP);
 
 // ---------------- EOI Upload Config using MemoryStorage ----------------
 const storage = multer.memoryStorage(); // store files in memory temporarily
@@ -184,8 +194,8 @@ const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (ext === '.pdf') cb(null, true);
-    else cb(new Error('Only PDF files are allowed'), false);
+    if (ext === ".pdf") cb(null, true);
+    else cb(new Error("Only PDF files are allowed"), false);
   },
 });
 
@@ -194,13 +204,13 @@ const mongoUri = process.env.MONGO_URI; // e.g., mongodb://localhost:27017/secur
 let gridFSBucket;
 
 MongoClient.connect(mongoUri)
-  .then(client => {
+  .then((client) => {
     const db = client.db(); // default DB from URI
-    gridFSBucket = new GridFSBucket(db, { bucketName: 'eoiDocuments' });
-    console.log('Connected to MongoDB GridFS for EOI uploads');
+    gridFSBucket = new GridFSBucket(db, { bucketName: "eoiDocuments" });
+    console.log("Connected to MongoDB GridFS for EOI uploads");
   })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
   });
 /**
  * @swagger
@@ -269,30 +279,34 @@ MongoClient.connect(mongoUri)
  */
 
 // ---------------- EOI Route ----------------
-router.post('/eoi', upload.array('documents', 5), async (req, res) => {
+router.post("/eoi", upload.array("documents", 5), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No documents uploaded' });
+      return res.status(400).json({ error: "No documents uploaded" });
     }
 
     // store each file in GridFS
-const fileInfos = await Promise.all(req.files.map(file => {
-  return new Promise((resolve, reject) => {
-    const uploadStream = gridFSBucket.openUploadStream(file.originalname, {
-      contentType: file.mimetype, // use actual mimetype
-    });
+    const fileInfos = await Promise.all(
+      req.files.map((file) => {
+        return new Promise((resolve, reject) => {
+          const uploadStream = gridFSBucket.openUploadStream(
+            file.originalname,
+            {
+              contentType: file.mimetype, // use actual mimetype
+            },
+          );
 
-    uploadStream.end(file.buffer);
-    uploadStream.on('finish', () => {
-      resolve({
-        filename: uploadStream.filename,
-        id: uploadStream.id,
-      });
-    });
-    uploadStream.on('error', reject);
-  });
-}));
-
+          uploadStream.end(file.buffer);
+          uploadStream.on("finish", () => {
+            resolve({
+              filename: uploadStream.filename,
+              id: uploadStream.id,
+            });
+          });
+          uploadStream.on("error", reject);
+        });
+      }),
+    );
 
     // You can also save other EOI info in MongoDB collection
     const eoiData = {
@@ -309,14 +323,15 @@ const fileInfos = await Promise.all(req.files.map(file => {
     // Use your submitEOI controller to store eoiData in a collection
     const { employerCreated } = await submitEOI(eoiData);
 
-    let message = 'EOI submitted successfully';
+    let message = "EOI submitted successfully";
     if (!employerCreated) {
-      message += ' (Account already exists for this email; no new credentials sent)';
+      message +=
+        " (Account already exists for this email; no new credentials sent)";
     }
 
     res.status(201).json({ message, files: fileInfos });
   } catch (err) {
-    console.error('EOI upload error:', err);
+    console.error("EOI upload error:", err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 /**
  * Role model for dynamic, DB-stored permissions and optional inheritance
@@ -14,10 +14,10 @@ const roleSchema = new mongoose.Schema(
     inheritsFrom: { type: String, default: null }, // name of parent role
     isSystem: { type: Boolean, default: false }, // prevent deletion of core roles
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 roleSchema.index({ name: 1 }, { unique: true });
 
-const Role = mongoose.model('Role', roleSchema);
+const Role = mongoose.model("Role", roleSchema);
 export default Role;

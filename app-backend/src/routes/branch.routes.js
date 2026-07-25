@@ -1,14 +1,14 @@
-import express from 'express';
+import express from "express";
 
-import { 
-  createSite, 
-  getAllSites, 
-  updateSite, 
-  deleteSite 
-} from '../controllers/branch.controller.js';
+import {
+  createSite,
+  getAllSites,
+  updateSite,
+  deleteSite,
+} from "../controllers/branch.controller.js";
 
-import auth from '../middleware/auth.js';
-import { employerOnly } from '../middleware/role.js';
+import auth from "../middleware/auth.js";
+import { employerOnly } from "../middleware/role.js";
 
 const router = express.Router();
 
@@ -90,7 +90,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/site', auth, employerOnly, getAllSites);
+router.get("/site", auth, employerOnly, getAllSites);
 
 /**
  * @swagger
@@ -174,7 +174,7 @@ router.get('/site', auth, employerOnly, getAllSites);
  *       500:
  *         description: Server error
  */
-router.post('/site', auth, employerOnly, createSite);
+router.post("/site", auth, employerOnly, createSite);
 
 /**
  * @swagger
@@ -262,7 +262,7 @@ router.post('/site', auth, employerOnly, createSite);
  *       500:
  *         description: Server error
  */
-router.put('/site/:id', auth, employerOnly, updateSite);
+router.put("/site/:id", auth, employerOnly, updateSite);
 
 /**
  * @swagger
@@ -300,6 +300,6 @@ router.put('/site/:id', auth, employerOnly, updateSite);
  *       500:
  *         description: Server error
  */
-router.delete('/site/:id', auth, employerOnly, deleteSite);
+router.delete("/site/:id", auth, employerOnly, deleteSite);
 
 export default router;

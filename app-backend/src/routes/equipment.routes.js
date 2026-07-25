@@ -1,6 +1,6 @@
-import express from 'express';
-import * as equipmentController from '../controllers/equipment.controller.js';
-import auth from '../middleware/auth.js';
+import express from "express";
+import * as equipmentController from "../controllers/equipment.controller.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -50,7 +50,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post('/', auth, equipmentController.createEquipment);
+router.post("/", auth, equipmentController.createEquipment);
 
 /**
  * @swagger
@@ -92,7 +92,7 @@ router.post('/', auth, equipmentController.createEquipment);
  *       404:
  *         description: Equipment not found
  */
-router.patch('/:id/assign', auth, equipmentController.assignEquipment);
+router.patch("/:id/assign", auth, equipmentController.assignEquipment);
 
 /**
  * @swagger
@@ -135,7 +135,7 @@ router.patch('/:id/assign', auth, equipmentController.assignEquipment);
  *       404:
  *         description: Equipment not found
  */
-router.patch('/:id/report', auth, equipmentController.reportEquipment);
+router.patch("/:id/report", auth, equipmentController.reportEquipment);
 
 /**
  * @swagger
@@ -162,10 +162,6 @@ router.patch('/:id/report', auth, equipmentController.reportEquipment);
  *       401:
  *         description: Unauthorized
  */
-router.get(
-  '/guard/:guardId',
-  auth,
-  equipmentController.getEquipmentByGuard
-);
+router.get("/guard/:guardId", auth, equipmentController.getEquipmentByGuard);
 
 export default router;
