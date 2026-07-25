@@ -46,7 +46,6 @@ cd secureshift-backend
 ```
 
 ### 2. Install dependencies
-
 ```bash
 npm install
 ```
@@ -67,7 +66,6 @@ SMTP_PASS=
 ```
 
 ### 4. Start the server
-
 ```bash
 npm start
 ```
@@ -79,30 +77,25 @@ Visit: [http://localhost:5000/api-docs](http://localhost:5000/api-docs) for Swag
 ## 🐳 Docker Usage
 
 ### Build the image
-
 ```bash
 docker build -t musahx/secureshift-backend .
 ```
 
 ### Run the container
-
 ```bash
 docker run -p 5000:5000 --env-file .env musahx/secureshift-backend
 ```
 
 ### Push to Docker Hub
-
 ```bash
 docker push musahx/secureshift-backend
 ```
 
 ### Run Docker Compose
-
 ```bash
 docker compose build
 docker compose up
 ```
-
 > Replace `musahx` with your DockerHub username.
 
 ---
