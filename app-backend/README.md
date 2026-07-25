@@ -102,7 +102,7 @@ docker compose up
 
 ## 📘 API Documentation
 
-API is documented using **Swagger UI**.
+API is documented using **Swagger UI**. 
 Once the server is running, open:
 
 ```
@@ -128,12 +128,12 @@ You can explore, test, and understand the structure of all API endpoints there.
 
 Base path: `/api/v1/shift-requests`
 
-| Method    | Endpoint | Roles                  | Description                                                                                                                            |
-| --------- | -------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST`  | `/`    | Guard                  | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard.                                                |
-| `GET`   | `/`    | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters.         |
-| `GET`   | `/:id` | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope.                                                                    |
-| `PATCH` | `/:id` | Employer, Admin        | Approve or reject a pending shift request with `{ "status": "APPROVED" }` or `{ "status": "REJECTED", "rejectionReason": "..." }`. |
+| Method | Endpoint | Roles | Description |
+| --- | --- | --- | --- |
+| `POST` | `/` | Guard | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard. |
+| `GET` | `/` | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters. |
+| `GET` | `/:id` | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope. |
+| `PATCH` | `/:id` | Employer, Admin | Approve or reject a pending shift request with `{ "status": "APPROVED" }` or `{ "status": "REJECTED", "rejectionReason": "..." }`. |
 
 ### Roles and scoping
 
