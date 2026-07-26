@@ -49,8 +49,10 @@ const fileFilter = (_req, file, cb) => {
   const ok = allowedMimeTypes.includes(file.mimetype);
 
   cb(
-    ok ? null : new Error("Only images, videos, audio, and PDF files are allowed"),
     ok
+      ? null
+      : new Error("Only images, videos, audio, and PDF files are allowed"),
+    ok,
   );
 };
 

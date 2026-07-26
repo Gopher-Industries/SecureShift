@@ -1,9 +1,9 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
-export const SHIFT_REQUEST_TYPES = ['SWAP', 'LEAVE'];
-export const SHIFT_REQUEST_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'];
+export const SHIFT_REQUEST_TYPES = ["SWAP", "LEAVE"];
+export const SHIFT_REQUEST_STATUSES = ["PENDING", "APPROVED", "REJECTED"];
 
 const shiftRequestSchema = new Schema(
   {
@@ -16,36 +16,36 @@ const shiftRequestSchema = new Schema(
     status: {
       type: String,
       enum: SHIFT_REQUEST_STATUSES,
-      default: 'PENDING',
+      default: "PENDING",
       required: true,
       index: true,
     },
     requestingGuardId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
     targetGuardId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
       validate: {
         validator(value) {
-          return this.type !== 'SWAP' || Boolean(value);
+          return this.type !== "SWAP" || Boolean(value);
         },
-        message: 'Target guard is required for shift swap requests',
+        message: "Target guard is required for shift swap requests",
       },
     },
     originalShiftId: {
       type: Schema.Types.ObjectId,
-      ref: 'Shift',
+      ref: "Shift",
       required: true,
       index: true,
     },
     replacementShiftId: {
       type: Schema.Types.ObjectId,
-      ref: 'Shift',
+      ref: "Shift",
       default: null,
     },
     leaveStartDate: {
@@ -53,9 +53,9 @@ const shiftRequestSchema = new Schema(
       default: null,
       validate: {
         validator(value) {
-          return this.type !== 'LEAVE' || Boolean(value);
+          return this.type !== "LEAVE" || Boolean(value);
         },
-        message: 'Leave start date is required for leave requests',
+        message: "Leave start date is required for leave requests",
       },
     },
     leaveEndDate: {
@@ -63,10 +63,10 @@ const shiftRequestSchema = new Schema(
       default: null,
       validate: {
         validator(value) {
-          if (this.type === 'LEAVE' && !value) return false;
+          if (this.type === "LEAVE" && !value) return false;
           return !value || !this.leaveStartDate || value >= this.leaveStartDate;
         },
-        message: 'Leave end date must be on or after leave start date',
+        message: "Leave end date must be on or after leave start date",
       },
     },
     reason: {
@@ -84,7 +84,7 @@ const shiftRequestSchema = new Schema(
     },
     reviewedBy: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
     },
     reviewedAt: {
@@ -96,29 +96,29 @@ const shiftRequestSchema = new Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 shiftRequestSchema.index({ requestingGuardId: 1, status: 1, createdAt: -1 });
 shiftRequestSchema.index({ originalShiftId: 1, status: 1 });
 shiftRequestSchema.index({ targetGuardId: 1, status: 1 });
 
-shiftRequestSchema.virtual('isActionable').get(function () {
-  return this.status === 'PENDING';
+shiftRequestSchema.virtual("isActionable").get(function () {
+  return this.status === "PENDING";
 });
 
-shiftRequestSchema.pre('validate', function (next) {
-  if (this.type === 'LEAVE' && this.leaveStartDate) {
+shiftRequestSchema.pre("validate", function (next) {
+  if (this.type === "LEAVE" && this.leaveStartDate) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (this.leaveStartDate < today) {
-      return next(new Error('Leave start date cannot be in the past'));
+      return next(new Error("Leave start date cannot be in the past"));
     }
   }
 
   return next();
 });
 
-const ShiftRequest = model('ShiftRequest', shiftRequestSchema);
+const ShiftRequest = model("ShiftRequest", shiftRequestSchema);
 export default ShiftRequest;
