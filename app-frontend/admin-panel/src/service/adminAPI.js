@@ -19,10 +19,13 @@ export const rejectGuardLicense = (id, body) =>
 
 // Oversight
 export const getShifts = (params) => http.get('/admin/shifts', { params }).then((r) => r.data);
-export const getAuditLogs = (params) => http.get('/admin/audit-logs', { params }).then((r) => r.data);
+export const getAuditLogs = (params) =>
+  http.get('/admin/audit-logs', { params }).then((r) => r.data);
 export const getMessages = (params) => http.get('/admin/messages', { params }).then((r) => r.data);
 
 // System configuration
 export const getSmtpSettings = () => http.get('/admin/smtp-settings').then((r) => r.data);
-export const updateSmtpSettings = (body) => http.put('/admin/smtp-settings', body).then((r) => r.data);
-export const testSmtpSettings = (body) => http.post('/admin/smtp-settings/test', body).then((r) => r.data);
+export const updateSmtpSettings = (body) =>
+  http.put('/admin/smtp-settings', body).then((r) => r.data);
+export const testSmtpSettings = (body) =>
+  http.post('/admin/smtp-settings/test', body).then((r) => r.data);
