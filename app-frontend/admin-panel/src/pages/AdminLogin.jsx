@@ -32,10 +32,10 @@ export default function AdminLogin() {
       <form onSubmit={onSubmit} style={{ background: '#fff', padding: 32, borderRadius: 8, width: 340, boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
         <h2 style={{ marginTop: 0, color: '#274b93' }}>SecureShift Admin</h2>
         {error && <p style={{ color: '#c00' }}>{error}</p>}
-        <label>Email</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required style={inp} />
-        <label>Password</label>
-        <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required style={inp} />
+        <label htmlFor="admin-email">Email</label>
+        <input id="admin-email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" required style={inp} />
+        <label htmlFor="admin-password">Password</label>
+        <input id="admin-password" value={password} onChange={(e) => setPassword(e.target.value)} type="password" required style={inp} />
         <button disabled={loading} style={{ ...btn, opacity: loading ? 0.7 : 1 }}>
           {loading ? 'Signing in\u2026' : 'Sign in'}
         </button>
