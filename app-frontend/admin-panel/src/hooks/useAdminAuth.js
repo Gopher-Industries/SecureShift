@@ -1,6 +1,12 @@
 import { useCallback } from 'react';
 import { adminLogin } from '../service/adminAPI';
-import { setSession, clearSession, isAuthenticated, isAdmin, getRole } from '../utils/authentication';
+import {
+  setSession,
+  clearSession,
+  isAuthenticated,
+  isAdmin,
+  getRole,
+} from '../utils/authentication';
 
 export default function useAdminAuth() {
   const login = useCallback(async (email, password) => {

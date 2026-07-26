@@ -5,7 +5,15 @@ export default function DataTable({ columns = [], rows = [], empty = 'No records
       <thead>
         <tr>
           {columns.map((c) => (
-            <th key={c.key} style={{ textAlign: 'left', padding: '10px 12px', borderBottom: '2px solid #e5e7eb', background: '#f3f4f6' }}>
+            <th
+              key={c.key}
+              style={{
+                textAlign: 'left',
+                padding: '10px 12px',
+                borderBottom: '2px solid #e5e7eb',
+                background: '#f3f4f6',
+              }}
+            >
               {c.header}
             </th>
           ))}
