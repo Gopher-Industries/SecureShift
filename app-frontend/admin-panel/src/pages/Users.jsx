@@ -38,7 +38,11 @@ export default function Users() {
     { key: 'name', header: 'Name' },
     { key: 'email', header: 'Email' },
     { key: 'role', header: 'Role' },
-    { key: 'createdAt', header: 'Joined', render: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '\u2014') },
+    {
+      key: 'createdAt',
+      header: 'Joined',
+      render: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '\u2014'),
+    },
   ];
 
   return (
