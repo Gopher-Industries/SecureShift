@@ -11,7 +11,8 @@ export const getUser = (id) => http.get(`/admin/users/${id}`).then((r) => r.data
 export const deleteUser = (id) => http.delete(`/admin/users/${id}`).then((r) => r.data);
 
 // Guard verification
-export const getPendingGuards = () => http.get('/admin/guards/pending').then((r) => r.data);
+export const getPendingGuards = (params) =>
+  http.get('/admin/guards/pending', { params }).then((r) => r.data);
 export const verifyGuardLicense = (id, body) =>
   http.patch(`/admin/guards/${id}/license/verify`, body).then((r) => r.data);
 export const rejectGuardLicense = (id, body) =>
