@@ -10,20 +10,18 @@ I went through each module in `guard_app/src/api` one by one. For every call I c
 
 ## Module check results
 
-| Module | Calls | Backend match | Status |
-|--------|-------|---------------|--------|
-| attendance | `POST /attendance/checkin/:shiftId`, `POST /attendance/checkout/:shiftId`, `GET /attendance/:userId` | All exist | OK |
-| auth | `POST /auth/register/guard`, `POST /auth/login`, `POST /auth/verify-otp`, `GET /users/me` | All exist | OK |
-| shifts | `GET /shifts`, `GET /shifts/myshifts`, `PUT /shifts/:id/apply` | All exist | OK |
-| messages | `GET /messages/inbox`, `/sent`, `/conversation/:userId`, `POST /messages`, `PATCH /messages/:id/read` | All exist | OK |
-| notification | `GET /notifications`, `/unread-count`, `/:id`, `POST /notifications`, `PATCH /read-all`, `/:id/read` | All exist | OK |
-| profile | `GET /users/me`, `PUT /users/me` | All exist | OK |
-| pushTokens | `POST /users/push-token` | Exists | OK |
-| guardScore | `GET /users/guards/:id/score` | Exists | OK |
-| home | `GET /users/me`, `GET /shifts/myshifts` (with `?date=`) | Paths exist, but `?date=` and array handling have issues | Needs fix |
-| payroll | `GET /payroll`, `GET /payroll/export` | Path exists but export call is missing a required param | Needs fix |
-| availability | `POST /availability`, `GET /availability/:userId` + 4 slot calls | Base calls exist, slot calls do not exist on backend | Needs backend work |
-| sos | `/sos/trigger`, `/sos/:id/location`, `/note`, `/cancel`, `GET /sos/:id` | Running on mock data, and real paths are wrong | Needs fix |
+- **attendance** — `POST /attendance/checkin/:shiftId`, `POST /attendance/checkout/:shiftId`, `GET /attendance/:userId`. All exist. Status: OK.
+- **auth** — `POST /auth/register/guard`, `POST /auth/login`, `POST /auth/verify-otp`, `GET /users/me`. All exist. Status: OK.
+- **shifts** — `GET /shifts`, `GET /shifts/myshifts`, `PUT /shifts/:id/apply`. All exist. Status: OK.
+- **messages** — `GET /messages/inbox`, `/sent`, `/conversation/:userId`, `POST /messages`, `PATCH /messages/:id/read`. All exist. Status: OK.
+- **notification** — `GET /notifications`, `/unread-count`, `/:id`, `POST /notifications`, `PATCH /read-all`, `/:id/read`. All exist. Status: OK.
+- **profile** — `GET /users/me`, `PUT /users/me`. All exist. Status: OK.
+- **pushTokens** — `POST /users/push-token`. Exists. Status: OK.
+- **guardScore** — `GET /users/guards/:id/score`. Exists. Status: OK.
+- **home** — `GET /users/me`, `GET /shifts/myshifts` (with `?date=`). Paths exist, but `?date=` and array handling have issues. Status: Needs fix.
+- **payroll** — `GET /payroll`, `GET /payroll/export`. Path exists but export call is missing a required param. Status: Needs fix.
+- **availability** — `POST /availability`, `GET /availability/:userId` + 4 slot calls. Base calls exist, slot calls do not exist on backend. Status: Needs backend work.
+- **sos** — `/sos/trigger`, `/sos/:id/location`, `/note`, `/cancel`, `GET /sos/:id`. Running on mock data, and real paths are wrong. Status: Needs fix.
 
 ## Problems found
 
