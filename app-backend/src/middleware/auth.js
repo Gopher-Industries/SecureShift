@@ -41,7 +41,6 @@ const auth = async (req, res, next) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
-      console.error("JWT Verification Error:", error.message);
       return res.status(401).json({ message: "Invalid or expired token." });
     }
 
@@ -52,7 +51,7 @@ const auth = async (req, res, next) => {
 
     // add a debug log to check the user object
     // console.log('User object keys:', Object.keys(user.toObject()));
-    console.log(`[AUTH] User ${uid} role from DB: ${user?.role}`);
+    // console.log(`[AUTH] User ${uid} role from DB: ${user?.role}`);
 
     // reject if user is not found or soft-deleted
     if (!user) {

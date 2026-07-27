@@ -36,7 +36,7 @@ const attachmentSchema = new mongoose.Schema(
       default: Date.now,
     },
   },
-  { _id: true }
+  { _id: true },
 );
 
 // ---------------- Incident Schema ----------------
@@ -108,7 +108,7 @@ const incidentSchema = new mongoose.Schema(
       ref: "User",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Incident", incidentSchema);
