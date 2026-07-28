@@ -111,7 +111,7 @@ docker compose up
 
 ## 📘 API Documentation
 
-API is documented using **Swagger UI**.
+API is documented using **Swagger UI**.  
 Once the server is running, open:
 
 ```
@@ -176,9 +176,7 @@ The backend exposes two authenticated SOS endpoint families:
 Both families use the same controller/service logic. Calling one alias does not call the other alias
 or create duplicate writes.
 
-| Method | Endpoint | Roles | Description |
-| --- | --- | --- | --- |
-| Method | Endpoint | Roles | Description |
+| Method | Path | Roles | Description |
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/emergency/sos` | `guard` | Create an SOS using the legacy emergency route. |
 | `POST` | `/api/v1/sos/trigger` | `guard` | Create an SOS using the Guard App route contract. |
