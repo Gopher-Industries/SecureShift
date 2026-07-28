@@ -177,7 +177,9 @@ export const checkOutForShift = async ({
 };
 
 export const getAttendanceHistoryForUser = async (userId) => {
-  const attendanceRecords = await ShiftAttendance.find({ guardId: userId }).sort({
+  const attendanceRecords = await ShiftAttendance.find({
+    guardId: userId,
+  }).sort({
     checkInTime: -1,
   });
 

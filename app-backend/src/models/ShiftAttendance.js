@@ -31,10 +31,13 @@ const shiftAttendanceSchema = new mongoose.Schema(
     },
     locationVerified: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 shiftAttendanceSchema.index({ siteLocation: "2dsphere" });
 
-const ShiftAttendance = mongoose.model("ShiftAttendance", shiftAttendanceSchema);
+const ShiftAttendance = mongoose.model(
+  "ShiftAttendance",
+  shiftAttendanceSchema,
+);
 export default ShiftAttendance;

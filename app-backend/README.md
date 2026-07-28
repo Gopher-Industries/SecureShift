@@ -55,6 +55,7 @@ npm install
 Create a `.env` file in the root:
 
 ```env
+# MONGO_URI is REQUIRED. The backend will not start without it.
 MONGO_URI=
 JWT_SECRET=
 SMTP_HOST=

@@ -4,68 +4,8 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="64ef35b3-52d4-4317-b7d9-cb52d9efacc4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/guard_app/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/.eslintignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/.eslintrc.cjs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/.prettierignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/.prettierrc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/App.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/app.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/assets/adaptive-icon.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/assets/favicon.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/assets/icon.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/assets/logo.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/assets/splash-icon.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/eas.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/husky" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/index.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/npm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/package-lock.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/package.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/secureshift-guardapp@1.0.0" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/api/attendance.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/api/auth.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/api/availability.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/api/home.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/api/messages.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/api/profile.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/api/pushTokens.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/api/shifts.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/components/AddAvailabilityModal.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/components/LocationVerificationModal.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/lib/attendancestore.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/lib/http.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/lib/localStorage.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/lib/pushNotifications.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/models/Address.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/models/License.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/models/UserProfile.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/navigation/AppNavigator.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/navigation/AppTabs.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/AvailabilityScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/DocumentsScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/EditProfileScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/HomeScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/MessagesScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/ProfileScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/SettingsScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/ShiftDetailsScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/ShiftsScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/SplashScreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/loginscreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/notifications.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/screen/signupscreen.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/theme/colors.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/types/images.d.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/utils/date.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/src/utils/imagePicker.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/guard_app/tsconfig.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="64ef35b3-52d4-4317-b7d9-cb52d9efacc4" name="Changes" comment="prettier" />
+    <list id="4af6b3e8-425c-4919-ba98-464e4d4b1b48" name="no" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -80,7 +20,7 @@
         <entry key="$PROJECT_DIR$" value="Sanjolika6788/feature/add-availability-modal" />
       </map>
     </option>
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/guard_app" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -99,6 +39,7 @@
   &quot;associatedIndex&quot;: 8
 }</component>
   <component name="ProjectId" id="30uBOkaqMbwlNQtmS8pRtpdquSN" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -128,6 +69,45 @@
       <option name="presentableId" value="Default" />
       <updated>1754467549773</updated>
     </task>
+    <task id="LOCAL-00001" summary="w">
+      <created>1785243167630</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1785243167630</updated>
+    </task>
+    <task id="LOCAL-00002" summary="w">
+      <created>1785243219183</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1785243219183</updated>
+    </task>
+    <task id="LOCAL-00003" summary="prettier">
+      <created>1785243413822</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1785243413822</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="w" />
+    <MESSAGE value="Fix Employer Guards RBAC Access&#10;-fix address to feedback&#10;-lint fix" />
+    <MESSAGE value="prettier" />
+    <option name="LAST_COMMIT_MESSAGE" value="prettier" />
   </component>
 </project>
