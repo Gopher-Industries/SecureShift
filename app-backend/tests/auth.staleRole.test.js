@@ -30,10 +30,17 @@ describe("----- Authentication Middleware Security Tests", () => {
   const validGuardRoute = `${BASE_URL}/shifts/history`;
 
   beforeAll(async () => {
+    const testUri = process.env.MONGO_TEST_URI;
+    if (!testUri) {
+      throw new Error(
+        "MONGO_TEST_URI is required. Authentication tests must use an isolated test database.",
+      );
+    }
+
     let retries = 5;
     while (retries > 0) {
       try {
-        await mongoose.connect(process.env.MONGO_URI);
+        await mongoose.connect(testUri);
         break;
       } catch (err) {
         console.log(`MongoDB connection failed, retries left: ${retries - 1}`);
