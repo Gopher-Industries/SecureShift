@@ -178,6 +178,8 @@ or create duplicate writes.
 
 | Method | Endpoint | Roles | Description |
 | --- | --- | --- | --- |
+| Method | Endpoint | Roles | Description |
+| --- | --- | --- | --- |
 | `POST` | `/` | Guard | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard. |
 | `GET` | `/` | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters. |
 | `GET` | `/:id` | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope. |
