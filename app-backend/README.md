@@ -40,14 +40,12 @@ The backend service for **SecureShift**, a shift management platform connecting 
 ## 🚀 Setup Instructions
 
 ### 1. Clone the repository
-
 ```bash
 git clone https://github.com/musahex/secureshift-backend.git
 cd secureshift-backend
 ```
 
 ### 2. Install dependencies
-
 ```bash
 npm install
 ```
@@ -59,7 +57,6 @@ Create a `.env` file in the root:
 ```env
 # MONGO_URI is REQUIRED. The backend will not start without it.
 MONGO_URI=
-
 JWT_SECRET=
 SMTP_HOST=
 SMTP_PORT=
@@ -69,7 +66,6 @@ SMTP_PASS=
 ```
 
 ### 4. Start the server
-
 ```bash
 npm start
 ```
@@ -81,25 +77,21 @@ Visit: [http://localhost:5000/api-docs](http://localhost:5000/api-docs) for Swag
 ## 🐳 Docker Usage
 
 ### Build the image
-
 ```bash
 docker build -t musahx/secureshift-backend .
 ```
 
 ### Run the container
-
 ```bash
 docker run -p 5000:5000 --env-file .env musahx/secureshift-backend
 ```
 
 ### Push to Docker Hub
-
 ```bash
 docker push musahx/secureshift-backend
 ```
 
 ### Run Docker Compose
-
 ```bash
 docker compose build
 docker compose up
