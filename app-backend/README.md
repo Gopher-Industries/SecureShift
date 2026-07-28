@@ -241,7 +241,7 @@ Generated timesheets are exposed under `/api/v1/timesheets`.
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/timesheets/generate` | `admin`, `employer`, `guard` | Generate or refresh timesheets for a completed-shift date range. Body requires `startDate` and `endDate` in `YYYY-MM-DD` format. |
 | `GET` | `/api/v1/timesheets` | `admin`, `employer`, `guard` | List generated timesheets visible to the current user. Supports optional `startDate`, `endDate`, `guardId`, `page`, and `limit` query parameters. |
-| `GET` | `/api/v1/timesheets/:id` | `admin`, `employer`, `guard` | Retrieve one generated timesheet in the current user's scope. |                                                                                               |
+| `GET` | `/api/v1/timesheets/:id` | `admin`, `employer`, `guard` | Retrieve one generated timesheet in the current user's scope. |
 
 Timesheet generation only uses shifts that are `completed`, assigned through `acceptedBy`,
 and have completed attendance with `guardId`, `shiftId`, `checkInTime`, and `checkOutTime`.
