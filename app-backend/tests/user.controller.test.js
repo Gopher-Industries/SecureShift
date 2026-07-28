@@ -1,5 +1,6 @@
 import request from "supertest";
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
+import { connectTestDB, disconnectTestDB } from "./testHelper.js";
 import app from "../src/app.js";
 
 import User from "../src/models/User.js";
@@ -14,7 +15,7 @@ describe("User Controller API Tests", () => {
   let createdGuardId;
 
   beforeAll(async () => {
-    await mongoose.connect(process.env.MONGO_URI);
+    await connectTestDB();
 
     admin = await User.create({
       name: "Admin",
@@ -47,7 +48,7 @@ describe("User Controller API Tests", () => {
 
   afterAll(async () => {
     await User.deleteMany({});
-    await mongoose.connection.close();
+    await disconnectTestDB();
   });
 
   /* ---------------- GET MY PROFILE ---------------- */

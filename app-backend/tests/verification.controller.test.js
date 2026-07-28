@@ -1,5 +1,6 @@
 import request from "supertest";
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
+import { connectTestDB, disconnectTestDB } from "./testHelpers.js";
 import app from "../app.js";
 
 import Guard from "../models/Guard.js";
@@ -19,7 +20,7 @@ describe("Verification Controller", () => {
   let adminToken;
 
   beforeAll(async () => {
-    await mongoose.connect(process.env.MONGO_URI);
+    await connectTestDB();
 
     guard = await Guard.create({
       name: "Test Guard",
@@ -42,7 +43,7 @@ describe("Verification Controller", () => {
     await Guard.deleteMany({});
     await GuardVerification.deleteMany({});
     await ManualVerification.deleteMany({});
-    await mongoose.connection.close();
+    await disconnectTestDB();
   });
 
   /* ---------------- START VERIFICATION (NSW SUCCESS) ---------------- */

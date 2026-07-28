@@ -1,6 +1,7 @@
 import request from "supertest";
 import app from "../src/app.js"; // your Express app
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
+import { connectTestDB, disconnectTestDB } from "./testHelper.js";
 import Shift from "../src/models/Shift.js";
 import User from "../src/models/User.js";
 import Branch from "../src/models/Branch.js";
@@ -27,7 +28,7 @@ describe("Shift Controller API Tests", () => {
   let shiftId;
 
   beforeAll(async () => {
-    await mongoose.connect(process.env.MONGO_URI);
+    await conntectTestDB();
 
     employer = await User.create({
       name: "Employer",
@@ -60,7 +61,7 @@ describe("Shift Controller API Tests", () => {
     await Shift.deleteMany({});
     await User.deleteMany({});
     await Branch.deleteMany({});
-    await mongoose.connection.close();
+    await disconnectTestDB();
   });
 
   /* ---------------- CREATE SHIFT ---------------- */

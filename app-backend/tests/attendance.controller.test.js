@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "@jest/globals";
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
+import { connectTestDB, disconnectTestDB } from "./testHelper.js";
 
 import Shift from "../src/models/Shift.js";
 import User from "../src/models/User.js";
@@ -47,7 +48,7 @@ describe("Shift attendance service", () => {
     });
 
   beforeAll(async () => {
-    await mongoose.connect(process.env.MONGO_URI);
+    await connectTestDB();
     await Promise.all([
       Shift.deleteMany({}),
       ShiftAttendance.deleteMany({}),
@@ -98,7 +99,7 @@ describe("Shift attendance service", () => {
     await ShiftAttendance.deleteMany({});
     await User.deleteMany({});
     await Branch.deleteMany({});
-    await mongoose.connection.close();
+    await disconnectTestDB();
   });
 
   test("records check-in with current attendance schema fields", async () => {
@@ -112,7 +113,7 @@ describe("Shift attendance service", () => {
     expect(String(attendance.guardId)).toBe(String(guard._id));
     expect(String(attendance.shiftId)).toBe(String(shift._id));
     expect(attendance.checkInTime).toEqual(
-      new Date("2026-12-01T09:01:00.000Z")
+      new Date("2026-12-01T09:01:00.000Z"),
     );
     expect(attendance.checkOutTime).toBeNull();
     expect(attendance.siteLocation.coordinates).toEqual([
@@ -127,7 +128,7 @@ describe("Shift attendance service", () => {
         guardId: guard._id,
         shiftId: shift._id,
         ...siteCoordinates,
-      })
+      }),
     ).rejects.toMatchObject({
       message: "Already checked in",
       statusCode: 400,
@@ -145,7 +146,7 @@ describe("Shift attendance service", () => {
     expect(String(attendance.guardId)).toBe(String(guard._id));
     expect(String(attendance.shiftId)).toBe(String(shift._id));
     expect(attendance.checkOutTime).toEqual(
-      new Date("2026-12-01T17:02:00.000Z")
+      new Date("2026-12-01T17:02:00.000Z"),
     );
     expect(attendance.checkOutLocation.coordinates).toEqual([
       siteCoordinates.longitude,
@@ -163,7 +164,7 @@ describe("Shift attendance service", () => {
         guardId: guard._id,
         shiftId: shiftWithoutAttendance._id,
         ...siteCoordinates,
-      })
+      }),
     ).rejects.toMatchObject({
       message: "No check-in record found",
       statusCode: 404,
@@ -180,7 +181,7 @@ describe("Shift attendance service", () => {
         guardId: otherGuard._id,
         shiftId: assignedShift._id,
         ...siteCoordinates,
-      })
+      }),
     ).rejects.toMatchObject({
       message: "Not assigned to this shift",
       statusCode: 403,
@@ -193,7 +194,7 @@ describe("Shift attendance service", () => {
         guardId: guard._id,
         shiftId: "not-a-shift-id",
         ...siteCoordinates,
-      })
+      }),
     ).rejects.toMatchObject({
       message: "Shift not found",
       statusCode: 404,

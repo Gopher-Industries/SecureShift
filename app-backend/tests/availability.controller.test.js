@@ -1,12 +1,13 @@
 import {
   createOrUpdateAvailability,
   getAvailability,
-} from '../src/controllers/availability.controller.js';
+} from "../src/controllers/availability.controller.js";
 
-import Availability from '../src/models/Availability.js';
-import mongoose from 'mongoose';
+import Availability from "../src/models/Availability.js";
+// import mongoose from 'mongoose';
+import { connectTestDB, disconnectTestDB } from "./testHelper.js";
 
-jest.mock('../src/models/Availability.js');
+jest.mock("../src/models/Availability.js");
 
 const mockRes = () => {
   const res = {};
@@ -16,7 +17,7 @@ const mockRes = () => {
 };
 
 const mockReq = (overrides = {}) => ({
-  user: { id: 'user123', role: 'user' },
+  user: { id: "user123", role: "user" },
   body: {},
   params: {},
   audit: {
@@ -25,8 +26,7 @@ const mockReq = (overrides = {}) => ({
   ...overrides,
 });
 
-describe('Availability Controller', () => {
-
+describe("Availability Controller", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -35,7 +35,7 @@ describe('Availability Controller', () => {
   // CREATE / UPDATE
   // ---------------------------
 
-  test('should return 401 if no user', async () => {
+  test("should return 401 if no user", async () => {
     const req = mockReq({ user: null });
     const res = mockRes();
 
@@ -44,11 +44,11 @@ describe('Availability Controller', () => {
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
-  test('should return 400 for invalid time slot format', async () => {
+  test("should return 400 for invalid time slot format", async () => {
     const req = mockReq({
       body: {
-        days: ['Monday'],
-        timeSlots: ['invalid-format'],
+        days: ["Monday"],
+        timeSlots: ["invalid-format"],
       },
     });
     const res = mockRes();
@@ -58,11 +58,11 @@ describe('Availability Controller', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  test('should return 400 when start time is after end time', async () => {
+  test("should return 400 when start time is after end time", async () => {
     const req = mockReq({
       body: {
-        days: ['Monday'],
-        timeSlots: ['18:00-10:00'],
+        days: ["Monday"],
+        timeSlots: ["18:00-10:00"],
       },
     });
     const res = mockRes();
@@ -72,12 +72,12 @@ describe('Availability Controller', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  test('should create/update availability successfully', async () => {
+  test("should create/update availability successfully", async () => {
     const mockAvailability = {
-      _id: 'avail123',
-      user: 'user123',
-      days: ['Monday'],
-      timeSlots: ['09:00-12:00'],
+      _id: "avail123",
+      user: "user123",
+      days: ["Monday"],
+      timeSlots: ["09:00-12:00"],
     };
 
     Availability.findOneAndUpdate.mockResolvedValue({
@@ -87,8 +87,8 @@ describe('Availability Controller', () => {
 
     const req = mockReq({
       body: {
-        days: ['Monday'],
-        timeSlots: ['09:00-12:00'],
+        days: ["Monday"],
+        timeSlots: ["09:00-12:00"],
       },
     });
 
@@ -100,9 +100,9 @@ describe('Availability Controller', () => {
     expect(res.json).toHaveBeenCalled();
   });
 
-  test('admin can update another user availability', async () => {
+  test("admin can update another user availability", async () => {
     const mockAvailability = {
-      _id: 'avail123',
+      _id: "avail123",
     };
 
     Availability.findOneAndUpdate.mockResolvedValue({
@@ -111,11 +111,11 @@ describe('Availability Controller', () => {
     });
 
     const req = mockReq({
-      user: { id: 'admin1', role: 'admin' },
+      user: { id: "admin1", role: "admin" },
       body: {
-        user: 'otherUser123',
-        days: ['Tuesday'],
-        timeSlots: ['10:00-12:00'],
+        user: "otherUser123",
+        days: ["Tuesday"],
+        timeSlots: ["10:00-12:00"],
       },
     });
 
@@ -130,9 +130,9 @@ describe('Availability Controller', () => {
   // GET AVAILABILITY
   // ---------------------------
 
-  test('should return 400 for invalid userId', async () => {
+  test("should return 400 for invalid userId", async () => {
     const req = mockReq({
-      params: { userId: 'invalid-id' },
+      params: { userId: "invalid-id" },
     });
 
     const res = mockRes();
@@ -142,10 +142,10 @@ describe('Availability Controller', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  test('should return 403 when accessing another user', async () => {
+  test("should return 403 when accessing another user", async () => {
     const req = mockReq({
-      user: { id: 'user1', role: 'user' },
-      params: { userId: 'user2' },
+      user: { id: "user1", role: "user" },
+      params: { userId: "user2" },
     });
 
     const res = mockRes();
@@ -155,13 +155,13 @@ describe('Availability Controller', () => {
     expect(res.status).toHaveBeenCalledWith(403);
   });
 
-  test('should return 404 if availability not found', async () => {
+  test("should return 404 if availability not found", async () => {
     Availability.findOne.mockReturnValue({
       populate: jest.fn().mockResolvedValue(null),
     });
 
     const req = mockReq({
-      params: { userId: 'user123' },
+      params: { userId: "user123" },
     });
 
     const res = mockRes();
@@ -171,10 +171,10 @@ describe('Availability Controller', () => {
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  test('should return availability successfully', async () => {
+  test("should return availability successfully", async () => {
     const mockData = {
-      _id: 'avail123',
-      user: 'user123',
+      _id: "avail123",
+      user: "user123",
     };
 
     Availability.findOne.mockReturnValue({
@@ -182,7 +182,7 @@ describe('Availability Controller', () => {
     });
 
     const req = mockReq({
-      params: { userId: 'user123' },
+      params: { userId: "user123" },
     });
 
     const res = mockRes();
@@ -191,8 +191,7 @@ describe('Availability Controller', () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ availability: mockData })
+      expect.objectContaining({ availability: mockData }),
     );
   });
-
 });
