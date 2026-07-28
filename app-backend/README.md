@@ -180,10 +180,20 @@ or create duplicate writes.
 | --- | --- | --- | --- |
 | Method | Endpoint | Roles | Description |
 | --- | --- | --- | --- |
-| `POST` | `/` | Guard | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard. |
-| `GET` | `/` | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters. |
-| `GET` | `/:id` | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope. |
-| `PATCH` | `/:id` | Employer, Admin | Approve or reject a pending shift request with `{ "status": "APPROVED" }` or `{ "status": "REJECTED", "rejectionReason": "..." }`. |
+| `POST` | `/api/v1/emergency/sos` | `guard` | Create an SOS using the legacy emergency route. |
+| `POST` | `/api/v1/sos/trigger` | `guard` | Create an SOS using the Guard App route contract. |
+| `GET` | `/api/v1/emergency/sos` | `admin`, `employer` | List SOS records visible to the authenticated admin or employer. |
+| `GET` | `/api/v1/emergency/sos/active` | `guard`, `employer`, `admin` | Get the latest active SOS in the authenticated user's scope. |
+| `GET` | `/api/v1/sos/active` | `guard`, `employer`, `admin` | Guard App alias for active SOS lookup. |
+| `GET` | `/api/v1/emergency/sos/:id` | `guard`, `employer`, `admin` | Get one SOS in the authenticated user's scope. |
+| `GET` | `/api/v1/sos/:id` | `guard`, `employer`, `admin` | Guard App alias for one SOS status. |
+| `POST` | `/api/v1/emergency/sos/:id/location` | `guard` | Update location for an active SOS owned by the guard. |
+| `POST` | `/api/v1/sos/:id/location` | `guard` | Guard App alias for location update. |
+| `POST` | `/api/v1/emergency/sos/:id/note` | `guard` | Add or replace guard-provided SOS context. |
+| `POST` | `/api/v1/sos/:id/note` | `guard` | Guard App alias for note update. |
+| `POST` | `/api/v1/emergency/sos/:id/cancel` | `guard` | Cancel an active SOS owned by the guard. |
+| `POST` | `/api/v1/sos/:id/cancel` | `guard` | Guard App alias for cancellation. |
+| `PUT` | `/api/v1/emergency/sos/:id` | `admin`, `employer` | Transition SOS status in the authenticated user's scope. |
 
 SOS responses include both the existing backend `data` field and the Guard App `sos` field. The
 Guard App shape includes `_id`, `guardId`, optional `shiftId`, `triggeredAt`, lower-case status,
