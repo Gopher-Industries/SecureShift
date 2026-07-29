@@ -130,12 +130,12 @@ For `/api/v1/rbac/*`, behaviour matches the corresponding `/api/v1/users/*` row 
 | Method | Endpoint | Guard | Employer | Admin | Ownership rule | Middleware / evidence |
 |--------|----------|-------|----------|-------|----------------|------------------------|
 | GET | `/api/v1/health` | Public | Public | Public | None | No Auth MW — `src/routes/health.routes.js:8` |
-| POST | `/api/v1/auth/register` | Public | Public | Public | None | `src/routes/auth.routes.js:77` → `register` |
-| POST | `/api/v1/auth/register/guard` | Public | Public | Public | None | Upload MW only — `src/routes/auth.routes.js:111` |
-| POST | `/api/v1/auth/login` | Public | Public | Public | None | `src/routes/auth.routes.js:153` → `login` |
-| POST | `/api/v1/auth/verify-otp` | Public | Public | Public | Issues JWT with role | `src/routes/auth.routes.js:179` → `verifyOTP` |
-| POST | `/api/v1/auth/eoi` | Public | Public | Public | None | Upload MW — `src/routes/auth.routes.js:272` |
-| POST | `/api/v1/admin/login` | Public | Public | Public | Controller requires admin after credentials | No Auth MW — `src/routes/admin.routes.js:52` → `adminLogin` |
+| POST | `/api/v1/auth/register` | Public | Public | Public | None | `src/routes/auth.routes.js:83` → `register` |
+| POST | `/api/v1/auth/register/guard` | Public | Public | Public | None | Upload MW only — `src/routes/auth.routes.js:117` |
+| POST | `/api/v1/auth/login` | Public | Public | Public | None | `src/routes/auth.routes.js:163` → `login` |
+| POST | `/api/v1/auth/verify-otp` | Public | Public | Public | Issues JWT with role | `src/routes/auth.routes.js:189` → `verifyOTP` |
+| POST | `/api/v1/auth/eoi` | Public | Public | Public | None | Upload MW — `src/routes/auth.routes.js:282` |
+| POST | `/api/v1/admin/login` | Public | Public | Public | Controller requires admin after credentials | No Auth MW — `src/routes/admin.routes.js:63` → `adminLogin` |
 
 ### 4.2 Users (`/api/v1/users`)
 
@@ -146,19 +146,19 @@ For `/api/v1/rbac/*`, behaviour matches the corresponding `/api/v1/users/*` row 
 | POST | `/api/v1/users/push-token` | Self | Self | Self | Own tokens | `src/routes/user.routes.js:120` → `registerPushToken` |
 | GET | `/api/v1/users/profile` | No | Self | No | Controller role: employer only | Auth MW + `loadUser` only — `src/routes/user.routes.js:173`; controller check in `user.controller.js` |
 | PUT | `/api/v1/users/profile` | No | Self | No | Controller role: employer only | `src/routes/user.routes.js:174` |
-| GET | `/api/v1/users/favourites` | No | Self | No | Own favourites | Auth MW + `loadUser` — `src/routes/user.routes.js:189–193`; controller role check |
-| POST | `/api/v1/users/favourites/:guardId` | No | Self | No | Own list | `src/routes/user.routes.js:219–223`; controller role check |
-| DELETE | `/api/v1/users/favourites/:guardId` | No | Self | No | Own list | `src/routes/user.routes.js:247–251`; controller role check |
-| GET | `/api/v1/users/guards` | No | Requires technical correction | Yes | Global guard list; `ROLES.EMPLOYEE` is undefined | Auth + `loadUser` + `authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE)` + `user:read` — `src/routes/user.routes.js:269–275`; `ROLES` in `src/middleware/rbac.js:11–18` |
-| GET | `/api/v1/users/guards/:id/score` | Self | Yes | Yes | Self or employer/admin | Auth + `requireSelfOrRoles` — `src/routes/user.routes.js:303–307` |
-| GET | `/api/v1/users/` | No | No | Yes | Admin-level list | Auth + roles including `SUPER_ADMIN`/`ADMIN`/`BRANCH_ADMIN` + `user:read` — `src/routes/user.routes.js:326–332` |
-| GET | `/api/v1/users/:userId` | No | No | Yes | Admin get | `src/routes/user.routes.js:403–408` |
-| PUT | `/api/v1/users/:userId` | No | No | Yes | Intended branch scope via `requireSameBranchAsTargetUser` | `src/routes/user.routes.js:410–416`; branch helper `src/middleware/rbac.js:124–160` |
-| DELETE | `/api/v1/users/:userId` | No | No | Yes | Admin delete | `src/routes/user.routes.js:418–423` |
+| GET | `/api/v1/users/favourites` | No | Self | No | Own favourites | Auth MW + `loadUser` — `src/routes/user.routes.js:189`; controller role check |
+| POST | `/api/v1/users/favourites/:guardId` | No | Self | No | Own list | `src/routes/user.routes.js:214`; controller role check |
+| DELETE | `/api/v1/users/favourites/:guardId` | No | Self | No | Own list | `src/routes/user.routes.js:237`; controller role check |
+| GET | `/api/v1/users/guards` | No | Requires technical correction | Yes | Global guard list; `ROLES.EMPLOYEE` is undefined | Auth + `loadUser` + `authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE)` + `user:read` — `src/routes/user.routes.js:254`; `ROLES` in `src/middleware/rbac.js:11–18` |
+| GET | `/api/v1/users/guards/:id/score` | Self | Yes | Yes | Self or employer/admin | Auth + `requireSelfOrRoles` — `src/routes/user.routes.js:288` |
+| GET | `/api/v1/users/` | No | No | Yes | Admin-level list | Auth + roles including `SUPER_ADMIN`/`ADMIN`/`BRANCH_ADMIN` + `user:read` — `src/routes/user.routes.js:311` |
+| GET | `/api/v1/users/:userId` | No | No | Yes | Admin get | `src/routes/user.routes.js:388` |
+| PUT | `/api/v1/users/:userId` | No | No | Yes | Intended branch scope via `requireSameBranchAsTargetUser` | `src/routes/user.routes.js:395`; branch helper `src/middleware/rbac.js:143–185` |
+| DELETE | `/api/v1/users/:userId` | No | No | Yes | Admin delete | `src/routes/user.routes.js:403` |
 
 ### 4.3 Users duplicated under `/api/v1/rbac`
 
-Mount: `src/routes/index.js:31`. Re-export: `src/routes/rbac.routes.js:10` and `:179`.
+Mount: `src/routes/index.js:31`. Re-export: `src/routes/rbac.routes.js:10` and `:202`.
 
 | Method | Endpoint | Same behaviour as |
 |--------|----------|-------------------|
@@ -181,23 +181,23 @@ Mount: `src/routes/index.js:31`. Re-export: `src/routes/rbac.routes.js:10` and `
 
 | Method | Endpoint | Guard | Employer | Admin | Ownership rule | Middleware / evidence |
 |--------|----------|-------|----------|-------|----------------|------------------------|
-| GET | `/api/v1/shifts` | Yes | Yes | Yes | Role-scoped listing in controller | Auth + inline `authorizeRole` — `src/routes/shift.routes.js:186` |
-| POST | `/api/v1/shifts` | No | Own employer records | No | Creates as employer | `src/routes/shift.routes.js:187` |
-| PATCH | `/api/v1/shifts/:id` | No | Own employer records | All | `createdBy` or admin | `src/routes/shift.routes.js:195` |
-| PUT | `/api/v1/shifts/:id/apply` | Self | No | No | Guard apply; ownership in service | `src/routes/shift.routes.js:295` |
-| PUT | `/api/v1/shifts/:id/approve` | No | Own employer records | All | Owner or admin | `src/routes/shift.routes.js:378` |
-| PUT | `/api/v1/shifts/:id/complete` | No | Own employer records | All | Owner or admin | `src/routes/shift.routes.js:404` |
-| GET | `/api/v1/shifts/myshifts` | Self | Own employer records | All | Guard: applicants/acceptedBy; employer: `createdBy`; admin: unrestricted query (`shift.controller.js`) | Auth MW only — **no Role/Perm MW** — `src/routes/shift.routes.js:432–433` |
-| PATCH | `/api/v1/shifts/:id/rate` | Self | Own employer records | No | Assigned guard / `createdBy` | `src/routes/shift.routes.js:481` |
-| GET | `/api/v1/shifts/history` | Self | Own employer records | No | Role-scoped | `src/routes/shift.routes.js:501` |
+| GET | `/api/v1/shifts` | Yes | Yes | Yes | Role-scoped listing in controller | Auth + inline `authorizeRole` — `src/routes/shift.routes.js:190` |
+| POST | `/api/v1/shifts` | No | Own employer records | No | Creates as employer | `src/routes/shift.routes.js:195` |
+| PATCH | `/api/v1/shifts/:id` | No | Own employer records | All | `createdBy` or admin | `src/routes/shift.routes.js:203` |
+| PUT | `/api/v1/shifts/:id/apply` | Self | No | No | Guard apply; ownership in service | `src/routes/shift.routes.js:301` |
+| PUT | `/api/v1/shifts/:id/approve` | No | Own employer records | All | Owner or admin | `src/routes/shift.routes.js:384` |
+| PUT | `/api/v1/shifts/:id/complete` | No | Own employer records | All | Owner or admin | `src/routes/shift.routes.js:410` |
+| GET | `/api/v1/shifts/myshifts` | Self | Own employer records | All | Guard: applicants/acceptedBy; employer: `createdBy`; admin: unrestricted query (`shift.controller.js`) | Auth MW only — **no Role/Perm MW** — `src/routes/shift.routes.js:437` |
+| PATCH | `/api/v1/shifts/:id/rate` | Self | Own employer records | No | Assigned guard / `createdBy` | `src/routes/shift.routes.js:485` |
+| GET | `/api/v1/shifts/history` | Self | Own employer records | No | Role-scoped | `src/routes/shift.routes.js:505` |
 
 ### 4.5 Attendance
 
 | Method | Endpoint | Guard | Employer | Admin | Ownership rule | Middleware / evidence |
 |--------|----------|-------|----------|-------|----------------|------------------------|
-| POST | `/api/v1/attendance/checkin/:shiftId` | Self | No | No | Must be `assignedGuard` (`attendance.service.js`) | Auth MW only — `src/routes/shiftattendance.routes.js:44` |
-| POST | `/api/v1/attendance/checkout/:shiftId` | Self | No | No | Same assignment check | Auth MW only — `src/routes/shiftattendance.routes.js:83` |
-| GET | `/api/v1/attendance/:userId` | Requires technical correction | Requires technical correction | Requires technical correction | **No requester ownership check** — loads by path `userId` | Auth MW only — `src/routes/shiftattendance.routes.js:139`; `shiftattendance.controller.js`; `attendance.service.js` |
+| POST | `/api/v1/attendance/checkin/:shiftId` | Self | No | No | Must be `assignedGuard` (`attendance.service.js`) | Auth MW only — `src/routes/shiftattendance.routes.js:48` |
+| POST | `/api/v1/attendance/checkout/:shiftId` | Self | No | No | Same assignment check | Auth MW only — `src/routes/shiftattendance.routes.js:87` |
+| GET | `/api/v1/attendance/:userId` | Requires technical correction | Requires technical correction | Requires technical correction | **No requester ownership check** — loads by path `userId` | Auth MW only — `src/routes/shiftattendance.routes.js:143`; `shiftattendance.controller.js`; `attendance.service.js` |
 
 ### 4.6 Incidents
 
@@ -212,36 +212,36 @@ Incident routes use `authorizePermissions('incident:...')`. Seed scripts do not 
 | PATCH | `/api/v1/incidents/:id` | Requires technical correction | Requires technical correction | Requires technical correction | Guard / employer (owns shift) / admin field rules | `incident:update` — `src/routes/incident.routes.js:238` |
 | GET | `/api/v1/incidents/:id` | Requires technical correction | Requires technical correction | Requires technical correction | Same scoping | `incident:view` — `src/routes/incident.routes.js:239` |
 | DELETE | `/api/v1/incidents/:id` | No | No | Requires technical correction | Soft-delete; requires `incident:delete` | `src/routes/incident.routes.js:240` |
-| POST | `/api/v1/incidents/:id/attachments` | Requires technical correction | Requires technical correction | Requires technical correction | Controller ownership + upload | `incident:update` — `src/routes/incident.routes.js:287–291` |
-| GET | `/api/v1/incidents/:id/attachments/:attachmentId` | Requires technical correction | Requires technical correction | Requires technical correction | Controller ownership | `incident:view` — `src/routes/incident.routes.js:327–330` |
+| POST | `/api/v1/incidents/:id/attachments` | Requires technical correction | Requires technical correction | Requires technical correction | Controller ownership + upload | `incident:update` — `src/routes/incident.routes.js:287` |
+| GET | `/api/v1/incidents/:id/attachments/:attachmentId` | Requires technical correction | Requires technical correction | Requires technical correction | Controller ownership | `incident:view` — `src/routes/incident.routes.js:327` |
 
 ### 4.7 Emergency and SOS
 
 | Method | Endpoint | Guard | Employer | Admin | Ownership rule | Middleware / evidence |
 |--------|----------|-------|----------|-------|----------------|------------------------|
-| POST | `/api/v1/emergency/sos` | Yes | No | No | Creates as authenticated guard | Auth + `allowRoles("guard")` — `src/routes/emergency.routes.js:56–60` |
-| GET | `/api/v1/emergency/sos` | No | Own employer records | All | `buildScopedEmergencyQuery` | Auth + `allowRoles("admin","employer")` — `src/routes/emergency.routes.js:76–80` |
-| GET | `/api/v1/emergency/sos/active` | Self | Own employer records | All | Scoped | `src/routes/sos.route-set.js:12` via `emergency.routes.js:83` |
-| GET | `/api/v1/emergency/sos/:id` | Self | Own employer records | All | Scoped | `sos.route-set.js:13` |
-| POST | `/api/v1/emergency/sos/:id/location` | Self | No | No | Guard-owned | `sos.route-set.js:14` |
-| POST | `/api/v1/emergency/sos/:id/note` | Self | No | No | Guard-owned | `sos.route-set.js:15` |
-| POST | `/api/v1/emergency/sos/:id/cancel` | Self | No | No | Guard-owned | `sos.route-set.js:16` |
-| PUT | `/api/v1/emergency/sos/:id` | No | Own employer records | All | Scoped status transition | Auth + `allowRoles("admin","employer")` — `src/routes/emergency.routes.js:114–118` |
+| POST | `/api/v1/emergency/sos` | Yes | No | No | Creates as authenticated guard | Auth + `allowRoles("guard")` — `src/routes/emergency.routes.js:56` |
+| GET | `/api/v1/emergency/sos` | No | Own employer records | All | `buildScopedEmergencyQuery` | Auth + `allowRoles("admin","employer")` — `src/routes/emergency.routes.js:71` |
+| GET | `/api/v1/emergency/sos/active` | Self | Own employer records | All | Scoped | `src/routes/sos.route-set.js:12` via `emergency.routes.js:73` |
+| GET | `/api/v1/emergency/sos/:id` | Self | Own employer records | All | Scoped | `sos.route-set.js:18` |
+| POST | `/api/v1/emergency/sos/:id/location` | Self | No | No | Guard-owned | `sos.route-set.js:24` |
+| POST | `/api/v1/emergency/sos/:id/note` | Self | No | No | Guard-owned | `sos.route-set.js:30` |
+| POST | `/api/v1/emergency/sos/:id/cancel` | Self | No | No | Guard-owned | `sos.route-set.js:31` |
+| PUT | `/api/v1/emergency/sos/:id` | No | Own employer records | All | Scoped status transition | Auth + `allowRoles("admin","employer")` — `src/routes/emergency.routes.js:104` |
 | POST | `/api/v1/sos/trigger` | Yes | No | No | Same create path | Auth + `allowRoles("guard")` — `src/routes/sos.routes.js:10` |
 | GET | `/api/v1/sos/active` | Self | Own employer records | All | Scoped | `sos.route-set.js:12` via `sos.routes.js:11` |
-| GET | `/api/v1/sos/:id` | Self | Own employer records | All | Scoped | `sos.route-set.js:13` |
-| POST | `/api/v1/sos/:id/location` | Self | No | No | Guard-owned | `sos.route-set.js:14` |
-| POST | `/api/v1/sos/:id/note` | Self | No | No | Guard-owned | `sos.route-set.js:15` |
-| POST | `/api/v1/sos/:id/cancel` | Self | No | No | Guard-owned | `sos.route-set.js:16` |
+| GET | `/api/v1/sos/:id` | Self | Own employer records | All | Scoped | `sos.route-set.js:18` via `sos.routes.js:11` |
+| POST | `/api/v1/sos/:id/location` | Self | No | No | Guard-owned | `sos.route-set.js:24` via `sos.routes.js:11` |
+| POST | `/api/v1/sos/:id/note` | Self | No | No | Guard-owned | `sos.route-set.js:30` via `sos.routes.js:11` |
+| POST | `/api/v1/sos/:id/cancel` | Self | No | No | Guard-owned | `sos.route-set.js:31` via `sos.routes.js:11` |
 
 ### 4.8 Documents
 
 | Method | Endpoint | Guard | Employer | Admin | Ownership rule | Middleware / evidence |
 |--------|----------|-------|----------|-------|----------------|------------------------|
-| GET | `/api/v1/documents/admin/documents` | No | All | All | **No employer filter** — all users with documents (`document.service.js`) | Auth + `authorizeRoles("admin","employer")` from `controllers/rbac.controller.js` — `src/routes/document.routes.js:49–53` |
-| GET | `/api/v1/documents/admin/documents/:id` | No | All | All | No tenant ownership filter | `src/routes/document.routes.js:79–83` |
-| PUT | `/api/v1/documents/admin/documents/:id` | Self | Requires technical correction | All | Service: admin **or document owner** only | Auth MW only — **no Role/Perm MW** — `src/routes/document.routes.js:120–123` |
-| POST | `/api/v1/documents/admin/documents` | No | Self | Self | Controller forces `userId: req.user._id` | Auth + Role MW — `src/routes/document.routes.js:161–165` |
+| GET | `/api/v1/documents/admin/documents` | No | All | All | **No employer filter** — all users with documents (`document.service.js`) | Auth + `authorizeRoles("admin","employer")` from `controllers/rbac.controller.js` — `src/routes/document.routes.js:49` |
+| GET | `/api/v1/documents/admin/documents/:id` | No | All | All | No tenant ownership filter | `src/routes/document.routes.js:79` |
+| PUT | `/api/v1/documents/admin/documents/:id` | Self | Requires technical correction | All | Service: admin **or document owner** only | Auth MW only — **no Role/Perm MW** — `src/routes/document.routes.js:120` |
+| POST | `/api/v1/documents/admin/documents` | No | Self | Self | Controller forces `userId: req.user._id` | Auth + Role MW — `src/routes/document.routes.js:157` |
 
 ### 4.9 Equipment
 
@@ -256,12 +256,12 @@ Incident routes use `authorizePermissions('incident:...')`. Seed scripts do not 
 
 | Method | Endpoint | Guard | Employer | Admin | Ownership rule | Middleware / evidence |
 |--------|----------|-------|----------|-------|----------------|------------------------|
-| GET | `/api/v1/payroll` | Self | Own employer records | All | Service-scoped (`payroll.service.js`) | Auth + inline `authorizeRole` — `src/routes/payroll.routes.js:83` |
-| GET | `/api/v1/payroll/export` | Self | Own employer records | All | Same | `src/routes/payroll.routes.js:138` |
-| GET | `/api/v1/payroll/export/csv` | Self | Own employer records | All | Same | `src/routes/payroll.routes.js:139` |
-| GET | `/api/v1/payroll/export/pdf` | Self | Own employer records | All | Same | `src/routes/payroll.routes.js:140` |
-| POST | `/api/v1/payroll/approve` | No | Own employer records | All | Employer record scope in service | `src/routes/payroll.routes.js:173` |
-| POST | `/api/v1/payroll/process` | No | Own employer records | All | Same | `src/routes/payroll.routes.js:206` |
+| GET | `/api/v1/payroll` | Self | Own employer records | All | Service-scoped (`payroll.service.js`) | Auth + inline `authorizeRole` — `src/routes/payroll.routes.js:87` |
+| GET | `/api/v1/payroll/export` | Self | Own employer records | All | Same | `src/routes/payroll.routes.js:142` |
+| GET | `/api/v1/payroll/export/csv` | Self | Own employer records | All | Same | `src/routes/payroll.routes.js:148` |
+| GET | `/api/v1/payroll/export/pdf` | Self | Own employer records | All | Same | `src/routes/payroll.routes.js:154` |
+| POST | `/api/v1/payroll/approve` | No | Own employer records | All | Employer record scope in service | `src/routes/payroll.routes.js:192` |
+| POST | `/api/v1/payroll/process` | No | Own employer records | All | Same | `src/routes/payroll.routes.js:230` |
 
 ### 4.11 Messages
 
@@ -291,20 +291,20 @@ Router-level Auth MW: `src/routes/message.routes.js:14`.
 
 | Method | Endpoint | Guard | Employer | Admin | Ownership rule | Middleware / evidence |
 |--------|----------|-------|----------|-------|----------------|------------------------|
-| GET | `/api/v1/admin/users` | No | No | All | Global | Auth + `adminOnly` — `src/routes/admin.routes.js:69` |
-| GET | `/api/v1/admin/users/:id` | No | No | All | Global | `src/routes/admin.routes.js:198` |
-| DELETE | `/api/v1/admin/users/:id` | No | No | All | Blocks self-delete in controller | `src/routes/admin.routes.js:289` |
-| GET | `/api/v1/admin/shifts` | No | No | All | Global | `src/routes/admin.routes.js:85` |
-| GET | `/api/v1/admin/messages` | No | No | All | Global | `src/routes/admin.routes.js:250` |
-| DELETE | `/api/v1/admin/messages/:id` | No | No | All | Soft-delete | `src/routes/admin.routes.js:326` |
-| GET | `/api/v1/admin/audit-logs` | No | No | All | Global | `src/routes/admin.routes.js:146` |
-| DELETE | `/api/v1/admin/audit-logs/purge` | No | No | All | Global | `src/routes/admin.routes.js:173` |
-| GET | `/api/v1/admin/guards/pending` | No | No | All | Global | `src/routes/admin.routes.js:360` |
-| PATCH | `/api/v1/admin/guards/:id/license/verify` | No | No | All | Global | `src/routes/admin.routes.js:391` |
-| PATCH | `/api/v1/admin/guards/:id/license/reject` | No | No | All | Global | `src/routes/admin.routes.js:431` |
-| GET | `/api/v1/admin/smtp-settings` | No | No | All | Global | `src/routes/admin.routes.js:449` |
-| PUT | `/api/v1/admin/smtp-settings` | No | No | All | Global | `src/routes/admin.routes.js:495` |
-| POST | `/api/v1/admin/smtp-settings/test` | No | No | All | Global | `src/routes/admin.routes.js:530` |
+| GET | `/api/v1/admin/users` | No | No | All | Global | Auth + `adminOnly` — `src/routes/admin.routes.js:80` |
+| GET | `/api/v1/admin/users/:id` | No | No | All | Global | `src/routes/admin.routes.js:209` |
+| DELETE | `/api/v1/admin/users/:id` | No | No | All | Blocks self-delete in controller | `src/routes/admin.routes.js:300` |
+| GET | `/api/v1/admin/shifts` | No | No | All | Global | `src/routes/admin.routes.js:96` |
+| GET | `/api/v1/admin/messages` | No | No | All | Global | `src/routes/admin.routes.js:261` |
+| DELETE | `/api/v1/admin/messages/:id` | No | No | All | Soft-delete | `src/routes/admin.routes.js:337` |
+| GET | `/api/v1/admin/audit-logs` | No | No | All | Global | `src/routes/admin.routes.js:157` |
+| DELETE | `/api/v1/admin/audit-logs/purge` | No | No | All | Global | `src/routes/admin.routes.js:184` |
+| GET | `/api/v1/admin/guards/pending` | No | No | All | Global | `src/routes/admin.routes.js:370` |
+| PATCH | `/api/v1/admin/guards/:id/license/verify` | No | No | All | Global | `src/routes/admin.routes.js:400` |
+| PATCH | `/api/v1/admin/guards/:id/license/reject` | No | No | All | Global | `src/routes/admin.routes.js:440` |
+| GET | `/api/v1/admin/smtp-settings` | No | No | All | Global | `src/routes/admin.routes.js:458` |
+| PUT | `/api/v1/admin/smtp-settings` | No | No | All | Global | `src/routes/admin.routes.js:504` |
+| POST | `/api/v1/admin/smtp-settings/test` | No | No | All | Global | `src/routes/admin.routes.js:539` |
 
 ### 4.14 Branch, availability, timesheets, shift requests
 
@@ -314,16 +314,16 @@ Router-level Auth MW: `src/routes/message.routes.js:14`.
 | POST | `/api/v1/branch/site` | No | Own employer records | No | Sets employer identity on create | `src/routes/branch.routes.js:177` |
 | PUT | `/api/v1/branch/site/:id` | No | Own employer records | No | Filtered by `employerId` | `src/routes/branch.routes.js:265` |
 | DELETE | `/api/v1/branch/site/:id` | No | Own employer records | No | Same | `src/routes/branch.routes.js:303` |
-| POST | `/api/v1/availability` | Self | Self | All | Non-admin may only target own user | Auth MW only — `src/routes/availability.routes.js:53–57` |
-| GET | `/api/v1/availability/:userId` | Self | Self | All | Self or admin in controller | Auth MW only — `src/routes/availability.routes.js:81–85` |
-| PATCH | `/api/v1/availability/status` | Self | Self | Self | Own status | Auth MW only — `src/routes/availability.routes.js:122–126` |
+| POST | `/api/v1/availability` | Self | Self | All | Non-admin may only target own user | Auth MW only — `src/routes/availability.routes.js:53` |
+| GET | `/api/v1/availability/:userId` | Self | Self | All | Self or admin in controller | Auth MW only — `src/routes/availability.routes.js:77` |
+| PATCH | `/api/v1/availability/status` | Self | Self | Self | Own status | Auth MW only — `src/routes/availability.routes.js:114` |
 | POST | `/api/v1/timesheets/generate` | Yes | Yes | Yes | Role-scoped in service | Auth + `authorizeRoles` — `src/routes/timesheet.routes.js:12` |
-| GET | `/api/v1/timesheets` | Self | Own employer records | All | Service filters | `src/routes/timesheet.routes.js:13` |
-| GET | `/api/v1/timesheets/:id` | Self | Own employer records | All | Service filters | `src/routes/timesheet.routes.js:14` |
+| GET | `/api/v1/timesheets` | Self | Own employer records | All | Service filters | `src/routes/timesheet.routes.js:18` |
+| GET | `/api/v1/timesheets/:id` | Self | Own employer records | All | Service filters | `src/routes/timesheet.routes.js:24` |
 | POST | `/api/v1/shift-requests` | Self | No | No | Guard creates for self | Auth + `authorizeRoles('guard')` — `src/routes/shiftrequest.routes.js:15` |
 | GET | `/api/v1/shift-requests` | Self | Own employer records | All | Employer shift scope in service | `src/routes/shiftrequest.routes.js:16` |
 | GET | `/api/v1/shift-requests/:id` | Self | Own employer records | All | Scope check in service | `src/routes/shiftrequest.routes.js:20` |
-| PATCH | `/api/v1/shift-requests/:id` | No | Own employer records | All | Employer must own shift scope | `src/routes/shiftrequest.routes.js:21` |
+| PATCH | `/api/v1/shift-requests/:id` | No | Own employer records | All | Employer must own shift scope | `src/routes/shiftrequest.routes.js:25` |
 
 ### 4.15 Unmounted route modules
 
@@ -343,7 +343,7 @@ Swagger may still document these files because it scans route modules under `src
 | Issue | Evidence |
 |-------|----------|
 | User enum is `guard` / `employer` / `admin` only; Role collection and `ROLES` also define `super_admin`, `branch_admin`, `client` | `src/models/User.js`; `src/middleware/rbac.js`; seed scripts |
-| `ROLES.EMPLOYEE` is referenced but not defined | `src/routes/user.routes.js:273`; `ROLES` object has no `EMPLOYEE` key |
+| `ROLES.EMPLOYEE` is referenced but not defined | `src/routes/user.routes.js:254`; `ROLES` object has no `EMPLOYEE` key |
 | Swagger user-update enum includes `user` / `admin`, which does not match the User enum | `src/routes/user.routes.js` Swagger block |
 | Notification create allow-list includes `super_admin` and `branch_admin` | `src/controllers/notification.controller.js` |
 | Documentation mentions `employee` as unsupported in places | `docs/payroll-api-design.md`, `docs/system-architecture.md` — not a seeded Role name |
@@ -368,7 +368,7 @@ Swagger may still document these files because it scans route modules under `src
 
 These are confirmed from source. They are recorded for Product Owner and engineering review; this document does not change application code.
 
-1. **`ROLES.EMPLOYEE` is undefined** on `GET /api/v1/users/guards` (`src/routes/user.routes.js:273`). Employers cannot pass the role middleware as written; only `admin` matches among intended roles.
+1. **`ROLES.EMPLOYEE` is undefined** on `GET /api/v1/users/guards` (`src/routes/user.routes.js:254`). Employers cannot pass the role middleware as written; only `admin` matches among intended roles.
 2. **Attendance history IDOR:** `GET /api/v1/attendance/:userId` authenticates only; controller and service do not compare the requester to `userId` (`shiftattendance.routes.js`, `shiftattendance.controller.js`, `attendance.service.js`).
 3. **Employer document listing is global:** `getAllDocuments` loads all users with documents and does not filter by employer (`document.service.js`); employer is allowed by role middleware (`document.routes.js`).
 4. **Equipment routes lack role and ownership controls:** Auth MW only on create, assign, report and list-by-guard (`equipment.routes.js`, `equipment.controller.js`).
