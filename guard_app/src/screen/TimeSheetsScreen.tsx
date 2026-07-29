@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 
 import { getUserAttendance, type Attendance } from '../api/attendance';
+import { myShifts, type ShiftDto } from '../api/shifts';
 import http from '../lib/http';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
@@ -44,6 +45,7 @@ export default function TimesheetsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [items, setItems] = useState<Attendance[]>([]);
+  const [shiftsById, setShiftsById] = useState<Record<string, ShiftDto>>({});
 
   const load = async () => {
     try {
@@ -54,8 +56,9 @@ export default function TimesheetsScreen() {
         throw new Error('Unable to find logged-in user');
       }
 
-      const rows = await getUserAttendance(userId);
+      const [rows, shifts] = await Promise.all([getUserAttendance(userId), myShifts()]);
       setItems(rows);
+      setShiftsById(Object.fromEntries(shifts.map((shift) => [shift._id, shift])));
     } catch (e: unknown) {
       if (e instanceof AxiosError) {
         const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
@@ -99,11 +102,14 @@ export default function TimesheetsScreen() {
     return (
       <TouchableOpacity
         style={s.card}
-        onPress={() =>
-          navigation.navigate('ShiftDetails', {
-            shiftId: item.shiftId,
-          })
-        }
+        onPress={() => {
+          const shift = shiftsById[item.shiftId];
+          if (!shift) {
+            Alert.alert('Error', 'Shift details are unavailable for this record.');
+            return;
+          }
+          navigation.navigate('ShiftDetails', { shift });
+        }}
       >
         <Text style={s.title}>{fmtShiftLabel(item)}</Text>
 
