@@ -1,0 +1,8 @@
+{
+  "short_name": "SecureShift Admin",
+  "name": "SecureShift Admin Panel",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1F3864",
+  "background_color": "#ffffff"
+}

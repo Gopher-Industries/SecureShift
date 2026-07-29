@@ -1,4 +1,4 @@
-import Shift from '../models/Shift.js';
+import Shift from "../models/Shift.js";
 
 export const FATIGUE_RULES = {
   maxShiftsPerWeek: 5,
@@ -9,13 +9,13 @@ export const FATIGUE_RULES = {
 const MINUTES_PER_DAY = 24 * 60;
 
 export const timeToMinutes = (time) => {
-  if (typeof time !== 'string') {
-    throw new Error('Time must be a string in HH:MM format');
+  if (typeof time !== "string") {
+    throw new Error("Time must be a string in HH:MM format");
   }
 
   const match = time.match(/^([0-1]\d|2[0-3]):([0-5]\d)$/);
   if (!match) {
-    throw new Error('Time must be in HH:MM format');
+    throw new Error("Time must be in HH:MM format");
   }
 
   const hours = Number(match[1]);
@@ -34,7 +34,7 @@ export const calculateShiftHours = (startTime, endTime) => {
       : endMinutes - startMinutes + MINUTES_PER_DAY;
 
   if (durationMinutes <= 0) {
-    throw new Error('Shift duration must be greater than zero');
+    throw new Error("Shift duration must be greater than zero");
   }
 
   return durationMinutes / 60;
@@ -78,18 +78,12 @@ export const calculateFatigueScore = ({
 }) => {
   const shiftLoad = Math.min(
     shiftsThisWeek / FATIGUE_RULES.maxShiftsPerWeek,
-    1
+    1,
   );
 
-  const dailyLoad = Math.min(
-    hoursThisDay / FATIGUE_RULES.maxHoursPerDay,
-    1
-  );
+  const dailyLoad = Math.min(hoursThisDay / FATIGUE_RULES.maxHoursPerDay, 1);
 
-  const weeklyLoad = Math.min(
-    hoursThisWeek / FATIGUE_RULES.maxHoursPerWeek,
-    1
-  );
+  const weeklyLoad = Math.min(hoursThisWeek / FATIGUE_RULES.maxHoursPerWeek, 1);
 
   return Math.round(((shiftLoad + dailyLoad + weeklyLoad) / 3) * 100);
 };
@@ -103,19 +97,19 @@ export const buildFatigueWarnings = ({
 
   if (shiftsThisWeek > FATIGUE_RULES.maxShiftsPerWeek) {
     warnings.push(
-      `Guard exceeds recommended weekly shift limit of ${FATIGUE_RULES.maxShiftsPerWeek} shifts`
+      `Guard exceeds recommended weekly shift limit of ${FATIGUE_RULES.maxShiftsPerWeek} shifts`,
     );
   }
 
   if (hoursThisDay > FATIGUE_RULES.maxHoursPerDay) {
     warnings.push(
-      `Guard exceeds recommended daily hour limit of ${FATIGUE_RULES.maxHoursPerDay} hours`
+      `Guard exceeds recommended daily hour limit of ${FATIGUE_RULES.maxHoursPerDay} hours`,
     );
   }
 
   if (hoursThisWeek > FATIGUE_RULES.maxHoursPerWeek) {
     warnings.push(
-      `Guard exceeds recommended weekly hour limit of ${FATIGUE_RULES.maxHoursPerWeek} hours`
+      `Guard exceeds recommended weekly hour limit of ${FATIGUE_RULES.maxHoursPerWeek} hours`,
     );
   }
 
@@ -153,18 +147,22 @@ export const assessFatigueFromMetrics = ({
 
 export const assessGuardFatigue = async (guardId, proposedShift) => {
   if (!guardId) {
-    throw new Error('Guard ID is required for fatigue assessment');
+    throw new Error("Guard ID is required for fatigue assessment");
   }
 
-  if (!proposedShift?.date || !proposedShift?.startTime || !proposedShift?.endTime) {
+  if (
+    !proposedShift?.date ||
+    !proposedShift?.startTime ||
+    !proposedShift?.endTime
+  ) {
     throw new Error(
-      'Shift date, start time, and end time are required for fatigue assessment'
+      "Shift date, start time, and end time are required for fatigue assessment",
     );
   }
 
   const proposedDate = new Date(proposedShift.date);
   if (Number.isNaN(proposedDate.getTime())) {
-    throw new Error('Shift date must be valid for fatigue assessment');
+    throw new Error("Shift date must be valid for fatigue assessment");
   }
 
   const weekStart = getStartOfWeek(proposedDate);
@@ -172,16 +170,16 @@ export const assessGuardFatigue = async (guardId, proposedShift) => {
 
   const existingShifts = await Shift.find({
     acceptedBy: guardId,
-    status: { $in: ['assigned', 'completed'] },
+    status: { $in: ["assigned", "completed"] },
     date: {
       $gte: weekStart,
       $lte: weekEnd,
     },
-  }).select('date startTime endTime status acceptedBy');
+  }).select("date startTime endTime status acceptedBy");
 
   const proposedShiftHours = calculateShiftHours(
     proposedShift.startTime,
-    proposedShift.endTime
+    proposedShift.endTime,
   );
 
   const existingWeeklyHours = existingShifts.reduce((total, shift) => {
