@@ -151,13 +151,13 @@ function AllTab({ navigation }: Props) {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [applyingId, setApplyingId] = useState<string | null>(null);
 
-  const [statusFilter, setStatusFilter] = useState<
-    'All' | 'Available' | 'Pending' | 'Confirmed'
-  >('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Available' | 'Pending' | 'Confirmed'>(
+    'All',
+  );
 
-  const [sortOption, setSortOption] = useState<
-    'dateAsc' | 'dateDesc' | 'payAsc' | 'payDesc'
-  >('dateAsc');
+  const [sortOption, setSortOption] = useState<'dateAsc' | 'dateDesc' | 'payAsc' | 'payDesc'>(
+    'dateAsc',
+  );
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week'>('all');
   const [error, setError] = useState<string | null>(null);
 
@@ -174,9 +174,7 @@ function AllTab({ navigation }: Props) {
     } catch (err: any) {
       setRows([]);
       setError(
-        err?.response?.data?.message ??
-          err?.message ??
-          'Unable to load shifts. Please try again.',
+        err?.response?.data?.message ?? err?.message ?? 'Unable to load shifts. Please try again.',
       );
     } finally {
       setLoading(false);
@@ -206,9 +204,7 @@ function AllTab({ navigation }: Props) {
 
   const filtered = rows
     .filter((shift) =>
-      `${shift.title} ${shift.site}`
-        .toLowerCase()
-        .includes(q.trim().toLowerCase()),
+      `${shift.title} ${shift.site}`.toLowerCase().includes(q.trim().toLowerCase()),
     )
     .filter((shift) => statusFilter === 'All' || shift.status === statusFilter)
     .filter((shift) => {
@@ -275,17 +271,11 @@ function AllTab({ navigation }: Props) {
         {(['All', 'Available', 'Pending', 'Confirmed'] as const).map((status) => (
           <TouchableOpacity
             key={status}
-            style={[
-              s.controlButton,
-              statusFilter === status && s.controlButtonActive,
-            ]}
+            style={[s.controlButton, statusFilter === status && s.controlButtonActive]}
             onPress={() => setStatusFilter(status)}
           >
             <Text
-              style={[
-                s.controlButtonText,
-                statusFilter === status && s.controlButtonTextActive,
-              ]}
+              style={[s.controlButtonText, statusFilter === status && s.controlButtonTextActive]}
             >
               {status}
             </Text>
@@ -305,10 +295,7 @@ function AllTab({ navigation }: Props) {
         ].map((option) => (
           <TouchableOpacity
             key={option.value}
-            style={[
-              s.controlButton,
-              dateFilter === option.value && s.controlButtonActive,
-            ]}
+            style={[s.controlButton, dateFilter === option.value && s.controlButtonActive]}
             onPress={() => setDateFilter(option.value as 'all' | 'today' | 'week')}
           >
             <Text
@@ -336,14 +323,9 @@ function AllTab({ navigation }: Props) {
         ].map((option) => (
           <TouchableOpacity
             key={option.value}
-            style={[
-              s.controlButton,
-              sortOption === option.value && s.controlButtonActive,
-            ]}
+            style={[s.controlButton, sortOption === option.value && s.controlButtonActive]}
             onPress={() =>
-              setSortOption(
-                option.value as 'dateAsc' | 'dateDesc' | 'payAsc' | 'payDesc',
-              )
+              setSortOption(option.value as 'dateAsc' | 'dateDesc' | 'payAsc' | 'payDesc')
             }
           >
             <Text
