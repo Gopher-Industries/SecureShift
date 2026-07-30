@@ -168,7 +168,16 @@
     "verified": "已驗證",
     "notVerified": "未驗證",
     "loading": "載入考勤中...",
-    "empty": "暫無考勤記錄。"
+    "empty": "暫無考勤記錄。",
+    "payable": "應付工時：",
+    "scheduled": "計劃工時：",
+    "actual": "實際工時：",
+    "hoursBreakdown": "工時",
+    "error": "無法載入考勤記錄。",
+    "detailError": "無法載入此考勤記錄。",
+    "retry": "重試",
+    "summary": "彙總",
+    "totalShifts": "班次數："
   },
   "tabs": {
     "home": "主頁",
@@ -185,7 +194,8 @@
     "notifications": "通知",
     "certificates": "資質認證",
     "shiftDetails": "排班詳情",
-    "shiftRequests": "排班更改請求"
+    "shiftRequests": "排班更改請求",
+    "timesheetDetails": "考勤詳情"
   },
   "docs": {
     "title": "文件概覽",
