@@ -38,8 +38,8 @@ describe("Auth Controller Tests", () => {
   describe("register", () => {
     it("should register a normal user successfully", async () => {
       req.body = {
-        name: "Krish",
-        email: "krish@test.com",
+        name: "Test User",
+        email: "user@example.test",
         password: "123456",
         role: "admin",
       };
