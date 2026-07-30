@@ -7,7 +7,7 @@ The backend service for **SecureShift**, a shift management platform connecting 
 ## 🧩 Tech Stack
 
 - **Node.js** + **Express.js**
-- **MongoDB Atlas** (via Mongoose)
+- **MongoDB** via Mongoose (local Docker MongoDB for development; external MongoDB where configured)
 - **JWT Authentication** with 2FA support
 - **RESTful API**
 - **Swagger UI** for API documentation
@@ -39,11 +39,12 @@ The backend service for **SecureShift**, a shift management platform connecting 
 
 ## 🚀 Setup Instructions
 
-### 1. Clone the repository
+### 1. Open the backend directory
+
+Clone the SecureShift monorepo using the team repository, then run:
 
 ```bash
-git clone https://github.com/musahex/secureshift-backend.git
-cd secureshift-backend
+cd SecureShift/app-backend
 ```
 
 ### 2. Install dependencies
@@ -61,12 +62,37 @@ Create a `.env` file in the root:
 MONGO_URI=
 
 JWT_SECRET=
+LICENCE_ENC_KEY=
+AUDIT_LOG_ENABLED=true
+EMAIL_ENABLED=true
 SMTP_HOST=
 SMTP_PORT=
 SMTP_SECURE=
+SMTP_AUTH_REQUIRED=true
 SMTP_USER=
 SMTP_PASS=
+SMTP_FROM_EMAIL=
 ```
+
+For production SMTP, keep `SMTP_AUTH_REQUIRED=true` and configure `SMTP_USER` and `SMTP_PASS`
+together. The backend rejects missing or partial authenticated credentials.
+
+### Local OTP email with Mailpit
+
+The repository Docker Compose stack includes Mailpit, a local SMTP inbox that does not deliver
+messages externally.
+
+- Full Compose stack: the backend is preconfigured with `SMTP_HOST=mailpit`,
+  `SMTP_PORT=1025`, and `SMTP_AUTH_REQUIRED=false`.
+- Backend running directly on WSL, Linux, or macOS: copy `.env.example` to `.env`; it uses
+  `SMTP_HOST=localhost`. Start the dependencies with
+  `docker compose up -d mailpit mongodb` from the repository root.
+- Open `http://127.0.0.1:8025`, attempt login, and read the OTP from the captured message.
+
+Local Mailpit configuration deliberately leaves `SMTP_USER` and `SMTP_PASS` empty. When
+`SMTP_AUTH_REQUIRED=false`, the Nodemailer transport has no `auth` property. When
+`EMAIL_ENABLED=false`, the backend does not attempt SMTP delivery and never returns or logs the OTP
+as a fallback.
 
 ### 4. Start the server
 
@@ -137,12 +163,12 @@ You can explore, test, and understand the structure of all API endpoints there.
 
 Base path: `/api/v1/shift-requests`
 
-| Method    | Endpoint | Roles                  | Description                                                                                                                            |
-| --------- | -------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST`  | `/`    | Guard                  | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard.                                                |
-| `GET`   | `/`    | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters.         |
-| `GET`   | `/:id` | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope.                                                                    |
-| `PATCH` | `/:id` | Employer, Admin        | Approve or reject a pending shift request with `{ "status": "APPROVED" }` or `{ "status": "REJECTED", "rejectionReason": "..." }`. |
+| Method  | Endpoint | Roles                  | Description                                                                                                                        |
+| ------- | -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `POST`  | `/`      | Guard                  | Create a `SWAP` or `LEAVE` request for a shift assigned to the authenticated guard.                                                |
+| `GET`   | `/`      | Guard, Employer, Admin | List shift requests scoped to the authenticated user. Supports `status`, `type`, `page`, and `limit` query parameters.             |
+| `GET`   | `/:id`   | Guard, Employer, Admin | Fetch one shift request when it is in the authenticated user scope.                                                                |
+| `PATCH` | `/:id`   | Employer, Admin        | Approve or reject a pending shift request with `{ "status": "APPROVED" }` or `{ "status": "REJECTED", "rejectionReason": "..." }`. |
 
 ### Roles and scoping
 
@@ -176,22 +202,22 @@ The backend exposes two authenticated SOS endpoint families:
 Both families use the same controller/service logic. Calling one alias does not call the other alias
 or create duplicate writes.
 
-| Method | Path | Roles | Description |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/emergency/sos` | `guard` | Create an SOS using the legacy emergency route. |
-| `POST` | `/api/v1/sos/trigger` | `guard` | Create an SOS using the Guard App route contract. |
-| `GET` | `/api/v1/emergency/sos` | `admin`, `employer` | List SOS records visible to the authenticated admin or employer. |
-| `GET` | `/api/v1/emergency/sos/active` | `guard`, `employer`, `admin` | Get the latest active SOS in the authenticated user's scope. |
-| `GET` | `/api/v1/sos/active` | `guard`, `employer`, `admin` | Guard App alias for active SOS lookup. |
-| `GET` | `/api/v1/emergency/sos/:id` | `guard`, `employer`, `admin` | Get one SOS in the authenticated user's scope. |
-| `GET` | `/api/v1/sos/:id` | `guard`, `employer`, `admin` | Guard App alias for one SOS status. |
-| `POST` | `/api/v1/emergency/sos/:id/location` | `guard` | Update location for an active SOS owned by the guard. |
-| `POST` | `/api/v1/sos/:id/location` | `guard` | Guard App alias for location update. |
-| `POST` | `/api/v1/emergency/sos/:id/note` | `guard` | Add or replace guard-provided SOS context. |
-| `POST` | `/api/v1/sos/:id/note` | `guard` | Guard App alias for note update. |
-| `POST` | `/api/v1/emergency/sos/:id/cancel` | `guard` | Cancel an active SOS owned by the guard. |
-| `POST` | `/api/v1/sos/:id/cancel` | `guard` | Guard App alias for cancellation. |
-| `PUT` | `/api/v1/emergency/sos/:id` | `admin`, `employer` | Transition SOS status in the authenticated user's scope. |
+| Method | Path                                 | Roles                        | Description                                                      |
+| ------ | ------------------------------------ | ---------------------------- | ---------------------------------------------------------------- |
+| `POST` | `/api/v1/emergency/sos`              | `guard`                      | Create an SOS using the legacy emergency route.                  |
+| `POST` | `/api/v1/sos/trigger`                | `guard`                      | Create an SOS using the Guard App route contract.                |
+| `GET`  | `/api/v1/emergency/sos`              | `admin`, `employer`          | List SOS records visible to the authenticated admin or employer. |
+| `GET`  | `/api/v1/emergency/sos/active`       | `guard`, `employer`, `admin` | Get the latest active SOS in the authenticated user's scope.     |
+| `GET`  | `/api/v1/sos/active`                 | `guard`, `employer`, `admin` | Guard App alias for active SOS lookup.                           |
+| `GET`  | `/api/v1/emergency/sos/:id`          | `guard`, `employer`, `admin` | Get one SOS in the authenticated user's scope.                   |
+| `GET`  | `/api/v1/sos/:id`                    | `guard`, `employer`, `admin` | Guard App alias for one SOS status.                              |
+| `POST` | `/api/v1/emergency/sos/:id/location` | `guard`                      | Update location for an active SOS owned by the guard.            |
+| `POST` | `/api/v1/sos/:id/location`           | `guard`                      | Guard App alias for location update.                             |
+| `POST` | `/api/v1/emergency/sos/:id/note`     | `guard`                      | Add or replace guard-provided SOS context.                       |
+| `POST` | `/api/v1/sos/:id/note`               | `guard`                      | Guard App alias for note update.                                 |
+| `POST` | `/api/v1/emergency/sos/:id/cancel`   | `guard`                      | Cancel an active SOS owned by the guard.                         |
+| `POST` | `/api/v1/sos/:id/cancel`             | `guard`                      | Guard App alias for cancellation.                                |
+| `PUT`  | `/api/v1/emergency/sos/:id`          | `admin`, `employer`          | Transition SOS status in the authenticated user's scope.         |
 
 SOS responses include both the existing backend `data` field and the Guard App `sos` field. The
 Guard App shape includes `_id`, `guardId`, optional `shiftId`, `triggeredAt`, lower-case status,
@@ -262,11 +288,11 @@ localhost, or mongodb:// protocol. Atlas/SRV URIs will fail immediately.
 
 Generated timesheets are exposed under `/api/v1/timesheets`.
 
-| Method   | Path                            | Roles                              | Description                                                                                                                                                 |
-| -------- | ------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST` | `/api/v1/timesheets/generate` | `admin`, `employer`, `guard` | Generate or refresh timesheets for a completed-shift date range. Body requires `startDate` and `endDate` in `YYYY-MM-DD` format.                      |
+| Method | Path                          | Roles                        | Description                                                                                                                                       |
+| ------ | ----------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/api/v1/timesheets/generate` | `admin`, `employer`, `guard` | Generate or refresh timesheets for a completed-shift date range. Body requires `startDate` and `endDate` in `YYYY-MM-DD` format.                  |
 | `GET`  | `/api/v1/timesheets`          | `admin`, `employer`, `guard` | List generated timesheets visible to the current user. Supports optional `startDate`, `endDate`, `guardId`, `page`, and `limit` query parameters. |
-| `GET`  | `/api/v1/timesheets/:id`      | `admin`, `employer`, `guard` | Retrieve one generated timesheet in the current user's scope.                                                                                               |
+| `GET`  | `/api/v1/timesheets/:id`      | `admin`, `employer`, `guard` | Retrieve one generated timesheet in the current user's scope.                                                                                     |
 
 Timesheet generation only uses shifts that are `completed`, assigned through `acceptedBy`,
 and have completed attendance with `guardId`, `shiftId`, `checkInTime`, and `checkOutTime`.
@@ -342,8 +368,8 @@ Reset deletes only those stable seed IDs and requires the exact confirmation val
 
 All test accounts use the local-only password `SecureShift1!`:
 
-| Role     | Scenario            | Email                            |
-| -------- | ------------------- | -------------------------------- |
+| Role     | Scenario            | Email                          |
+| -------- | ------------------- | ------------------------------ |
 | Admin    | Admin access        | `admin.local@secureshift.test` |
 | Employer | Operations employer | `ops.local@secureshift.test`   |
 | Employer | Venue employer      | `venue.local@secureshift.test` |
@@ -354,6 +380,55 @@ All test accounts use the local-only password `SecureShift1!`:
 
 Employer and guard login still uses the normal OTP flow. This seed does not bypass OTP. Admin login
 uses the existing admin authentication endpoint.
+
+---
+### Local audit logging
+
+SecureShift can persist application audit events to the local
+`secureshift_local.auditlogs` collection.
+
+For local development, set:
+
+```env
+AUDIT_LOG_ENABLED=true
+```
+
+Restart the backend after changing this value because environment configuration
+is loaded during application startup.
+
+The local OTP flow records:
+
+| Outcome | Audit record |
+| --- | --- |
+| OTP email accepted by SMTP | `OTP_SENT` |
+| OTP verified and JWT issued | `LOGIN_SUCCESS` with `metadata.step: "OTP_VERIFIED"` |
+| OTP email delivery failed | `OTP_DELIVERY_FAILED` |
+
+Audit records do not contain OTP values, JWTs, SMTP passwords, or email bodies.
+
+To inspect recent OTP audit records:
+
+```bash
+docker exec secureshift-db mongosh \
+  "mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshift_local" \
+  --quiet \
+  --eval '
+    db.auditlogs.find({
+      action: {
+        $in: ["OTP_SENT", "LOGIN_SUCCESS", "OTP_DELIVERY_FAILED"]
+      }
+    }).sort({ timestamp: -1 }).limit(10).forEach(printjson);
+  '
+```
+
+In MongoDB Compass, filter by user with:
+
+```javascript
+{ user: ObjectId("8a4d53ffcdde6d18139a6e17") }
+```
+
+The normal Compass query bar does not accept the Extended JSON `$oid` form.
+
 
 ---
 

@@ -1,26 +1,49 @@
 import nodemailer from "nodemailer";
 
-if (
-  !process.env.SMTP_HOST ||
-  !process.env.SMTP_USER ||
-  !process.env.SMTP_PASS
-) {
-  console.warn("⚠️  SMTP configuration is missing. Email sending will fail.");
-  console.warn(
-    "   Please set SMTP_HOST, SMTP_USER, and SMTP_PASS in your .env file",
-  );
-}
+export const parseBoolean = (value, defaultValue = false) => {
+  if (value === undefined || value === null || value === "") {
+    return defaultValue;
+  }
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "localhost",
-    port: parseInt(process.env.SMTP_PORT || "587", 10),
-    secure: (process.env.SMTP_SECURE || "false") === "true",
-    auth: {
-      user: process.env.SMTP_USER || "",
-      pass: process.env.SMTP_PASS || "",
-    },
-  });
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+
+  throw new Error("Boolean configuration values must be 'true' or 'false'");
+};
+
+export const getSmtpTransportOptions = (env = process.env) => {
+  const authRequired = parseBoolean(env.SMTP_AUTH_REQUIRED, true);
+  const user = env.SMTP_USER?.trim();
+  const pass = env.SMTP_PASS?.trim();
+
+  if (authRequired && (!user || !pass)) {
+    throw new Error(
+      "SMTP_USER and SMTP_PASS are both required when SMTP_AUTH_REQUIRED=true",
+    );
+  }
+
+  const options = {
+    host: env.SMTP_HOST || "localhost",
+    port: Number.parseInt(env.SMTP_PORT || "587", 10),
+    secure: parseBoolean(env.SMTP_SECURE, false),
+  };
+
+  if (authRequired) {
+    options.auth = { user, pass };
+  }
+
+  return options;
+};
+
+export const createTransporter = (env = process.env) => {
+  return nodemailer.createTransport(getSmtpTransportOptions(env));
+};
+
+const assertEmailEnabled = (env = process.env) => {
+  if (!parseBoolean(env.EMAIL_ENABLED, true)) {
+    throw new Error("Email delivery is disabled");
+  }
 };
 
 const getOtpHtmlTemplate = ({ otp, name }) => {
@@ -93,10 +116,9 @@ const getOtpHtmlTemplate = ({ otp, name }) => {
   </html>`;
 };
 
-let transporter = createTransporter();
-
 export const sendOTP = async (email, otp, recipientName = "") => {
-  transporter = createTransporter();
+  assertEmailEnabled();
+  const transporter = createTransporter();
   const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
 
   if (!fromEmail) {
@@ -118,28 +140,10 @@ export const sendOTP = async (email, otp, recipientName = "") => {
     console.log(`✅ OTP email sent to ${email} from ${fromEmail}`);
   } catch (err) {
     const errorMsg = err.message || "Unknown error";
-    console.error("❌ Failed to send OTP email:", errorMsg);
-    console.error("   SMTP Config - Host:", process.env.SMTP_HOST || "NOT SET");
-    console.error("   SMTP Config - User:", process.env.SMTP_USER || "NOT SET");
-    console.error("   SMTP Config - Port:", process.env.SMTP_PORT || "587");
-    console.error(
-      "   SMTP Config - Secure:",
-      process.env.SMTP_SECURE || "false",
-    );
-    console.error("   SMTP Config - From Email:", fromEmail || "NOT SET");
-    console.error(
-      "   SMTP Config - Password Set:",
-      process.env.SMTP_PASS ? "YES" : "NO",
-    );
 
     if (!process.env.SMTP_HOST) {
       throw new Error(
         "SMTP_HOST is not configured. Please set it in your .env file",
-      );
-    }
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      throw new Error(
-        "SMTP credentials are missing. Please set SMTP_USER and SMTP_PASS in your .env file",
       );
     }
     if (!process.env.SMTP_FROM_EMAIL) {
@@ -184,7 +188,8 @@ export const sendEmployerCredentials = async (
   contactPerson,
   companyName,
 ) => {
-  transporter = createTransporter();
+  assertEmailEnabled();
+  const transporter = createTransporter();
 
   const subject = "Your SecureShift Employer Account Credentials";
   const greetingName = contactPerson || companyName || "there";
