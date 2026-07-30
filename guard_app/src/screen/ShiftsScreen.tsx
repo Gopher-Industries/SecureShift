@@ -8,6 +8,7 @@ import {
   Dimensions,
   FlatList,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -150,15 +151,33 @@ function AllTab({ navigation }: Props) {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [applyingId, setApplyingId] = useState<string | null>(null);
 
+  const [statusFilter, setStatusFilter] = useState<
+    'All' | 'Available' | 'Pending' | 'Confirmed'
+  >('All');
+
+  const [sortOption, setSortOption] = useState<
+    'dateAsc' | 'dateDesc' | 'payAsc' | 'payDesc'
+  >('dateAsc');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week'>('all');
+  const [error, setError] = useState<string | null>(null);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
+
       const me = await getMe();
       const myUid = me?._id ?? me?.id ?? '';
 
-      const resp = await listShifts();
-      const mapped = mapAllShifts(resp.items, myUid);
-      setRows(mapped);
+      const resp = await listShifts(1, 50);
+      setRows(mapAllShifts(resp.items, myUid));
+    } catch (err: any) {
+      setRows([]);
+      setError(
+        err?.response?.data?.message ??
+          err?.message ??
+          'Unable to load shifts. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -185,9 +204,45 @@ function AllTab({ navigation }: Props) {
     }
   };
 
-  const filtered = rows.filter((r) =>
-    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
-  );
+  const filtered = rows
+    .filter((shift) =>
+      `${shift.title} ${shift.site}`
+        .toLowerCase()
+        .includes(q.trim().toLowerCase()),
+    )
+    .filter((shift) => statusFilter === 'All' || shift.status === statusFilter)
+    .filter((shift) => {
+      if (dateFilter === 'all') return true;
+
+      const shiftDate = new Date(shift.date);
+      const today = new Date();
+
+      shiftDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      if (dateFilter === 'today') {
+        return shiftDate.getTime() === today.getTime();
+      }
+
+      const endOfWeek = new Date(today);
+      endOfWeek.setDate(today.getDate() + 7);
+
+      return shiftDate >= today && shiftDate <= endOfWeek;
+    })
+    .sort((a, b) => {
+      if (sortOption === 'dateAsc') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+
+      if (sortOption === 'dateDesc') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+
+      const payA = Number(a.rate.replace(/[^0-9.]/g, '')) || 0;
+      const payB = Number(b.rate.replace(/[^0-9.]/g, '')) || 0;
+
+      return sortOption === 'payAsc' ? payA - payB : payB - payA;
+    });
 
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
@@ -212,9 +267,107 @@ function AllTab({ navigation }: Props) {
         <ViewToggle view={view} onViewChange={setView} colors={colors} />
       </View>
 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.controlsRow}
+      >
+        {(['All', 'Available', 'Pending', 'Confirmed'] as const).map((status) => (
+          <TouchableOpacity
+            key={status}
+            style={[
+              s.controlButton,
+              statusFilter === status && s.controlButtonActive,
+            ]}
+            onPress={() => setStatusFilter(status)}
+          >
+            <Text
+              style={[
+                s.controlButtonText,
+                statusFilter === status && s.controlButtonTextActive,
+              ]}
+            >
+              {status}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.controlsRow}
+      >
+        {[
+          { label: 'Any date', value: 'all' },
+          { label: 'Today', value: 'today' },
+          { label: 'Next 7 days', value: 'week' },
+        ].map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              s.controlButton,
+              dateFilter === option.value && s.controlButtonActive,
+            ]}
+            onPress={() => setDateFilter(option.value as 'all' | 'today' | 'week')}
+          >
+            <Text
+              style={[
+                s.controlButtonText,
+                dateFilter === option.value && s.controlButtonTextActive,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.controlsRow}
+      >
+        {[
+          { label: 'Date ↑', value: 'dateAsc' },
+          { label: 'Date ↓', value: 'dateDesc' },
+          { label: 'Pay ↑', value: 'payAsc' },
+          { label: 'Pay ↓', value: 'payDesc' },
+        ].map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              s.controlButton,
+              sortOption === option.value && s.controlButtonActive,
+            ]}
+            onPress={() =>
+              setSortOption(
+                option.value as 'dateAsc' | 'dateDesc' | 'payAsc' | 'payDesc',
+              )
+            }
+          >
+            <Text
+              style={[
+                s.controlButtonText,
+                sortOption === option.value && s.controlButtonTextActive,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       {loading && <ActivityIndicator size="large" color={colors.primary} />}
 
-      {view === 'calendar' ? (
+      {error ? (
+        <View style={s.errorContainer}>
+          <Text style={s.errorText}>{error}</Text>
+          <TouchableOpacity style={s.retryButton} onPress={fetchData}>
+            <Text style={s.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : view === 'calendar' ? (
         <CalendarView shifts={filtered} onShiftPress={setSelectedShift} colors={colors} />
       ) : (
         <FlatList
@@ -534,5 +687,57 @@ const getStyles = (colors: AppColors) =>
       fontSize: 14,
       margin: 8,
       alignSelf: 'center',
+    },
+
+    controlsRow: {
+      gap: 8,
+      paddingBottom: 10,
+    },
+
+    controlButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+
+    controlButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+
+    controlButtonText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+
+    controlButtonTextActive: {
+      color: colors.white,
+    },
+
+    errorContainer: {
+      alignItems: 'center',
+      paddingVertical: 16,
+    },
+
+    errorText: {
+      color: '#B00020',
+      textAlign: 'center',
+      marginBottom: 10,
+    },
+
+    retryButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+
+    retryButtonText: {
+      color: colors.white,
+      fontWeight: '700',
     },
   });
