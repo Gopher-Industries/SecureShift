@@ -11,20 +11,38 @@ services:
       MONGO_URI: mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
       JWT_SECRET: local-dev-jwt-secret-change-me
       LICENCE_ENC_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
-      EMAIL_ENABLED: "false"
-      SMTP_HOST: localhost
-      SMTP_PORT: "587"
+      AUDIT_LOG_ENABLED: "true"
+      EMAIL_ENABLED: "true"
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
       SMTP_SECURE: "false"
-      SMTP_USER: local@example.test
-      SMTP_PASS: local-dev-password
+      SMTP_AUTH_REQUIRED: "false"
       SMTP_FROM_EMAIL: local@example.test
     depends_on:
       mongodb:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - secureshift
     command: npm start
+
+  mailpit:
+    image: axllent/mailpit:v1.29.7
+    container_name: secureshift-mailpit
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_HOST_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_HOST_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - secureshift
 
   mongodb:
     image: mongo:6
@@ -39,7 +57,11 @@ services:
       - mongo-data:/data/db
       - ./app-backend/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })' >/dev/null || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })' >/dev/null || exit 1",
+        ]
       interval: 5s
       timeout: 5s
       retries: 12

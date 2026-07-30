@@ -164,25 +164,30 @@ export const login = async (req, res) => {
     user.otpExpiresAt = expiry;
     await user.save();
 
-    let emailSent = false;
-
     try {
       await sendOTP(user.email, otp, user.name);
-      emailSent = true;
-    } catch (err) {
-      console.error("OTP email failed:", err.message);
-    }
-
-    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
-
-    if (emailSent) {
+      await req.audit.log(user._id, ACTIONS.OTP_SENT);
       return res.status(200).json({ message: "OTP sent to your email" });
+    } catch {
+      await User.updateOne(
+        {
+          _id: user._id,
+          otp,
+          otpExpiresAt: expiry,
+        },
+        {
+          $unset: {
+            otp: "",
+            otpExpiresAt: "",
+          },
+        },
+      );
+      await req.audit.log(user._id, ACTIONS.OTP_DELIVERY_FAILED);
+      return res.status(503).json({
+        message:
+          "We could not send your verification code. Please try again later.",
+      });
     }
-
-    return res.status(200).json({
-      message: "OTP generated successfully",
-      warning: "Email failed. Check server console for OTP.",
-    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
