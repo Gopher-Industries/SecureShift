@@ -255,7 +255,7 @@ router.get(
   "/guards",
   auth,
   loadUser,
-  authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYER), 
+  authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYER),
   authorizePermissions("user:read"),
   getAllGuards,
 );
@@ -312,7 +312,7 @@ router.get(
   "/",
   auth,
   loadUser,
-  authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN, ROLES.EMPLOYER,),
+  authorizeRoles(ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.BRANCH_ADMIN),
   authorizePermissions("user:read", { any: true }),
   listUsers,
 );

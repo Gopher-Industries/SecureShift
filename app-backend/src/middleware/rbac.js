@@ -85,9 +85,10 @@ async function getEffectivePermissions(roleName, visited = new Set()) {
   visited.add(roleName);
 
   const roleDoc = await loadRoleFromDB(roleName);
-  const hasDbPerms = Array.isArray(roleDoc?.permissions) && roleDoc.permissions.length > 0;
+  const hasDbPerms =
+    Array.isArray(roleDoc?.permissions) && roleDoc.permissions.length > 0;
   let perms = new Set(
-    hasDbPerms ? roleDoc.permissions : (DEFAULT_ROLE_PERMISSIONS[roleName] || []),
+    hasDbPerms ? roleDoc.permissions : DEFAULT_ROLE_PERMISSIONS[roleName] || [],
   );
 
   if (roleDoc?.inheritsFrom) {
