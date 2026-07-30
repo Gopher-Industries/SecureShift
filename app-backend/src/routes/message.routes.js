@@ -1,14 +1,14 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   sendMessage,
   getInboxMessages,
   getSentMessages,
   getConversation,
   markMessageAsRead,
-  getMessageStats
+  getMessageStats,
 } from "../controllers/message.controller.js";
 
-import auth from '../middleware/auth.js';
+import auth from "../middleware/auth.js";
 const router = Router();
 
 router.use(auth);
@@ -70,7 +70,7 @@ router.use(auth);
  *       401:
  *         description: Unauthorized
  */
-router.post('/', sendMessage);
+router.post("/", sendMessage);
 
 /**
  * @swagger
@@ -103,7 +103,7 @@ router.post('/', sendMessage);
  *       401:
  *         description: Unauthorized
  */
-router.get('/inbox', getInboxMessages);
+router.get("/inbox", getInboxMessages);
 
 /**
  * @swagger
@@ -137,7 +137,7 @@ router.get('/inbox', getInboxMessages);
  *       401:
  *         description: Unauthorized
  */
-router.get('/sent', getSentMessages);
+router.get("/sent", getSentMessages);
 
 /**
  * @swagger
@@ -181,7 +181,7 @@ router.get('/sent', getSentMessages);
  *       401:
  *         description: Unauthorized
  */
-router.get('/conversation/:userId', getConversation);
+router.get("/conversation/:userId", getConversation);
 
 /**
  * @swagger
@@ -215,7 +215,7 @@ router.get('/conversation/:userId', getConversation);
  *       401:
  *         description: Unauthorized
  */
-router.patch('/:messageId/read', markMessageAsRead);
+router.patch("/:messageId/read", markMessageAsRead);
 
 /**
  * @swagger
@@ -241,6 +241,6 @@ router.patch('/:messageId/read', markMessageAsRead);
  *       401:
  *         description: Unauthorized
  */
-router.get('/stats', getMessageStats);
+router.get("/stats", getMessageStats);
 
 export default router;
