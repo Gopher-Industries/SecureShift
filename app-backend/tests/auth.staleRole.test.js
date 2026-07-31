@@ -24,6 +24,50 @@ import Guard from "../src/models/Guard.js";
 
 const BASE_URL = `/api/v1`;
 
+// test database security vertify function
+function validateTestDatabaseURI(uri) {
+  // check if setting is correct
+  if (!uri) {
+    throw new Error(
+      "MONGO_TEST_URI is required. Authentication tests must use an isolated test database.",
+    );
+  }
+  // only allow mongodb:// protocol (reject mongodb+srv:// Atlas)
+  if (!uri.startsWith("mongodb://")) {
+    throw new Error(
+      "MONGO_TEST_URI must use mongodb:// protocol. mongodb+srv:// (Atlas) is not allowed for tests.",
+    );
+  }
+
+  try {
+    const parsed = new URL(uri);
+    const host = parsed.hostname;
+    const dbName = parsed.pathname.replace(/^\//, "");
+
+    // only localhost or 127.0.0.1 are allowed
+    if (!["localhost", "127.0.0.1"].includes(host)) {
+      throw new Error(
+        `MONGO_TEST_URI host must be "localhost" or "127.0.0.1", got: "${host}"`,
+      );
+    }
+
+    // only allow secureshift_test
+    if (dbName !== "secureshift_test") {
+      throw new Error(
+        `MONGO_TEST_URI database must be "secureshift_test", got: "${dbName}"`,
+      );
+    }
+
+    // if all checks pass, return the URI
+    return uri;
+  } catch (error) {
+    if (error.message.includes("MONGO_TEST_URI")) {
+      throw error;
+    }
+    throw new Error(`Invalid MONGO_TEST_URI format: ${error.message}`);
+  }
+}
+
 describe("----- Authentication Middleware Security Tests", () => {
   let testUser;
   let testToken;
@@ -31,16 +75,12 @@ describe("----- Authentication Middleware Security Tests", () => {
 
   beforeAll(async () => {
     const testUri = process.env.MONGO_TEST_URI;
-    if (!testUri) {
-      throw new Error(
-        "MONGO_TEST_URI is required. Authentication tests must use an isolated test database.",
-      );
-    }
+    const safeUri = validateTestDatabaseURI(testUri);
 
     let retries = 5;
     while (retries > 0) {
       try {
-        await mongoose.connect(testUri);
+        await mongoose.connect(safeUri);
         break;
       } catch (err) {
         console.log(`MongoDB connection failed, retries left: ${retries - 1}`);
