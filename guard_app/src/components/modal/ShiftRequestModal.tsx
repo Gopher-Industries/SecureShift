@@ -78,11 +78,6 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
         reason,
       });
 
-      if (res.status === 'PENDING') {
-        Alert.alert(t('shifts.alerts.requestCreated'));
-      } else {
-        Alert.alert(t('shifts.alerts.requestFailed'));
-      }
     } else {
       Alert.alert(t('shifts.alerts.requestFailed'));
     }
