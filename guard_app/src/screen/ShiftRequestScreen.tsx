@@ -34,7 +34,6 @@ export default function ShiftRequestScreen() {
 
       const res = await listShiftRequests();
 
-      console.log(res.success);
       if (!res.success) throw error;
 
       setAllRows(res.items);

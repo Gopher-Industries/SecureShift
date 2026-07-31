@@ -77,7 +77,6 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
         leaveEndDate: leaveEnd,
         reason,
       });
-
     } else {
       Alert.alert(t('shifts.alerts.requestFailed'));
     }
