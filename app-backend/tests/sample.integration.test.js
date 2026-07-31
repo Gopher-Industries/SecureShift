@@ -19,7 +19,7 @@ const TestModel = mongoose.model("TestTemp", TestSchema);
 describe("Sample Integration Test (CRUD)", () => {
   beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGO_URI);
+      await mongoose.connect(process.env.MONGO_TEST_URI);
     }
   });
 

@@ -14,17 +14,17 @@ describe("Test Environment Configuration", () => {
   });
 
   it("should have MONGO_URI defined", () => {
-    expect(process.env.MONGO_URI).toBeDefined();
-    expect(process.env.MONGO_URI).toContain("mongodb://");
+    expect(process.env.MONGO_TEST_URI).toBeDefined();
+    expect(process.env.MONGO_TEST_URI).toContain("mongodb://");
   });
 
   it("should target secureshift_test database", () => {
-    const uri = process.env.MONGO_URI;
+    const uri = process.env.MONGO_TEST_URI;
     expect(uri).toContain("secureshift_test");
   });
 
   it("should use localhost or 127.0.0.1", () => {
-    const uri = process.env.MONGO_URI;
+    const uri = process.env.MONGO_TEST_URI;
     expect(uri).toMatch(/localhost|127\.0\.0\.1|::1/);
   });
 });

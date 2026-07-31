@@ -1,6 +1,10 @@
 // tests/setup.js
 import dotenv from "dotenv";
 import path from "path";
+import { fileURIToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // find .env.test file and load it into process.env
 dotenv.config({
@@ -10,7 +14,7 @@ dotenv.config({
 
 console.log(`[Test Setup] NODE_ENV=${process.env.NODE_ENV}`);
 
-const MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGO_TEST_URI;
 
 if (!MONGO_URI) {
   console.error("FAIL: [Test] MONGO_URI is not defined in .env.test");

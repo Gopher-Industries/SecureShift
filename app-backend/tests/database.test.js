@@ -11,7 +11,7 @@ import mongoose from "mongoose";
 describe("Test Database Connection", () => {
   beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGO_URI);
+      await mongoose.connect(process.env.MONGO_TEST_URI);
     }
   });
 
