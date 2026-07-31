@@ -124,7 +124,7 @@ router.post(
  * @swagger
  * /api/v1/auth/login:
  *   post:
- *     summary: Login and retrieve a JWT token
+ *     summary: Validate credentials and send a one-time passcode
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -142,23 +142,19 @@ router.post(
  *                 example: P@ssw0rd!
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: OTP delivered successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 token:
+ *                 message:
  *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6...
- *                 role:
- *                   type: string
- *                   example: guard
- *                 id:
- *                   type: string
- *                   example: 64d9fa5b5e18f9b9a3d52f77
+ *                   example: OTP sent to your email
  *       401:
  *         description: Invalid credentials
+ *       503:
+ *         description: OTP delivery is unavailable; no OTP is returned
  */
 router.post("/login", login);
 
