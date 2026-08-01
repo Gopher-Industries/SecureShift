@@ -40,13 +40,13 @@ const router = express.Router();
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Krish Uppal"
+ *                 example: "Test Employer"
  *               email:
  *                 type: string
- *                 example: "krish@example.com"
+ *                 example: "new.employer@example.test"
  *               password:
  *                 type: string
- *                 example: "P@ssw0rd!"
+ *                 example: "SecureShift1!"
  *               role:
  *                 type: string
  *                 enum: [employer, admin]
@@ -88,8 +88,9 @@ router.post("/register", register);
  *   post:
  *     summary: Register a new Guard (requires license image)
  *     description: |
- *       Accepts a single image file in **license** form-data field (jpg, png, webp, heic), max 5MB.
- *       The uploaded image is stored under /uploads** and the guard's license status is set to **pending**.
+ *       A unique email and a single licence image in the **license** form-data field are required.
+ *       Supported image types are jpg, png, webp, and heic, with a maximum size of 5MB.
+ *       The uploaded image is stored under `/uploads` and the initial licence status is **pending**.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -99,9 +100,9 @@ router.post("/register", register);
  *             type: object
  *             required: [name, email, password, license]
  *             properties:
- *               name: { type: string, example: "John Guard" }
- *               email: { type: string, format: email, example: "john.guard@example.com" }
- *               password: { type: string, example: "P@ssw0rd!" }
+ *               name: { type: string, example: "Test Guard" }
+ *               email: { type: string, format: email, example: "new.guard@example.test" }
+ *               password: { type: string, example: "SecureShift1!" }
  *               license:
  *                 type: string
  *                 format: binary
@@ -136,10 +137,20 @@ router.post(
  *             properties:
  *               email:
  *                 type: string
- *                 example: krish@example.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: P@ssw0rd!
+ *           examples:
+ *             employer:
+ *               summary: Seeded local employer
+ *               value:
+ *                 email: ops.local@secureshift.test
+ *                 password: SecureShift1!
+ *             guard:
+ *               summary: Seeded local guard
+ *               value:
+ *                 email: mia.guard@secureshift.test
+ *                 password: SecureShift1!
  *     responses:
  *       200:
  *         description: OTP delivered successfully
@@ -163,6 +174,7 @@ router.post("/login", login);
  * /api/v1/auth/verify-otp:
  *   post:
  *     summary: Verify OTP and get JWT token
+ *     description: Replace the placeholder OTP with the current code captured by Mailpit at http://localhost:8025.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -174,8 +186,12 @@ router.post("/login", login);
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
+ *                 example: ops.local@secureshift.test
  *               otp:
  *                 type: string
+ *                 example: "000000"
+ *                 description: Placeholder only. Use the current OTP from Mailpit at http://localhost:8025.
  *     responses:
  *       200:
  *         description: JWT token issued

@@ -50,8 +50,10 @@ const router = express.Router();
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: admin.local@secureshift.test
  *               password:
  *                 type: string
+ *                 example: SecureShift1!
  *     responses:
  *       200:
  *         description: JWT token returned on successful admin login
@@ -462,6 +464,13 @@ router.get("/smtp-settings", auth, adminOnly, getSmtpSettings);
  * /api/v1/admin/smtp-settings:
  *   put:
  *     summary: Update SMTP settings (Admin only)
+ *     description: |
+ *       Updates authenticated SMTP provider settings using string configuration values.
+ *       `SMTP_USER` and `SMTP_PASS` are required together by this endpoint.
+ *       Local Mailpit is configured through the runtime environment rather than this endpoint:
+ *       containers use `SMTP_HOST=mailpit`, while a backend running directly on the host uses `SMTP_HOST=localhost`.
+ *       Mailpit captures email locally and does not deliver it externally.
+ *       This endpoint does not update `EMAIL_ENABLED` or `SMTP_AUTH_REQUIRED`.
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -475,22 +484,34 @@ router.get("/smtp-settings", auth, adminOnly, getSmtpSettings);
  *               - SMTP_HOST
  *               - SMTP_USER
  *               - SMTP_PASS
+ *               - SMTP_FROM_EMAIL
  *             properties:
  *               SMTP_HOST:
  *                 type: string
- *                 example: smtp.gmail.com
  *               SMTP_PORT:
  *                 type: string
- *                 example: "587"
  *               SMTP_SECURE:
  *                 type: string
- *                 example: "false"
+ *                 enum: ["true", "false"]
+ *                 description: String boolean persisted to the backend environment.
  *               SMTP_USER:
  *                 type: string
- *                 example: your-email@gmail.com
  *               SMTP_PASS:
  *                 type: string
- *                 example: your-app-password
+ *                 format: password
+ *               SMTP_FROM_EMAIL:
+ *                 type: string
+ *                 format: email
+ *           examples:
+ *             authenticatedProvider:
+ *               summary: Authenticated SMTP provider
+ *               value:
+ *                 SMTP_HOST: smtp.example.com
+ *                 SMTP_PORT: "587"
+ *                 SMTP_SECURE: "false"
+ *                 SMTP_USER: smtp-user
+ *                 SMTP_PASS: replace-with-provider-secret
+ *                 SMTP_FROM_EMAIL: noreply@example.com
  *     responses:
  *       200:
  *         description: SMTP settings updated successfully
@@ -508,6 +529,10 @@ router.put("/smtp-settings", auth, adminOnly, updateSmtpSettings);
  * /api/v1/admin/smtp-settings/test:
  *   post:
  *     summary: Test SMTP settings by sending a test email (Admin only)
+ *     description: |
+ *       Requires an authenticated admin bearer token.
+ *       `testEmail` becomes the destination shown in the captured message headers.
+ *       With local Mailpit, no message is delivered externally; view the captured test email at http://localhost:8025.
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -523,7 +548,8 @@ router.put("/smtp-settings", auth, adminOnly, updateSmtpSettings);
  *               testEmail:
  *                 type: string
  *                 format: email
- *                 example: test@example.com
+ *                 example: admin-test@example.test
+ *                 description: Destination address shown in the captured test message headers.
  *     responses:
  *       200:
  *         description: Test email sent successfully
@@ -534,7 +560,7 @@ router.put("/smtp-settings", auth, adminOnly, updateSmtpSettings);
  *       403:
  *         description: Forbidden (admin only)
  *       500:
- *         description: Failed to send test email
+ *         description: Test email delivery failed
  */
 router.post("/smtp-settings/test", auth, adminOnly, testSmtpSettings);
 
