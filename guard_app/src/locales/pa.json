@@ -177,7 +177,16 @@
     "verified": "ਪ੍ਰਮਾਣਿਤ",
     "notVerified": "ਅਪ੍ਰਮਾਣਿਤ",
     "loading": "ਟਾਈਮਸ਼ੀਟ ਲੋਡ ਹੋ ਰਹੀ ਹੈ...",
-    "empty": "ਅਜੇ ਕੋਈ ਟਾਈਮਸ਼ੀਟ ਰਿਕਾਰਡ ਨਹੀਂ ਹੈ।"
+    "empty": "ਅਜੇ ਕੋਈ ਟਾਈਮਸ਼ੀਟ ਰਿਕਾਰਡ ਨਹੀਂ ਹੈ।",
+    "payable": "ਦੇਣਯੋਗ:",
+    "scheduled": "ਨਿਰਧਾਰਿਤ:",
+    "actual": "ਅਸਲ:",
+    "hoursBreakdown": "ਘੰਟੇ",
+    "error": "ਟਾਈਮਸ਼ੀਟ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ।",
+    "detailError": "ਇਹ ਟਾਈਮਸ਼ੀਟ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ।",
+    "retry": "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+    "summary": "ਸਾਰ",
+    "totalShifts": "ਸ਼ਿਫਟ:"
   },
 
   "tabs": {
@@ -196,7 +205,8 @@
     "notifications": "ਸੂਚਨਾਵਾਂ",
     "certificates": "ਪ੍ਰਮਾਣਪੱਤਰ",
     "shiftDetails": "ਸ਼ਿਫਟ ਵੇਰਵਾ",
-    "shiftRequests": "ਸ਼ਿਫਟ ਬਦਲਾਅ ਬੇਨਤੀਆਂ"
+    "shiftRequests": "ਸ਼ਿਫਟ ਬਦਲਾਅ ਬੇਨਤੀਆਂ",
+    "timesheetDetails": "ਟਾਈਮਸ਼ੀਟ ਵੇਰਵਾ"
   },
 
   "docs": {

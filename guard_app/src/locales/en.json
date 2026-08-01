@@ -176,7 +176,16 @@
     "verified": "Verified",
     "notVerified": "Not verified",
     "loading": "Loading timesheets...",
-    "empty": "No timesheet records yet."
+    "empty": "No timesheet records yet.",
+    "payable": "Payable:",
+    "scheduled": "Scheduled:",
+    "actual": "Actual:",
+    "hoursBreakdown": "Hours",
+    "error": "Could not load timesheets.",
+    "detailError": "Could not load this timesheet.",
+    "retry": "Try again",
+    "summary": "Summary",
+    "totalShifts": "Shifts:"
   },
   "tabs": {
     "home": "Home",
@@ -193,7 +202,8 @@
     "notifications": "Notifications",
     "certificates": "Certificates",
     "shiftDetails": "Shift Details",
-    "shiftRequests": "Shift Change Requests"
+    "shiftRequests": "Shift Change Requests",
+    "timesheetDetails": "Timesheet Details"
   },
   "docs": {
     "title": "Documents Overview",
