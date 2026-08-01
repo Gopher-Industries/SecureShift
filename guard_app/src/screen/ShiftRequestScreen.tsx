@@ -4,7 +4,6 @@ import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { getMe } from '../api/auth';
 import { listShiftRequests, ShiftRequestDto } from '../api/shiftRequest';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
@@ -37,7 +36,7 @@ export default function ShiftRequestScreen() {
       if (!res.success) throw error;
 
       setAllRows(res.items);
-      setRows(allRows);
+      setRows(res.items);
       setError('');
     } catch (e: unknown) {
       setError(t('shifts.requestError'));
@@ -156,16 +155,16 @@ export default function ShiftRequestScreen() {
                   <View style={styles.cardRow}>
                     <Text style={styles.cardLabel}>{t('shifts.leaveStart')}</Text>
                     <Text style={styles.cardValue}>
-                      {typeof item.createdAt === 'string'
-                        ? new Date(Date.parse(item.createdAt)).toDateString()
+                      {typeof item.leaveStartDate === 'string'
+                        ? new Date(Date.parse(item.leaveStartDate)).toDateString()
                         : '---'}
                     </Text>
                   </View>
                   <View style={styles.cardRow}>
                     <Text style={styles.cardLabel}>{t('shifts.leaveEnd')}</Text>
                     <Text style={styles.cardValue}>
-                      {typeof item.createdAt === 'string'
-                        ? new Date(Date.parse(item.createdAt)).toDateString()
+                      {typeof item.leaveEndDate === 'string'
+                        ? new Date(Date.parse(item.leaveEndDate)).toDateString()
                         : '---'}
                     </Text>
                   </View>
@@ -217,14 +216,14 @@ const getStyles = (colors: AppColors) =>
       color: colors.muted,
       marginTop: 40,
       fontSize: 24,
-      fontWeight: 600,
+      fontWeight: '600',
     },
     errorText: {
       textAlign: 'center',
       color: colors.status.rejected,
       marginTop: 40,
       fontSize: 24,
-      fontWeight: 600,
+      fontWeight: '600',
     },
     cardList: {
       paddingBottom: 95,
@@ -270,7 +269,7 @@ const getStyles = (colors: AppColors) =>
     cardRejection: {
       fontSize: 13,
       color: colors.status.rejected,
-      fontWeight: 600,
+      fontWeight: '600',
       width: 65,
       marginBottom: 6,
     },

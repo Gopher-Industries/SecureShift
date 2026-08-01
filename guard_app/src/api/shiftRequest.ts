@@ -6,8 +6,8 @@ export type ShiftRequestDto = {
   _id: string;
   type: 'SWAP' | 'LEAVE';
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  requestingGuardID: string;
-  targetGuardID?: string;
+  requestingGuardId: string;
+  targetGuardId?: string;
   originalShiftId: string;
   leaveStartDate?: Date;
   leaveEndDate?: Date;

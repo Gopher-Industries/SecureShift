@@ -157,11 +157,12 @@
     "requestError": "Failed to load requests.",
     "alerts": {
       "missingDateHead": "Missing Date",
-      "missingDateMsg": "Enter the date and time you want your shift moved to.",
+      "missingDateMsg": "Enter the date you want your shift moved to.",
       "invalidDateHead": "Invalid Date",
       "invalidDateMsg": "Selected date is invalid",
       "requestCreated": "Request Created",
-      "requestFailed": "Request Failed"
+      "requestFailed": "Request Failed",
+      "successMessage": "Your request has been sent to your employer"
     }
   },
   "timesheet": {

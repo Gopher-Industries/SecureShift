@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native';
 
-import { createShiftRequest, ShiftRequestDto } from '../../api/shiftRequest';
+import { createShiftRequest } from '../../api/shiftRequest';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
 import type { AppColors } from '../../theme/colors';
@@ -67,17 +67,22 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
 
     if (shift === null) return;
 
-    if (REQUEST_TYPES[requestType].id === 'SWAP' || REQUEST_TYPES[requestType].id === 'LEAVE') {
-      const res = await createShiftRequest({
-        type: REQUEST_TYPES[requestType].id,
-        targetGuardId: 'NOT YET IMPLEMENTED', // NOT YET IMPLEMENTED
-        originalShiftId: shift.id,
-        replacementShiftId: 'NOT YET IMPLEMENTED', // NOT YET IMPLEMENTED
-        leaveStartDate: leaveStart,
-        leaveEndDate: leaveEnd,
-        reason,
-      });
-    } else {
+    try {
+      if (REQUEST_TYPES[requestType].id === 'SWAP' || REQUEST_TYPES[requestType].id === 'LEAVE') {
+        const res = await createShiftRequest({
+          type: REQUEST_TYPES[requestType].id,
+          targetGuardId: null, // NOT YET IMPLEMENTED
+          originalShiftId: shift.id,
+          replacementShiftId: null, // NOT YET IMPLEMENTED
+          leaveStartDate: leaveStart,
+          leaveEndDate: leaveEnd,
+          reason,
+        });
+        Alert.alert(t('shifts.alerts.requestCreated'), t('shifts.alerts.successMessage'));
+      } else {
+        Alert.alert(t('shifts.alerts.requestFailed'));
+      }
+    } catch {
       Alert.alert(t('shifts.alerts.requestFailed'));
     }
 
