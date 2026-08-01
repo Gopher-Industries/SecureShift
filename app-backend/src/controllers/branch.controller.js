@@ -1,5 +1,5 @@
-import Branch from '../models/Branch.js';              
-import { ACTIONS } from '../middleware/logger.js';
+import Branch from "../models/Branch.js";
+import { ACTIONS } from "../middleware/logger.js";
 
 /**
  * @desc    Create a new site (employer only)
@@ -16,22 +16,22 @@ export const createSite = async (req, res) => {
     });
 
     if (existing) {
-      return res.status(400).json({ message: 'Site code already exists' });
+      return res.status(400).json({ message: "Site code already exists" });
     }
 
     const site = new Branch({
       name,
       code,
       location: {
-        line1: location?.line1 || '',
-        line2: location?.line2 || '',
-        city: location?.city || '',
-        state: location?.state || '',
-        postcode: location?.postcode || '',
-        country: location?.country || '',
+        line1: location?.line1 || "",
+        line2: location?.line2 || "",
+        city: location?.city || "",
+        state: location?.state || "",
+        postcode: location?.postcode || "",
+        country: location?.country || "",
       },
       createdBy: req.user.id,
-      employerId: req.user.id
+      employerId: req.user.id,
     });
 
     await site.save();
@@ -41,7 +41,9 @@ export const createSite = async (req, res) => {
 
     res.status(201).json(site);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to create site', error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to create site", error: err.message });
   }
 };
 
@@ -61,7 +63,9 @@ export const getAllSites = async (req, res) => {
 
     res.status(200).json({ count: sites.length, sites });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch sites', error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch sites", error: err.message });
   }
 };
 
@@ -80,7 +84,7 @@ export const updateSite = async (req, res) => {
     });
 
     if (!site) {
-      return res.status(404).json({ message: 'Site not found' });
+      return res.status(404).json({ message: "Site not found" });
     }
 
     const { name, code, location } = req.body;
@@ -105,7 +109,9 @@ export const updateSite = async (req, res) => {
 
     res.status(200).json(site);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to update site', error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to update site", error: err.message });
   }
 };
 
@@ -124,7 +130,7 @@ export const deleteSite = async (req, res) => {
     });
 
     if (!site) {
-      return res.status(404).json({ message: 'Site not found' });
+      return res.status(404).json({ message: "Site not found" });
     }
 
     site.isActive = false;
@@ -133,8 +139,10 @@ export const deleteSite = async (req, res) => {
       siteId: id,
     });
 
-    res.status(200).json({ message: 'Site deleted successfully' });
+    res.status(200).json({ message: "Site deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to delete site', error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to delete site", error: err.message });
   }
 };

@@ -1,31 +1,60 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
-if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-  console.warn('⚠️  SMTP configuration is missing. Email sending will fail.');
-  console.warn('   Please set SMTP_HOST, SMTP_USER, and SMTP_PASS in your .env file');
-}
+export const parseBoolean = (value, defaultValue = false) => {
+  if (value === undefined || value === null || value === "") {
+    return defaultValue;
+  }
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'localhost',
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
-    secure: (process.env.SMTP_SECURE || 'false') === 'true',
-    auth: {
-      user: process.env.SMTP_USER || '',
-      pass: process.env.SMTP_PASS || '',
-    },
-  });
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+
+  throw new Error("Boolean configuration values must be 'true' or 'false'");
+};
+
+export const getSmtpTransportOptions = (env = process.env) => {
+  const authRequired = parseBoolean(env.SMTP_AUTH_REQUIRED, true);
+  const user = env.SMTP_USER?.trim();
+  const pass = env.SMTP_PASS?.trim();
+
+  if (authRequired && (!user || !pass)) {
+    throw new Error(
+      "SMTP_USER and SMTP_PASS are both required when SMTP_AUTH_REQUIRED=true",
+    );
+  }
+
+  const options = {
+    host: env.SMTP_HOST || "localhost",
+    port: Number.parseInt(env.SMTP_PORT || "587", 10),
+    secure: parseBoolean(env.SMTP_SECURE, false),
+  };
+
+  if (authRequired) {
+    options.auth = { user, pass };
+  }
+
+  return options;
+};
+
+export const createTransporter = (env = process.env) => {
+  return nodemailer.createTransport(getSmtpTransportOptions(env));
+};
+
+const assertEmailEnabled = (env = process.env) => {
+  if (!parseBoolean(env.EMAIL_ENABLED, true)) {
+    throw new Error("Email delivery is disabled");
+  }
 };
 
 const getOtpHtmlTemplate = ({ otp, name }) => {
-  const displayName = name?.trim() ? name.trim().split(' ')[0] : 'there';
+  const displayName = name?.trim() ? name.trim().split(" ")[0] : "there";
   const logoUrl =
     process.env.EMAIL_LOGO_URL ||
-    'https://cdn.jsdelivr.net/gh/musahex/secureshift-branding@main/logo.png';
-  const supportEmail = process.env.SUPPORT_EMAIL || 'support@secureshift.app';
-  const supportPhone = process.env.SUPPORT_PHONE || '+61 123 456 789';
+    "https://cdn.jsdelivr.net/gh/musahex/secureshift-branding@main/logo.png";
+  const supportEmail = process.env.SUPPORT_EMAIL || "support@secureshift.app";
+  const supportPhone = process.env.SUPPORT_PHONE || "+61 123 456 789";
   const address =
-    process.env.COMPANY_ADDRESS || '1234 Collins St, Melbourne VIC 3000';
+    process.env.COMPANY_ADDRESS || "1234 Collins St, Melbourne VIC 3000";
   const year = new Date().getFullYear();
 
   return `<!DOCTYPE html>
@@ -87,21 +116,22 @@ const getOtpHtmlTemplate = ({ otp, name }) => {
   </html>`;
 };
 
-let transporter = createTransporter();
-
-export const sendOTP = async (email, otp, recipientName = '') => {
-  transporter = createTransporter();
+export const sendOTP = async (email, otp, recipientName = "") => {
+  assertEmailEnabled();
+  const transporter = createTransporter();
   const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
 
   if (!fromEmail) {
-    throw new Error('SMTP_FROM_EMAIL is not configured. Please set it in your .env file or Email Settings UI');
+    throw new Error(
+      "SMTP_FROM_EMAIL is not configured. Please set it in your .env file or Email Settings UI",
+    );
   }
 
   const mailOptions = {
     from: `"Secure Shift" <${fromEmail}>`,
     to: email,
-    subject: 'Your Secure Shift OTP Code',
-    text: `Hi ${recipientName || 'there'},\n\nYour one-time password is ${otp}. It expires in 5 minutes.\n\nIf you did not request this code, reset your password or contact Secure Shift support immediately.`,
+    subject: "Your Secure Shift OTP Code",
+    text: `Hi ${recipientName || "there"},\n\nYour one-time password is ${otp}. It expires in 5 minutes.\n\nIf you did not request this code, reset your password or contact Secure Shift support immediately.`,
     html: getOtpHtmlTemplate({ otp, name: recipientName }),
   };
 
@@ -109,45 +139,60 @@ export const sendOTP = async (email, otp, recipientName = '') => {
     await transporter.sendMail(mailOptions);
     console.log(`✅ OTP email sent to ${email} from ${fromEmail}`);
   } catch (err) {
-    const errorMsg = err.message || 'Unknown error';
-    console.error('❌ Failed to send OTP email:', errorMsg);
-    console.error('   SMTP Config - Host:', process.env.SMTP_HOST || 'NOT SET');
-    console.error('   SMTP Config - User:', process.env.SMTP_USER || 'NOT SET');
-    console.error('   SMTP Config - Port:', process.env.SMTP_PORT || '587');
-    console.error('   SMTP Config - Secure:', process.env.SMTP_SECURE || 'false');
-    console.error('   SMTP Config - From Email:', fromEmail || 'NOT SET');
-    console.error('   SMTP Config - Password Set:', process.env.SMTP_PASS ? 'YES' : 'NO');
-    
+    const errorMsg = err.message || "Unknown error";
+
     if (!process.env.SMTP_HOST) {
-      throw new Error('SMTP_HOST is not configured. Please set it in your .env file');
-    }
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      throw new Error('SMTP credentials are missing. Please set SMTP_USER and SMTP_PASS in your .env file');
+      throw new Error(
+        "SMTP_HOST is not configured. Please set it in your .env file",
+      );
     }
     if (!process.env.SMTP_FROM_EMAIL) {
-      throw new Error('SMTP_FROM_EMAIL is not configured. For SendGrid, this must be a verified sender email. Please set it in your .env file or Email Settings UI');
+      throw new Error(
+        "SMTP_FROM_EMAIL is not configured. For SendGrid, this must be a verified sender email. Please set it in your .env file or Email Settings UI",
+      );
     }
-    
-    if (errorMsg.includes('Authentication failed') || errorMsg.includes('535')) {
-      if (process.env.SMTP_HOST === 'smtp.sendgrid.net' && process.env.SMTP_USER !== 'apikey') {
-        throw new Error('For SendGrid, SMTP_USER must be exactly "apikey" (not an email address). SMTP_PASS should be your SendGrid API key.');
+
+    if (
+      errorMsg.includes("Authentication failed") ||
+      errorMsg.includes("535")
+    ) {
+      if (
+        process.env.SMTP_HOST === "smtp.sendgrid.net" &&
+        process.env.SMTP_USER !== "apikey"
+      ) {
+        throw new Error(
+          'For SendGrid, SMTP_USER must be exactly "apikey" (not an email address). SMTP_PASS should be your SendGrid API key.',
+        );
       }
-      throw new Error(`SMTP Authentication failed. Check your SMTP_USER and SMTP_PASS credentials. Error: ${errorMsg}`);
+      throw new Error(
+        `SMTP Authentication failed. Check your SMTP_USER and SMTP_PASS credentials. Error: ${errorMsg}`,
+      );
     }
-    
-    if (errorMsg.includes('550') || errorMsg.includes('verified Sender Identity')) {
-      throw new Error(`The FROM email address (${fromEmail}) is not verified in SendGrid. Please verify this email in SendGrid Dashboard → Settings → Sender Authentication. Error: ${errorMsg}`);
+
+    if (
+      errorMsg.includes("550") ||
+      errorMsg.includes("verified Sender Identity")
+    ) {
+      throw new Error(
+        `The FROM email address (${fromEmail}) is not verified in SendGrid. Please verify this email in SendGrid Dashboard → Settings → Sender Authentication. Error: ${errorMsg}`,
+      );
     }
-    
+
     throw new Error(`Failed to send OTP email: ${errorMsg}`);
   }
 };
 
-export const sendEmployerCredentials = async (email, tempPassword, contactPerson, companyName) => {
-  transporter = createTransporter();
-  
-  const subject = 'Your SecureShift Employer Account Credentials';
-  const greetingName = contactPerson || companyName || 'there';
+export const sendEmployerCredentials = async (
+  email,
+  tempPassword,
+  contactPerson,
+  companyName,
+) => {
+  assertEmailEnabled();
+  const transporter = createTransporter();
+
+  const subject = "Your SecureShift Employer Account Credentials";
+  const greetingName = contactPerson || companyName || "there";
   const text = `Hello ${greetingName},
 
 An employer account has been created for you on SecureShift.
@@ -170,9 +215,13 @@ SecureShift Team`;
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Employer credentials email sent to ${email} from ${fromEmail}`);
+    console.log(
+      `✅ Employer credentials email sent to ${email} from ${fromEmail}`,
+    );
   } catch (err) {
-    console.error('❌ Failed to send employer credentials email:', err.message);
-    throw new Error(`Failed to send employer credentials email: ${err.message}`);
+    console.error("❌ Failed to send employer credentials email:", err.message);
+    throw new Error(
+      `Failed to send employer credentials email: ${err.message}`,
+    );
   }
 };

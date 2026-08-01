@@ -3,12 +3,6 @@ import axios from 'axios';
 
 import http from '../lib/http';
 
-/**
- * When the backend has the /sos/* routes implemented, set USE_MOCK_SOS to
- * false (or remove the mock branches) so the real API is called instead.
- */
-const USE_MOCK_SOS = true;
-
 export type LocationPayload = {
   latitude: number;
   longitude: number;
@@ -53,76 +47,15 @@ type SOSResponse = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Mock implementation                                                 */
-/* ------------------------------------------------------------------ */
-
-let mockStore: SOSAlert | null = null;
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function randomId() {
-  return 'mock-' + Math.random().toString(36).slice(2, 10);
-}
-
-function buildInitialAlert(loc: LocationPayload, note?: string): SOSAlert {
-  return {
-    _id: randomId(),
-    guardId: 'mock-guard',
-    shiftId: null,
-    triggeredAt: nowIso(),
-    status: 'pending',
-    statusMessage: 'Connecting to dispatch...',
-    location: loc,
-    note,
-    history: [{ status: 'pending', message: 'SOS triggered', at: nowIso() }],
-    // For emulator testing, use a non-emergency number so the dialer opens.
-    // In production this should be '000' (or whatever the emergency contact is).
-    emergencyContact: { name: 'Emergency Services', phone: '0412345678' },
-  };
-}
-
-/**
- * Simulate the alert progressing through statuses based on how long it has
- * been active. Each call to getSOSStatus moves it forward if appropriate.
- */
-function advanceMockStatus(alertObj: SOSAlert): SOSAlert {
-  if (alertObj.status === 'cancelled' || alertObj.status === 'resolved') {
-    return alertObj;
-  }
-  const elapsed = Date.now() - new Date(alertObj.triggeredAt).getTime();
-  const next = { ...alertObj, history: [...(alertObj.history ?? [])] };
-  if (elapsed > 25_000 && alertObj.status !== 'connected') {
-    next.status = 'connected';
-    next.statusMessage = 'Connected to dispatch — help is on the way';
-    next.history.push({ status: 'connected', at: nowIso() });
-  } else if (elapsed > 15_000 && alertObj.status === 'notifying') {
-    next.status = 'notified';
-    next.statusMessage = 'Supervisor notified';
-    next.history.push({ status: 'notified', at: nowIso() });
-  } else if (elapsed > 5_000 && alertObj.status === 'pending') {
-    next.status = 'notifying';
-    next.statusMessage = 'Notifying supervisor...';
-    next.history.push({ status: 'notifying', at: nowIso() });
-  }
-  return next;
-}
-
-function delay<T>(value: T, ms = 250): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
-/* ------------------------------------------------------------------ */
 /* Public API                                                          */
+/*                                                                     */
+/* Backed by the real /sos/* routes (guard role):                      */
+/*   POST /sos/trigger, POST /sos/:id/location, POST /sos/:id/note,    */
+/*   POST /sos/:id/cancel, GET /sos/:id, GET /sos/active.              */
 /* ------------------------------------------------------------------ */
 
 // 🚨 Trigger SOS
 export async function triggerSOS(loc: LocationPayload, note?: string): Promise<SOSAlert> {
-  if (USE_MOCK_SOS) {
-    mockStore = buildInitialAlert(loc, note);
-    return delay(mockStore, 400);
-  }
   try {
     const { data } = await http.post<SOSResponse>('/sos/trigger', {
       latitude: loc.latitude,
@@ -142,13 +75,6 @@ export async function triggerSOS(loc: LocationPayload, note?: string): Promise<S
 
 // 📍 Push a location update for an active SOS
 export async function updateSOSLocation(sosId: string, loc: LocationPayload): Promise<SOSAlert> {
-  if (USE_MOCK_SOS) {
-    if (!mockStore || mockStore._id !== sosId) {
-      throw new Error('No active mock SOS for that id');
-    }
-    mockStore = { ...mockStore, location: loc };
-    return delay(mockStore, 100);
-  }
   try {
     const { data } = await http.post<SOSResponse>(`/sos/${sosId}/location`, {
       latitude: loc.latitude,
@@ -169,13 +95,6 @@ export async function updateSOSLocation(sosId: string, loc: LocationPayload): Pr
 
 // 📝 Add or update a note on an active SOS
 export async function addSOSNote(sosId: string, note: string): Promise<SOSAlert> {
-  if (USE_MOCK_SOS) {
-    if (!mockStore || mockStore._id !== sosId) {
-      throw new Error('No active mock SOS for that id');
-    }
-    mockStore = { ...mockStore, note };
-    return delay(mockStore, 200);
-  }
   try {
     const { data } = await http.post<SOSResponse>(`/sos/${sosId}/note`, { note });
     return data.sos;
@@ -190,22 +109,6 @@ export async function addSOSNote(sosId: string, note: string): Promise<SOSAlert>
 
 // ❌ Cancel an active SOS (within grace period or with confirmation)
 export async function cancelSOS(sosId: string): Promise<SOSAlert> {
-  if (USE_MOCK_SOS) {
-    if (!mockStore || mockStore._id !== sosId) {
-      throw new Error('No active mock SOS for that id');
-    }
-    mockStore = {
-      ...mockStore,
-      status: 'cancelled',
-      statusMessage: 'SOS cancelled by guard',
-      cancelledAt: nowIso(),
-      history: [
-        ...(mockStore.history ?? []),
-        { status: 'cancelled', at: nowIso(), message: 'SOS cancelled by guard' },
-      ],
-    };
-    return delay(mockStore, 200);
-  }
   try {
     const { data } = await http.post<SOSResponse>(`/sos/${sosId}/cancel`, {});
     return data.sos;
@@ -220,13 +123,6 @@ export async function cancelSOS(sosId: string): Promise<SOSAlert> {
 
 // 🔄 Get the latest status for an active SOS (used for polling)
 export async function getSOSStatus(sosId: string): Promise<SOSAlert> {
-  if (USE_MOCK_SOS) {
-    if (!mockStore || mockStore._id !== sosId) {
-      throw new Error('No active mock SOS for that id');
-    }
-    mockStore = advanceMockStatus(mockStore);
-    return delay(mockStore, 150);
-  }
   try {
     const { data } = await http.get<SOSResponse>(`/sos/${sosId}`);
     return data.sos;
@@ -238,5 +134,23 @@ export async function getSOSStatus(sosId: string): Promise<SOSAlert> {
       );
     }
     throw new Error('Failed to fetch SOS status');
+  }
+}
+
+// 🟢 Get the guard's currently active SOS (if any) — used to restore UI state
+export async function getActiveSOS(): Promise<SOSAlert | null> {
+  try {
+    const { data } = await http.get<SOSResponse>('/sos/active');
+    return data.sos ?? null;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // No active SOS is a normal, non-error state.
+      if (error.response?.status === 404) return null;
+      const message = error.response?.data?.message;
+      throw new Error(
+        message || `Failed to fetch active SOS (${error.response?.status ?? 'unknown'})`,
+      );
+    }
+    throw new Error('Failed to fetch active SOS');
   }
 }
