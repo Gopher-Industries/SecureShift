@@ -71,9 +71,9 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
       if (REQUEST_TYPES[requestType].id === 'SWAP' || REQUEST_TYPES[requestType].id === 'LEAVE') {
         const res = await createShiftRequest({
           type: REQUEST_TYPES[requestType].id,
-          targetGuardId: null, // NOT YET IMPLEMENTED
+          targetGuardId: null,
           originalShiftId: shift.id,
-          replacementShiftId: null, // NOT YET IMPLEMENTED
+          replacementShiftId: null,
           leaveStartDate: leaveStart,
           leaveEndDate: leaveEnd,
           reason,
