@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import CompanyLogo from './company_logo.svg';
 import ProfilePicPlaceHolder from './ProfilePicPlaceHolder.svg';
 import NotificationsPopup from '../pages/NotificationsPopup';
-import translations from "../i18n/translations";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import Logo from '../pages/logo.png';
 
-export default function Header({ language, setLanguage }) {
-  const t = translations[language || "en"] || translations.en;
-
+export default function Header() {
+  const { t, i18n } = useTranslation();
+  console.log("Language:", i18n.language);
+console.log("Home translation:", t("home"));
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
 
@@ -47,11 +49,22 @@ export default function Header({ language, setLanguage }) {
     navigate('/login');
   };
 
+  const changeLanguage = (language) => {
+    i18n.changeLanguage(language);
+    localStorage.setItem('language', language);
+    // Force re-render of the entire app
+    window.location.reload();
+  };
+
   return (
     <div style={headerStyle}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <img src={CompanyLogo} alt="Company Logo" style={{ height: '66px' }} />
+        <img 
+          src={CompanyLogo} 
+          alt="Company Logo" 
+          style={{ height: '66px' }} 
+        />
         <div style={{ fontWeight: '600', fontSize: '24px' }}>
           Secure Shift
         </div>
@@ -59,40 +72,39 @@ export default function Header({ language, setLanguage }) {
 
       {/* Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-
         <div onClick={handleHomeClick} style={navButtonStyle}>
-          {t.home}
+          {t("home")}
         </div>
 
         <Link to="/manage-shift" style={navButtonStyle}>
-          {t.shifts}
+          {t("shifts")}
         </Link>
 
         <Link to="/guard-profiles" style={navButtonStyle}>
-          {t.guard}
+          {t("guard")}
         </Link>
 
         <Link to="/timesheet" style={navButtonStyle}>
-          {t.timesheet}
+          {t("timesheet")}
         </Link>
 
         <Link to="/daily-monitoring" style={navButtonStyle}>
-        {t.dailyMonitoring}
+          {t("dailyMonitoring")}
         </Link>
 
         <Link to="/payroll" style={navButtonStyle}>
-        {t.payroll}
+          {t("payroll")}
         </Link>
 
         {localStorage.getItem('userRole') === 'admin' && (
           <Link to="/email-settings" style={navButtonStyle}>
-            {t.email}
+            {t("email")}
           </Link>
         )}
 
-<NotificationsPopup language={language} />
+        <NotificationsPopup />
 
-        {/* Avatar + Dropdown */}
+        {/* Profile */}
         <div style={{ position: 'relative' }}>
           <div
             onClick={() => setShowMenu(!showMenu)}
@@ -121,57 +133,54 @@ export default function Header({ language, setLanguage }) {
             >
               {/* Profile Section */}
               <div
-  onClick={() => {
-    navigate('/company-profile');
-    setShowMenu(false);
-  }}
-  style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '16px',
-    borderBottom: '1px solid #eee',
-    backgroundColor: '#072261',
-    cursor: 'pointer',
-  }}
->
-  <img
-    src={Logo}
-    alt="Profile"
-    style={{
-      width: '52px',
-      height: '52px',
-      borderRadius: '50%',
-      objectFit: 'contain',
-      backgroundColor: '#fff',
-      padding: '4px',
-    }}
-  />
+                onClick={() => {
+                  navigate('/company-profile');
+                  setShowMenu(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '16px',
+                  borderBottom: '1px solid #eee',
+                  backgroundColor: '#072261',
+                  cursor: 'pointer',
+                }}
+              >
+                <img
+                  src={Logo}
+                  alt="Profile"
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '50%',
+                    objectFit: 'contain',
+                    backgroundColor: '#fff',
+                    padding: '4px',
+                  }}
+                />
+                <div>
+                  <div
+                    style={{
+                      fontWeight: '700',
+                      fontSize: '15px',
+                      color: '#fff',
+                    }}
+                  >
+                    ABC Security
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '13px',
+                      color: '#dbeafe',
+                    }}
+                  >
+                    {localStorage.getItem('email') || 'User'}
+                  </div>
+                </div>
+              </div>
 
-  <div>
-    <div
-      style={{
-        fontWeight: '700',
-        fontSize: '15px',
-        color: '#fff',
-      }}
-    >
-      ABC Security
-    </div>
-
-    <div
-      style={{
-        fontSize: '13px',
-        color: '#dbeafe',
-        marginTop: '2px',
-      }}
-    >
-      {localStorage.getItem('email') || 'User'}
-    </div>
-  </div>
-</div>
-
-              {/* Language Section */}
+              {/* Language */}
               <div style={{ padding: '14px 16px' }}>
                 <div
                   style={{
@@ -181,7 +190,7 @@ export default function Header({ language, setLanguage }) {
                     color: '#111',
                   }}
                 >
-                  🌐 Language
+                  🌐 {t("language")}
                 </div>
 
                 {[
@@ -192,15 +201,14 @@ export default function Header({ language, setLanguage }) {
                 ].map((item) => (
                   <div
                     key={item.code}
-                    onClick={() => setLanguage(item.code)}
+                    onClick={() => changeLanguage(item.code)}
                     style={{
                       padding: '7px 0',
                       cursor: 'pointer',
                       fontSize: '14px',
-                      color:
-                        language === item.code ? '#274B93' : '#333',
-                      fontWeight:
-                        language === item.code ? '700' : '400',
+                      color: i18n.language === item.code ? '#274B93' : '#333',
+                      fontWeight: i18n.language === item.code ? '700' : '400',
+                      borderBottom: i18n.language === item.code ? '2px solid #274B93' : 'none',
                     }}
                   >
                     {item.label}
@@ -219,7 +227,7 @@ export default function Header({ language, setLanguage }) {
                   fontWeight: '600',
                 }}
               >
-                Logout
+                {t("logout")}
               </div>
             </div>
           )}

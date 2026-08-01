@@ -11,9 +11,9 @@ services:
       MONGO_URI: mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
       JWT_SECRET: local-dev-jwt-secret-change-me
       LICENCE_ENC_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
-      EMAIL_ENABLED: "false"
-      SMTP_HOST: localhost
-      SMTP_PORT: "587"
+      EMAIL_ENABLED: "true"
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
       SMTP_SECURE: "false"
       SMTP_USER: local@example.test
       SMTP_PASS: local-dev-password
@@ -44,6 +44,16 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+    restart: unless-stopped
+    networks:
+      - secureshift
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: secureshift-mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
     restart: unless-stopped
     networks:
       - secureshift
