@@ -17,58 +17,67 @@ const fallbackFaqs = [
     category: 'Account',
     displayOrder: 2,
   },
-  ];
+];
 
 export default function Faq() {
   const [faqs, setFaqs] = useState(fallbackFaqs);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [usedFallback, setUsedFallback] = useState(true);
 
-useEffect(() => {
-  let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-          api.get('/faqs')
-  .then((res) => {
-    if (isMounted && Array.isArray(res.data) && res.data.length > 0) {
-      setFaqs(res.data);
-    }
-  })
-  .catch(() => {
-    if (isMounted) {
-      setError('Unable to load latest FAQs, showing default list.');
-    }
-  })
-  .finally(() => {
-    if (isMounted) {
-      setLoading(false);
-    }
-  });
+    api.get('/faqs')
+      .then((res) => {
+        // BE 022 contract: a successful response is always an array (possibly
+        // empty when there are no active FAQs). Only treat it as "no data"
+        // if it's not an array - an empty array is a valid, real result and
+        // should replace the fallback list instead of being ignored.
+        if (isMounted && Array.isArray(res.data)) {
+          setFaqs(res.data);
+          setUsedFallback(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setError('Unable to load latest FAQs, showing default list.');
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
 
-          return () => {
-            isMounted = false;
-          };
-}, []);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-const sortedFaqs = [...faqs].sort(
-  (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
+  const sortedFaqs = [...faqs].sort(
+    (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
   );
 
-return (
-  <div style={styles.page}>
-<div style={styles.container}>
-<h1 style={styles.title}>Frequently Asked Questions</h1>
-  {loading && <p style={styles.paragraph}>Loading FAQs...</p>}
-   {error && <p style={styles.paragraph}>{error}</p>}
-    {sortedFaqs.map((faq) => (
-      <div key={faq._id} style={styles.faqItem}>
-      <h2 style={styles.heading}>{faq.question}</h2>
-    <p style={styles.paragraph}>{faq.answer}</p>
+  return (
+    <div style={styles.page}>
+      <div style={styles.container}>
+        <h1 style={styles.title}>Frequently Asked Questions</h1>
+        {loading && <p style={styles.paragraph}>Loading FAQs...</p>}
+        {error && <p style={styles.paragraph}>{error}</p>}
+        {!loading && !error && !usedFallback && sortedFaqs.length === 0 && (
+          <p style={styles.paragraph}>No FAQs are available right now.</p>
+        )}
+        {sortedFaqs.map((faq) => (
+          <div key={faq._id} style={styles.faqItem}>
+            <h2 style={styles.heading}>{faq.question}</h2>
+            <p style={styles.paragraph}>{faq.answer}</p>
+          </div>
+        ))}
       </div>
-    ))}
-   </div>
-     </div>
-   );
-  }
+    </div>
+  );
+}
 
 const styles = {
   page: { padding: '40px 20px' },
@@ -78,4 +87,3 @@ const styles = {
   paragraph: { fontSize: '15px', lineHeight: 1.6 },
   faqItem: { marginBottom: '16px' },
 };
-  
