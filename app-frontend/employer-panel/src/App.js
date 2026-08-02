@@ -30,6 +30,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import ContactUs from './pages/ContactUs';
 
+import i18n from './i18n';
 function TaskRoute() {
   return (
     <Routes>
@@ -76,9 +77,8 @@ function AppRoutes({ language, setLanguage }) {
         <Route path="/task-detail" element={<TaskRoute />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-condition" element={<TermsAndConditions />} />
-        <Route path="/contact-us" element={<ContactUs />} />  
 
-
+        <Route path="/contact-us" element={<ContactUs />} /> 
         {/* PROTECTED ROUTES */}
         <Route
           path="/employer-dashboard"
@@ -120,7 +120,7 @@ function AppRoutes({ language, setLanguage }) {
           path="/payroll"
           element={protectedLayout(<Payroll language={language} />)}
         />
-
+       
       </Routes>
     </>
   );
