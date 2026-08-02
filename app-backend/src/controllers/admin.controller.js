@@ -747,10 +747,9 @@ export const testSmtpSettings = async (req, res) => {
         message: "Test email sent successfully",
         note: "Check the inbox of the test email address",
       });
-    } catch (emailError) {
+    } catch {
       res.status(500).json({
-        message: "Failed to send test email",
-        error: emailError.message,
+        message: "Failed to send test email. Please verify the SMTP settings.",
       });
     }
   } catch (err) {
