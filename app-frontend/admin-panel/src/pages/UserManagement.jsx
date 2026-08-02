@@ -7,15 +7,15 @@ import colors from '../theme/colors';
 
 const ui = {
   btn: {
-      border: 'none',
-      borderRadius: 8,
-      padding: '7px 14px',
-      fontSize: 13,
-      fontWeight: 600,
-      cursor: 'pointer',
-  }, 
-  btnCancel: { 
-    background: colors.white, 
+    border: 'none',
+    borderRadius: 8,
+    padding: '7px 14px',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  btnCancel: {
+    background: colors.white,
     color: colors.primary,
     border: `1px solid ${colors.primary}`,
   },
@@ -23,12 +23,12 @@ const ui = {
     background: colors.danger,
     color: colors.white,
   },
-  toolbar: { 
-    display: 'flex', 
-    gap: 12, 
-    flexWrap: 'wrap', 
-    alignItems: 'center', 
-    marginBottom: 16 
+  toolbar: {
+    display: 'flex',
+    gap: 12,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   input: {
     border: `1px solid ${colors.border}`,
@@ -46,7 +46,7 @@ const ui = {
     background: colors.white,
     color: colors.text,
     cursor: 'pointer',
-  }
+  },
 };
 
 // First working admin data view — end-to-end integration with GET /admin/users.
@@ -80,7 +80,8 @@ export default function UserManagement() {
   }, [refreshFlag]);
 
   const filtered = users.filter((u) => {
-    const matchesQuery = !query || `${u.name} ${u.email}`.toLowerCase().includes(query.toLowerCase());
+    const matchesQuery =
+      !query || `${u.name} ${u.email}`.toLowerCase().includes(query.toLowerCase());
     const matchesRole = !roleFilter || u.role === roleFilter;
     return matchesQuery && matchesRole;
   });
@@ -98,17 +99,17 @@ export default function UserManagement() {
       key: 'deletebtn',
       header: '',
       render: (r) => (
-        <button 
+        <button
           style={{
             ...ui.btn,
-            ...ui.btnDanger
+            ...ui.btnDanger,
           }}
           onClick={() => setDel(r)}
-          >
-            Delete
+        >
+          Delete
         </button>
-      )
-    }
+      ),
+    },
   ];
 
   const handleDelete = async () => {
@@ -120,22 +121,22 @@ export default function UserManagement() {
       setError(e?.response?.data?.message || 'Failed to delete user');
       setDel(null);
     }
-  }
+  };
 
   return (
     <div>
       <h1>User Management</h1>
-      <div style={{...ui.toolbar}}>
-        <input 
+      <div style={{ ...ui.toolbar }}>
+        <input
           style={ui.input}
-          value={query} 
-          onChange={(e) => setQuery(e.target.value)} 
-          placeholder="Search by name or email…" 
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name or email…"
         />
         <select
-            style={ui.select}
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+          style={ui.select}
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
         >
           <option value="">All Roles</option>
           <option value="admin">Admin</option>
@@ -148,9 +149,9 @@ export default function UserManagement() {
       ) : error ? (
         <p style={{ color: colors.danger }}>{error}</p>
       ) : (
-        <DataTable 
-          columns={columns} 
-          rows={filtered} 
+        <DataTable
+          columns={columns}
+          rows={filtered}
           empty={query || roleFilter ? 'No users match your search or filter' : 'No users found'}
         />
       )}
@@ -159,26 +160,24 @@ export default function UserManagement() {
         <p style={{ margin: '4px 0' }}>
           <strong>{del?.name}</strong> — {del?.email}
         </p>
-        <p style={{ margin: '4px 0' }}>
-          Role: {del?.role}
-        </p>
+        <p style={{ margin: '4px 0' }}>Role: {del?.role}</p>
         <p>Are you sure you want to delete this user?</p>
         <button
-        style={{
-          ...ui.btn, 
-          ...ui.btnDanger,
-          marginRight: 8
-        }}
-        onClick={handleDelete}
+          style={{
+            ...ui.btn,
+            ...ui.btnDanger,
+            marginRight: 8,
+          }}
+          onClick={handleDelete}
         >
           Delete
         </button>
-        <button 
-        style={{
-          ...ui.btn, 
-          ...ui.btnCancel
-        }}
-        onClick={() => setDel(null)}
+        <button
+          style={{
+            ...ui.btn,
+            ...ui.btnCancel,
+          }}
+          onClick={() => setDel(null)}
         >
           Cancel
         </button>
