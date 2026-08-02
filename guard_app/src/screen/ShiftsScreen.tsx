@@ -419,7 +419,7 @@ function AppliedTab({ navigation }: Props) {
   };
 
   const filtered = rows.filter((r) =>
-    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
+    `${r.title} ${r.company} ${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
   const handleViewRequests = () => {
