@@ -148,10 +148,10 @@ router.post("/push-token", auth, loadUser, registerPushToken);
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Krish Uppal"
+ *                 example: "Example Employer"
  *               email:
  *                 type: string
- *                 example: "krish@example.com"
+ *                 example: "employer@example.test"
  *               phone:
  *                 type: string
  *                 example: "+61400123456"

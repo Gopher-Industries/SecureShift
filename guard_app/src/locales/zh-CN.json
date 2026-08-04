@@ -168,7 +168,16 @@
     "verified": "已验证",
     "notVerified": "未验证",
     "loading": "加载考勤中...",
-    "empty": "暂无考勤记录。"
+    "empty": "暂无考勤记录。",
+    "payable": "应付工时：",
+    "scheduled": "计划工时：",
+    "actual": "实际工时：",
+    "hoursBreakdown": "工时",
+    "error": "无法加载考勤记录。",
+    "detailError": "无法加载此考勤记录。",
+    "retry": "重试",
+    "summary": "汇总",
+    "totalShifts": "班次数："
   },
   "tabs": {
     "home": "主页",
@@ -185,7 +194,8 @@
     "notifications": "通知",
     "certificates": "资质认证",
     "shiftDetails": "排班详情",
-    "shiftRequests": "排班更改请求"
+    "shiftRequests": "排班更改请求",
+    "timesheetDetails": "考勤详情"
   },
   "docs": {
     "title": "文件概览",
