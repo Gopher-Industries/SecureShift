@@ -111,7 +111,8 @@ export default function SMTPSettings() {
 
   const validate = () => {
     if (!settings.SMTP_HOST.trim()) return 'Host is required';
-    if (!settings.SMTP_PORT || Number.isNaN(Number(settings.SMTP_PORT))) return 'Port must be a number';
+    if (!settings.SMTP_PORT || Number.isNaN(Number(settings.SMTP_PORT)))
+      return 'Port must be a number';
     if (!settings.SMTP_FROM_EMAIL.trim()) return 'From Email is required';
     return '';
   };
@@ -275,8 +276,8 @@ export default function SMTPSettings() {
           <div style={styles.card}>
             <h2 style={styles.cardTitle}>Send Test Email</h2>
             <p style={styles.cardSubtitle}>
-              Sends a test message using the currently saved SMTP settings — save your changes
-              above first if you just edited them.
+              Sends a test message using the currently saved SMTP settings — save your changes above
+              first if you just edited them.
             </p>
             <form onSubmit={handleTestEmail}>
               <div style={styles.field}>
@@ -304,9 +305,7 @@ export default function SMTPSettings() {
                 {testing ? 'Sending…' : 'Send Test Email'}
               </button>
 
-              {testResult && (
-                <div style={styles.message(testResult.ok)}>{testResult.message}</div>
-              )}
+              {testResult && <div style={styles.message(testResult.ok)}>{testResult.message}</div>}
             </form>
           </div>
         </div>
