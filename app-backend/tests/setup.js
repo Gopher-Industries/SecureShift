@@ -1,18 +1,17 @@
 // tests/setup.js
 import dotenv from "dotenv";
 import path from "path";
-import { fileURIToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const envPath = path.resolve(process.cwd(), ".env.test");
 
 // find .env.test file and load it into process.env
 dotenv.config({
-  path: path.resolve(process.cwd(), ".env.test"),
+  path: envPath,
   override: true,
 });
 
 console.log(`[Test Setup] NODE_ENV=${process.env.NODE_ENV}`);
+console.log(`[Test Setup] Loading .env.test from: ${envPath}`);
 
 const MONGO_URI = process.env.MONGO_TEST_URI;
 

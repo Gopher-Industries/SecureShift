@@ -7,6 +7,7 @@
  * Delete the document
  * If all steps pass, confirm the test database allows write operations and beforeAll/afterAll cleanup logic works correctly
  */
+import "./setup.js";
 import mongoose from "mongoose";
 
 const TestSchema = new mongoose.Schema({
@@ -18,6 +19,7 @@ const TestModel = mongoose.model("TestTemp", TestSchema);
 
 describe("Sample Integration Test (CRUD)", () => {
   beforeAll(async () => {
+    console.log("[database.test.js] beforeAll - connecting...");
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(process.env.MONGO_TEST_URI);
     }

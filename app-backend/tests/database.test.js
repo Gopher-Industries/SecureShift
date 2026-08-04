@@ -6,10 +6,12 @@
  * If all checks pass, confirm valid credentials and accessible test database
  */
 
+import "./setup.js";
 import mongoose from "mongoose";
 
 describe("Test Database Connection", () => {
   beforeAll(async () => {
+    console.log("[database.test.js] beforeAll - connecting...");
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(process.env.MONGO_TEST_URI);
     }
