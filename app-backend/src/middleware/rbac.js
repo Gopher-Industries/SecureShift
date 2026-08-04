@@ -56,7 +56,6 @@ const DEFAULT_ROLE_PERMISSIONS = {
     "payment:write",
     "incident:view",
     "incident:update",
-    "user:read",
   ],
   [ROLES.GUARD]: [
     "shift:read",
@@ -72,7 +71,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
 
 async function loadRoleFromDB(roleName) {
   if (!roleName) return null;
-  return Role.findOne({ name: roleName }).lean();
+  return Role.findOne({name: roleName}).lean();
 }
 
 async function getEffectivePermissions(roleName, visited = new Set()) {
@@ -108,15 +107,15 @@ function hasWildcard(perms) {
 export function authorizeRoles(...allowedRoles) {
   return (req, res, next) => {
     const role = req.user?.role;
-    if (!role) return res.status(401).json({ message: "Not authenticated" });
+    if (!role) return res.status(401).json({message: "Not authenticated"});
     if (!allowedRoles.includes(role)) {
-      return res.status(403).json({ message: "Insufficient role" });
+      return res.status(403).json({message: "Insufficient role"});
     }
     next();
   };
 }
 
-export function authorizePermissions(requiredPerms, options = { any: false }) {
+export function authorizePermissions(requiredPerms, options = {any: false}) {
   const permsArray = Array.isArray(requiredPerms)
     ? requiredPerms
     : [requiredPerms];
@@ -125,7 +124,7 @@ export function authorizePermissions(requiredPerms, options = { any: false }) {
   return async (req, res, next) => {
     try {
       const role = req.user?.role;
-      if (!role) return res.status(401).json({ message: "Not authenticated" });
+      if (!role) return res.status(401).json({message: "Not authenticated"});
 
       const effectivePerms = await getEffectivePermissions(role);
       if (hasWildcard(effectivePerms)) return next();
@@ -136,7 +135,7 @@ export function authorizePermissions(requiredPerms, options = { any: false }) {
       if ((requireAny && hasAny) || (!requireAny && hasAll)) {
         return next();
       }
-      return res.status(403).json({ message: "Insufficient permissions" });
+      return res.status(403).json({message: "Insufficient permissions"});
     } catch (err) {
       next(err);
     }
@@ -148,12 +147,12 @@ export function authorizePermissions(requiredPerms, options = { any: false }) {
  * Super Admin bypasses; Admin bypasses (treat admin as system-level).
  * paramKey: name of req.params key containing userId to compare
  */
-export function requireSameBranchAsTargetUser({ paramKey = "userId" } = {}) {
+export function requireSameBranchAsTargetUser({paramKey = "userId"} = {}) {
   return async (req, res, next) => {
     try {
       const requesterRole = req.user?.role;
       if (!requesterRole)
-        return res.status(401).json({ message: "Not authenticated" });
+        return res.status(401).json({message: "Not authenticated"});
 
       if ([ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(requesterRole)) {
         return next(); // system-wide access
@@ -162,7 +161,7 @@ export function requireSameBranchAsTargetUser({ paramKey = "userId" } = {}) {
       if (requesterRole !== ROLES.BRANCH_ADMIN) {
         return res
           .status(403)
-          .json({ message: "Only Branch Admins can use this scoped route" });
+          .json({message: "Only Branch Admins can use this scoped route"});
       }
 
       const targetUserId = req.params[paramKey];
@@ -174,17 +173,17 @@ export function requireSameBranchAsTargetUser({ paramKey = "userId" } = {}) {
       if (!requester?.branch) {
         return res
           .status(403)
-          .json({ message: "Requester is not assigned to any branch" });
+          .json({message: "Requester is not assigned to any branch"});
       }
       if (!target) {
-        return res.status(404).json({ message: "Target user not found" });
+        return res.status(404).json({message: "Target user not found"});
       }
 
       const same = String(requester.branch) === String(target.branch);
       if (!same) {
         return res
           .status(403)
-          .json({ message: "Cross-branch action is not allowed" });
+          .json({message: "Cross-branch action is not allowed"});
       }
 
       next();
@@ -198,17 +197,17 @@ export function requireSameBranchAsTargetUser({ paramKey = "userId" } = {}) {
  * Allow if acting on self or has certain roles (e.g., admins)
  * paramKey: param name for target user id
  */
-export function requireSelfOrRoles({ paramKey = "userId", roles = [] } = {}) {
+export function requireSelfOrRoles({paramKey = "userId", roles = []} = {}) {
   return (req, res, next) => {
     const requesterId = req.user?.id || req.user?._id;
     const targetId = req.params[paramKey];
     const role = req.user?.role;
 
     if (!requesterId)
-      return res.status(401).json({ message: "Not authenticated" });
+      return res.status(401).json({message: "Not authenticated"});
     if (String(requesterId) === String(targetId)) return next();
     if (roles.includes(role)) return next();
 
-    return res.status(403).json({ message: "Insufficient privileges" });
+    return res.status(403).json({message: "Insufficient privileges"});
   };
 }
