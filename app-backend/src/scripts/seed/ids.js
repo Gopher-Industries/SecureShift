@@ -59,6 +59,17 @@ export const SEED_IDS = {
     ],
     "document",
   ),
+  faqs: mapIds(
+    [
+      "register",
+      "applyShift",
+      "cancelShift",
+      "payrollDate",
+      "licenseVerification",
+      "resetPassword",
+    ],
+    "faq",
+  ),
 };
 
 export const idsFor = (group) => Object.values(SEED_IDS[group]);
