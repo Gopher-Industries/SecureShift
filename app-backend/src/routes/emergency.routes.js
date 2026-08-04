@@ -4,6 +4,7 @@ import {
   getSOSHistory,
   updateSOSStatus,
 } from "../controllers/emergency.controller.js";
+import { registerSOSInteractionRoutes } from "./sos.route-set.js";
 
 // ✅ correct auth import
 import auth from "../middleware/auth.js";
@@ -52,12 +53,7 @@ const router = express.Router();
  *       201:
  *         description: SOS triggered successfully
  */
-router.post(
-  "/sos",
-  auth,
-  allowRoles("guard"),
-  triggerSOS
-);
+router.post("/sos", auth, allowRoles("guard"), triggerSOS);
 
 /**
  * @swagger
@@ -72,12 +68,9 @@ router.post(
  *       200:
  *         description: SOS history fetched
  */
-router.get(
-  "/sos",
-  auth,
-  allowRoles("admin", "employer"),
-  getSOSHistory
-);
+router.get("/sos", auth, allowRoles("admin", "employer"), getSOSHistory);
+
+registerSOSInteractionRoutes(router, "/sos");
 
 /**
  * @swagger
@@ -87,7 +80,7 @@ router.get(
  *     tags: [Emergency]
  *     security:
  *       - bearerAuth: []
- *     description: Admin/Employer resolves SOS
+ *     description: Admin/Employer transitions SOS status
  *     parameters:
  *       - in: path
  *         name: id
@@ -103,16 +96,11 @@ router.get(
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [ACTIVE, RESOLVED]
+ *                 enum: [ACTIVE, ESCALATED, RESOLVED, CANCELLED]
  *     responses:
  *       200:
  *         description: SOS updated
  */
-router.put(
-  "/sos/:id",
-  auth,
-  allowRoles("admin", "employer"),
-  updateSOSStatus
-);
+router.put("/sos/:id", auth, allowRoles("admin", "employer"), updateSOSStatus);
 
 export default router;

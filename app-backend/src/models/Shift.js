@@ -1,10 +1,10 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
 // Helper: "HH:MM" -> minutes since midnight
 const hhmmToMinutes = (s) => {
-  if (typeof s !== 'string') return NaN;
+  if (typeof s !== "string") return NaN;
   const m = s.match(/^([0-1]\d|2[0-3]):([0-5]\d)$/);
   if (!m) return NaN;
   return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
@@ -19,7 +19,7 @@ const locationSchema = new Schema(
     latitude: { type: Number, min: -90, max: 90 },
     longitude: { type: Number, min: -180, max: 180 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const shiftSchema = new Schema(
@@ -44,7 +44,7 @@ const shiftSchema = new Schema(
           today.setHours(0, 0, 0, 0);
           return v >= today;
         },
-        message: 'Shift date must be today or in the future',
+        message: "Shift date must be today or in the future",
       },
     },
 
@@ -66,7 +66,7 @@ const shiftSchema = new Schema(
           const duration = (end - start + 1440) % 1440;
           return duration > 0;
         },
-        message: 'End time must be after start time (same day or next day)',
+        message: "End time must be after start time (same day or next day)",
       },
     },
 
@@ -75,13 +75,13 @@ const shiftSchema = new Schema(
 
     shiftType: {
       type: String,
-      enum: ['Day', 'Night'],
+      enum: ["Day", "Night"],
     },
 
     // Break time in minutes
     breakTime: {
       type: Number,
-      min: [0, 'Break time cannot be negative'],
+      min: [0, "Break time cannot be negative"],
       validate: {
         validator: function (v) {
           if (v == null) return true;
@@ -91,7 +91,7 @@ const shiftSchema = new Schema(
           const duration = (end - start + 1440) % 1440;
           return v < duration; // break must be less than total shift duration
         },
-        message: 'Break time must be less than total shift duration',
+        message: "Break time must be less than total shift duration",
       },
     },
 
@@ -101,17 +101,17 @@ const shiftSchema = new Schema(
     // Branch ID for multi-branch support
     siteId: {
       type: Schema.Types.ObjectId,
-      ref: 'Branch',
+      ref: "Branch",
       index: true,
     },
 
     // Guard assignments
     guardIds: {
-      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+      type: [{ type: Schema.Types.ObjectId, ref: "User" }],
       default: [],
       validate: {
         validator: (arr) => Array.isArray(arr) && arr.every(Boolean),
-        message: 'Guard IDs cannot contain null/undefined',
+        message: "Guard IDs cannot contain null/undefined",
       },
     },
 
@@ -128,39 +128,44 @@ const shiftSchema = new Schema(
     // Urgency
     urgency: {
       type: String,
-      enum: ['normal', 'priority', 'last-minute'],
-      default: 'normal',
+      enum: ["normal", "priority", "last-minute"],
+      default: "normal",
     },
 
-    // Pay Rate 
+    // Pay Rate
     payRate: {
       type: Number,
-      required: false,   // make `true` if every shift must have a pay rate
-      min: [0, 'Pay rate cannot be negative'],
+      required: false, // make `true` if every shift must have a pay rate
+      min: [0, "Pay rate cannot be negative"],
     },
 
     // Domain fields
     status: {
       type: String,
-      enum: ['draft', 'open', 'applied', 'assigned', 'completed'],
-      default: 'draft',
+      enum: ["draft", "open", "applied", "assigned", "completed"],
+      default: "draft",
       index: true,
     },
 
     applicants: {
-      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+      type: [{ type: Schema.Types.ObjectId, ref: "User" }],
       default: [],
       validate: {
         validator: (arr) => Array.isArray(arr) && arr.every(Boolean),
-        message: 'Applicants cannot contain null/undefined',
+        message: "Applicants cannot contain null/undefined",
       },
     },
 
     // Canonical historical name
-    acceptedBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    acceptedBy: { type: Schema.Types.ObjectId, ref: "User", index: true },
 
     // Creator
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
     // Ratings
     guardRating: { type: Number, min: 1, max: 5 },
@@ -168,11 +173,11 @@ const shiftSchema = new Schema(
     ratedByGuard: { type: Boolean, default: false },
     ratedByEmployer: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Compute spansMidnight
-shiftSchema.pre('validate', function (next) {
+shiftSchema.pre("validate", function (next) {
   const s = hhmmToMinutes(this.startTime);
   const e = hhmmToMinutes(this.endTime);
   if (!Number.isNaN(s) && !Number.isNaN(e)) {
@@ -182,7 +187,7 @@ shiftSchema.pre('validate', function (next) {
 });
 
 // Clean applicants
-shiftSchema.pre('save', function (next) {
+shiftSchema.pre("save", function (next) {
   if (Array.isArray(this.applicants)) {
     this.applicants = this.applicants.filter(Boolean);
   } else {
@@ -193,7 +198,7 @@ shiftSchema.pre('save', function (next) {
 
 // Virtual alias: assignedGuard <-> acceptedBy
 shiftSchema
-  .virtual('assignedGuard')
+  .virtual("assignedGuard")
   .get(function () {
     return this.acceptedBy;
   })
@@ -202,29 +207,28 @@ shiftSchema
   });
 
 // Virtual for attendance record
-shiftSchema
-  .virtual('attendance', {
-    ref:          'ShiftAttendance',
-    localField:   '_id',
-    foreignField: 'shiftId',
-    justOne:      true,
+shiftSchema.virtual("attendance", {
+  ref: "ShiftAttendance",
+  localField: "_id",
+  foreignField: "shiftId",
+  justOne: true,
 });
 
 // Virtuals for check-in/out status
-shiftSchema.virtual('hasCheckedIn').get(function () {
+shiftSchema.virtual("hasCheckedIn").get(function () {
   return this.attendance?.checkInTime != null;
 });
 
-shiftSchema.virtual('hasCheckedOut').get(function () {
+shiftSchema.virtual("hasCheckedOut").get(function () {
   return this.attendance?.checkOutTime != null;
 });
 
 // Ensure virtuals in responses
-shiftSchema.set('toJSON', { virtuals: true });
-shiftSchema.set('toObject', { virtuals: true });
+shiftSchema.set("toJSON", { virtuals: true });
+shiftSchema.set("toObject", { virtuals: true });
 
 // 🔑 Compound index for history queries
 shiftSchema.index({ status: 1, date: -1 });
 
-const Shift = model('Shift', shiftSchema);
+const Shift = model("Shift", shiftSchema);
 export default Shift;

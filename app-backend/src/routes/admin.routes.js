@@ -1,15 +1,26 @@
 // routes/admin.routes.js
-import express from 'express';
+import express from "express";
 
 import {
-    adminLogin, getAllUsers, getAllShifts, getAuditLogs, purgeAuditLogs,
-    getUserById, getAllMessages, deleteUserById, deleteMessageById,
-    listPendingDocuments, verifyGuardLicense, rejectGuardLicense,
-    getSmtpSettings, updateSmtpSettings, testSmtpSettings,
-} from '../controllers/admin.controller.js';
+  adminLogin,
+  getAllUsers,
+  getAllShifts,
+  getAuditLogs,
+  purgeAuditLogs,
+  getUserById,
+  getAllMessages,
+  deleteUserById,
+  deleteMessageById,
+  listPendingDocuments,
+  verifyGuardLicense,
+  rejectGuardLicense,
+  getSmtpSettings,
+  updateSmtpSettings,
+  testSmtpSettings,
+} from "../controllers/admin.controller.js";
 
-import auth from '../middleware/auth.js';
-import { adminOnly } from '../middleware/role.js';
+import auth from "../middleware/auth.js";
+import { adminOnly } from "../middleware/role.js";
 
 const router = express.Router();
 
@@ -39,8 +50,10 @@ const router = express.Router();
  *               email:
  *                 type: string
  *                 format: email
+ *                 example: admin.local@secureshift.test
  *               password:
  *                 type: string
+ *                 example: SecureShift1!
  *     responses:
  *       200:
  *         description: JWT token returned on successful admin login
@@ -49,7 +62,7 @@ const router = express.Router();
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', adminLogin);
+router.post("/login", adminLogin);
 
 /**
  * @swagger
@@ -66,7 +79,7 @@ router.post('/login', adminLogin);
  *       403:
  *         description: Forbidden
  */
-router.get('/users', auth, adminOnly, getAllUsers);
+router.get("/users", auth, adminOnly, getAllUsers);
 
 /**
  * @swagger
@@ -82,7 +95,7 @@ router.get('/users', auth, adminOnly, getAllUsers);
  *       403:
  *         description: Forbidden
  */
-router.get('/shifts', auth, adminOnly, getAllShifts);
+router.get("/shifts", auth, adminOnly, getAllShifts);
 
 /**
  * @swagger
@@ -143,7 +156,7 @@ router.get('/shifts', auth, adminOnly, getAllShifts);
  *       500:
  *         description: Server error
  */
-router.get('/audit-logs', auth, adminOnly, getAuditLogs);
+router.get("/audit-logs", auth, adminOnly, getAuditLogs);
 
 /**
  * @swagger
@@ -170,7 +183,7 @@ router.get('/audit-logs', auth, adminOnly, getAuditLogs);
  *       500:
  *         description: Server error
  */
-router.delete('/audit-logs/purge', auth, adminOnly, purgeAuditLogs);
+router.delete("/audit-logs/purge", auth, adminOnly, purgeAuditLogs);
 
 /**
  * @swagger
@@ -195,7 +208,7 @@ router.delete('/audit-logs/purge', auth, adminOnly, purgeAuditLogs);
  *       403:
  *         description: Forbidden
  */
-router.get('/users/:id', auth, adminOnly, getUserById);
+router.get("/users/:id", auth, adminOnly, getUserById);
 
 /**
  * @swagger
@@ -247,7 +260,7 @@ router.get('/users/:id', auth, adminOnly, getUserById);
  *       403:
  *         description: Forbidden
  */
-router.get('/messages', auth, adminOnly, getAllMessages);
+router.get("/messages", auth, adminOnly, getAllMessages);
 
 /**
  * @swagger
@@ -286,7 +299,7 @@ router.get('/messages', auth, adminOnly, getAllMessages);
  *       404:
  *         description: User not found
  */
-router.delete('/users/:id', auth, adminOnly, deleteUserById);
+router.delete("/users/:id", auth, adminOnly, deleteUserById);
 
 /**
  * @swagger
@@ -323,8 +336,7 @@ router.delete('/users/:id', auth, adminOnly, deleteUserById);
  *       404:
  *         description: Message not found
  */
-router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
-
+router.delete("/messages/:id", auth, adminOnly, deleteMessageById);
 
 /**
  * @swagger
@@ -343,7 +355,7 @@ router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
  *        schema:
  *          type: string
  *          enum: [license, id_card, passport, firstAid, certificate, rsa, other]
- *          description: Filter by document type 
+ *          description: Filter by document type
  *    tags: [Admin]
  *    security:
  *      - bearerAuth: []
@@ -357,8 +369,7 @@ router.delete('/messages/:id', auth, adminOnly, deleteMessageById);
  *      500:
  *        description: Server error
  */
-router.get('/guards/pending', auth, adminOnly, listPendingDocuments);
-
+router.get("/guards/pending", auth, adminOnly, listPendingDocuments);
 
 /**
  * @swagger
@@ -388,7 +399,7 @@ router.get('/guards/pending', auth, adminOnly, listPendingDocuments);
  *       500:
  *         description: Server error
  */
-router.patch('/guards/:id/license/verify', auth, adminOnly, verifyGuardLicense);
+router.patch("/guards/:id/license/verify", auth, adminOnly, verifyGuardLicense);
 
 /**
  * @swagger
@@ -428,7 +439,7 @@ router.patch('/guards/:id/license/verify', auth, adminOnly, verifyGuardLicense);
  *       500:
  *         description: Server error
  */
-router.patch('/guards/:id/license/reject', auth, adminOnly, rejectGuardLicense);
+router.patch("/guards/:id/license/reject", auth, adminOnly, rejectGuardLicense);
 
 /**
  * @swagger
@@ -446,13 +457,20 @@ router.patch('/guards/:id/license/reject', auth, adminOnly, rejectGuardLicense);
  *       403:
  *         description: Forbidden (admin only)
  */
-router.get('/smtp-settings', auth, adminOnly, getSmtpSettings);
+router.get("/smtp-settings", auth, adminOnly, getSmtpSettings);
 
 /**
  * @swagger
  * /api/v1/admin/smtp-settings:
  *   put:
  *     summary: Update SMTP settings (Admin only)
+ *     description: |
+ *       Updates authenticated SMTP provider settings using string configuration values.
+ *       `SMTP_USER` and `SMTP_PASS` are required together by this endpoint.
+ *       Local Mailpit is configured through the runtime environment rather than this endpoint:
+ *       containers use `SMTP_HOST=mailpit`, while a backend running directly on the host uses `SMTP_HOST=localhost`.
+ *       Mailpit captures email locally and does not deliver it externally.
+ *       This endpoint does not update `EMAIL_ENABLED` or `SMTP_AUTH_REQUIRED`.
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -466,22 +484,34 @@ router.get('/smtp-settings', auth, adminOnly, getSmtpSettings);
  *               - SMTP_HOST
  *               - SMTP_USER
  *               - SMTP_PASS
+ *               - SMTP_FROM_EMAIL
  *             properties:
  *               SMTP_HOST:
  *                 type: string
- *                 example: smtp.gmail.com
  *               SMTP_PORT:
  *                 type: string
- *                 example: "587"
  *               SMTP_SECURE:
  *                 type: string
- *                 example: "false"
+ *                 enum: ["true", "false"]
+ *                 description: String boolean persisted to the backend environment.
  *               SMTP_USER:
  *                 type: string
- *                 example: your-email@gmail.com
  *               SMTP_PASS:
  *                 type: string
- *                 example: your-app-password
+ *                 format: password
+ *               SMTP_FROM_EMAIL:
+ *                 type: string
+ *                 format: email
+ *           examples:
+ *             authenticatedProvider:
+ *               summary: Authenticated SMTP provider
+ *               value:
+ *                 SMTP_HOST: smtp.example.com
+ *                 SMTP_PORT: "587"
+ *                 SMTP_SECURE: "false"
+ *                 SMTP_USER: smtp-user
+ *                 SMTP_PASS: replace-with-provider-secret
+ *                 SMTP_FROM_EMAIL: noreply@example.com
  *     responses:
  *       200:
  *         description: SMTP settings updated successfully
@@ -492,13 +522,17 @@ router.get('/smtp-settings', auth, adminOnly, getSmtpSettings);
  *       403:
  *         description: Forbidden (admin only)
  */
-router.put('/smtp-settings', auth, adminOnly, updateSmtpSettings);
+router.put("/smtp-settings", auth, adminOnly, updateSmtpSettings);
 
 /**
  * @swagger
  * /api/v1/admin/smtp-settings/test:
  *   post:
  *     summary: Test SMTP settings by sending a test email (Admin only)
+ *     description: |
+ *       Requires an authenticated admin bearer token.
+ *       `testEmail` becomes the destination shown in the captured message headers.
+ *       With local Mailpit, no message is delivered externally; view the captured test email at http://localhost:8025.
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -514,7 +548,8 @@ router.put('/smtp-settings', auth, adminOnly, updateSmtpSettings);
  *               testEmail:
  *                 type: string
  *                 format: email
- *                 example: test@example.com
+ *                 example: admin-test@example.test
+ *                 description: Destination address shown in the captured test message headers.
  *     responses:
  *       200:
  *         description: Test email sent successfully
@@ -525,8 +560,8 @@ router.put('/smtp-settings', auth, adminOnly, updateSmtpSettings);
  *       403:
  *         description: Forbidden (admin only)
  *       500:
- *         description: Failed to send test email
+ *         description: Test email delivery failed
  */
-router.post('/smtp-settings/test', auth, adminOnly, testSmtpSettings);
+router.post("/smtp-settings/test", auth, adminOnly, testSmtpSettings);
 
 export default router;

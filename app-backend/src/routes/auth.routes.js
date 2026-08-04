@@ -1,9 +1,15 @@
-import express from 'express';
-import multer from 'multer';
-import { MongoClient, GridFSBucket } from 'mongodb';
-import path from 'path';
-import { upload as imageUpload } from '../config/multer.js'; //
-import { register, registerGuardWithLicense, login, verifyOTP, submitEOI } from '../controllers/auth.controller.js';
+import express from "express";
+import multer from "multer";
+import { MongoClient, GridFSBucket } from "mongodb";
+import path from "path";
+import { upload as imageUpload } from "../config/multer.js"; //
+import {
+  register,
+  registerGuardWithLicense,
+  login,
+  verifyOTP,
+  submitEOI,
+} from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
@@ -34,13 +40,13 @@ const router = express.Router();
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Krish Uppal"
+ *                 example: "Test Employer"
  *               email:
  *                 type: string
- *                 example: "krish@example.com"
+ *                 example: "new.employer@example.test"
  *               password:
  *                 type: string
- *                 example: "P@ssw0rd!"
+ *                 example: "SecureShift1!"
  *               role:
  *                 type: string
  *                 enum: [employer, admin]
@@ -74,7 +80,7 @@ const router = express.Router();
  *         description: Missing required fields (e.g., ABN for employers) or email already registered
  */
 
-router.post('/register', register);
+router.post("/register", register);
 
 /**
  * @swagger
@@ -82,8 +88,9 @@ router.post('/register', register);
  *   post:
  *     summary: Register a new Guard (requires license image)
  *     description: |
- *       Accepts a single image file in **license** form-data field (jpg, png, webp, heic), max 5MB.
- *       The uploaded image is stored under /uploads** and the guard's license status is set to **pending**.
+ *       A unique email and a single licence image in the **license** form-data field are required.
+ *       Supported image types are jpg, png, webp, and heic, with a maximum size of 5MB.
+ *       The uploaded image is stored under `/uploads` and the initial licence status is **pending**.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -93,9 +100,9 @@ router.post('/register', register);
  *             type: object
  *             required: [name, email, password, license]
  *             properties:
- *               name: { type: string, example: "John Guard" }
- *               email: { type: string, format: email, example: "john.guard@example.com" }
- *               password: { type: string, example: "P@ssw0rd!" }
+ *               name: { type: string, example: "Test Guard" }
+ *               email: { type: string, format: email, example: "new.guard@example.test" }
+ *               password: { type: string, example: "SecureShift1!" }
  *               license:
  *                 type: string
  *                 format: binary
@@ -108,13 +115,17 @@ router.post('/register', register);
  *       500:
  *         description: Server error
  */
-router.post('/register/guard', imageUpload.single('license'), registerGuardWithLicense);
+router.post(
+  "/register/guard",
+  imageUpload.single("license"),
+  registerGuardWithLicense,
+);
 
 /**
  * @swagger
  * /api/v1/auth/login:
  *   post:
- *     summary: Login and retrieve a JWT token
+ *     summary: Validate credentials and send a one-time passcode
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -126,37 +137,44 @@ router.post('/register/guard', imageUpload.single('license'), registerGuardWithL
  *             properties:
  *               email:
  *                 type: string
- *                 example: krish@example.com
+ *                 format: email
  *               password:
  *                 type: string
- *                 example: P@ssw0rd!
+ *           examples:
+ *             employer:
+ *               summary: Seeded local employer
+ *               value:
+ *                 email: ops.local@secureshift.test
+ *                 password: SecureShift1!
+ *             guard:
+ *               summary: Seeded local guard
+ *               value:
+ *                 email: mia.guard@secureshift.test
+ *                 password: SecureShift1!
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: OTP delivered successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 token:
+ *                 message:
  *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6...
- *                 role:
- *                   type: string
- *                   example: guard
- *                 id:
- *                   type: string
- *                   example: 64d9fa5b5e18f9b9a3d52f77
+ *                   example: OTP sent to your email
  *       401:
  *         description: Invalid credentials
+ *       503:
+ *         description: OTP delivery is unavailable; no OTP is returned
  */
-router.post('/login', login);
+router.post("/login", login);
 
 /**
  * @swagger
  * /api/v1/auth/verify-otp:
  *   post:
  *     summary: Verify OTP and get JWT token
+ *     description: Replace the placeholder OTP with the current code captured by Mailpit at http://localhost:8025.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -168,15 +186,19 @@ router.post('/login', login);
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
+ *                 example: ops.local@secureshift.test
  *               otp:
  *                 type: string
+ *                 example: "000000"
+ *                 description: Placeholder only. Use the current OTP from Mailpit at http://localhost:8025.
  *     responses:
  *       200:
  *         description: JWT token issued
  *       401:
  *         description: Invalid or expired OTP
  */
-router.post('/verify-otp', verifyOTP);
+router.post("/verify-otp", verifyOTP);
 
 // ---------------- EOI Upload Config using MemoryStorage ----------------
 const storage = multer.memoryStorage(); // store files in memory temporarily
@@ -184,8 +206,8 @@ const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (ext === '.pdf') cb(null, true);
-    else cb(new Error('Only PDF files are allowed'), false);
+    if (ext === ".pdf") cb(null, true);
+    else cb(new Error("Only PDF files are allowed"), false);
   },
 });
 
@@ -194,13 +216,13 @@ const mongoUri = process.env.MONGO_URI; // e.g., mongodb://localhost:27017/secur
 let gridFSBucket;
 
 MongoClient.connect(mongoUri)
-  .then(client => {
+  .then((client) => {
     const db = client.db(); // default DB from URI
-    gridFSBucket = new GridFSBucket(db, { bucketName: 'eoiDocuments' });
-    console.log('Connected to MongoDB GridFS for EOI uploads');
+    gridFSBucket = new GridFSBucket(db, { bucketName: "eoiDocuments" });
+    console.log("Connected to MongoDB GridFS for EOI uploads");
   })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
   });
 /**
  * @swagger
@@ -269,30 +291,34 @@ MongoClient.connect(mongoUri)
  */
 
 // ---------------- EOI Route ----------------
-router.post('/eoi', upload.array('documents', 5), async (req, res) => {
+router.post("/eoi", upload.array("documents", 5), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No documents uploaded' });
+      return res.status(400).json({ error: "No documents uploaded" });
     }
 
     // store each file in GridFS
-const fileInfos = await Promise.all(req.files.map(file => {
-  return new Promise((resolve, reject) => {
-    const uploadStream = gridFSBucket.openUploadStream(file.originalname, {
-      contentType: file.mimetype, // use actual mimetype
-    });
+    const fileInfos = await Promise.all(
+      req.files.map((file) => {
+        return new Promise((resolve, reject) => {
+          const uploadStream = gridFSBucket.openUploadStream(
+            file.originalname,
+            {
+              contentType: file.mimetype, // use actual mimetype
+            },
+          );
 
-    uploadStream.end(file.buffer);
-    uploadStream.on('finish', () => {
-      resolve({
-        filename: uploadStream.filename,
-        id: uploadStream.id,
-      });
-    });
-    uploadStream.on('error', reject);
-  });
-}));
-
+          uploadStream.end(file.buffer);
+          uploadStream.on("finish", () => {
+            resolve({
+              filename: uploadStream.filename,
+              id: uploadStream.id,
+            });
+          });
+          uploadStream.on("error", reject);
+        });
+      }),
+    );
 
     // You can also save other EOI info in MongoDB collection
     const eoiData = {
@@ -309,14 +335,15 @@ const fileInfos = await Promise.all(req.files.map(file => {
     // Use your submitEOI controller to store eoiData in a collection
     const { employerCreated } = await submitEOI(eoiData);
 
-    let message = 'EOI submitted successfully';
+    let message = "EOI submitted successfully";
     if (!employerCreated) {
-      message += ' (Account already exists for this email; no new credentials sent)';
+      message +=
+        " (Account already exists for this email; no new credentials sent)";
     }
 
     res.status(201).json({ message, files: fileInfos });
   } catch (err) {
-    console.error('EOI upload error:', err);
+    console.error("EOI upload error:", err);
     res.status(500).json({ error: err.message });
   }
 });
