@@ -251,13 +251,13 @@ router.delete("/favourites/:guardId", auth, loadUser, removeFavouriteGuard);
  *       403:
  *         description: Forbidden
  */
- router.get(
-   "/guards",
-   auth,
-   loadUser,
-   authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYER),
-   getAllGuards,
-  );
+router.get(
+  "/guards",
+  auth,
+  loadUser,
+  authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYER),
+  getAllGuards,
+);
 
 /**
  * @swagger
