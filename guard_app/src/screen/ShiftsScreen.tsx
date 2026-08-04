@@ -204,8 +204,11 @@ function AllTab({ navigation }: Props) {
 
   const filtered = rows
     .filter((shift) =>
-      `${shift.title} ${shift.site}`.toLowerCase().includes(q.trim().toLowerCase()),
+      `${shift.title} ${shift.company} ${shift.site}`
+        .toLowerCase()
+        .includes(q.trim().toLowerCase()),
     )
+
     .filter((shift) => statusFilter === 'All' || shift.status === statusFilter)
     .filter((shift) => {
       if (dateFilter === 'all') return true;
