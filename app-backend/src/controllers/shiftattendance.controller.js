@@ -64,7 +64,6 @@ export const getAttendanceByUserId = async (req, res) => {
       });
     }
 
-
     const attendanceRecords = await getAttendanceHistoryForUser(userId);
 
     res.status(200).json({
