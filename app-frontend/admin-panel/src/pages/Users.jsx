@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getUsers } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
-import colors from '../theme/colors';
 
 // First working admin data view — end-to-end integration with GET /admin/users.
 export default function Users() {
@@ -37,15 +35,7 @@ export default function Users() {
   );
 
   const columns = [
-    {
-      key: 'name',
-      header: 'Name',
-      render: (r) => (
-        <Link to={`/users/${r._id}`} style={{ color: colors.primary }}>
-          {r.name}
-        </Link>
-      ),
-    },
+    { key: 'name', header: 'Name' },
     { key: 'email', header: 'Email' },
     { key: 'role', header: 'Role' },
     {
