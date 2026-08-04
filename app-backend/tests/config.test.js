@@ -7,6 +7,7 @@
  * Check whether the host is localhost or 127.0.0.1
  * If all checks pass, confirm the safety validation logic works as expected
  */
+import "./setup.js";
 
 describe("Test Environment Configuration", () => {
   it("should have NODE_ENV set to test", () => {
