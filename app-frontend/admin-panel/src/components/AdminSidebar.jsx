@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 const items = [
   ['/dashboard', 'Dashboard'],
   ['/users', 'Users'],
-  ['/user-management', 'User Management'],
   ['/guard-verification', 'Guard Verification'],
   ['/shifts', 'Shifts'],
   ['/audit-logs', 'Audit Logs'],

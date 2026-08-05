@@ -4,7 +4,6 @@ import AdminLayout from '../layouts/AdminLayout';
 import AdminLogin from '../pages/AdminLogin';
 import AdminDashboard from '../pages/AdminDashboard';
 import Users from '../pages/Users';
-import UserManagement from '../pages/UserManagement';
 import UserDetails from '../pages/UserDetails';
 import GuardVerification from '../pages/GuardVerification';
 import Shifts from '../pages/Shifts';
@@ -27,7 +26,6 @@ export default function AppRoutes() {
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/users" element={<Users />} />
         <Route path="/users/:id" element={<UserDetails />} />
-        <Route path="/user-management" element={<UserManagement />} />
         <Route path="/guard-verification" element={<GuardVerification />} />
         <Route path="/shifts" element={<Shifts />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
