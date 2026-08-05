@@ -3,7 +3,12 @@ import Shift from "../models/Shift.js";
 import Branch from "../models/Branch.js";
 import Guard from "../models/Guard.js";
 import Availability from "../models/Availability.js";
-import { assessGuardFatigue } from "../services/fatigue.service.js";
+import {
+  assessGuardFatigue,
+  getEndOfWeek,
+  getStartOfWeek,
+  assessCurrentGuardFatigue,
+} from "../services/fatigue.service.js";
 import { ACTIONS } from "../middleware/logger.js";
 import { timeToMinutes, normalizeEnd } from "../utils/timeUtils.js";
 
@@ -908,6 +913,89 @@ export const getShiftHistory = async (req, res) => {
       .populate("assignedGuard", "name email");
 
     return res.json({ total: shifts.length, items: shifts });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+/**
+ * GET /api/v1/shifts/
+ */
+export const getEmployerFatigueDashboard = async (req, res) => {
+  try {
+    // 1. Get logged-in employer ID
+    const uid = req.user._id;
+    // 2. Set the reference date to today
+    const referenceDate = new Date();
+    // 3. Find employer's assigned/completed shifts for the current week
+    const weekStart = getStartOfWeek(referenceDate);
+    const weekEnd = getEndOfWeek(referenceDate);
+    // 4. Extract acceptedBy from each shift
+    const shifts = await Shift.find({
+      createdBy: uid,
+      acceptedBy: { $ne: null },
+      status: { $in: ["assigned", "completed"] },
+      date: {
+        $gte: weekStart,
+        $lte: weekEnd,
+      },
+    });
+    // 5. Remove duplicate guard IDs
+    const guardIds = shifts.map((shift) => {
+      return shift.acceptedBy.toString();
+    });
+
+    const uniqueGuardIds = [...new Set(guardIds)];
+    // 6. Call assessCurrentGuardFatigue for each unique guard
+    const assessmentPromises = uniqueGuardIds.map((guardId) => {
+      return assessCurrentGuardFatigue(guardId, referenceDate);
+    });
+
+    const guardAssessments = await Promise.all(assessmentPromises);
+    // 7. Build the dashboard response
+    const guardResults = uniqueGuardIds.map((guardId, index) => {
+      const assessment = guardAssessments[index];
+
+      return {
+        guardId: guardId,
+        fatigueScore: assessment.fatigueScore,
+        warnings: assessment.warnings,
+        isFatigued: assessment.isFatigued,
+        metrics: {
+          shiftsThisWeek: assessment.metrics.shiftsThisWeek,
+          hoursThisDay: assessment.metrics.hoursThisDay,
+          hoursThisWeek: assessment.metrics.hoursThisWeek,
+        },
+      };
+    });
+
+    const guardsMonitored = uniqueGuardIds.length;
+
+    const fatiguedGuards = guardResults.filter((guard) => {
+      return guard.isFatigued === true;
+    }).length;
+
+    const totalFatigueScore = guardResults.reduce((total, guard) => {
+      return total + guard.fatigueScore;
+    }, 0);
+
+    const averageFatigueScore =
+      guardsMonitored === 0
+        ? 0
+        : Math.round(totalFatigueScore / guardsMonitored);
+
+    const dashboardResponse = {
+      referenceDate: referenceDate,
+      summary: {
+        guardsMonitored: guardsMonitored,
+        fatiguedGuards: fatiguedGuards,
+        averageFatigueScore: averageFatigueScore,
+      },
+      guards: guardResults,
+    };
+    // 8. Return 200
+    return res.status(200).json({
+      dashboard: dashboardResponse,
+    });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
