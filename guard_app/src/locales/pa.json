@@ -153,15 +153,25 @@
     "selectRequestType": "ਬੇਨਤੀ ਦੀ ਕਿਸਮ ਚੁਣੋ",
     "reasonHint": "ਮਾਫ਼ ਕਰਨਾ, ਮੈਂ ਬਿਮਾਰ ਹਾਂ...",
     "requestedTime": "ਬੇਨਤੀ ਕੀਤਾ ਸਮਾਂ",
-    "selectDate": "ਤਾਰੀਖ ਚੁਣੋ",
-    "selectTime": "ਸਮਾਂ ਚੁਣੋ",
+    "swapGuard": "ਗਾਰਡ ਦੀ ਬੇਨਤੀ ਕੀਤੀ ਗਈ",
+    "guardHint": "ਜੌਨ ਸਮਿਥ...",
+    "swapShift": "ਰਿਪਲੇਸਮੈਂਟ ਸ਼ਿਫਟ",
+    "shiftHint": "ਬਦਲੀ ਸ਼ਿਫਟ ਦਾ ਨਾਮ..",
+    "selectStart": "ਸ਼ੁਰੂ ਦੀ ਚੋਣ ਕਰੋ",
+    "selectEnd": "ਅੰਤ ਚੁਣੋ",
+    "leaveStart": "ਛੱਡੋ ਸ਼ੁਰੂ",
+    "leaveEnd": "ਛੱਡੋ ਦਾ ਅੰਤ",
     "notFound": "ਕੋਈ ਸ਼ਿਫਟ ਬੇਨਤੀ ਨਹੀਂ ਮਿਲੀ",
     "requestError": "ਬੇਨਤੀਆਂ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ।",
     "alerts": {
-      "missingTimeHead": "ਤਾਰੀਖ ਜਾਂ ਸਮਾਂ ਨਹੀਂ ਦਿੱਤਾ ਗਿਆ",
-      "missingTimeMsg": "ਉਹ ਤਾਰੀਖ ਅਤੇ ਸਮਾਂ ਦਰਜ ਕਰੋ ਜਿਸ 'ਤੇ ਤੁਸੀਂ ਆਪਣੀ ਸ਼ਿਫਟ ਤਬਦੀਲ ਕਰਵਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ।",
-      "invalidDateHead": "ਅਵੈਧ ਤਾਰੀਖ",
-      "invalidDateMsg": "ਚੁਣੀ ਗਈ ਤਾਰੀਖ ਅਵੈਧ ਹੈ"
+      "missingDateHead": "ਗੁੰਮ ਹੋਈ ਮਿਤੀ",
+      "missingDateMsg": "ਉਸ ਤਾਰੀਖ਼ ਨੂੰ ਦਾਖਲ ਕਰੋ ਜਿਸ 'ਤੇ ਤੁਸੀਂ ਆਪਣੀ ਸ਼ਿਫਟ ਨੂੰ ਤਬਦੀਲ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ.",
+      "invalidDateHead": "ਅਵੈਧ ਮਿਤੀ",
+      "invalidDateMsg": "ਚੁਣੀ ਗਈ ਮਿਤੀ ਅਵੈਧ ਹੈ",
+      "requestCreated": "ਬੇਨਤੀ ਬਣਾਈ ਗਈ",
+      "requestFailed": "ਬੇਨਤੀ ਅਸਫਲ ਰਹੀ",
+      "requestSuccessful": "ਬੇਨਤੀ ਸਫਲ ਹੋਈ",
+      "successMessage": "ਤੁਹਾਡੀ ਬੇਨਤੀ ਤੁਹਾਡੇ ਰੁਜ਼ਗਾਰਦਾਤਾ ਨੂੰ ਭੇਜ ਦਿੱਤੀ ਗਈ ਹੈ"
     }
   },
 
