@@ -35,7 +35,7 @@ Example:
 GET /api/v1/payroll?startDate=2026-07-01&endDate=2026-07-31&periodType=weekly
 ```
 
-Successful response (200) returns an array of payroll documents. Each document includes the guard and employer reference, period bounds, hour breakdowns (scheduled, actual, payable, ordinary, overtime), amounts, current status, and an entries array with per-shift detail.
+Successful response (200) returns an object with three keys: `filters` (the resolved query params), `summary` (aggregated totals), and `payroll` (an array of payroll documents). Each document in the array includes the guard and employer reference, period bounds, hour breakdowns (scheduled, actual, payable, ordinary, overtime), amounts, current status, and an entries array with per-shift detail.
 
 Common errors:
 - 400 if any required param is missing, a date is not valid YYYY-MM-DD, periodType is not recognised, or startDate is after endDate
@@ -153,6 +153,6 @@ A new payroll record starts as PENDING. It must be approved before it can be pro
 - The `/export` endpoint requires a `format` param. Calling it without one returns a 400. Use `/export/csv` or `/export/pdf` directly if you want to avoid passing `format`.
 - The `department` filter maps to `Shift.field` on the backend, not a field called department. Frontend values must match what is stored in the shift record.
 - Guards cannot supply a `guardId` belonging to another guard. The backend enforces this and returns a 403.
-- The export endpoints return a binary stream, not JSON. The frontend must handle the response as a Blob and trigger a file download.
+- The CSV export endpoint returns a plain-text stream (`text/csv`). The PDF export endpoint returns a binary stream (`application/pdf`). For PDF responses the frontend must handle the response as a Blob and trigger a file download.
 - There is no pagination on the retrieval endpoint. Large date ranges may return large payloads.
 - Always check payroll status before showing approve or process actions in the UI. Sending an out-of-order request returns a 409.
