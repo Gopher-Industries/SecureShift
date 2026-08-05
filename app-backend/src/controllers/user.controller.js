@@ -83,13 +83,23 @@ export const adminUpdateUserProfile = async (req, res) => {
 };
 
 /**
- * @desc    Get all guards (Admin + Employee only)
+ * @desc    Get all guards (Admin + Employer only)
  * @route   GET /api/v1/users/guards
- * @access  Private/Admin,Employee
+ * @access  Private/Admin,Employer
  */
+
 export const getAllGuards = async (req, res) => {
-  const guards = await User.find({ role: "guard" }).select("-password");
-  res.json(guards);
+  try {
+    const guards = await User.find({
+      role: "guard",
+      isDeleted: { $ne: true },
+    }).select("-password");
+
+    res.status(200).json(guards);
+  } catch (error) {
+    console.error("Error fetching guards:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 /**
