@@ -51,7 +51,8 @@ export default function Users() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [del, setDel] = useState('');
+  const [del, setDel] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [refreshFlag, setRefreshFlag] = useState(false);
 
   useEffect(() => {
@@ -117,11 +118,14 @@ export default function Users() {
 
   const handleDelete = async () => {
     try {
+      setDeleting(true);
       await deleteUser(del._id);
       setDel(null);
       setRefreshFlag((prev) => !prev);
     } catch (e) {
       setError(e?.response?.data?.message || 'Failed to delete user');
+    } finally {
+      setDeleting(false);
       setDel(null);
     }
   };
@@ -164,15 +168,20 @@ export default function Users() {
             ...ui.btn,
             ...ui.btnDanger,
             marginRight: 8,
+            opacity: deleting ? 0.5 : 1,
+            cursor: deleting ? 'not-allowed' : 'pointer',
           }}
           onClick={handleDelete}
+          disabled={deleting}
         >
-          Delete
+          {deleting ? 'Deleting…' : 'Delete'}
         </button>
         <button
           style={{
             ...ui.btn,
             ...ui.btnCancel,
+            opacity: deleting ? 0.5 : 1,
+            cursor: deleting ? 'not-allowed' : 'pointer',
           }}
           onClick={() => setDel(null)}
         >
