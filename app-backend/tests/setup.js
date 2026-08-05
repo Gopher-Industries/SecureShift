@@ -49,7 +49,7 @@ if (dbName !== "secureshift_test") {
   process.exit(1);
 }
 
-if (host && !["localhost", "127.0.0.1", "::1", "mongodb"].includes(host)) {
+if (host && !["localhost", "127.0.0.1", "::1"].includes(host)) {
   console.error(`FAIL: [Test] Test DB host must be localhost. Got: ${host}`);
   process.exit(1);
 }
