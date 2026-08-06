@@ -46,8 +46,10 @@ export function collectErrors(env = process.env) {
   const errors = [];
   const nodeEnv = (env.NODE_ENV ?? "development").trim().toLowerCase();
   const isProduction = nodeEnv === "production";
-  const emailEnabled = (env.EMAIL_ENABLED ?? "false").trim().toLowerCase() === "true";
-  const verificationEnabled = (env.VERIFICATION_ENABLED ?? "false").trim().toLowerCase() === "true";
+  const emailEnabled =
+    (env.EMAIL_ENABLED ?? "false").trim().toLowerCase() === "true";
+  const verificationEnabled =
+    (env.VERIFICATION_ENABLED ?? "false").trim().toLowerCase() === "true";
 
   // helper so we don't repeat the label() call everywhere
   function err(name, message) {
@@ -58,7 +60,10 @@ export function collectErrors(env = process.env) {
   const mongoUri = (env.MONGO_URI ?? "").trim();
   if (!mongoUri) {
     err("MONGO_URI", "required but missing");
-  } else if (!mongoUri.startsWith("mongodb://") && !mongoUri.startsWith("mongodb+srv://")) {
+  } else if (
+    !mongoUri.startsWith("mongodb://") &&
+    !mongoUri.startsWith("mongodb+srv://")
+  ) {
     err("MONGO_URI", 'must start with "mongodb://" or "mongodb+srv://"');
   }
 
@@ -68,7 +73,10 @@ export function collectErrors(env = process.env) {
   if (!jwtSecret) {
     err("JWT_SECRET", "required but missing");
   } else if (jwtSecret.length < minJwtLen) {
-    err("JWT_SECRET", `must be at least ${minJwtLen} characters in ${nodeEnv} mode`);
+    err(
+      "JWT_SECRET",
+      `must be at least ${minJwtLen} characters in ${nodeEnv} mode`,
+    );
   } else if (isProduction && jwtSecret === INSECURE_DEFAULTS.JWT_SECRET) {
     err("JWT_SECRET", "cannot use the default dev value in production");
   }
@@ -86,7 +94,10 @@ export function collectErrors(env = process.env) {
   } else {
     const keyBuf = Buffer.from(licenceKey, "base64");
     if (keyBuf.length !== 32) {
-      err("LICENCE_ENC_KEY", `must decode to exactly 32 bytes, got ${keyBuf.length} bytes`);
+      err(
+        "LICENCE_ENC_KEY",
+        `must decode to exactly 32 bytes, got ${keyBuf.length} bytes`,
+      );
     }
     if (isProduction && licenceKey === INSECURE_DEFAULTS.LICENCE_ENC_KEY) {
       err("LICENCE_ENC_KEY", "cannot use the default dev value in production");
@@ -96,7 +107,10 @@ export function collectErrors(env = process.env) {
   // NODE_ENV - only accept known values so typos don't go unnoticed
   const allowedEnvs = ["development", "test", "staging", "production"];
   if (nodeEnv && !allowedEnvs.includes(nodeEnv)) {
-    err("NODE_ENV", `must be one of: ${allowedEnvs.join(", ")}, got "${nodeEnv}"`);
+    err(
+      "NODE_ENV",
+      `must be one of: ${allowedEnvs.join(", ")}, got "${nodeEnv}"`,
+    );
   }
 
   // SMTP settings - only checked when email is actually enabled
@@ -107,7 +121,10 @@ export function collectErrors(env = process.env) {
 
     const smtpPortStr = (env.SMTP_PORT ?? "1025").trim();
     if (!isValidPort(smtpPortStr)) {
-      err("SMTP_PORT", `must be a number between 1 and 65535, got "${smtpPortStr}"`);
+      err(
+        "SMTP_PORT",
+        `must be a number between 1 and 65535, got "${smtpPortStr}"`,
+      );
     }
 
     const smtpSecure = (env.SMTP_SECURE ?? "false").trim().toLowerCase();
@@ -124,10 +141,16 @@ export function collectErrors(env = process.env) {
     // credentials only required when authentication is enabled
     if (smtpAuth === "true") {
       if (!(env.SMTP_USER ?? "").trim()) {
-        err("SMTP_USER", "required when EMAIL_ENABLED=true and SMTP_AUTH_REQUIRED=true");
+        err(
+          "SMTP_USER",
+          "required when EMAIL_ENABLED=true and SMTP_AUTH_REQUIRED=true",
+        );
       }
       if (!(env.SMTP_PASS ?? "").trim()) {
-        err("SMTP_PASS", "required when EMAIL_ENABLED=true and SMTP_AUTH_REQUIRED=true");
+        err(
+          "SMTP_PASS",
+          "required when EMAIL_ENABLED=true and SMTP_AUTH_REQUIRED=true",
+        );
       }
     }
 
@@ -142,14 +165,20 @@ export function collectErrors(env = process.env) {
     if (!nswTokenUrl) {
       err("NSW_TOKEN_URL", "required when VERIFICATION_ENABLED=true");
     } else if (!isValidHttpUrl(nswTokenUrl)) {
-      err("NSW_TOKEN_URL", `must be a valid http/https URL, got "${nswTokenUrl}"`);
+      err(
+        "NSW_TOKEN_URL",
+        `must be a valid http/https URL, got "${nswTokenUrl}"`,
+      );
     }
 
     const nswVerifyUrl = (env.NSW_VERIFY_URL ?? "").trim();
     if (!nswVerifyUrl) {
       err("NSW_VERIFY_URL", "required when VERIFICATION_ENABLED=true");
     } else if (!isValidHttpUrl(nswVerifyUrl)) {
-      err("NSW_VERIFY_URL", `must be a valid http/https URL, got "${nswVerifyUrl}"`);
+      err(
+        "NSW_VERIFY_URL",
+        `must be a valid http/https URL, got "${nswVerifyUrl}"`,
+      );
     }
 
     if (!(env.NSW_API_KEY ?? "").trim()) {
@@ -168,7 +197,9 @@ export function validateEnv() {
   const errors = collectErrors(process.env);
 
   if (errors.length > 0) {
-    console.error("❌ Environment configuration is invalid. Fix the following before starting:\n");
+    console.error(
+      "❌ Environment configuration is invalid. Fix the following before starting:\n",
+    );
     errors.forEach((e) => console.error(e));
     console.error("\nSee app-backend/.env.example for the required variables.");
     process.exit(1);
