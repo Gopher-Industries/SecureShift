@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./FAQs.css";
 import FAQItem from "../components/FAQItem";
 import FAQContactForm from "../components/FAQContactForm";
 import PageTitleHandler from "../components/PageTitleHandler";
 
-const faqData = [
+const mockFaqData = [
   {
     question: "How do employers create and manage shifts?",
     answer:
@@ -59,8 +59,53 @@ const faqData = [
 
 function FAQs() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [faqs, setFaqs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredFaqs = faqData.filter((item) => {
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchFAQs = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Simulate API call delay
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        if (!isMounted) return;
+
+        // Note: To test different data scenarios, you can uncomment one of the following lines:
+        
+        // Scenario 1: API Error
+        // throw new Error("Failed to load FAQs. Please try again later.");
+
+        // Scenario 2: Empty Data
+        // setFaqs([]); return;
+
+        // Scenario 3: Success with Data (Default)
+        setFaqs(mockFaqData);
+
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message || "An unexpected error occurred.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchFAQs();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredFaqs = faqs.filter((item) => {
     const lowerCaseQuery = searchQuery.toLowerCase();
     return (
       item.question.toLowerCase().includes(lowerCaseQuery) ||
@@ -120,31 +165,51 @@ function FAQs() {
                 Select a question below to view more information.
               </p>
 
-              {searchQuery && (
-                <div className="faq-result-count">
-                  <span className="faq-result-badge">{filteredFaqs.length}</span>
-                  <span>
-                    {filteredFaqs.length === 1 ? "result" : "results"} found
-                  </span>
+              {isLoading ? (
+                <div className="faq-status-message faq-loading">
+                  <div className="faq-spinner"></div>
+                  <p>Loading FAQs...</p>
                 </div>
-              )}
+              ) : error ? (
+                <div className="faq-status-message faq-error">
+                  <span className="faq-status-icon">⚠️</span>
+                  <p>{error}</p>
+                  <button className="faq-retry-btn" onClick={() => window.location.reload()}>Retry</button>
+                </div>
+              ) : faqs.length === 0 ? (
+                <div className="faq-status-message faq-empty">
+                  <span className="faq-status-icon">📭</span>
+                  <p>No FAQs are currently available.</p>
+                </div>
+              ) : (
+                <>
+                  {searchQuery && (
+                    <div className="faq-result-count">
+                      <span className="faq-result-badge">{filteredFaqs.length}</span>
+                      <span>
+                        {filteredFaqs.length === 1 ? "result" : "results"} found
+                      </span>
+                    </div>
+                  )}
 
-              <div className="faq-list">
-                {filteredFaqs.length > 0 ? (
-                  filteredFaqs.map((item, index) => (
-                    <FAQItem
-                      key={index}
-                      question={item.question}
-                      answer={item.answer}
-                    />
-                  ))
-                ) : (
-                  <div className="faq-no-results">
-                    <span className="faq-no-results-icon">🤔</span>
-                    <p>No questions found matching "{searchQuery}". Try a different term.</p>
+                  <div className="faq-list">
+                    {filteredFaqs.length > 0 ? (
+                      filteredFaqs.map((item, index) => (
+                        <FAQItem
+                          key={index}
+                          question={item.question}
+                          answer={item.answer}
+                        />
+                      ))
+                    ) : (
+                      <div className="faq-no-results">
+                        <span className="faq-no-results-icon">🤔</span>
+                        <p>No questions found matching "{searchQuery}". Try a different term.</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
 
             <div className="faq-form-column">

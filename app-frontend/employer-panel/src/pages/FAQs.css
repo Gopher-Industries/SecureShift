@@ -234,3 +234,62 @@
     font-size: 22px;
   }
 }
+
+/* ============================================================
+   STATUS MESSAGES (Loading, Error, Empty)
+   ============================================================ */
+
+.faq-status-message {
+  padding: 40px 24px;
+  text-align: center;
+  background-color: #ffffff;
+  border: 1px dashed #c9d5e8;
+  border-radius: 12px;
+  color: #718096;
+  font-size: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.faq-error {
+  border-color: #feb2b2;
+  background-color: #fff5f5;
+  color: #c53030;
+}
+
+.faq-status-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.faq-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #274b93;
+  border-radius: 50%;
+  animation: faq-spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes faq-spin {
+  to { transform: rotate(360deg); }
+}
+
+.faq-retry-btn {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background-color: #c53030;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.faq-retry-btn:hover {
+  background-color: #9b2c2c;
+}
