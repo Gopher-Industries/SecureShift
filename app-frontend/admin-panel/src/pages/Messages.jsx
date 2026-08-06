@@ -183,7 +183,7 @@ export default function Messages() {
   useEffect(() => {
     fetchMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, appliedFilters]); 
+  }, [page, appliedFilters]);
 
   // Apply the selected filters and reset to the first page
   const handleApplyFilters = (e) => {
@@ -208,7 +208,7 @@ export default function Messages() {
 
   // Close the confirmation dialog unless a delete is in progress
   const closeDeleteConfirm = () => {
-    if (deleting) return; 
+    if (deleting) return;
     setConfirmTarget(null);
     setDeleteReason('');
     setDeleteError('');
