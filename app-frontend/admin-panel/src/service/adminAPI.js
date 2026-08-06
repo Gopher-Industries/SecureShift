@@ -22,6 +22,8 @@ export const getShifts = (params) => http.get('/admin/shifts', { params }).then(
 export const getAuditLogs = (params) =>
   http.get('/admin/audit-logs', { params }).then((r) => r.data);
 export const getMessages = (params) => http.get('/admin/messages', { params }).then((r) => r.data);
+export const deleteMessage = (id, body) =>
+  http.delete(`/admin/messages/${id}`, { data: body }).then((r) => r.data);
 
 // System configuration
 export const getSmtpSettings = () => http.get('/admin/smtp-settings').then((r) => r.data);
