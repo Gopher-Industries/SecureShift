@@ -15,7 +15,7 @@ This document records the current authentication and authorisation behaviour of 
 | Assignable `User.role` values | `guard`, `employer`, `admin` only (`src/models/User.js`) |
 | Role collection / `ROLES` constants | Also define `super_admin`, `branch_admin`, `client` |
 | Unique mounted handlers | **108** |
-| Mounted handlers including `/api/v1/rbac/*` duplicates | **122** |
+| `/api/v1/rbac/*` duplicates | Removed in BE 006 (no longer mounted) |
 | Unmounted route modules | `dashboard.routes.js`, `verification.routes.js` |
 
 Highest-severity confirmed defects:
@@ -86,9 +86,8 @@ When a Role document is missing (or permissions are falsy), `getEffectivePermiss
 | Controller role | Role gate inside controller | Controller |
 | Ownership | Self / employer / admin scope in controller or service | Controller / service |
 
-`/api/v1/rbac` does **not** expose Role CRUD. `src/routes/rbac.routes.js` re-exports the user router, so every `/api/v1/users/...` handler is also reachable under `/api/v1/rbac/...`.
-
----
+Before BE 006, `/api/v1/rbac` incorrectly re-exported the user router.
+The obsolete route has now been removed and requests to `/api/v1/rbac/*` return 404.
 
 ## 3. Mount inventory
 
@@ -113,7 +112,6 @@ When a Role document is missing (or permissions are falsy), `getEffectivePermiss
 | `/emergency` | `emergency.routes.js` + `sos.route-set.js` | 8 |
 | `/sos` | `sos.routes.js` + `sos.route-set.js` | 6 |
 | **Subtotal (unique)** | | **108** |
-| `/rbac` | Re-exports `user.routes.js` | **+14 → 122** |
 
 **Not mounted:** `src/routes/dashboard.routes.js`, `src/routes/verification.routes.js`.
 
@@ -156,26 +154,13 @@ For `/api/v1/rbac/*`, behaviour matches the corresponding `/api/v1/users/*` row 
 | PUT | `/api/v1/users/:userId` | No | No | Yes | Intended branch scope via `requireSameBranchAsTargetUser` | `src/routes/user.routes.js:395`; branch helper `src/middleware/rbac.js:143–185` |
 | DELETE | `/api/v1/users/:userId` | No | No | Yes | Admin delete | `src/routes/user.routes.js:403` |
 
-### 4.3 Users duplicated under `/api/v1/rbac`
+### 4.3 Historical `/api/v1/rbac` duplicate routes (removed in BE 006)
 
-Mount: `src/routes/index.js:31`. Re-export: `src/routes/rbac.routes.js:10` and `:202`.
+Before BE 006, the route was mounted from `src/routes/index.js` and re-exported `user.routes.js` through `src/routes/rbac.routes.js`. Both the mount and obsolete route file have now been removed.
 
-| Method | Endpoint | Same behaviour as |
-|--------|----------|-------------------|
-| GET | `/api/v1/rbac/me` | `/api/v1/users/me` |
-| PUT | `/api/v1/rbac/me` | `/api/v1/users/me` |
-| POST | `/api/v1/rbac/push-token` | `/api/v1/users/push-token` |
-| GET | `/api/v1/rbac/profile` | `/api/v1/users/profile` |
-| PUT | `/api/v1/rbac/profile` | `/api/v1/users/profile` |
-| GET | `/api/v1/rbac/favourites` | `/api/v1/users/favourites` |
-| POST | `/api/v1/rbac/favourites/:guardId` | `/api/v1/users/favourites/:guardId` |
-| DELETE | `/api/v1/rbac/favourites/:guardId` | `/api/v1/users/favourites/:guardId` |
-| GET | `/api/v1/rbac/guards` | `/api/v1/users/guards` |
-| GET | `/api/v1/rbac/guards/:id/score` | `/api/v1/users/guards/:id/score` |
-| GET | `/api/v1/rbac/` | `/api/v1/users/` |
-| GET | `/api/v1/rbac/:userId` | `/api/v1/users/:userId` |
-| PUT | `/api/v1/rbac/:userId` | `/api/v1/users/:userId` |
-| DELETE | `/api/v1/rbac/:userId` | `/api/v1/users/:userId` |
+Before BE 006 these endpoints duplicated `/api/v1/users/*`.
+
+They have now been removed and requests return 404.
 
 ### 4.4 Shifts
 
@@ -355,7 +340,8 @@ Swagger may still document these files because it scans route modules under `src
 
 | Documentation claim | Current repository behaviour |
 |---------------------|------------------------------|
-| `docs/rbac.md` documents Role CRUD under `/api/v1/rbac/roles` and related paths | `/api/v1/rbac` re-exports user routes; those Role CRUD endpoints are not implemented by the mounted router |
+| `docs/rbac.md` previously documented `/api/v1/rbac`|
+|The obsolete `/api/v1/rbac` route has been removed in BE 006|
 | `docs/verification.md` documents `/api/verification/...` | Verification router is not mounted; Swagger annotations use `/api/v1/verification/...` |
 | `docs/system-architecture.md` §9.1 omits timesheets, shift-requests, emergency and sos | Those mounts exist in `src/routes/index.js` |
 | Document create Swagger implies arbitrary `userId` in the body | Controller overwrites `userId` with `req.user._id` |
@@ -376,7 +362,7 @@ These are confirmed from source. They are recorded for Product Owner and enginee
 6. **Verification and dashboard routers are not mounted** despite existing route files and possible Swagger coverage.
 7. **Branch scoping references missing `User.branch`:** `requireSameBranchAsTargetUser` selects `branch` (`middleware/rbac.js`); `User` schema has no `branch` field.
 8. **`PUT /api/v1/documents/admin/documents/:id` has no role middleware**; service allows admin or document owner only (employers without ownership are denied in service, but the route path and middleware are inconsistent with sibling document routes).
-9. **`/api/v1/rbac` is a user-route alias**, not a Role management API (`rbac.routes.js`).
+9. The obsolete `/api/v1/rbac` user-route alias was removed in BE 006, not a Role management API (`rbac.routes.js`).
 10. **RBAC logic is duplicated** in middleware, `controllers/rbac.controller.js` and `routes/rbac.routes.js`, with permission-map drift; documents import authorisation from the controller copy.
 11. **Several employer-only surfaces rely on controller role checks without route Role MW** (profile, favourites).
 12. **Notification create** uses controller-only role checks and accepts an arbitrary target `userId`.
@@ -396,7 +382,7 @@ These are confirmed from source. They are recorded for Product Owner and enginee
 | 6 | Availability `GET /:userId`: should employers read other users’ availability for scheduling? |
 | 7 | `GET /api/v1/shifts/myshifts`: should admin retain unrestricted access; should Role MW be required? |
 | 8 | Incidents: add `incident:*` to seeds, or replace permission middleware with role-based gates? |
-| 9 | `/api/v1/rbac`: implement Role CRUD, remove the mount, or keep as a deliberate user-route alias? |
+| 9 | Resolved in BE 006: | the obsolete `/api/v1/rbac` mount has been removed. |
 | 10 | Verification: mount under `/api/v1/verification` and which roles may start/recheck? |
 | 11 | Branch admin: implement `User.branch` (or equivalent) and real tenancy, or remove branch-admin from the product model? |
 
@@ -488,7 +474,7 @@ Do **not** infer production database contents from this document. Confirm in the
 | Topic | Outcome |
 |-------|---------|
 | Mounted route count | **108** unique; **122** including `/rbac` duplicates |
-| `/api/v1/rbac` | Confirmed full re-export of user routes |
+| /api/v1/rbac | Removed in BE 006. Requests now return 404 |
 | Public endpoints | Role columns use `Public` (not “Yes”) |
 | `GET /api/v1/shifts/myshifts` admin access | Confirmed **All** via unrestricted query when role is admin; missing Role MW remains a defect / Product Owner item |
 | Seven priority defects | All confirmed (attendance IDOR, equipment auth-only, global document list, incident seed/fallback, `ROLES.EMPLOYEE`, unmounted verification/dashboard, missing `User.branch`) |
