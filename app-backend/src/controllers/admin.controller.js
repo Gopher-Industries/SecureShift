@@ -111,19 +111,40 @@ export const getAuditLogs = async (req, res) => {
   try {
     const { page = 1, limit = 50, userId, action, role, from, to } = req.query;
 
+    const VALID_ROLES = ["guard", "employer", "admin"];
+    if (role && !VALID_ROLES.includes(role)) {
+      return res.status(400).json({
+        message: `Invalid role. Must be one of: ${VALID_ROLES.join(", ")}`,
+      });
+    }
+
     const query = {};
-    if (userId) query.user = userId;
     if (action) query.action = action;
-    if (role) query.role = role;
     if (from || to) query.timestamp = {};
     if (from) query.timestamp.$gte = new Date(from);
     if (to) query.timestamp.$lte = new Date(to);
+
+    // Intersect userId and role filters instead of one overriding the other
+    if (userId && role) {
+      const usersWithRole = await User.find({ role }).select("_id");
+      const roleUserIds = usersWithRole.map((u) => String(u._id));
+      if (roleUserIds.includes(String(userId))) {
+        query.user = userId;
+      } else {
+        return res.status(200).json({ logs: [] });
+      }
+    } else if (userId) {
+      query.user = userId;
+    } else if (role) {
+      const usersWithRole = await User.find({ role }).select("_id");
+      query.user = { $in: usersWithRole.map((u) => u._id) };
+    }
 
     const logs = await AuditLog.find(query)
       .sort({ timestamp: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit))
-      .populate("user", "name email role"); // populate user info
+      .populate("user", "name email role");
 
     res.status(200).json({ logs });
   } catch (err) {
