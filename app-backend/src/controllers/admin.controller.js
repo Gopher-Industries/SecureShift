@@ -124,29 +124,66 @@ export const getAuditLogs = async (req, res) => {
     if (from) query.timestamp.$gte = new Date(from);
     if (to) query.timestamp.$lte = new Date(to);
 
-    // Intersect userId and role filters instead of one overriding the other
+    let noMatch = false;
+
     if (userId && role) {
-      const usersWithRole = await User.find({ role }).select("_id");
+      const usersWithRole = await User.find({
+        role,
+        isDeleted: { $ne: true },
+      }).select("_id");
       const roleUserIds = usersWithRole.map((u) => String(u._id));
       if (roleUserIds.includes(String(userId))) {
         query.user = userId;
       } else {
-        return res.status(200).json({ logs: [] });
+        noMatch = true;
       }
     } else if (userId) {
       query.user = userId;
     } else if (role) {
-      const usersWithRole = await User.find({ role }).select("_id");
-      query.user = { $in: usersWithRole.map((u) => u._id) };
+      const usersWithRole = await User.find({
+        role,
+        isDeleted: { $ne: true },
+      }).select("_id");
+      if (usersWithRole.length === 0) {
+        noMatch = true;
+      } else {
+        query.user = { $in: usersWithRole.map((u) => u._id) };
+      }
     }
 
-    const logs = await AuditLog.find(query)
-      .sort({ timestamp: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
-      .populate("user", "name email role");
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
 
-    res.status(200).json({ logs });
+    if (noMatch) {
+      return res.status(200).json({
+        logs: [],
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: 0,
+          hasNext: false,
+        },
+      });
+    }
+
+    const [logs, total] = await Promise.all([
+      AuditLog.find(query)
+        .sort({ timestamp: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum)
+        .populate("user", "name email role"),
+      AuditLog.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      logs,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        hasNext: pageNum * limitNum < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
