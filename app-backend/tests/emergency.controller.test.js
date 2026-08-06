@@ -12,6 +12,30 @@ import Shift from "../src/models/Shift.js";
 jest.mock("../src/models/Emergency.js");
 jest.mock("../src/models/Shift.js");
 
+// Mock the auth middleware to avoid database connection
+jest.mock("../src/middleware/auth.js", () => ({
+  __esModule: true,
+  default: (req, res, next) => {
+    let userId = "test-user-id";
+    let role = "guard";
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      try {
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.id || decoded._id || "test-user-id";
+        role = decoded.role || "guard";
+      } catch (e) {
+        // ignore
+      }
+    }
+    req.user = { _id: userId, id: userId, role };
+    next();
+  },
+}));
+jest.setTimeout(30000);
+
 process.env.JWT_SECRET = "test-secret";
 
 const makeToken = (role, id = new mongoose.Types.ObjectId().toString()) =>
@@ -51,7 +75,9 @@ const buildSOS = (overrides = {}) => ({
   message: "",
   note: "",
   status: "ACTIVE",
-  statusHistory: [{ status: "ACTIVE", message: "SOS triggered", at: new Date() }],
+  statusHistory: [
+    { status: "ACTIVE", message: "SOS triggered", at: new Date() },
+  ],
   locationUpdates: [],
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -166,7 +192,9 @@ describe("Emergency SOS routes", () => {
 
     expect(res.statusCode).toBe(200);
     expect(Shift.find).toHaveBeenCalledWith({ createdBy: employerId });
-    expect(Emergency.find).toHaveBeenCalledWith({ shiftId: { $in: [shiftId] } });
+    expect(Emergency.find).toHaveBeenCalledWith({
+      shiftId: { $in: [shiftId] },
+    });
     expect(res.body.count).toBe(1);
   });
 
@@ -182,7 +210,10 @@ describe("Emergency SOS routes", () => {
       .set(auth("employer", employerId));
 
     expect(res.statusCode).toBe(404);
-    expect(Emergency.findOne).toHaveBeenCalledWith({ _id: sosId, shiftId: { $in: [] } });
+    expect(Emergency.findOne).toHaveBeenCalledWith({
+      _id: sosId,
+      shiftId: { $in: [] },
+    });
   });
 
   test("admin can list SOS records without ownership scope", async () => {

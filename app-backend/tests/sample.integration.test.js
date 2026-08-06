@@ -9,6 +9,13 @@
  */
 import "./setup.js";
 import mongoose from "mongoose";
+import {
+  startTestDatabase,
+  clearDatabase,
+  closeTestDatabase,
+} from "./db-helper.js";
+
+let mongoServer;
 
 const TestSchema = new mongoose.Schema({
   name: String,
@@ -20,16 +27,13 @@ const TestModel = mongoose.model("TestTemp", TestSchema);
 describe("Sample Integration Test (CRUD)", () => {
   beforeAll(async () => {
     console.log("[database.test.js] beforeAll - connecting...");
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGO_TEST_URI);
-    }
+    await startTestDatabase();
   });
 
   afterAll(async () => {
     await TestModel.deleteMany({});
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
+    await clearDatabase();
+    await closeTestDatabase();
   });
 
   it("should create a document", async () => {

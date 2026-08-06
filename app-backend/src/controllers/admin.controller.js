@@ -7,12 +7,12 @@ import Guard from "../models/Guard.js";
 import { sendOTP } from "../utils/sendEmail.js";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+// import { fileURLToPath } from "url";
 
 import jwt from "jsonwebtoken";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 /**
  * Generate JWT token for a user
@@ -58,6 +58,9 @@ export const adminLogin = async (req, res) => {
       name: user.name,
       role: user.role,
     });
+
+    const envPath = path.join(process.cwd(), ".env");
+    let envContent = "";
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
