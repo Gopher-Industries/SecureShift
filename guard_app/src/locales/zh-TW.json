@@ -17,7 +17,8 @@
     "invalidInput": "輸入無效",
     "loginFailed": "登入失敗",
     "otpFailed": "OTP驗證失敗",
-    "otpMsgReq": "輸入您的OTP驗證碼。"
+    "otpMsgReq": "輸入您的OTP驗證碼。",
+    "sessionExpired": "您的登入已過期，請重新登入。"
   },
   "signup": {
     "title": "建立您的帳號",

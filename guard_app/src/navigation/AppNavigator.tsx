@@ -27,7 +27,7 @@ import { useAppTheme } from '../theme';
 export type RootStackParamList = {
   AppTabs: undefined;
   Splash: undefined;
-  Login: undefined;
+  Login: { sessionExpired?: boolean } | undefined;
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
