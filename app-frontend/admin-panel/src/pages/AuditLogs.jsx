@@ -70,9 +70,7 @@ export default function AuditLogs() {
       const res = await http.delete('/admin/audit-logs/purge', {
         params: { days: purgeDays },
       });
-      setPurgeMessage(
-        `Purged ${res.data.deletedCount} log(s) older than ${purgeDays} days.`
-      );
+      setPurgeMessage(`Purged ${res.data.deletedCount} log(s) older than ${purgeDays} days.`);
       setShowPurgeConfirm(false);
       setPage(1);
       fetchLogs();
@@ -91,7 +89,11 @@ export default function AuditLogs() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
         <input placeholder="User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
-        <input placeholder="Action (e.g. LOGIN_SUCCESS)" value={action} onChange={(e) => setAction(e.target.value)} />
+        <input
+          placeholder="Action (e.g. LOGIN_SUCCESS)"
+          value={action}
+          onChange={(e) => setAction(e.target.value)}
+        />
         <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">All Roles</option>
           <option value="guard">Guard</option>
@@ -105,7 +107,18 @@ export default function AuditLogs() {
       </div>
 
       {/* Purge section */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', padding: '10px', border: '1px solid #e0a0a0', borderRadius: '4px', backgroundColor: '#fff5f5' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          marginBottom: '16px',
+          padding: '10px',
+          border: '1px solid #e0a0a0',
+          borderRadius: '4px',
+          backgroundColor: '#fff5f5',
+        }}
+      >
         <label>
           Purge logs older than{' '}
           <input
@@ -120,7 +133,14 @@ export default function AuditLogs() {
         <button
           onClick={() => setShowPurgeConfirm(true)}
           disabled={purging}
-          style={{ backgroundColor: '#d9534f', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+          style={{
+            backgroundColor: '#d9534f',
+            color: 'white',
+            border: 'none',
+            padding: '6px 12px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
         >
           Purge Logs
         </button>
@@ -198,19 +218,55 @@ export default function AuditLogs() {
       {selectedLog && (
         <div
           onClick={() => setSelectedLog(null)}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', minWidth: '400px', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}
+            style={{
+              backgroundColor: 'white',
+              padding: '24px',
+              borderRadius: '8px',
+              minWidth: '400px',
+              maxWidth: '600px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+            }}
           >
             <h2>Log Details</h2>
-            <p><strong>Timestamp:</strong> {new Date(selectedLog.timestamp).toLocaleString()}</p>
-            <p><strong>Action:</strong> {selectedLog.action}</p>
-            <p><strong>User:</strong> {selectedLog.user?.name || '—'} ({selectedLog.user?.email || 'N/A'})</p>
-            <p><strong>Role:</strong> {selectedLog.user?.role || '—'}</p>
-            <p><strong>Metadata:</strong></p>
-            <pre style={{ backgroundColor: '#f5f5f5', padding: '10px', borderRadius: '4px', overflowX: 'auto' }}>
+            <p>
+              <strong>Timestamp:</strong> {new Date(selectedLog.timestamp).toLocaleString()}
+            </p>
+            <p>
+              <strong>Action:</strong> {selectedLog.action}
+            </p>
+            <p>
+              <strong>User:</strong> {selectedLog.user?.name || '—'} (
+              {selectedLog.user?.email || 'N/A'})
+            </p>
+            <p>
+              <strong>Role:</strong> {selectedLog.user?.role || '—'}
+            </p>
+            <p>
+              <strong>Metadata:</strong>
+            </p>
+            <pre
+              style={{
+                backgroundColor: '#f5f5f5',
+                padding: '10px',
+                borderRadius: '4px',
+                overflowX: 'auto',
+              }}
+            >
               {JSON.stringify(selectedLog.metadata, null, 2)}
             </pre>
             <button onClick={() => setSelectedLog(null)}>Close</button>
@@ -220,8 +276,27 @@ export default function AuditLogs() {
 
       {/* Purge Confirmation Modal */}
       {showPurgeConfirm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', minWidth: '350px' }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              padding: '24px',
+              borderRadius: '8px',
+              minWidth: '350px',
+            }}
+          >
             <h2 style={{ color: '#d9534f' }}>⚠️ Confirm Purge</h2>
             <p>
               This will <strong>permanently delete</strong> all audit logs older than{' '}
@@ -232,7 +307,14 @@ export default function AuditLogs() {
               <button
                 onClick={handlePurgeConfirmed}
                 disabled={purging}
-                style={{ backgroundColor: '#d9534f', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}
+                style={{
+                  backgroundColor: '#d9534f',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
               >
                 {purging ? 'Purging...' : 'Yes, Purge'}
               </button>
