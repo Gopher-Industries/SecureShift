@@ -190,71 +190,59 @@ function AllTab({ navigation }: Props) {
     setRefreshing(false);
   };
 
-const submitApplication = async (shiftId: string) => {
-  try {
-    setApplyingId(shiftId);
+  const submitApplication = async (shiftId: string) => {
+    try {
+      setApplyingId(shiftId);
 
-    await applyToShift(shiftId);
+      await applyToShift(shiftId);
 
-    Alert.alert('Success', 'Shift applied successfully');
-    await fetchData();
-  } catch (error: unknown) {
-    const apiError = error as {
-      response?: {
-        data?: {
-          message?: string;
+      Alert.alert('Success', 'Shift applied successfully');
+      await fetchData();
+    } catch (error: unknown) {
+      const apiError = error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
         };
       };
-    };
 
-    const message =
-      apiError.response?.data?.message ?? 'Could not apply for shift';
+      const message = apiError.response?.data?.message ?? 'Could not apply for shift';
 
-    const normalizedMessage = message.toLowerCase();
+      const normalizedMessage = message.toLowerCase();
 
-    if (
-      normalizedMessage.includes('already applied') ||
-      normalizedMessage.includes('duplicate')
-    ) {
-      Alert.alert(
-        'Already Applied',
-        'You have already applied for this shift.',
-      );
-    } else if (
-      normalizedMessage.includes('already taken') ||
-      normalizedMessage.includes('not available') ||
-      normalizedMessage.includes('filled') ||
-      normalizedMessage.includes('assigned')
-    ) {
-      Alert.alert(
-        'Shift Unavailable',
-        'This shift is no longer available.',
-      );
-    } else {
-      Alert.alert('Apply Failed', message);
+      if (
+        normalizedMessage.includes('already applied') ||
+        normalizedMessage.includes('duplicate')
+      ) {
+        Alert.alert('Already Applied', 'You have already applied for this shift.');
+      } else if (
+        normalizedMessage.includes('already taken') ||
+        normalizedMessage.includes('not available') ||
+        normalizedMessage.includes('filled') ||
+        normalizedMessage.includes('assigned')
+      ) {
+        Alert.alert('Shift Unavailable', 'This shift is no longer available.');
+      } else {
+        Alert.alert('Apply Failed', message);
+      }
+    } finally {
+      setApplyingId(null);
     }
-  } finally {
-    setApplyingId(null);
-  }
-};
+  };
 
-const handleApply = (shiftId: string) => {
-  if (Platform.OS === 'web') {
-    const confirmed = window.confirm(
-      'Are you sure you want to apply for this shift?',
-    );
+  const handleApply = (shiftId: string) => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to apply for this shift?');
 
-    if (confirmed) {
-      void submitApplication(shiftId);
+      if (confirmed) {
+        void submitApplication(shiftId);
+      }
+
+      return;
     }
 
-    return;
-  }
-
-  Alert.alert(
-    'Confirm Application',
-    'Are you sure you want to apply for this shift?',
-    [
+    Alert.alert('Confirm Application', 'Are you sure you want to apply for this shift?', [
       {
         text: 'Cancel',
         style: 'cancel',
@@ -263,9 +251,8 @@ const handleApply = (shiftId: string) => {
         text: 'Apply',
         onPress: () => void submitApplication(shiftId),
       },
-    ],
-  );
-};
+    ]);
+  };
   const filtered = rows
     .filter((shift) =>
       `${shift.title} ${shift.company} ${shift.site}`
@@ -439,17 +426,17 @@ const handleApply = (shiftId: string) => {
       )}
 
       <ShiftDetailsModal
-  shift={selectedShift}
-  visible={selectedShift !== null}
-  onClose={() => setSelectedShift(null)}
-  colors={colors}
-  onApply={() => {
-    if (selectedShift) {
-      handleApply(selectedShift.id);
-    }
-  }}
-  applying={selectedShift ? applyingId === selectedShift.id : false}
-/>
+        shift={selectedShift}
+        visible={selectedShift !== null}
+        onClose={() => setSelectedShift(null)}
+        colors={colors}
+        onApply={() => {
+          if (selectedShift) {
+            handleApply(selectedShift.id);
+          }
+        }}
+        applying={selectedShift ? applyingId === selectedShift.id : false}
+      />
     </View>
   );
 }
