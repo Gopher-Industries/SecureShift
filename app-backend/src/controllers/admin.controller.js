@@ -59,8 +59,8 @@ export const adminLogin = async (req, res) => {
       role: user.role,
     });
 
-    const envPath = path.join(process.cwd(), ".env");
-    let envContent = "";
+    // const envPath = path.join(process.cwd(), ".env");
+    // let envContent = "";
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

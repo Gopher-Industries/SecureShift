@@ -2,7 +2,7 @@ import Incident from "../models/Incident.js";
 import Shift from "../models/Shift.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
 import { ACTIONS } from "../middleware/logger.js";
-// import path from "path";
+import path from "path";
 // import { fileURLToPath } from "url";
 
 // const __filename = fileURLToPath(import.meta.url);
