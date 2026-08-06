@@ -4,27 +4,13 @@ import mongoose from "mongoose";
 import express from "express";
 import Faq from "../src/models/Faq.js";
 import faqRoutes from "../src/routes/faq.routes.js";
+import "./setup.js";
 
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
   app.use("/api/v1/faqs", faqRoutes);
   return app;
-};
-
-// safe check to ensure we are using a test database
-const validateTestDatabase = (uri) => {
-  const dbName = uri.split("/").pop()?.split("?")[0] || "";
-  const allowed = ["secureshift_test", "secureshift_local"];
-  if (!allowed.includes(dbName)) {
-    throw new Error(
-      `FAIL: Test database is not safe, currently using database: "${dbName}"，` +
-        `Only allowed: ${allowed.join(", ")}。\n` +
-        `Please update your .env file to use a test database.`,
-    );
-  }
-  console.log(`PASS: Test database is safe, using database: "${dbName}"`);
-  return dbName;
 };
 
 describe("FAQ API Integration Tests", () => {
@@ -39,19 +25,22 @@ describe("FAQ API Integration Tests", () => {
         "FAIL: MONGO_URI is not defined in the environment variables. Please set it to a test database URI.",
       );
     }
-    validateTestDatabase(uri);
     await mongoose.connect(uri);
     app = createTestApp();
   });
 
   afterAll(async () => {
-    // await Faq.deleteMany({});
+    if (createdIds.length > 0) {
+      await Faq.deleteMany({ _id: { $in: createdIds } });
+    }
     await mongoose.connection.close();
   });
 
   beforeEach(async () => {
-    await Faq.deleteMany({});
-    createdIds = [];
+    if (createdIds.length > 0) {
+      await Faq.deleteMany({ _id: { $in: createdIds } });
+      createdIds = [];
+    }
   });
 
   afterEach(async () => {
