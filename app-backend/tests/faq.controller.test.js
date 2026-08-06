@@ -52,7 +52,10 @@ describe("FAQ API Integration Tests", () => {
 
   describe("GET /api/v1/faqs", () => {
     beforeEach(async () => {
-      await Faq.deleteMany({});
+      if (createdIds.length > 0) {
+        await Faq.deleteMany({ _id: { $in: createdIds } });
+        createdIds = [];
+      }
     });
 
     test("should return 200 OK and an empty array when no FAQs exist", async () => {
