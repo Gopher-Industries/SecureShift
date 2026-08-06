@@ -119,6 +119,7 @@ export default function AuditLogs() {
         </label>
         <button
           onClick={() => setShowPurgeConfirm(true)}
+          disabled={purging}
           style={{ backgroundColor: '#d9534f', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
         >
           Purge Logs
@@ -126,10 +127,16 @@ export default function AuditLogs() {
         {purgeMessage && <span>{purgeMessage}</span>}
       </div>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {loading && <p>Loading...</p>}
-
-      <table border="1" cellPadding="8" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table
+        border="1"
+        cellPadding="8"
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          opacity: purging ? 0.5 : 1,
+          pointerEvents: purging ? 'none' : 'auto',
+        }}
+      >
         <thead>
           <tr>
             <th>Timestamp</th>
@@ -138,31 +145,53 @@ export default function AuditLogs() {
           </tr>
         </thead>
         <tbody>
-          {logs.length === 0 && !loading && (
+          {loading ? (
             <tr>
-              <td colSpan="3">No logs found.</td>
+              <td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>
+                Loading audit logs…
+              </td>
             </tr>
+          ) : error ? (
+            <tr>
+              <td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: '#d9534f' }}>
+                {error}{' '}
+                <button onClick={fetchLogs} style={{ marginLeft: '8px' }}>
+                  Retry
+                </button>
+              </td>
+            </tr>
+          ) : logs.length === 0 ? (
+            <tr>
+              <td colSpan="3" style={{ textAlign: 'center', padding: '20px', color: '#777' }}>
+                No audit logs match the current filters.
+              </td>
+            </tr>
+          ) : (
+            logs.map((log) => (
+              <tr
+                key={log._id}
+                onClick={() => setSelectedLog(log)}
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <td>{new Date(log.timestamp).toLocaleString()}</td>
+                <td>{log.user?.name || log.user || '—'}</td>
+                <td>{log.action}</td>
+              </tr>
+            ))
           )}
-          {logs.map((log) => (
-            <tr
-              key={log._id}
-              onClick={() => setSelectedLog(log)}
-              style={{ cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
-              <td>{new Date(log.timestamp).toLocaleString()}</td>
-              <td>{log.user?.name || log.user || '—'}</td>
-              <td>{log.action}</td>
-            </tr>
-          ))}
         </tbody>
       </table>
 
       <div style={{ marginTop: '12px' }}>
-        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</button>
+        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1 || loading}>
+          Previous
+        </button>
         <span style={{ margin: '0 10px' }}>Page {page}</span>
-        <button onClick={() => setPage((p) => p + 1)} disabled={logs.length < limit}>Next</button>
+        <button onClick={() => setPage((p) => p + 1)} disabled={logs.length < limit || loading}>
+          Next
+        </button>
       </div>
 
       {/* Details Modal */}
