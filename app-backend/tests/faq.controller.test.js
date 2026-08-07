@@ -1,10 +1,15 @@
+import { jest } from "@jest/globals";
 import "dotenv/config";
 import request from "supertest";
 import mongoose from "mongoose";
 import express from "express";
 import Faq from "../src/models/Faq.js";
 import faqRoutes from "../src/routes/faq.routes.js";
-import "./setup.js";
+import {
+  startTestDatabase,
+  clearDatabase,
+  closeTestDatabase,
+} from "./db-helper.js";
 
 const createTestApp = () => {
   const app = express();
@@ -19,13 +24,8 @@ describe("FAQ API Integration Tests", () => {
   let app;
 
   beforeAll(async () => {
-    const uri = process.env.MONGO_TEST_URI;
-    if (!uri) {
-      throw new Error(
-        "FAIL: MONGO_TEST_URI is not defined in the environment variables. Please set it to a test database URI.",
-      );
-    }
-    await mongoose.connect(uri);
+    await startTestDatabase(true);
+    await clearDatabase();
     app = createTestApp();
   });
 
@@ -33,7 +33,8 @@ describe("FAQ API Integration Tests", () => {
     if (createdIds.length > 0) {
       await Faq.deleteMany({ _id: { $in: createdIds } });
     }
-    await mongoose.connection.close();
+    await clearDatabase();
+    await closeTestDatabase();
   });
 
   beforeEach(async () => {
