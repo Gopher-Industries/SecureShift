@@ -25,7 +25,7 @@ The backend Docker image (`app-backend/Dockerfile`) is now pinned to **Node 18**
 
 - **Jenkins (Node 20):** Jenkins is a major version behind the backend CI recommendation (22) but matches the frontend/Guard App GitHub Actions workflows (20). There is no documented technical blocker for upgrading to 22, it looks like an unreviewed default rather than an intentional limitation. Here tagged for lead to verify if Jenkins has to be upgraded to 22 to align with CI or stay at 20 to align with frontend pipelines – suggest to raise as a follow up instead of fixing in BE 011.
 
-- **`package.json` engines (`>=18`):** This is a permissive range (allows 18 and above), not a pinned version, therefore technically does not clash with any environment above. But it does not implement the suggested baseline of Node 22. This is tightened to `>=22` and needs lead approval before it is implemented. Per ticket scope. Not applied in this PR.
+- **`package.json` engines (`>=18`):** This is a permissive range (allows 18 and above), not a pinned version, therefore technically does not clash with any environment above. But it does not implement the suggested baseline of Node 22. This could be tightened to `>=22`, but it needs lead approval before it is implemented (per ticket scope) and is not applied in this PR.
 
 ### Notes
 
