@@ -19,7 +19,7 @@ Standardize Backend local development, CI and Docker to **Node 22**, same versio
 
 ### Known exception
 
-The backend Docker image (`app-backend/Dockerfile`) is now pinned to **Node 18** (not matching CI (Node 22)). This is drift and not an intentional design choice and should be rectified in a separate ticket -- Dockerfile updates are specifically out of scope for BE 011.
+The backend Docker image (`app-backend/Dockerfile`) is pinned to **Node 18** (not matching CI (Node 22)). This is drift rather than an intentional design choice and should be rectified in a separate ticket — Dockerfile updates are specifically out of scope for BE 011.
 
 ### Justified exceptions
 
