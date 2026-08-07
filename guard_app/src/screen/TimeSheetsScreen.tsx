@@ -14,14 +14,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
+import { myShifts, type ShiftDto } from '../api/shifts';
 import { getAllMyTimesheets, type Timesheet } from '../api/timesheets';
 import { useAppTheme } from '../theme';
-import {
-  formatHours,
-  formatShiftDate,
-  formatTimesheetDateTime,
-  sumHours,
-} from '../utils/timesheet';
+import { fmtShiftLabel, formatHours, formatTimesheetDateTime, sumHours } from '../utils/timesheet';
 
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { AppColors } from '../theme/colors';
@@ -37,13 +33,18 @@ export default function TimesheetsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [items, setItems] = useState<Timesheet[]>([]);
+  const [shiftsById, setShiftsById] = useState<Record<string, ShiftDto>>({});
   const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     try {
       setError(null);
-      const rows = await getAllMyTimesheets();
+      const [rows, shifts] = await Promise.all([
+        getAllMyTimesheets(),
+        myShifts().catch(() => [] as ShiftDto[]),
+      ]);
       setItems(rows);
+      setShiftsById(Object.fromEntries(shifts.map((shift) => [shift._id, shift])));
     } catch (e: unknown) {
       let msg = t('timesheet.error');
 
@@ -82,7 +83,7 @@ export default function TimesheetsScreen() {
       style={s.card}
       onPress={() => navigation.navigate('TimesheetDetails', { timesheetId: item.id })}
     >
-      <Text style={s.title}>{formatShiftDate(item.shiftDate)}</Text>
+      <Text style={s.title}>{fmtShiftLabel(shiftsById[item.shiftId], item.shiftId)}</Text>
 
       <View style={s.row}>
         <Text style={s.label}>{t('timesheet.checkIn')}</Text>
