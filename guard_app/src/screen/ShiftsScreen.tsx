@@ -7,6 +7,7 @@ import {
   Alert,
   Dimensions,
   FlatList,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -185,19 +186,69 @@ function AllTab({ navigation }: Props) {
     setRefreshing(false);
   };
 
-  const handleApply = async (shiftId: string) => {
+  const submitApplication = async (shiftId: string) => {
     try {
       setApplyingId(shiftId);
+
       await applyToShift(shiftId);
+
       Alert.alert('Success', 'Shift applied successfully');
       await fetchData();
-    } catch (error: any) {
-      Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
+    } catch (error: unknown) {
+      const apiError = error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      };
+
+      const message = apiError.response?.data?.message ?? 'Could not apply for shift';
+
+      const normalizedMessage = message.toLowerCase();
+
+      if (
+        normalizedMessage.includes('already applied') ||
+        normalizedMessage.includes('duplicate')
+      ) {
+        Alert.alert('Already Applied', 'You have already applied for this shift.');
+      } else if (
+        normalizedMessage.includes('already taken') ||
+        normalizedMessage.includes('not available') ||
+        normalizedMessage.includes('filled') ||
+        normalizedMessage.includes('assigned')
+      ) {
+        Alert.alert('Shift Unavailable', 'This shift is no longer available.');
+      } else {
+        Alert.alert('Apply Failed', message);
+      }
     } finally {
       setApplyingId(null);
     }
   };
 
+  const handleApply = (shiftId: string) => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to apply for this shift?');
+
+      if (confirmed) {
+        void submitApplication(shiftId);
+      }
+
+      return;
+    }
+
+    Alert.alert('Confirm Application', 'Are you sure you want to apply for this shift?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Apply',
+        onPress: () => void submitApplication(shiftId),
+      },
+    ]);
+  };
   const filtered = rows
     .filter((shift) =>
       `${shift.title} ${shift.company} ${shift.site}`
@@ -375,6 +426,12 @@ function AllTab({ navigation }: Props) {
         visible={selectedShift !== null}
         onClose={() => setSelectedShift(null)}
         colors={colors}
+        onApply={() => {
+          if (selectedShift) {
+            handleApply(selectedShift.id);
+          }
+        }}
+        applying={selectedShift ? applyingId === selectedShift.id : false}
       />
     </View>
   );
