@@ -121,7 +121,7 @@ The obsolete route has now been removed and requests to `/api/v1/rbac/*` return 
 
 **Column values:** `Public` · `Yes` · `No` · `Self` · `Own employer records` · `All` · `Requires Product Owner decision` · `Requires technical correction`
 
-For `/api/v1/rbac/*`, behaviour matches the corresponding `/api/v1/users/*` row (see Section 4.3).
+The obsolete `/api/v1/rbac/*` routes were removed in BE 006. Requests to `/api/v1/rbac/*` now return 404.
 
 ### 4.1 Public and health
 
@@ -473,7 +473,7 @@ Do **not** infer production database contents from this document. Confirm in the
 
 | Topic | Outcome |
 |-------|---------|
-| Mounted route count | **108** unique; **122** including `/rbac` duplicates |
+| Mounted route count | **108** unique; the previous 14 `/rbac` duplicate handlers were removed in BE 006 |
 | /api/v1/rbac | Removed in BE 006. Requests now return 404 |
 | Public endpoints | Role columns use `Public` (not “Yes”) |
 | `GET /api/v1/shifts/myshifts` admin access | Confirmed **All** via unrestricted query when role is admin; missing Role MW remains a defect / Product Owner item |
