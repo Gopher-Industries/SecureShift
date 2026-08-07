@@ -15,7 +15,7 @@ _Last updated: 7 Aug 2026 - BE 011_
 
 ### Recommendation
 
-Standardize Backend local development, CI and Docker to **Node 22**, same version used by backend GitHub Actions lint workflow (`backend-lint.yml`). The active LTS release at the moment is Node 22 and adopting this is the closest alignment to production-facing CI checks (lint/tests) than the oldest supported floor.
+Standardize Backend local development, CI, and Docker to **Node 22**, the version used by the backend GitHub Actions lint workflow (`backend-lint.yml`). Node 22 is the active LTS release, and adopting it aligns local/dev tooling with the production-facing CI checks (lint/tests) rather than the minimum supported floor.
 
 ### Known exception
 
