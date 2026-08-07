@@ -10,8 +10,8 @@ import {
   listAvailableShifts,
   getShiftHistory,
   updateShift,
-  getShiftById,   
-  deleteShift,    
+  getShiftById,
+  deleteShift,
 } from "../controllers/shift.controller.js";
 
 const router = express.Router();

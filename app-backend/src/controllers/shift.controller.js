@@ -129,14 +129,7 @@ export const createShift = async (req, res) => {
     let loc = {};
 
     if (location && typeof location === "object") {
-      const {
-        street,
-        suburb,
-        state,
-        postcode,
-        latitude,
-        longitude,
-      } = location;
+      const { street, suburb, state, postcode, latitude, longitude } = location;
 
       loc = {
         street: typeof street === "string" ? street.trim() : "",
@@ -151,8 +144,7 @@ export const createShift = async (req, res) => {
     if (!isDraft) {
       if (!loc?.street || !loc?.suburb || !loc?.state || !loc?.postcode) {
         return res.status(400).json({
-          message:
-            "location must include street, suburb, state, and postcode",
+          message: "location must include street, suburb, state, and postcode",
         });
       }
 
@@ -361,8 +353,7 @@ export const listAvailableShifts = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const { q, urgency } = req.query;
-    const withApplicantsOnly =
-      String(req.query.withApplicantsOnly) === "true";
+    const withApplicantsOnly = String(req.query.withApplicantsOnly) === "true";
 
     let query = {};
 
@@ -442,9 +433,8 @@ export const listAvailableShifts = async (req, res) => {
 
           return (
             guardId &&
-            array.findIndex(
-              (item) => String(item?._id || item) === guardId,
-            ) === index
+            array.findIndex((item) => String(item?._id || item) === guardId) ===
+              index
           );
         })
         .map((guard) => ({
@@ -653,8 +643,7 @@ export const rateShift = async (req, res) => {
     }
 
     if (req.user.role === "guard") {
-      const isAssigned =
-        String(shift.assignedGuard) === String(req.user._id);
+      const isAssigned = String(shift.assignedGuard) === String(req.user._id);
 
       if (!isAssigned) {
         return res.status(403).json({
@@ -831,4 +820,3 @@ export const getShiftHistory = async (req, res) => {
     return res.status(500).json({ message: e.message });
   }
 };
-
