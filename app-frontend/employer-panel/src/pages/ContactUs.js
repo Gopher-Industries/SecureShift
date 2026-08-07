@@ -126,48 +126,59 @@ function ContactUs() {
     <div className="contact-page">
       <div className="contact-header">
         <h1>Contact Us</h1>
-        <p>Have a question or need assistance? We'd love to hear from you.</p>
+        <p>
+          Have a question or need assistance? We&apos;d love to hear from you.
+        </p>
       </div>
 
       <div className="contact-content">
-        {/* Contact Information */}
-        <div className="contact-info">
-          <h2>Contact Information</h2>
+        <section className="contact-info" aria-labelledby="contact-info-title">
+          <h2 id="contact-info-title">Contact Information</h2>
 
           <div className="info-item">
-            <div className="contact-icon">
+            <div className="contact-icon" aria-hidden="true">
               <IconPhone />
             </div>
+
             <div className="info-item-body">
               <h3>Phone</h3>
-              <p>+61 3 1234 5678</p>
+              <a href="tel:+61312345678">+61 3 1234 5678</a>
             </div>
           </div>
 
           <div className="info-item">
-            <div className="contact-icon">
+            <div className="contact-icon" aria-hidden="true">
               <IconMail />
             </div>
+
             <div className="info-item-body">
               <h3>Email</h3>
-              <p>support@secureshift.com</p>
+              <a href="mailto:support@secureshift.com">
+                support@secureshift.com
+              </a>
             </div>
           </div>
 
           <div className="info-item">
-            <div className="contact-icon">
+            <div className="contact-icon" aria-hidden="true">
               <IconPin />
             </div>
+
             <div className="info-item-body">
               <h3>Address</h3>
               <p>Melbourne, Victoria, Australia</p>
             </div>
           </div>
-        </div>
+
+          <div className="contact-response-note">
+            <h3>Response time</h3>
+            <p>Our team normally responds within 1–2 business days.</p>
+          </div>
+        </section>
 
         {/* Contact Form Section */}
-        <div className="contact-form-section">
-          <h2>Send Us a Message</h2>
+        <section className="contact-form-section" aria-labelledby="contact-form-title">
+          <h2 id="contact-form-title">Send Us a Message</h2>
 
           {submitStatus && (
             <div
@@ -325,7 +336,7 @@ function ContactUs() {
               )}
             </button>
           </form>
-        </div>
+        </section>
       </div>
     </div>
   );

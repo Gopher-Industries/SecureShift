@@ -145,15 +145,24 @@
     "selectRequestType": "વિનંતી પ્રકાર પસંદ કરો",
     "reasonHint": "માફ કરશો, હું બીમાર છું...",
     "requestedTime": "વિનંતી કરેલ સમય",
-    "selectDate": "તારીખ પસંદ કરો",
-    "selectTime": "સમય પસંદ કરો",
+    "swapGuard": "વિનંતી થયેલ રક્ષક",
+    "guardHint": "જ્હોન સ્મિથ...",
+    "swapShift": "રિપ્લેસમેન્ટ શિફ્ટ",
+    "shiftHint": "બદલી શિફ્ટ નામ..",
+    "selectStart": "શરુઆત પસંદ કરો",
+    "selectEnd": "અંત પસંદ કરો",
+    "leaveStart": " શરુઆત છોડો",
+    "leaveEnd": "છોડી દેવાનો અંત",
     "notFound": "કોઈ શિફ્ટ વિનંતીઓ મળી નથી",
     "requestError": "વિનંતીઓ લોડ કરવામાં નિષ્ફળતા.",
     "alerts": {
-      "missingTimeHead": "તારીખ અથવા સમય ગુમ છે",
-      "missingTimeMsg": "તમારી શિફ્ટ કયા તારીખ અને સમયે બદલવી છે તે દાખલ કરો.",
-      "invalidDateHead": "અમાન્ય તારીખ",
-      "invalidDateMsg": "પસંદ કરેલી તારીખ અમાન્ય છે"
+      "missingDateHead": "ગુમ થયેલ તારીખ",
+      "missingDateMsg": "તમે જે તારીખે તમારી શિફ્ટ ખસેડવા માંગો છો તે તારીખ દાખલ કરો.",
+      "invalidDateHead": "અયોગ્ય તારીખ",
+      "invalidDateMsg": "પસંદ થયેલ તારીખ અયોગ્ય છે",
+      "requestCreated": "માંગણી બનાવેલ છે",
+      "requestFailed": "વિનંતી નિષ્ફળ",
+      "successMessage": "તમારી વિનંતી તમારા એમ્પ્લોયરને મોકલવામાં આવી છે"
     }
   },
   "timesheet": {

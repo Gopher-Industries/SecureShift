@@ -1,56 +1,53 @@
 .contact-page {
-  padding: 32px 36px 40px;
-  background: #fff;
   min-height: calc(100vh - 80px);
+  padding: 32px 36px 40px;
+  background: #ffffff;
 }
 
-/* Header */
 .contact-header {
   margin-bottom: 28px;
   animation: ss-fade-up 0.5s ease both;
 }
 
 .contact-header h1 {
-  font-size: 22px;
-  font-weight: 700;
-  color: #162447;
-  margin: 0 0 8px;
   position: relative;
   display: inline-block;
+  margin: 0 0 8px;
+  color: #162447;
+  font-size: 22px;
+  font-weight: 700;
 }
 
 .contact-header h1::after {
-  content: "";
   position: absolute;
-  left: 0;
   bottom: -6px;
+  left: 0;
   width: 42px;
   height: 3px;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--ss-blue-800, #162447), var(--ss-blue-700, #1f3b73));
+  content: '';
   animation: ss-line-grow 0.6s ease 0.3s both;
 }
 
 .contact-header p {
-  font-size: 13px;
-  color: var(--ss-muted, #64748b);
   margin: 10px 0 0;
+  color: var(--ss-muted, #64748b);
+  font-size: 13px;
 }
 
-/* Main container */
 .contact-content {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(380px, 1.2fr);
   gap: 24px;
+  align-items: start;
 }
 
-/* Cards */
 .contact-info,
 .contact-form-section {
-  background: var(--ss-panel, #f8fafc);
   border-radius: var(--ss-radius-xl, 22px);
+  background: var(--ss-panel, #f8fafc);
   padding: 24px;
-  box-shadow: inset 0 0 0 1px #edf1f6;
   animation: ss-fade-up 0.5s ease both;
 }
 
@@ -60,16 +57,15 @@
 
 .contact-form-section {
   animation-delay: 0.2s;
-  min-height: 350px;
 }
 
 /* Section titles */
 .contact-info h2,
 .contact-form-section h2 {
   margin: 0 0 18px;
+  color: #162447;
   font-size: 18px;
   font-weight: 700;
-  color: #162447;
 }
 
 /* Contact information items */
@@ -77,20 +73,16 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: #fff;
-  border-radius: 14px;
-  padding: 16px;
   margin-bottom: 14px;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 16px;
   box-shadow: var(--shadow-soft, 0 4px 12px rgba(0, 0, 0, 0.04));
   border: 1px solid var(--ss-border, #e2e8f0);
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   opacity: 0;
   animation: ss-fade-up 0.5s ease forwards;
 }
-
-.info-item:nth-child(1) { animation-delay: 0.25s; }
-.info-item:nth-child(2) { animation-delay: 0.35s; }
-.info-item:nth-child(3) { animation-delay: 0.45s; }
 
 .info-item:hover {
   transform: translateY(-3px);
@@ -99,34 +91,41 @@
 }
 
 .info-item:hover .contact-icon {
-  transform: scale(1.08) rotate(-4deg);
   background: var(--ss-blue-800, #162447);
   color: #fff;
+  transform: scale(1.08) rotate(-4deg);
 }
 
 .info-item-body h3 {
   margin: 0 0 4px;
-  font-size: 13px;
   color: #18284f;
+  font-size: 13px;
   font-weight: 700;
 }
 
-.info-item-body p {
+.info-item-body p,
+.info-item-body a {
   margin: 0;
   color: #5f6c84;
   font-size: 13px;
+  text-decoration: none;
+}
+
+.info-item-body a:hover {
+  color: var(--ss-blue-700, #124f70);
+  text-decoration: underline;
 }
 
 /* Contact icons */
 .contact-icon {
-  flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  background: #edf3ff;
-  border-radius: 50%;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #edf3ff;
   color: var(--ss-blue-800, #162447);
   transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease;
 }
@@ -333,12 +332,34 @@
   color: #0d5224;
 }
 
+.contact-response-note {
+  margin-top: 18px;
+  border-left: 3px solid var(--ss-blue-700, #1f3b73);
+  border-radius: 8px;
+  background: #edf3ff;
+  padding: 14px 16px;
+}
+
+.contact-response-note h3 {
+  margin: 0 0 4px;
+  color: #162447;
+  font-size: 13px;
+}
+
+.contact-response-note p {
+  margin: 0;
+  color: #5f6c84;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 /* Keyframes */
 @keyframes ss-fade-up {
   from {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -346,8 +367,13 @@
 }
 
 @keyframes ss-line-grow {
-  from { width: 0; }
-  to { width: 42px; }
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 42px;
+  }
 }
 
 @keyframes ss-spin {
@@ -370,5 +396,16 @@
 
   .contact-submit-btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-page {
+    padding: 20px 14px 30px;
+  }
+
+  .contact-info,
+  .contact-form-section {
+    padding: 18px;
   }
 }
