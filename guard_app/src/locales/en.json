@@ -145,15 +145,24 @@
     "selectRequestType": "Select Request Type",
     "reasonHint": "Sorry I'm sick...",
     "requestedTime": "Requested Time",
-    "selectDate": "Select date",
-    "selectTime": "Select time",
+    "swapGuard": "Requested Guard",
+    "guardHint": "John Smith...",
+    "swapShift": "Replacement Shift",
+    "shiftHint": "Replacement shift name..",
+    "selectStart": "Select Start",
+    "selectEnd": "Select End",
+    "leaveStart": "Leave Start",
+    "leaveEnd": "Leave End",
     "notFound": "No shift requests found",
     "requestError": "Failed to load requests.",
     "alerts": {
-      "missingTimeHead": "Missing Date or Time",
-      "missingTimeMsg": "Enter the date and time you want your shift moved to.",
+      "missingDateHead": "Missing Date",
+      "missingDateMsg": "Enter the date you want your shift moved to.",
       "invalidDateHead": "Invalid Date",
-      "invalidDateMsg": "Selected date is invalid"
+      "invalidDateMsg": "Selected date is invalid",
+      "requestCreated": "Request Created",
+      "requestFailed": "Request Failed",
+      "successMessage": "Your request has been sent to your employer"
     }
   },
   "timesheet": {

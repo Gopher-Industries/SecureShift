@@ -14,48 +14,82 @@ import {
   View,
 } from 'react-native';
 
+import { createShiftRequest } from '../../api/shiftRequest';
+
+import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
 import type { AppColors } from '../../theme/colors';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   colors: AppColors;
+  shift: AppliedShift | CompletedShift | AllShift | null;
 };
 
-export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
+export default function ShiftRequestModal({ visible, onClose, colors, shift }: Props) {
   const s = getStyles(colors);
   const { t } = useTranslation();
 
   const REQUEST_TYPES = [
-    { id: 'swap', label: t('shifts.swap') },
-    { id: 'leave', label: t('shifts.leave') },
+    { index: 0, id: 'SWAP', label: t('shifts.swap') },
+    { index: 1, id: 'LEAVE', label: t('shifts.leave') },
   ];
 
-  const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(null);
+  const [activePicker, setActivePicker] = useState<'start' | 'end' | null>(null);
   const [reason, setReason] = useState<string>('');
-  const [requestDate, setRequestDate] = useState<Date | null>(null);
-  const [requestTime, setRequestTime] = useState<Date | null>(null);
-  const [requestType, setRequestType] = useState<string>(REQUEST_TYPES[0].label);
+  const [leaveStart, setLeaveStart] = useState<Date | null>(null);
+  const [leaveEnd, setLeaveEnd] = useState<Date | null>(null);
+  const [requestType, setRequestType] = useState<number>(0);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [targetGuard, setTargetGuard] = useState<string>('');
+  const [targetShift, setTargetShift] = useState<string>('');
 
-  const handleCreateRequest = () => {
-    if (requestType === REQUEST_TYPES[0].label) {
-      if (requestDate === null || requestTime === null) {
-        Alert.alert(t('shifts.alerts.missingTimeHead'), t('shifts.alerts.missingTimeMsg'));
+  const handleCreateRequest = async () => {
+    if (requestType === 1) {
+      if (leaveStart === null || leaveEnd === null) {
+        Alert.alert(t('shifts.alerts.missingDateHead'), t('shifts.alerts.missingDateMsg'));
         return;
       }
-      if (requestDate < new Date()) {
-        Alert.alert(t('shifts.alerts.invalidTimeHead'), t('shifts.alerts.invalidTimeMsg'));
+      if (leaveStart < new Date()) {
+        Alert.alert(t('shifts.alerts.invalidDateHead'), t('shifts.alerts.invalidDateMsg'));
+        return;
+      }
+      if (leaveStart > leaveEnd) {
+        Alert.alert(t('shifts.alerts.invalidDateHead'), t('shifts.alerts.invalidDateMsg'));
         return;
       }
     }
 
-    //Send request to API
+    if (requestType === 0) {
+      Alert.alert('Not Implemented', 'Sorry, swap shift requests are coming soon');
+      return;
+    }
+
+    if (shift === null) return;
+
+    try {
+      if (REQUEST_TYPES[requestType].id === 'SWAP' || REQUEST_TYPES[requestType].id === 'LEAVE') {
+        const res = await createShiftRequest({
+          type: REQUEST_TYPES[requestType].id,
+          targetGuardId: null,
+          originalShiftId: shift.id,
+          replacementShiftId: null,
+          leaveStartDate: leaveStart,
+          leaveEndDate: leaveEnd,
+          reason,
+        });
+        Alert.alert(t('shifts.alerts.requestCreated'), t('shifts.alerts.successMessage'));
+      } else {
+        Alert.alert(t('shifts.alerts.requestFailed'));
+      }
+    } catch {
+      Alert.alert(t('shifts.alerts.requestFailed'));
+    }
 
     onClose();
   };
 
-  const openPicker = (kind: 'date' | 'time') => {
+  const openPicker = (kind: 'start' | 'end') => {
     setActivePicker(kind);
   };
 
@@ -67,21 +101,15 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
 
     if (!selected) return;
 
-    if (activePicker === 'date') {
-      setRequestDate(selected);
-    } else if (activePicker === 'time') {
-      setRequestTime(selected);
+    if (activePicker === 'start') {
+      setLeaveStart(selected);
+    } else if (activePicker === 'end') {
+      setLeaveEnd(selected);
     }
 
     if (Platform.OS === 'android') {
       setActivePicker(null);
     }
-  };
-
-  const formatTime = (date: Date) => {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const mins = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${mins}`;
   };
 
   return (
@@ -100,8 +128,14 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
               <Text style={s.modalShiftHeader}>{t('shifts.requestType')}</Text>
             </View>
             <TouchableOpacity style={s.dropdown} onPress={() => setShowDropdown(!showDropdown)}>
-              <Text style={requestType ? s.dropdownTextSelected : s.dropdownTextPlaceholder}>
-                {requestType || t('shifts.selectRequestType')}
+              <Text
+                style={
+                  REQUEST_TYPES[requestType].label
+                    ? s.dropdownTextSelected
+                    : s.dropdownTextPlaceholder
+                }
+              >
+                {REQUEST_TYPES[requestType].label || t('shifts.selectRequestType')}
               </Text>
               <Text style={s.dropdownIcon}>{showDropdown ? '▲' : '▼'}</Text>
             </TouchableOpacity>
@@ -111,16 +145,19 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
                 {REQUEST_TYPES.map((request) => (
                   <TouchableOpacity
                     key={request.id}
-                    style={[s.dropdownItem, requestType === request.id && s.dropdownItemSelected]}
+                    style={[
+                      s.dropdownItem,
+                      requestType === request.index && s.dropdownItemSelected,
+                    ]}
                     onPress={() => {
-                      setRequestType(request.label);
+                      setRequestType(request.index);
                       setShowDropdown(false);
                     }}
                   >
                     <Text
                       style={[
                         s.dropdownItemText,
-                        requestType === request.id && s.dropdownItemTextSelected,
+                        requestType === request.index && s.dropdownItemTextSelected,
                       ]}
                     >
                       {request.label}
@@ -131,7 +168,7 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
             )}
 
             <View style={s.modalHeaderRow}>
-              <Text style={s.modalShiftHeader}>{t('shifts.requestedTime')}</Text>
+              <Text style={s.modalShiftHeader}>{t('shifts.reason')}</Text>
             </View>
             <TextInput
               style={s.modalInput}
@@ -142,20 +179,51 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
               onChangeText={(s) => setReason(s)}
             />
 
-            {requestType === REQUEST_TYPES[0].label && (
-              <View>
+            {requestType === 0 && (
+              <View style={s.modalBody}>
+                <View style={s.modalHeaderRow}>
+                  <Text style={s.modalShiftHeader}>{t('shifts.swapGuard')}</Text>
+                </View>
+                <View>
+                  <TextInput
+                    style={s.modalInput}
+                    placeholder={t('shifts.guardHint')}
+                    placeholderTextColor={colors.muted}
+                    keyboardType="default"
+                    returnKeyType="done"
+                    onChangeText={(t) => setTargetGuard(t)}
+                  />
+                </View>
+                <View style={s.modalHeaderRow}>
+                  <Text style={s.modalShiftHeader}>{t('shifts.swapShift')}</Text>
+                </View>
+                <View>
+                  <TextInput
+                    style={s.modalInput}
+                    placeholder={t('shifts.shiftHint')}
+                    placeholderTextColor={colors.muted}
+                    keyboardType="default"
+                    returnKeyType="done"
+                    onChangeText={(ts) => setTargetShift(ts)}
+                  />
+                </View>
+              </View>
+            )}
+
+            {requestType === 1 && (
+              <View style={s.modalBody}>
                 <View style={s.modalHeaderRow}>
                   <Text style={s.modalShiftHeader}>{t('shifts.requestedTime')}</Text>
                 </View>
                 <View style={s.modalHeaderRow}>
-                  <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('date')}>
+                  <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('start')}>
                     <Text style={s.modalTimeText}>
-                      {requestDate ? requestDate.toDateString() : t('shifts.selectDate')}
+                      {leaveStart ? leaveStart.toDateString() : t('shifts.selectStart')}
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('time')}>
+                  <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('end')}>
                     <Text style={s.modalTimeText}>
-                      {requestTime ? formatTime(requestTime) : t('shifts.selectTime')}
+                      {leaveEnd ? leaveEnd.toDateString() : t('shifts.selectEnd')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -171,13 +239,9 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
             {activePicker && (
               <DateTimePicker
                 value={
-                  activePicker === 'date'
-                    ? (requestDate ?? new Date())
-                    : activePicker === 'time'
-                      ? (requestTime ?? new Date())
-                      : (requestTime ?? new Date())
+                  activePicker === 'start' ? (leaveStart ?? new Date()) : (leaveEnd ?? new Date())
                 }
-                mode={activePicker === 'date' ? 'date' : 'time'}
+                mode="date"
                 display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                 onChange={handlePickerChange}
               />

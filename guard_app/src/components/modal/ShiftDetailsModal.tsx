@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import ShiftRequestModal from './ShiftRequestModal';
+import { formatAttendanceTime } from '../functions/formatAttendanceTime';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
 import type { AppColors } from '../../theme/colors';
-import { formatAttendanceTime } from '../functions/formatAttendanceTime';
 
 type Props = {
   shift: AppliedShift | CompletedShift | AllShift | null;
@@ -134,6 +134,7 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
         visible={requestVisible}
         onClose={() => setRequestVisible(false)}
         colors={colors}
+        shift={shift}
       />
     </Modal>
   );

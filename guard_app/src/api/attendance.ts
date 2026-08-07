@@ -5,16 +5,8 @@ import http from '../lib/http';
 
 export type Attendance = {
   _id: string;
-  shift: string | { _id: string };
-  guard: string | { _id: string };
-  clockIn?: string | null;
-  clockOut?: string | null;
-  scheduledStart?: string;
-  scheduledEnd?: string;
-  hoursWorked?: number;
-  status?: string;
   guardId: string;
-  shiftId: string | any;
+  shiftId: string;
   checkInTime?: string | null;
   checkOutTime?: string | null;
   locationVerified: boolean;
