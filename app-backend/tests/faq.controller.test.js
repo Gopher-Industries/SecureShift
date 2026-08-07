@@ -19,10 +19,10 @@ describe("FAQ API Integration Tests", () => {
   let app;
 
   beforeAll(async () => {
-    const uri = process.env.MONGO_URI;
+    const uri = process.env.MONGO_TEST_URI;
     if (!uri) {
       throw new Error(
-        "FAIL: MONGO_URI is not defined in the environment variables. Please set it to a test database URI.",
+        "FAIL: MONGO_TEST_URI is not defined in the environment variables. Please set it to a test database URI.",
       );
     }
     await mongoose.connect(uri);
@@ -144,14 +144,14 @@ describe("FAQ API Integration Tests", () => {
         displayOrder: 2,
         isActive: true,
       });
-      await Faq.create({
+      const doc3 = await Faq.create({
         question: "Inactive FAQ",
         answer: "This should NOT be returned",
         category: "general",
         displayOrder: 3,
         isActive: false,
       });
-      createdIds = [doc1._id, doc2._id];
+      createdIds = [doc1._id, doc2._id, doc3._id];
 
       const response = await request(app).get("/api/v1/faqs");
 
