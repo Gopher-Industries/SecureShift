@@ -1,8 +1,18 @@
 import { render, screen } from '@testing-library/react';
-import App from './App';
+import ContactUs from './pages/ContactUs';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test('renders the Contact Us page and reusable form', () => {
+  render(<ContactUs />);
+
+  expect(
+    screen.getByRole('heading', { name: /contact us/i })
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByRole('form', { name: /contact form/i })
+  ).toBeInTheDocument();
+
+  expect(
+    screen.getByRole('button', { name: /send message/i })
+  ).toBeInTheDocument();
 });

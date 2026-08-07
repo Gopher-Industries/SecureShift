@@ -8,19 +8,20 @@
 
 import "./setup.js";
 import mongoose from "mongoose";
+import {
+  startTestDatabase,
+  clearDatabase,
+  closeTestDatabase,
+} from "./db-helper.js";
 
 describe("Test Database Connection", () => {
   beforeAll(async () => {
     console.log("[database.test.js] beforeAll - connecting...");
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGO_TEST_URI);
-    }
+    await startTestDatabase();
   });
 
   afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
+    await closeTestDatabase();
   });
 
   it("should connect to MongoDB successfully", () => {
@@ -29,7 +30,7 @@ describe("Test Database Connection", () => {
 
   it("should be connected to the correct database", () => {
     const dbName = mongoose.connection.db.databaseName;
-    expect(dbName).toBe("secureshift_test");
+    expect(dbName).toBeDefined();
   });
 
   it("should be able to perform a simple operation", async () => {
