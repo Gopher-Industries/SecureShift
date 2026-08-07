@@ -215,15 +215,17 @@ const upload = multer({
 const mongoUri = process.env.MONGO_URI; // e.g., mongodb://localhost:27017/secureShift
 let gridFSBucket;
 
-MongoClient.connect(mongoUri)
-  .then((client) => {
-    const db = client.db(); // default DB from URI
-    gridFSBucket = new GridFSBucket(db, { bucketName: "eoiDocuments" });
-    console.log("Connected to MongoDB GridFS for EOI uploads");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-  });
+if (process.env.NODE_ENV !== "test") {
+  MongoClient.connect(mongoUri)
+    .then((client) => {
+      const db = client.db(); // default DB from URI
+      gridFSBucket = new GridFSBucket(db, { bucketName: "eoiDocuments" });
+      console.log("Connected to MongoDB GridFS for EOI uploads");
+    })
+    .catch((err) => {
+      console.error("MongoDB connection error:", err);
+    });
+}
 /**
  * @swagger
  * /api/v1/auth/eoi:

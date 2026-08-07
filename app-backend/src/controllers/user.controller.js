@@ -52,7 +52,7 @@ export const updateMyProfile = async (req, res) => {
  * @access  Private/Admin
  */
 export const adminGetUserProfile = async (req, res) => {
-  const user = await User.findById(req.params.id).select("-password");
+  const user = await User.findById(req.params.userId).select("-password");
   if (!user) return res.status(404).json({ message: "User not found" });
   res.json(user);
 };
@@ -67,7 +67,7 @@ export const adminUpdateUserProfile = async (req, res) => {
   delete fieldsToUpdate.password; // separate password endpoint if needed
 
   const updatedUser = await User.findByIdAndUpdate(
-    req.params.id,
+    req.params.userId,
     fieldsToUpdate,
     { new: true, runValidators: true },
   ).select("-password");
