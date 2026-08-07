@@ -9,7 +9,7 @@ _Last updated: 7 Aug 2026 - BE 011_
 | Local development | `v24.18.0` | Developer machine |
 | GitHub Actions (Backend CI) | `22` | `.github/workflows/backend-lint.yml` |
 | GitHub Actions (Frontend/Guard App CI) | `20` | `.github/workflows/lint.yml`, `admin-panel-lint.yml` |
-| Jenkins | `20` | `devops/jenkins.yaml` |
+| Jenkins | `NodeJS tool: Node20` | `devops/jenkins.yaml` |
 | Backend Docker image | `18` | `app-backend/Dockerfile` (`FROM node:18`) |
 | `package.json` `engines` field | `>=18` | `app-backend/package.json` |
 
