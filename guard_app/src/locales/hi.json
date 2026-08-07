@@ -17,7 +17,8 @@
     "invalidInput": "अमान्य इनपुट",
     "loginFailed": "लॉग इन असफल",
     "otpFailed": "OTP सत्यापन असफल",
-    "otpMsgReq": "अपना OTP कोड दर्ज करें।"
+    "otpMsgReq": "अपना OTP कोड दर्ज करें।",
+    "sessionExpired": "आपका सत्र समाप्त हो गया है। कृपया फिर से लॉग इन करें।"
   },
   "signup": {
     "title": "अपना खाता बनाएं",

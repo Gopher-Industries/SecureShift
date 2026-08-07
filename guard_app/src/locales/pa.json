@@ -17,7 +17,8 @@
     "invalidInput": "ਗਲਤ ਇਨਪੁੱਟ",
     "loginFailed": "ਲਾਗਇਨ ਅਸਫਲ",
     "otpFailed": "OTP ਜਾਂਚ ਅਸਫਲ",
-    "otpMsgReq": "ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ OTP ਕੋਡ ਦਰਜ ਕਰੋ।"
+    "otpMsgReq": "ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ OTP ਕੋਡ ਦਰਜ ਕਰੋ।",
+    "sessionExpired": "ਤੁਹਾਡਾ ਸੈਸ਼ਨ ਖਤਮ ਹੋ ਗਿਆ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਲਾਗਇਨ ਕਰੋ।"
   },
 
   "signup": {
