@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminNavbar from '../components/AdminNavbar';
+import AdminFooter from '../components/AdminFooter';
 import './AdminLayout.css';
 
 export default function AdminLayout() {
@@ -9,9 +10,23 @@ export default function AdminLayout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <AdminNavbar onMenuClick={() => setSidebarOpen((prev) => !prev)} />
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+        }}
+      >
+        <AdminNavbar
+          onMenuClick={() => setSidebarOpen((prev) => !prev)}
+        />
+
         <main
           style={{
             padding: 24,
@@ -22,6 +37,8 @@ export default function AdminLayout() {
         >
           <Outlet />
         </main>
+
+        <AdminFooter />
       </div>
     </div>
   );

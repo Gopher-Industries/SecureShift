@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import useAdminAuth from '../hooks/useAdminAuth';
+import logo from '../logo.png';
 
 export default function AdminNavbar({ onMenuClick }) {
   const navigate = useNavigate();
@@ -7,7 +8,7 @@ export default function AdminNavbar({ onMenuClick }) {
 
   const onLogout = () => {
     logout();
-    navigate('/login', { replace: true });
+    navigate('/login');
   };
 
   return (
@@ -16,10 +17,9 @@ export default function AdminNavbar({ onMenuClick }) {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        gap: 12,
-        padding: '10px 24px',
-        background: '#fff',
-        borderBottom: '1px solid #e5e7eb',
+        padding: '0 24px',
+        background: '#072261',
+        color: '#fff',
       }}
     >
       <button
@@ -32,26 +32,63 @@ export default function AdminNavbar({ onMenuClick }) {
           fontSize: 24,
           cursor: 'pointer',
           padding: 4,
-          color: '#18284f',
+          color: '#fff',
         }}
       >
         ☰
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
-        <span style={{ color: '#555' }}>Signed in as {role || 'admin'}</span>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <img
+          src={logo}
+          alt="SecureShift Logo"
+          style={{
+            width: '52px',
+            height: '52px',
+            objectFit: 'contain',
+          }}
+        />
+
+        <span
+          style={{
+            fontSize: '22px',
+            fontWeight: 600,
+          }}
+        >
+          Secure Shift Admin
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          marginLeft: 'auto',
+        }}
+      >
+        <span style={{ color: '#fff' }}>
+          Signed in as {role || 'admin'}
+        </span>
+
         <button
           onClick={onLogout}
           style={{
-            padding: '6px 14px',
+            padding: '8px 18px',
             background: '#274b93',
             color: '#fff',
             border: 'none',
-            borderRadius: 4,
+            borderRadius: 20,
             cursor: 'pointer',
           }}
         >
-          Log out
+          Logout
         </button>
       </div>
     </header>
