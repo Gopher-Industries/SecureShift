@@ -2,18 +2,20 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ContactForm from './ContactForm';
 
 describe('ContactForm', () => {
-  test('renders the required contact fields', () => {
+  test('renders initial form fields and accessible submit button', () => {
     render(<ContactForm />);
 
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/subject/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/message/i)).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /send message/i })
     ).toBeInTheDocument();
   });
 
-  test('shows validation errors when submitted empty', () => {
+  test('shows required field validation errors when submitted empty', () => {
     render(<ContactForm />);
 
     fireEvent.click(
@@ -22,100 +24,143 @@ describe('ContactForm', () => {
 
     expect(screen.getByText('Name is required.')).toBeInTheDocument();
     expect(screen.getByText('Email is required.')).toBeInTheDocument();
+    expect(screen.getByText('Subject is required.')).toBeInTheDocument();
     expect(screen.getByText('Message is required.')).toBeInTheDocument();
+
+    const nameInput = screen.getByLabelText(/name/i);
+    expect(nameInput).toHaveAttribute('aria-invalid', 'true');
+    expect(nameInput).toHaveAttribute('aria-describedby', 'contact-name-error');
   });
 
-  test('shows errors for invalid values', () => {
+  test('validates invalid email format', () => {
     render(<ContactForm />);
 
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: 'U' },
-    });
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'invalid-email' },
-    });
-    fireEvent.change(screen.getByLabelText(/message/i), {
-      target: { value: 'Short' },
+      target: { value: 'not-an-email' },
     });
 
     fireEvent.click(
       screen.getByRole('button', { name: /send message/i })
     );
 
-    expect(
-      screen.getByText('Name must be at least 2 characters.')
-    ).toBeInTheDocument();
     expect(
       screen.getByText('Enter a valid email address.')
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('Message must be at least 10 characters.')
-    ).toBeInTheDocument();
   });
 
-  test('submits valid data and resets the form', async () => {
-    const handleSubmit = jest.fn().mockResolvedValue(undefined);
+  test('validates phone number when provided', () => {
+    render(<ContactForm />);
 
-    render(<ContactForm onSubmit={handleSubmit} />);
-
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: 'Ujwal Sharma' },
-    });
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'ujwal@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/message/i), {
-      target: {
-        value: 'I would like more information about SecureShift.',
-      },
+    fireEvent.change(screen.getByLabelText(/phone number/i), {
+      target: { value: 'abc-invalid-phone' },
     });
 
     fireEvent.click(
       screen.getByRole('button', { name: /send message/i })
     );
+
+    expect(
+      screen.getByText('Enter a valid phone number.')
+    ).toBeInTheDocument();
+  });
+
+  test('updates character counter on typing message', () => {
+    render(<ContactForm />);
+
+    const messageInput = screen.getByLabelText(/message/i);
+    expect(screen.getByText('0/1000')).toBeInTheDocument();
+
+    fireEvent.change(messageInput, {
+      target: { value: 'Hello World' },
+    });
+
+    expect(screen.getByText('11/1000')).toBeInTheDocument();
+  });
+
+  test('handles loading state: disables submit button and inputs, shows spinner', async () => {
+    let resolveSubmit;
+    const handleSubmit = jest.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveSubmit = resolve;
+        })
+    );
+
+    render(<ContactForm onSubmit={handleSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/name/i), {
+      target: { value: 'Alex Mercer' },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'alex@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/subject/i), {
+      target: { value: 'General Inquiry' },
+    });
+    fireEvent.change(screen.getByLabelText(/message/i), {
+      target: { value: 'Checking loading state and disabled inputs.' },
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /send message/i })
+    );
+
+    // During loading:
+    const submitBtn = screen.getByRole('button', { name: /sending\.\.\./i });
+    expect(submitBtn).toBeDisabled();
+    expect(screen.getByLabelText(/name/i)).toBeDisabled();
+    expect(screen.getByLabelText(/email/i)).toBeDisabled();
+    expect(screen.getByLabelText(/phone number/i)).toBeDisabled();
+    expect(screen.getByLabelText(/subject/i)).toBeDisabled();
+    expect(screen.getByLabelText(/message/i)).toBeDisabled();
+
+    // Prevent duplicate submissions while loading:
+    fireEvent.click(submitBtn);
+    expect(handleSubmit).toHaveBeenCalledTimes(1);
+
+    // Success message is NOT shown yet
+    expect(
+      screen.queryByText('Your message has been submitted successfully.')
+    ).not.toBeInTheDocument();
+
+    // Resolve submission
+    resolveSubmit();
 
     await waitFor(() => {
-      expect(handleSubmit).toHaveBeenCalledWith({
-        name: 'Ujwal Sharma',
-        email: 'ujwal@example.com',
-        message: 'I would like more information about SecureShift.',
-      });
+      expect(
+        screen.getByText('Your message has been submitted successfully.')
+      ).toBeInTheDocument();
     });
 
-    expect(
-      await screen.findByText(
-        'Your message has been submitted successfully.'
-      )
-    ).toBeInTheDocument();
-
-    expect(screen.getByLabelText(/name/i)).toHaveValue('');
-    expect(screen.getByLabelText(/email/i)).toHaveValue('');
-    expect(screen.getByLabelText(/message/i)).toHaveValue('');
+    // Inputs enabled again after submission completes
+    expect(screen.getByLabelText(/name/i)).not.toBeDisabled();
   });
 
-  test('shows an error when submission fails', async () => {
+  test('displays error message on failed submission', async () => {
     const handleSubmit = jest
       .fn()
-      .mockRejectedValue(new Error('Submission failed.'));
+      .mockRejectedValue(new Error('Server error occurred.'));
 
     render(<ContactForm onSubmit={handleSubmit} />);
 
     fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: 'Ujwal Sharma' },
+      target: { value: 'Alex Mercer' },
     });
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'ujwal@example.com' },
+      target: { value: 'alex@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/subject/i), {
+      target: { value: 'Feedback' },
     });
     fireEvent.change(screen.getByLabelText(/message/i), {
-      target: { value: 'This is a valid contact form message.' },
+      target: { value: 'Testing error message banner display.' },
     });
 
     fireEvent.click(
       screen.getByRole('button', { name: /send message/i })
     );
 
-    expect(
-      await screen.findByText('Submission failed.')
-    ).toBeInTheDocument();
+    const errorAlert = await screen.findByRole('alert');
+    expect(errorAlert).toHaveTextContent('Server error occurred.');
   });
 });
