@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 // Path to the PDF
 const pdfPath = path.join(
   __dirname,
-  "../../../knowledge-base/guides/Onboarding.pdf"
+  "../../../knowledge-base/guides/Onboarding.pdf",
 );
 
 async function readPDF() {
@@ -24,7 +24,6 @@ async function readPDF() {
     console.log("\n========== PDF TEXT ==========\n");
     console.log(data.text);
     console.log("\n==============================\n");
-
   } catch (error) {
     console.error("❌ Error reading PDF:");
     console.error(error);

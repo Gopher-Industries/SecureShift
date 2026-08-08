@@ -8,10 +8,7 @@ import { cosineSimilarity } from "./similarity.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const vectorsFolder = path.join(
-  __dirname,
-  "../../../knowledge-base/vectors"
-);
+const vectorsFolder = path.join(__dirname, "../../../knowledge-base/vectors");
 
 // ==========================================
 // Load all vectors
@@ -25,10 +22,7 @@ for (const file of files) {
   if (!file.endsWith(".json")) continue;
 
   const fileVectors = JSON.parse(
-    fs.readFileSync(
-      path.join(vectorsFolder, file),
-      "utf8"
-    )
+    fs.readFileSync(path.join(vectorsFolder, file), "utf8"),
   );
 
   fileVectors.forEach((chunk) => {
@@ -40,7 +34,7 @@ for (const file of files) {
 console.log(
   `✅ Loaded ${vectors.length} chunks from ${
     files.filter((file) => file.endsWith(".json")).length
-  } documents`
+  } documents`,
 );
 
 // ==========================================
@@ -100,11 +94,7 @@ function getKeywords(question) {
 
   return cleanText(question)
     .split(" ")
-    .filter(
-      (word) =>
-        word.length > 2 &&
-        !stopWords.has(word)
-    )
+    .filter((word) => word.length > 2 && !stopWords.has(word))
     .map((word) => aliases[word] || word);
 }
 
@@ -242,9 +232,7 @@ function sectionMatchScore(question, chunk) {
       return 1;
     }
 
-    if (
-      text.includes("secureshift is a workforce management platform")
-    ) {
+    if (text.includes("secureshift is a workforce management platform")) {
       return 0.8;
     }
   }
@@ -256,29 +244,15 @@ function sectionMatchScore(question, chunk) {
 // Semantic search
 // ==========================================
 
-export async function semanticSearch(
-  question,
-  topK = 5
-) {
-  const questionEmbedding =
-    await createEmbedding(question);
+export async function semanticSearch(question, topK = 5) {
+  const questionEmbedding = await createEmbedding(question);
 
   const scored = vectors.map((chunk) => {
-    const semantic = cosineSimilarity(
-      questionEmbedding,
-      chunk.embedding
-    );
+    const semantic = cosineSimilarity(questionEmbedding, chunk.embedding);
 
-    const keyword = keywordScore(
-      question,
-      chunk
-    );
+    const keyword = keywordScore(question, chunk);
 
-    const sectionMatch =
-      sectionMatchScore(
-        question,
-        chunk
-      );
+    const sectionMatch = sectionMatchScore(question, chunk);
 
     /*
       Final score:
@@ -288,10 +262,7 @@ export async function semanticSearch(
       Section matching    = 40%
     */
 
-    const score =
-      semantic * 0.35 +
-      keyword * 0.25 +
-      sectionMatch * 0.40;
+    const score = semantic * 0.35 + keyword * 0.25 + sectionMatch * 0.4;
 
     return {
       ...chunk,
@@ -308,74 +279,39 @@ export async function semanticSearch(
   // Highest score first
   // ==========================================
 
-  scored.sort(
-    (a, b) => b.score - a.score
-  );
+  scored.sort((a, b) => b.score - a.score);
 
   const results = scored.slice(0, topK);
 
-  const bestScore =
-    results[0]?.score || 0;
+  const bestScore = results[0]?.score || 0;
 
   // ==========================================
   // Debug output
   // ==========================================
 
-  console.log(
-    "\n========== SEMANTIC SEARCH =========="
-  );
+  console.log("\n========== SEMANTIC SEARCH ==========");
 
-  console.log(
-    "Question:",
-    question
-  );
+  console.log("Question:", question);
 
   results.forEach((result, index) => {
-    console.log(
-      `\n--- Result ${index + 1} ---`
-    );
+    console.log(`\n--- Result ${index + 1} ---`);
 
-    console.log(
-      "Final Score:",
-      result.score.toFixed(3)
-    );
+    console.log("Final Score:", result.score.toFixed(3));
 
-    console.log(
-      "Semantic:",
-      result.semanticScore.toFixed(3)
-    );
+    console.log("Semantic:", result.semanticScore.toFixed(3));
 
-    console.log(
-      "Keyword:",
-      result.keywordScore.toFixed(3)
-    );
+    console.log("Keyword:", result.keywordScore.toFixed(3));
 
-    console.log(
-      "Section:",
-      result.sectionMatchScore.toFixed(3)
-    );
+    console.log("Section:", result.sectionMatchScore.toFixed(3));
 
-    console.log(
-      "Document:",
-      result.document
-    );
+    console.log("Document:", result.document);
 
-    console.log(
-      "Section Name:",
-      result.section
-    );
+    console.log("Section Name:", result.section);
 
-    console.log(
-      "Text:",
-      result.text
-        .substring(0, 300)
-        .replace(/\n/g, " ")
-    );
+    console.log("Text:", result.text.substring(0, 300).replace(/\n/g, " "));
   });
 
-  console.log(
-    "\n======================================\n"
-  );
+  console.log("\n======================================\n");
 
   return {
     results,

@@ -19,7 +19,7 @@ export async function chat(req, res) {
     let mode = "general";
     let confidence = 0;
 
-    if (searchResult.bestScore >= 0.60) {
+    if (searchResult.bestScore >= 0.6) {
       chunks = searchResult.results;
       mode = "documentation";
       confidence = Number(searchResult.bestScore.toFixed(3));
@@ -40,7 +40,7 @@ export async function chat(req, res) {
         console.log("Score    :", chunk.score.toFixed(3));
         console.log(
           "Text     :",
-          chunk.text.substring(0, 250).replace(/\n/g, " ")
+          chunk.text.substring(0, 250).replace(/\n/g, " "),
         );
       });
     }
@@ -68,7 +68,6 @@ export async function chat(req, res) {
       confidence,
       timestamp: new Date().toISOString(),
     });
-
   } catch (err) {
     console.error("========== AI CHAT ERROR ==========");
     console.error(err);

@@ -8,15 +8,9 @@ import { createEmbedding } from "../embeddings/embeddingService.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const docsFolder = path.join(
-  __dirname,
-  "../../../knowledge-base/docs"
-);
+const docsFolder = path.join(__dirname, "../../../knowledge-base/docs");
 
-const vectorsFolder = path.join(
-  __dirname,
-  "../../../knowledge-base/vectors"
-);
+const vectorsFolder = path.join(__dirname, "../../../knowledge-base/vectors");
 
 // Create vectors folder if it doesn't exist
 if (!fs.existsSync(vectorsFolder)) {
@@ -33,10 +27,7 @@ async function buildIndex() {
 
     console.log(`\nProcessing ${file}`);
 
-    const text = fs.readFileSync(
-      path.join(docsFolder, file),
-      "utf8"
-    );
+    const text = fs.readFileSync(path.join(docsFolder, file), "utf8");
 
     // Split document into sections/chunks
     const chunks = splitIntoChunks(text);
@@ -59,13 +50,9 @@ async function buildIndex() {
     const vectors = [];
 
     for (let i = 0; i < chunks.length; i++) {
-      console.log(
-        `Embedding ${file} (${i + 1}/${chunks.length})`
-      );
+      console.log(`Embedding ${file} (${i + 1}/${chunks.length})`);
 
-      const embedding = await createEmbedding(
-        chunks[i].text
-      );
+      const embedding = await createEmbedding(chunks[i].text);
 
       vectors.push({
         id: i,
@@ -76,15 +63,9 @@ async function buildIndex() {
       });
     }
 
-    const outputFile = path.join(
-      vectorsFolder,
-      file.replace(".txt", ".json")
-    );
+    const outputFile = path.join(vectorsFolder, file.replace(".txt", ".json"));
 
-    fs.writeFileSync(
-      outputFile,
-      JSON.stringify(vectors, null, 2)
-    );
+    fs.writeFileSync(outputFile, JSON.stringify(vectors, null, 2));
 
     console.log(`Saved ${outputFile}`);
   }

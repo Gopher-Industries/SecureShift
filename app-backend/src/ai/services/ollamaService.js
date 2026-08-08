@@ -1,19 +1,15 @@
 import { Ollama } from "ollama";
 
 const ollama = new Ollama({
-  host:
-    process.env.OLLAMA_HOST ||
-    "http://host.docker.internal:11434",
+  host: process.env.OLLAMA_HOST || "http://host.docker.internal:11434",
 });
 
 export async function askOllama(question, chunks = []) {
-
   let systemPrompt;
   let userPrompt;
 
   // Documentation found
   if (chunks.length > 0) {
-
     const context = chunks
       .map(
         (chunk) => `
@@ -21,7 +17,7 @@ Document: ${chunk.document}
 Section: ${chunk.section}
 
 ${chunk.text}
-`
+`,
       )
       .join("\n\n=============================\n\n");
 
@@ -74,9 +70,7 @@ Question
 
 ${question}
 `;
-
   } else {
-
     systemPrompt = `
 You are SecureShift AI.
 
