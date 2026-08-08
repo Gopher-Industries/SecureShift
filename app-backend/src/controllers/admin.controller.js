@@ -7,12 +7,12 @@ import Guard from "../models/Guard.js";
 import { sendOTP } from "../utils/sendEmail.js";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+// import { fileURLToPath } from "url";
 
 import jwt from "jsonwebtoken";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 /**
  * Generate JWT token for a user
@@ -58,6 +58,9 @@ export const adminLogin = async (req, res) => {
       name: user.name,
       role: user.role,
     });
+
+    // const envPath = path.join(process.cwd(), ".env");
+    // let envContent = "";
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -111,21 +114,79 @@ export const getAuditLogs = async (req, res) => {
   try {
     const { page = 1, limit = 50, userId, action, role, from, to } = req.query;
 
+    const VALID_ROLES = ["guard", "employer", "admin"];
+    if (role && !VALID_ROLES.includes(role)) {
+      return res.status(400).json({
+        message: `Invalid role. Must be one of: ${VALID_ROLES.join(", ")}`,
+      });
+    }
+
     const query = {};
-    if (userId) query.user = userId;
     if (action) query.action = action;
-    if (role) query.role = role;
     if (from || to) query.timestamp = {};
     if (from) query.timestamp.$gte = new Date(from);
     if (to) query.timestamp.$lte = new Date(to);
 
-    const logs = await AuditLog.find(query)
-      .sort({ timestamp: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
-      .populate("user", "name email role"); // populate user info
+    let noMatch = false;
 
-    res.status(200).json({ logs });
+    if (userId && role) {
+      const usersWithRole = await User.find({
+        role,
+        isDeleted: { $ne: true },
+      }).select("_id");
+      const roleUserIds = usersWithRole.map((u) => String(u._id));
+      if (roleUserIds.includes(String(userId))) {
+        query.user = userId;
+      } else {
+        noMatch = true;
+      }
+    } else if (userId) {
+      query.user = userId;
+    } else if (role) {
+      const usersWithRole = await User.find({
+        role,
+        isDeleted: { $ne: true },
+      }).select("_id");
+      if (usersWithRole.length === 0) {
+        noMatch = true;
+      } else {
+        query.user = { $in: usersWithRole.map((u) => u._id) };
+      }
+    }
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    if (noMatch) {
+      return res.status(200).json({
+        logs: [],
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: 0,
+          hasNext: false,
+        },
+      });
+    }
+
+    const [logs, total] = await Promise.all([
+      AuditLog.find(query)
+        .sort({ timestamp: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum)
+        .populate("user", "name email role"),
+      AuditLog.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      logs,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        hasNext: pageNum * limitNum < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

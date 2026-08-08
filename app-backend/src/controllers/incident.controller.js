@@ -3,10 +3,10 @@ import Shift from "../models/Shift.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
 import { ACTIONS } from "../middleware/logger.js";
 import path from "path";
-import { fileURLToPath } from "url";
+// import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 const validStatuses = ["SUBMITTED", "IN_REVIEW", "RESOLVED"];
 
@@ -321,7 +321,8 @@ export const getAttachment = async (req, res, next) => {
       return next(new ErrorResponse("Attachment not found", 404));
     }
 
-    const filePath = path.join(__dirname, "..", "uploads", attachment.fileName);
+    // const filePath = path.join(__dirname, "..", "uploads", attachment.fileName);
+    const filePath = path.join(process.cwd(), "uploads", attachment.fileName);
     res.download(filePath);
   } catch (err) {
     next(err);

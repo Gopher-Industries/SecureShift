@@ -1,4 +1,5 @@
-import "./ContactUs.css";
+import ContactForm from '../components/ContactForm';
+import './ContactUs.css';
 
 const IconPhone = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -11,8 +12,24 @@ const IconPhone = (props) => (
 
 const IconMail = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-    <path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <rect
+      x="3"
+      y="5"
+      width="18"
+      height="14"
+      rx="2"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <path
+      d="M4 7l8 6 8-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -29,62 +46,80 @@ const IconPin = (props) => (
 );
 
 function ContactUs() {
+  const handleContactSubmit = async (formData) => {
+    /*
+     * The backend contact endpoint has not been provided yet.
+     * Replace this resolved Promise with the API request when the endpoint
+     * becomes available.
+     */
+    return Promise.resolve(formData);
+  };
+
   return (
     <div className="contact-page">
       <div className="contact-header">
         <h1>Contact Us</h1>
-        <p>Have a question or need assistance? We'd love to hear from you.</p>
+        <p>
+          Have a question or need assistance? We&apos;d love to hear from you.
+        </p>
       </div>
 
       <div className="contact-content">
-        {/* Contact Information */}
-        <div className="contact-info">
-          <h2>Contact Information</h2>
+        <section className="contact-info" aria-labelledby="contact-info-title">
+          <h2 id="contact-info-title">Contact Information</h2>
 
           <div className="info-item">
-            <div className="contact-icon">
+            <div className="contact-icon" aria-hidden="true">
               <IconPhone />
             </div>
+
             <div className="info-item-body">
               <h3>Phone</h3>
-              <p>+61 3 1234 5678</p>
+              <a href="tel:+61312345678">+61 3 1234 5678</a>
             </div>
           </div>
 
           <div className="info-item">
-            <div className="contact-icon">
+            <div className="contact-icon" aria-hidden="true">
               <IconMail />
             </div>
+
             <div className="info-item-body">
               <h3>Email</h3>
-              <p>support@secureshift.com</p>
+              <a href="mailto:support@secureshift.com">
+                support@secureshift.com
+              </a>
             </div>
           </div>
 
           <div className="info-item">
-            <div className="contact-icon">
+            <div className="contact-icon" aria-hidden="true">
               <IconPin />
             </div>
+
             <div className="info-item-body">
               <h3>Address</h3>
               <p>Melbourne, Victoria, Australia</p>
             </div>
           </div>
-        </div>
 
-        {/* Contact Form Placeholder */}
-        <div className="contact-form-section">
-          <h2>Send Us a Message</h2>
-
-          {/* FE-009 will replace this placeholder */}
-          <div className="form-placeholder">
-            <h3>Contact form coming soon</h3>
-            <p>Contact Form Component will be added here.</p>
-            <button className="contact-btn" type="button">
-              Notify Me
-            </button>
+          <div className="contact-response-note">
+            <h3>Response time</h3>
+            <p>Our team normally responds within 1–2 business days.</p>
           </div>
-        </div>
+        </section>
+
+        <section
+          className="contact-form-section"
+          aria-labelledby="contact-form-title"
+        >
+          <h2 id="contact-form-title">Send Us a Message</h2>
+
+          <ContactForm
+            onSubmit={handleContactSubmit}
+            submitButtonText="Send Message"
+          />
+        </section>
       </div>
     </div>
   );

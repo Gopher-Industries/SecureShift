@@ -2,7 +2,7 @@
 import GuardVerification from "../models/GuardVerification.js";
 import ManualVerification from "../models/ManualVerification.js";
 import Guard from "../models/Guard.js";
-import { encryptLicence } from "../utils/crypto.js";
+import { encryptLicence, decryptLicence } from "../utils/crypto.js";
 import { verifyNSW } from "../adapters/verification/nswAdapter.js";
 import { createManualVerification } from "../adapters/verification/manualAdapter.js";
 
@@ -158,7 +158,6 @@ export const recheckVerification = async (req, res) => {
 
     if (latest.source === "nsw_api") {
       // decrypt licence and call NSW again
-      const { decryptLicence } = await import("../utils/licenceCrypto.js");
       const licenceNumber = decryptLicence(latest.licenceNumber);
       const result = await verifyNSW({ licenceNumber });
 

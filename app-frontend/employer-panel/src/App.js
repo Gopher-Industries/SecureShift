@@ -80,7 +80,6 @@ function AppRoutes({ language, setLanguage }) {
         <Route path="/task-detail" element={<TaskRoute />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-condition" element={<TermsAndConditions />} />
-        <Route path="/faqs" element={<FAQs />} />
 
         <Route path="/contact-us" element={<ContactUs />} /> 
         <Route path="/ai-assistant" element={<AIAssistant />}/>
@@ -125,6 +124,10 @@ function AppRoutes({ language, setLanguage }) {
         <Route
           path="/payroll"
           element={protectedLayout(<Payroll language={language} />)}
+        />
+        <Route
+          path="/faqs"
+          element={protectedLayout(<FAQs />)}
         />
        
       </Routes>
