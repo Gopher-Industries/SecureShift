@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./EmployerDashboard.css";
+import AIChatWidget from "../components/AIChatWidget";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -977,8 +978,9 @@ export default function EmployerDashboard() {
               </button>
             </div>
           </div>
+            
         </div>
-      )}
+      )}  <AIChatWidget />
     </div>
   );
 }

@@ -2,12 +2,15 @@ services:
   backend:
     build:
       context: ./app-backend
+    volumes: 
+      - ./app-backend:/app
     container_name: secureshift-backend
     ports:
       - "${BACKEND_HOST_PORT:-5000}:5000"
     environment:
       NODE_ENV: development
       PORT: "5000"
+      OLLAMA_HOST: http://host.docker.internal:11434
       MONGO_URI: mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
       JWT_SECRET: local-dev-jwt-secret-change-me
       LICENCE_ENC_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
