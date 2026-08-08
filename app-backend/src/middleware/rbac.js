@@ -85,10 +85,8 @@ async function getEffectivePermissions(roleName, visited = new Set()) {
   visited.add(roleName);
 
   const roleDoc = await loadRoleFromDB(roleName);
-  const hasDbPerms =
-    Array.isArray(roleDoc?.permissions) && roleDoc.permissions.length > 0;
   let perms = new Set(
-    hasDbPerms ? roleDoc.permissions : DEFAULT_ROLE_PERMISSIONS[roleName] || [],
+    roleDoc?.permissions || DEFAULT_ROLE_PERMISSIONS[roleName] || [],
   );
 
   if (roleDoc?.inheritsFrom) {
@@ -107,16 +105,11 @@ function hasWildcard(perms) {
 }
 
 export function authorizeRoles(...allowedRoles) {
-  const normalizedAllowed = allowedRoles
-    .filter(Boolean)
-    .map((r) => String(r).trim().toLowerCase());
-
   return (req, res, next) => {
     const role = req.user?.role;
     if (!role) return res.status(401).json({ message: "Not authenticated" });
 
-    const normalizedRole = String(role).trim().toLowerCase();
-    if (!normalizedAllowed.includes(normalizedRole)) {
+    if (!allowedRoles.includes(role)) {
       return res.status(403).json({ message: "Insufficient role" });
     }
     next();
