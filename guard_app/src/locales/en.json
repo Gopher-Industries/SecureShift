@@ -17,7 +17,8 @@
     "invalidInput": "Invalid input",
     "loginFailed": "Login failed",
     "otpFailed": "OTP verification failed",
-    "otpMsgReq": "Enter your OTP code."
+    "otpMsgReq": "Enter your OTP code.",
+    "sessionExpired": "Your session has expired. Please log in again."
   },
   "signup": {
     "title": "Create your account",

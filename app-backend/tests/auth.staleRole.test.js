@@ -12,9 +12,14 @@
  */
 
 /* global describe, test, expect, beforeAll, afterAll */
+// Mock MongoDB to prevent real connection (avoid open handle)
 import "dotenv/config";
 import request from "supertest";
-import mongoose from "mongoose";
+import {
+  startTestDatabase,
+  clearDatabase,
+  closeTestDatabase,
+} from "./db-helper.js";
 import jwt from "jsonwebtoken";
 import app from "../src/app.js";
 import User from "../src/models/User.js";
@@ -80,7 +85,7 @@ describe("----- Authentication Middleware Security Tests", () => {
     let retries = 5;
     while (retries > 0) {
       try {
-        await mongoose.connect(safeUri);
+        await startTestDatabase();
         break;
       } catch (err) {
         console.log(`MongoDB connection failed, retries left: ${retries - 1}`);
@@ -93,8 +98,8 @@ describe("----- Authentication Middleware Security Tests", () => {
   });
 
   afterAll(async () => {
-    await User.deleteMany({ email: /.*security.test@example.com/ });
-    await mongoose.connection.close();
+    await clearDatabase();
+    await closeTestDatabase();
   });
 
   // task 1: active user with valid token → 200 OK
@@ -231,10 +236,6 @@ describe("----- Authentication Middleware Security Tests", () => {
       { expiresIn: "15m" },
     );
 
-    // upgrade the user to admin
-    // guardUser.role = 'admin';
-    // await guardUser.save();
-
     await User.collection.updateOne(
       { _id: guardUser._id },
       { $set: { role: "admin" } },
@@ -256,7 +257,6 @@ describe("----- Authentication Middleware Security Tests", () => {
       name: "Employer Test User",
       email: "employer.security.test@example.com",
       password: "Password1!",
-      // role: 'employer',
       ABN: "12345678901",
     });
 

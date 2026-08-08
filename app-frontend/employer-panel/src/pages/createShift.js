@@ -432,16 +432,26 @@ const CreateShift = ({ isModal = false, onClose }) => {
       return;
     }
     try {
+      const parsedNewSite = parseAddress(trimmedAddress); 
       const res = await http.post('/branch/site', {
         name: trimmedName,
         code: slugify(trimmedName),
-        location: { line1: trimmedAddress },
+        location: {
+          line1: parsedNewSite.street,
+          city: parsedNewSite.suburb,
+          state: parsedNewSite.state,
+          postcode: parsedNewSite.postcode,
+        },
       });
       const newSite = res.data;
       const nextSite = {
         id: newSite._id,
         name: newSite.name,
         address: trimmedAddress,
+        street: parsedNewSite.street,
+        suburb: parsedNewSite.suburb,
+        state: parsedNewSite.state,
+        postcode: parsedNewSite.postcode,
       };
       setSites((prev) => [...prev, nextSite]);
       setPendingSiteId(newSite._id);

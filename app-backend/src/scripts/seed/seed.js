@@ -10,6 +10,7 @@ import Role from "../../models/Role.js";
 import Shift from "../../models/Shift.js";
 import ShiftAttendance from "../../models/ShiftAttendance.js";
 import User from "../../models/User.js";
+import Faq from "../../models/Faq.js";
 import { syncPayrollForShiftIds } from "../../services/payroll.service.js";
 import { buildSeedData, SEED_PASSWORD } from "./data.js";
 import { idsFor, SEED_IDS } from "./ids.js";
@@ -87,6 +88,7 @@ export const getSeedCounts = async () => ({
   notifications: await Notification.countDocuments({
     _id: { $in: idsFor("notifications") },
   }),
+  faqs: await Faq.countDocuments({ _id: { $in: idsFor("faqs") } }),
 });
 
 export const seedLocalData = async ({ now = new Date() } = {}) => {
@@ -144,6 +146,8 @@ export const seedLocalData = async ({ now = new Date() } = {}) => {
   for (const notification of data.notifications)
     await saveDocument(Notification, notification);
 
+  for (const faq of data.faqs) await saveDocument(Faq, faq);
+
   return {
     counts: await getSeedCounts(),
     adminId: String(admin._id),
@@ -179,6 +183,9 @@ export const resetLocalData = async () => {
   ).deletedCount;
   deleted.roles = (
     await Role.deleteMany({ _id: { $in: idsFor("roles") } })
+  ).deletedCount;
+  deleted.faqs = (
+    await Faq.deleteMany({ _id: { $in: idsFor("faqs") } })
   ).deletedCount;
 
   return {
