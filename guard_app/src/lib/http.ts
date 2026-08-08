@@ -47,14 +47,29 @@ http.interceptors.request.use(async (config) => {
   return config;
 });
 
+// these run before the user has a session, so a 401 here is a normal
+// login error and must not log anyone out
+const PUBLIC_AUTH_PATHS = ['/auth/login', '/auth/verify-otp'];
+
+// stops a burst of 401s from logging out more than once
+let loggingOut = false;
+
 // Attach handler to catch 401 Unauthorized errors and auto logout
 export function attach401Handler(onUnauthorized: () => void) {
   http.interceptors.response.use(
     (res) => res, // Pass successful responses through
     async (err) => {
-      if (err?.response?.status === 401) {
-        await LocalStorage.clearAll(); // Clear tokens on 401
-        onUnauthorized(); // Trigger logout handler (e.g., navigate to Login)
+      const url = err?.config?.url ?? '';
+      const isPublicAuth = PUBLIC_AUTH_PATHS.some((path) => url.startsWith(path));
+
+      if (err?.response?.status === 401 && !isPublicAuth && !loggingOut) {
+        loggingOut = true;
+        try {
+          await LocalStorage.clearAll(); // Clear tokens on 401
+          onUnauthorized(); // Trigger logout handler (e.g., navigate to Login)
+        } finally {
+          loggingOut = false;
+        }
       }
       throw err; // Rethrow error for further handling
     },
