@@ -57,9 +57,7 @@ export default function AdminNavbar() {
           gap: 16,
         }}
       >
-        <span style={{ color: '#fff' }}>
-          Signed in as {role || 'admin'}
-        </span>
+        <span style={{ color: '#fff' }}>Signed in as {role || 'admin'}</span>
 
         <button
           onClick={onLogout}
