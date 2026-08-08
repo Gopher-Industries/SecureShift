@@ -19,7 +19,6 @@ import TaskDetail from './pages/TaskDetail';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
-import Faq from './pages/Faq';
 import PageTitleHandler from './components/PageTitleHandler';
 
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -79,7 +78,6 @@ function AppRoutes({ language, setLanguage }) {
         <Route path="/task-detail" element={<TaskRoute />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-and-condition" element={<TermsAndConditions />} />
-<Route path="/faqs" element={<Faq />} />
 
         <Route path="/contact-us" element={<ContactUs />} /> 
         {/* PROTECTED ROUTES */}
