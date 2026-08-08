@@ -73,9 +73,7 @@ export default function AdminNavbar({ onMenuClick }) {
           marginLeft: 'auto',
         }}
       >
-        <span style={{ color: '#fff' }}>
-          Signed in as {role || 'admin'}
-        </span>
+        <span style={{ color: '#fff' }}>Signed in as {role || 'admin'}</span>
 
         <button
           onClick={onLogout}
