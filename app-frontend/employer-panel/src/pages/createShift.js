@@ -119,9 +119,16 @@ const existingShifts = [
 const mapDefault = { lat: -37.8136, lng: 144.9631 }; // Melbourne CBD
 
 const parseAddress = (address) => {
-  const match = address.match(/^(.+),\s*(.+?)\s+([A-Z]{2,3})\s+(\d{4})$/);
+  const match = address.match(/^(.+),\s*(.+?)\s+([A-Z]{2,3})\s+(\d{4})/);
   if (match) return { street: match[1], suburb: match[2], state: match[3], postcode: match[4] };
-  return { street: address, suburb: '', state: '', postcode: '' };
+
+  const parts = address.split(',').map((p) => p.trim()).filter(Boolean);
+  return {
+    street: parts[0] || address || 'Not specified',
+    suburb: parts[1] || 'Not specified',
+    state: parts[2] || 'VIC',
+    postcode: parts[3] || '0000',
+  };
 };
 
 const slugify = (text) =>
@@ -382,16 +389,26 @@ const CreateShift = ({ isModal = false, onClose }) => {
       return;
     }
     try {
+      const parsedNewSite = parseAddress(trimmedAddress); 
       const res = await http.post('/branch/site', {
         name: trimmedName,
         code: slugify(trimmedName),
-        location: { line1: trimmedAddress },
+        location: {
+          line1: parsedNewSite.street,
+          city: parsedNewSite.suburb,
+          state: parsedNewSite.state,
+          postcode: parsedNewSite.postcode,
+        },
       });
       const newSite = res.data;
       const nextSite = {
         id: newSite._id,
         name: newSite.name,
         address: trimmedAddress,
+        street: parsedNewSite.street,
+        suburb: parsedNewSite.suburb,
+        state: parsedNewSite.state,
+        postcode: parsedNewSite.postcode,
       };
       setSites((prev) => [...prev, nextSite]);
       setPendingSiteId(newSite._id);
