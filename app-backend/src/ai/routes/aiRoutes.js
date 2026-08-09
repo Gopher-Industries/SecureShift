@@ -17,9 +17,9 @@ const router = express.Router();
 router.post(
   "/chat",
   protect,
-   allowRoles("employer", "admin"),
-    aiRateLimiter,
-  chat
+  allowRoles("employer", "admin"),
+  aiRateLimiter,
+  chat,
 );
 
 export default router;

@@ -21,7 +21,7 @@ router.post(
   protect,
   allowRoles("employer", "admin"),
   aiRateLimiter,
-  chat
+  chat,
 );
 
 export default router;
