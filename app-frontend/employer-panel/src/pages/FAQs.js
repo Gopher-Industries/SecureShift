@@ -19,14 +19,14 @@ function FAQs() {
         setIsLoading(true);
         setError(null);
 
-        const response = await api.get("/api/v1/faqs");
+        const response = await api.get("/faqs");
 
         if (!isMounted) return;
 
         setFaqs(response.data || []);
       } catch (err) {
         if (isMounted) {
-          setError(err.message || "An unexpected error occurred.");
+        setError(err.response?.data?.message || err.message || "An unexpected error occurred.");
         }
       } finally {
         if (isMounted) {
