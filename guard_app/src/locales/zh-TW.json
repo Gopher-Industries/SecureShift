@@ -17,7 +17,8 @@
     "invalidInput": "輸入無效",
     "loginFailed": "登入失敗",
     "otpFailed": "OTP驗證失敗",
-    "otpMsgReq": "輸入您的OTP驗證碼。"
+    "otpMsgReq": "輸入您的OTP驗證碼。",
+    "sessionExpired": "您的登入已過期，請重新登入。"
   },
   "signup": {
     "title": "建立您的帳號",
@@ -145,15 +146,25 @@
     "selectRequestType": "選擇請求類型",
     "reasonHint": "抱歉我生病了...",
     "requestedTime": "請求時間",
-    "selectDate": "選擇日期",
-    "selectTime": "選擇時間",
+    "swapGuard": "請求守衛",
+    "guardHint": "約翰·史密斯...",
+    "swapShift": "替換班次",
+    "shiftHint": "替代班次名稱..",
+    "selectStart": "選擇起跑",
+    "selectEnd": "選擇終點",
+    "leaveStart": "離開開始",
+    "leaveEnd": "離開終點",
     "notFound": "未找到排班請求",
     "requestError": "載入請求失敗。",
     "alerts": {
-      "missingTimeHead": "缺少日期或時間",
-      "missingTimeMsg": "輸入您想要將排班移動到的日期和時間。",
+      "missingDateHead": "缺失的日期",
+      "missingDateMsg": "輸入你想把班次移到哪個日期.",
       "invalidDateHead": "無效日期",
-      "invalidDateMsg": "選擇的日期無效"
+      "invalidDateMsg": "所選日期無效",
+      "requestCreated": "已建立請求",
+      "requestFailed": "申請失敗",
+      "requestSuccessful": "請求成功",
+      "successMessage": "您的申請已送達您的雇主"
     }
   },
   "timesheet": {

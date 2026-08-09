@@ -268,6 +268,21 @@ npm run test
 
 Unit and integration tests are managed via Jest (or Mocha/Chai if used).
 
+### Test Database Configuration
+Database-connected tests use a dedicated MongoDB database `secureshift_test`.
+1. Create a test environment file:
+    ```bash
+    cp .env.example .env.test
+    ```
+2. Edit .env.test and set the test database URI:
+    ```bash
+    NODE_ENV=test
+    MONGO_URI=mongodb://localhost:27017/secureshift_test
+    ```
+Safety notice: Tests run destructive operations like deleteMany({}). The test
+runner includes safety checks that reject any database other than secureshift_test,
+localhost, or mongodb:// protocol. Atlas/SRV URIs will fail immediately.
+
 ## Timesheet API
 
 Generated timesheets are exposed under `/api/v1/timesheets`.

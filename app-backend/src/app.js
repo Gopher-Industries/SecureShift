@@ -6,8 +6,8 @@ import router from "./routes/index.js";
 import errorHandler from "./middleware/errorHandler.js";
 import setupSwagger from "./config/swagger.js"; // ✅ now using ES module import
 import { auditMiddleware } from "./middleware/logger.js";
-import path from "path";
-import { fileURLToPath } from "url";
+// import path from "path";
+// import { fileURLToPath } from "url";
 
 const app = express();
 
@@ -18,8 +18,8 @@ app.use(express.json());
 app.use(auditMiddleware);
 
 // Resolve __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 // Swagger docs
 setupSwagger(app);
