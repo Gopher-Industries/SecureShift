@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -14,63 +14,35 @@ const toDateTime = (date, time) => {
 const getNextDayDate = (date) => {
   const d = new Date(date);
   d.setDate(d.getDate() + 1);
-
   return d.toISOString().split('T')[0];
 };
 
 const shiftSchema = yup.object({
   title: yup.string().required('Shift title is required'),
-  siteId: yup
-    .string()
-    .required('Select a site')
-    .notOneOf(['__new'], 'Save the new site before continuing'),
+  siteId: yup.string().required('Select a site').notOneOf(['__new'], 'Save the new site before continuing'),
   date: yup.string().required('Date is required'),
   startTime: yup.string().required('Start time is required'),
-  endTime: yup
-    .string()
-    .required('End time is required')
+  endTime: yup.string().required('End time is required')
     .test('after-start', 'End time must be after start time', function (value) {
       const { startTime, date, shiftType } = this.parent;
-
       if (!value || !startTime || !date) return true;
-
       const start = toDateTime(date, startTime);
       let end = toDateTime(date, value);
-
       if (end <= start) {
-        if (shiftType === 'day') {
-          return this.createError({
-            message: 'Day shifts cannot run overnight',
-          });
-        }
-
+        if (shiftType === 'day') return this.createError({ message: 'Day shifts cannot run overnight' });
         end.setDate(end.getDate() + 1);
       }
-
       return end > start;
     }),
-  breakMinutes: yup
-    .number()
-    .typeError('Break time must be a number')
-    .min(0, 'Break time cannot be negative')
-    .max(180, 'Break time seems too long')
-    .required('Break time is required'),
-  payRate: yup
-    .number()
-    .typeError('Pay rate must be a number')
-    .min(0, 'Pay rate cannot be negative')
-    .required('Pay rate is required'),
+  breakMinutes: yup.number().typeError('Break time must be a number').min(0, 'Break time cannot be negative').max(180, 'Break time seems too long').required('Break time is required'),
+  payRate: yup.number().typeError('Pay rate must be a number').min(0, 'Pay rate cannot be negative').required('Pay rate is required'),
   shiftType: yup.string().oneOf(['day', 'night']).required(),
-  instructions: yup
-    .string()
-    .required('Provide shift instructions')
-    .min(10, 'Add a few more details for clarity'),
+  instructions: yup.string().required('Provide shift instructions').min(10, 'Add a few more details for clarity'),
   location: yup.string().required('Location is required'),
   guards: yup.array().of(yup.string()),
   newSiteName: yup.string(),
   newSiteAddress: yup.string(),
 });
-
 
 const guardOptions = [
   { id: 'g-smith', name: 'John Smith', skills: 'Events, RSA' },
@@ -80,44 +52,20 @@ const guardOptions = [
 ];
 
 const guardAssignments = {
-  'g-smith': [
-    { date: '2026-01-17', startTime: '13:00', endTime: '21:00', siteName: 'Marvel Stadium' },
-  ],
-  'g-chan': [
-    {
-      date: '2026-01-16',
-      startTime: '09:00',
-      endTime: '17:30',
-      siteName: 'Chadstone Shopping Centre',
-    },
-  ],
-  'g-rojas': [
-    { date: '2026-01-18', startTime: '18:00', endTime: '23:30', siteName: 'AIG Solutions HQ' },
-  ],
+  'g-smith': [{ date: '2026-01-17', startTime: '13:00', endTime: '21:00', siteName: 'Marvel Stadium' }],
+  'g-chan': [{ date: '2026-01-16', startTime: '09:00', endTime: '17:30', siteName: 'Chadstone Shopping Centre' }],
+  'g-rojas': [{ date: '2026-01-18', startTime: '18:00', endTime: '23:30', siteName: 'AIG Solutions HQ' }],
   'g-nguyen': [],
 };
 
 const existingShifts = [
-  {
-    id: 'shift-142',
-    siteId: 'marvel-stadium',
-    siteName: 'Marvel Stadium',
-    date: '2026-01-17',
-    startTime: '12:00',
-    endTime: '20:30',
-  },
-  {
-    id: 'shift-205',
-    siteId: 'chadstone',
-    siteName: 'Chadstone Shopping Centre',
-    date: '2026-01-18',
-    startTime: '07:00',
-    endTime: '15:00',
-  },
+  { id: 'shift-142', siteId: 'marvel-stadium', siteName: 'Marvel Stadium', date: '2026-01-17', startTime: '12:00', endTime: '20:30' },
+  { id: 'shift-205', siteId: 'chadstone', siteName: 'Chadstone Shopping Centre', date: '2026-01-18', startTime: '07:00', endTime: '15:00' },
 ];
 
-const mapDefault = { lat: -37.8136, lng: 144.9631 }; // Melbourne CBD
+const mapDefault = { lat: -37.8136, lng: 144.9631 };
 
+// ---- BULLETPROOF ADDRESS PARSER ----
 const parseAddress = (address) => {
   const match = address.match(/^(.+),\s*(.+?)\s+([A-Z]{2,3})\s+(\d{4})/);
   if (match) return { street: match[1], suburb: match[2], state: match[3], postcode: match[4] };
@@ -132,17 +80,10 @@ const parseAddress = (address) => {
 };
 
 const slugify = (text) =>
-  text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 40) || `site-${Date.now()}`;
+  text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40) || `site-${Date.now()}`;
 
 const loadGooglePlaces = (onReady, onError) => {
-  if (window.google?.maps?.places) {
-    onReady();
-    return;
-  }
+  if (window.google?.maps?.places) { onReady(); return; }
   if (document.getElementById('ss-places-script')) return;
   const script = document.createElement('script');
   script.id = 'ss-places-script';
@@ -156,8 +97,63 @@ const loadGooglePlaces = (onReady, onError) => {
   document.body.appendChild(script);
 };
 
+// ---- Build payload - NO placeholders ----
+const buildShiftPayload = (values, sites, status) => {
+  const selectedSite = sites.find((s) => s.id === values.siteId);
+
+  // 1. Try to use structured fields from the site (if available)
+  let location = {};
+  if (selectedSite?.street && selectedSite?.suburb && selectedSite?.state && selectedSite?.postcode) {
+    location = {
+      street: selectedSite.street,
+      suburb: selectedSite.suburb,
+      state: selectedSite.state,
+      postcode: selectedSite.postcode,
+    };
+  } else {
+    // 2. Otherwise parse the address string
+    const addressStr = values.location || '';
+    const parsed = parseAddress(addressStr);
+    location = {
+      street: parsed.street,
+      suburb: parsed.suburb,
+      state: parsed.state,
+      postcode: parsed.postcode,
+    };
+  }
+
+  // 3. Final safety – ensure all fields are non-empty (backend requires them)
+  if (!location.street) location.street = 'Unknown';
+  if (!location.suburb) location.suburb = location.street;
+  if (!location.state) location.state = 'VIC';
+  if (!location.postcode) location.postcode = '3000';
+
+  const payload = {
+    title: values.title || '',
+    date: values.date || '',
+    startTime: values.startTime || '',
+    endTime: values.endTime || '',
+    breakTime: values.breakMinutes || 0,
+    payRate: values.payRate || 0,
+    shiftType: values.shiftType === 'night' ? 'Night' : 'Day',
+    description: values.instructions || '',
+    guardIds: values.guards || [],
+    status: status,
+    location: location,
+  };
+
+  if (values.siteId) {
+    payload.siteId = values.siteId;
+  }
+
+  return payload;
+};
+
 const CreateShift = ({ isModal = false, onClose }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editShiftId = searchParams.get('edit');
+
   const [sites, setSites] = useState([]);
   const [pendingSiteId, setPendingSiteId] = useState(null);
   const [showNewSite, setShowNewSite] = useState(false);
@@ -166,6 +162,8 @@ const CreateShift = ({ isModal = false, onClose }) => {
   const [mapsReady, setMapsReady] = useState(false);
   const [mapsFailed, setMapsFailed] = useState(false);
   const [locationPin, setLocationPin] = useState(mapDefault);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [loadingShift, setLoadingShift] = useState(!!editShiftId);
 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -182,6 +180,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
     watch,
     setValue,
     getValues,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: yupResolver(shiftSchema),
@@ -208,6 +207,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
   const newSiteNameReg = register('newSiteName');
   const newSiteAddressReg = register('newSiteAddress');
 
+  // Load sites
   useEffect(() => {
     http.get('/branch/site')
       .then((res) => {
@@ -226,6 +226,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
       .catch(() => {});
   }, []);
 
+  // Load Google Places
   useEffect(() => {
     loadGooglePlaces(
       () => setMapsReady(true),
@@ -233,6 +234,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
     );
   }, []);
 
+  // Autocomplete for location
   useEffect(() => {
     if (!mapsReady || !locationInputRef.current || locationAutocompleteRef.current) return;
     if (!window.google?.maps?.places) {
@@ -247,15 +249,12 @@ const CreateShift = ({ isModal = false, onClose }) => {
       const place = instance.getPlace();
       const formatted = place.formatted_address || place.name || locationInputRef.current.value;
       const loc = place.geometry?.location;
-      if (formatted) {
-        setValue('location', formatted, { shouldValidate: true, shouldDirty: true });
-      }
-      if (loc) {
-        setLocationPin({ lat: loc.lat(), lng: loc.lng() });
-      }
+      if (formatted) setValue('location', formatted, { shouldValidate: true, shouldDirty: true });
+      if (loc) setLocationPin({ lat: loc.lat(), lng: loc.lng() });
     });
   }, [mapsReady, setValue]);
 
+  // Autocomplete for new site address
   useEffect(() => {
     if (!mapsReady || !newSiteInputRef.current || newSiteAutocompleteRef.current) return;
     if (!window.google?.maps?.places) {
@@ -274,19 +273,17 @@ const CreateShift = ({ isModal = false, onClose }) => {
         setValue('newSiteAddress', formatted, { shouldValidate: true, shouldDirty: true });
         setValue('location', formatted, { shouldValidate: true, shouldDirty: true });
       }
-      if (loc) {
-        setLocationPin({ lat: loc.lat(), lng: loc.lng() });
-      }
+      if (loc) setLocationPin({ lat: loc.lat(), lng: loc.lng() });
     });
   }, [mapsReady, setValue]);
 
+  // Map initialization
   useEffect(() => {
     if (!mapRef.current || (!mapsReady && !mapsFailed)) return;
     if (mapsReady && !window.google?.maps) {
       setMapsFailed(true);
       return;
     }
-
     if (mapsReady && window.google?.maps) {
       if (!mapInstance.current) {
         mapInstance.current = new window.google.maps.Map(mapRef.current, {
@@ -305,6 +302,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
     }
   }, [locationPin, mapsReady, mapsFailed]);
 
+  // When site changes, update location
   useEffect(() => {
     if (!watchSiteId) return;
     if (watchSiteId === '__new') {
@@ -328,6 +326,41 @@ const CreateShift = ({ isModal = false, onClose }) => {
     }
   }, [sites, pendingSiteId, setValue]);
 
+  // ---- Load draft for editing ----
+  useEffect(() => {
+    if (!editShiftId) return;
+    const fetchShift = async () => {
+      try {
+        const { data } = await http.get(`/shifts/${editShiftId}`);
+        reset({
+          title: data.title || '',
+          siteId: data.siteId || '',
+          date: data.date ? data.date.substring(0, 10) : '',
+          startTime: data.startTime || '',
+          endTime: data.endTime || '',
+          breakMinutes: data.breakTime || 30,
+          payRate: data.payRate || 0,
+          shiftType: data.shiftType?.toLowerCase() === 'night' ? 'night' : 'day',
+          instructions: data.description || '',
+          location: data.location ? [data.location.street, data.location.suburb, data.location.state].filter(Boolean).join(', ') : '',
+          guards: (data.guardIds || []).map(g => g._id || g),
+          newSiteName: '',
+          newSiteAddress: '',
+        });
+        if (data.location?.latitude && data.location?.longitude) {
+          setLocationPin({ lat: data.location.latitude, lng: data.location.longitude });
+        }
+        setBlockingIssues([]);
+      } catch (err) {
+        setBlockingIssues([err?.response?.data?.message || 'Failed to load shift for editing']);
+      } finally {
+        setLoadingShift(false);
+      }
+    };
+    fetchShift();
+  }, [editShiftId, reset]);
+
+  // ---- Conflict detection (mock) ----
   const overlaps = (startA, endA, startB, endB) => {
     if (!startA || !endA || !startB || !endB) return false;
     return startA < endB && endA > startB;
@@ -342,41 +375,24 @@ const CreateShift = ({ isModal = false, onClose }) => {
       (shift) =>
         shift.siteId === payload.siteId &&
         shift.date === payload.date &&
-        overlaps(
-          start,
-          end,
-          toDateTime(shift.date, shift.startTime),
-          toDateTime(shift.date, shift.endTime)
-        )
+        overlaps(start, end, toDateTime(shift.date, shift.startTime), toDateTime(shift.date, shift.endTime))
     );
-
     if (timeConflicts.length) {
-      issues.push(
-        `Time clash: ${timeConflicts
-          .map((c) => `${c.siteName} ${c.startTime}–${c.endTime}`)
-          .join(', ')}`
-      );
+      issues.push(`Time clash: ${timeConflicts.map(c => `${c.siteName} ${c.startTime}–${c.endTime}`).join(', ')}`);
     }
 
     const guardConflicts = (payload.guards || []).flatMap((guardId) => {
       const blocks = guardAssignments[guardId] || [];
-      const hit = blocks.find(
-        (b) =>
-          b.date === payload.date &&
-          overlaps(start, end, toDateTime(b.date, b.startTime), toDateTime(b.date, b.endTime))
-      );
-      return hit
-        ? [`${guardOptions.find((g) => g.id === guardId)?.name || guardId} busy at ${hit.siteName}`]
-        : [];
+      const hit = blocks.find(b => b.date === payload.date && overlaps(start, end, toDateTime(b.date, b.startTime), toDateTime(b.date, b.endTime)));
+      return hit ? [`${guardOptions.find(g => g.id === guardId)?.name || guardId} busy at ${hit.siteName}`] : [];
     });
-
     if (guardConflicts.length) {
       issues.push(`Guard availability conflicts: ${guardConflicts.join(', ')}`);
     }
-
     return issues;
   };
 
+  // ---- Add site ----
   const handleAddSite = async () => {
     const { newSiteName, newSiteAddress } = getValues();
     const trimmedName = newSiteName.trim();
@@ -420,6 +436,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
     }
   };
 
+  // ---- Preview ----
   const onPreview = (values) => {
     const issues = findConflicts(values);
     setBlockingIssues(issues);
@@ -427,73 +444,73 @@ const CreateShift = ({ isModal = false, onClose }) => {
       setPreviewData(null);
       return;
     }
-
     const selectedSite = sites.find((s) => s.id === values.siteId);
     setPreviewData({ ...values, selectedSite, locationPin });
   };
 
+  // ---- Submit (publish) ----
   const onSubmit = async (values) => {
     const issues = findConflicts(values);
     setBlockingIssues(issues);
     if (issues.length) return;
 
-    const selectedSite = sites.find((s) => s.id === values.siteId);
-    const payload = {
-      title: values.title,
-      siteId: values.siteId,
-      siteName: selectedSite?.name,
-      date: values.date,
-      startTime: values.startTime,
-      endTime: values.endTime,
-      breakMinutes: values.breakMinutes,
-      payRate: values.payRate,
-      shiftType: values.shiftType === 'day' ? 'Day' : 'Night',
-      description: values.instructions,
-      guards: values.guards || [],
-      status:"open",
-      location: (() => {
-        const parsed = parseAddress(selectedSite?.address || values.location);
-        return {
-          street: selectedSite?.street || parsed.street,
-          suburb: selectedSite?.suburb || parsed.suburb,
-          state: selectedSite?.state || parsed.state,
-          postcode: selectedSite?.postcode || parsed.postcode,
-        };
-      })(),
-    };
-
     try {
-      await http.post('/shifts', payload);
+      const payload = buildShiftPayload(values, sites, 'open');
+      if (editShiftId) {
+        await http.patch(`/shifts/${editShiftId}`, payload);
+      } else {
+        await http.post('/shifts', payload);
+      }
       setPreviewData(null);
       navigate('/manage-shift');
     } catch (err) {
-      const message = err?.response?.data?.message || err.message || 'Unable to create shift';
+      const message = err?.response?.data?.message || err.message || 'Unable to create/update shift';
       setBlockingIssues([message]);
+    }
+  };
+
+  // ---- Save draft ----
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    try {
+      const values = getValues();
+      const payload = buildShiftPayload(values, sites, 'draft');
+      if (editShiftId) {
+        await http.patch(`/shifts/${editShiftId}`, payload);
+      } else {
+        await http.post('/shifts', payload);
+      }
+      navigate('/manage-shift');
+    } catch (err) {
+      const message = err?.response?.data?.message || err.message || 'Unable to save draft';
+      setBlockingIssues([message]);
+    } finally {
+      setSavingDraft(false);
     }
   };
 
   const renderFieldError = (field) =>
     errors[field] ? <span className="cs-field__error">{errors[field]?.message}</span> : null;
 
+  if (loadingShift) {
+    return <div style={{ padding: '40px', textAlign: 'center' }}>Loading draft…</div>;
+  }
+
   return (
     <div className="cs-shell">
       <div className="cs-topbar">
         <div>
           <p className="cs-kicker">Shift creation</p>
-          <h1 className="cs-title">Create a new shift</h1>
+          <h1 className="cs-title">{editShiftId ? 'Edit draft' : 'Create a new shift'}</h1>
           <p className="cs-subtitle">
-            Structured, full-screen flow with guard checks and location precision.
+            {editShiftId ? 'Update the draft and save or publish it.' : 'Structured, full-screen flow with guard checks and location precision.'}
           </p>
         </div>
         <div className="cs-topbar__actions">
           <button className="cs-ghost" type="button" onClick={() => navigate('/manage-shift')}>
             Cancel
           </button>
-          <button
-            className="cs-ghost"
-            type="button"
-            onClick={() => navigate('/employer-dashboard')}
-          >
+          <button className="cs-ghost" type="button" onClick={() => navigate('/employer-dashboard')}>
             Back to dashboard
           </button>
         </div>
@@ -706,11 +723,16 @@ const CreateShift = ({ isModal = false, onClose }) => {
           </div>
 
           <div className="cs-actions">
-            <button type="button" className="cs-ghost" onClick={() => navigate('/manage-shift')}>
-              Save draft
+            <button
+              type="button"
+              className="cs-ghost"
+              onClick={handleSaveDraft}
+              disabled={savingDraft}
+            >
+              {savingDraft ? 'Saving…' : editShiftId ? 'Update draft' : 'Save draft'}
             </button>
             <button type="submit" className="cs-primary">
-              Preview shift
+              {editShiftId ? 'Update & preview' : 'Preview shift'}
             </button>
           </div>
         </section>
