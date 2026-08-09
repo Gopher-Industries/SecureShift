@@ -2,8 +2,12 @@ import { askOllama } from "../services/ollamaService.js";
 import { semanticSearch } from "../retrieval/vectorSearch.js";
 
 export async function chat(req, res) {
+  console.log("\n======================================");
+  console.log("AI QUESTION:", req.body?.question);
+  console.log("======================================\n");
+
   try {
-    const question = req.body?.question;
+    const question = req.body?.question?.trim();
 
     if (!question) {
       return res.status(400).json({
@@ -12,7 +16,10 @@ export async function chat(req, res) {
       });
     }
 
-    // Search the vector database
+    // =========================================================
+    // SEARCH KNOWLEDGE BASE
+    // =========================================================
+
     const searchResult = await semanticSearch(question);
 
     let chunks = [];
@@ -25,9 +32,10 @@ export async function chat(req, res) {
       confidence = Number(searchResult.bestScore.toFixed(3));
     }
 
-    // ==============================
-    // DEBUG: Show retrieved chunks
-    // ==============================
+    // =========================================================
+    // DEBUG RETRIEVED CHUNKS
+    // =========================================================
+
     console.log("\n========== RETRIEVED CHUNKS ==========");
 
     if (chunks.length === 0) {
@@ -40,15 +48,26 @@ export async function chat(req, res) {
         console.log("Score    :", chunk.score.toFixed(3));
         console.log(
           "Text     :",
-          chunk.text.substring(0, 250).replace(/\n/g, " "),
+          chunk.text.substring(0, 300).replace(/\n/g, " "),
         );
       });
     }
 
     console.log("======================================\n");
 
-    // Ask Ollama
+    // =========================================================
+    // CALL OLLAMA
+    // =========================================================
+
+    console.log("Calling Ollama...");
+
     const answer = await askOllama(question, chunks);
+
+    console.log("✅ Answer generated successfully.");
+
+    // =========================================================
+    // RESPONSE
+    // =========================================================
 
     return res.status(200).json({
       success: true,
@@ -69,13 +88,15 @@ export async function chat(req, res) {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    console.error("========== AI CHAT ERROR ==========");
-    console.error(err);
-    console.error("===================================");
+    console.error("\n========== AI CHAT ERROR ==========");
+    console.error("Message:", err.message);
+    console.error(err.stack);
+    console.error("===================================\n");
 
     return res.status(500).json({
       success: false,
-      message: err.message,
+      message: "SecureShift AI failed to generate a response.",
+      error: err.message,
     });
   }
 }

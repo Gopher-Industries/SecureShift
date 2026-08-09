@@ -10,7 +10,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: "5000"
-      OLLAMA_HOST: http://host.docker.internal:11434
+      OLLAMA_HOST: http://ollama:11434
       MONGO_URI: mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
       JWT_SECRET: local-dev-jwt-secret-change-me
       LICENCE_ENC_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
@@ -31,7 +31,63 @@ services:
     networks:
       - secureshift
     command: npm start
+  ollama:
+    image: ollama/ollama:latest
+    container_name: secureshift-ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - secureshift
 
+  ollama-models:
+    image: ollama/ollama:latest
+    container_name: secureshift-ollama-models
+
+    depends_on:
+      - ollama
+
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+
+    entrypoint: ["/bin/sh", "-c"]
+
+    command: |
+      echo "Waiting for Ollama..."
+
+      until ollama list >/dev/null 2>&1; do
+        sleep 2
+      done
+
+      echo "Pulling llama3.2..."
+      ollama pull llama3.2
+
+      echo "Pulling nomic-embed-text..."
+      ollama pull nomic-embed-text:latest
+
+      echo "Models ready."
+
+    restart: "no"
+
+    networks:
+      - secureshift
+
+  ai-indexer:
+    build:
+      context: ./app-backend
+    container_name: secureshift-ai-indexer
+    volumes:
+      - ./app-backend:/app
+    environment:
+      NODE_ENV: development
+      OLLAMA_HOST: http://ollama:11434
+    depends_on:
+      ollama-models:
+        condition: service_completed_successfully
+    command: node src/ai/indexing/buildIndex.js
+    restart: "no"
+    networks:
+      - secureshift
   mailpit:
     image: axllent/mailpit:v1.29.7
     container_name: secureshift-mailpit
@@ -89,6 +145,7 @@ services:
 
 volumes:
   mongo-data:
+  ollama-data:
 
 networks:
   secureshift:

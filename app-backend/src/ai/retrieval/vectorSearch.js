@@ -8,7 +8,10 @@ import { cosineSimilarity } from "./similarity.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const vectorsFolder = path.join(__dirname, "../../../knowledge-base/vectors");
+const vectorsFolder = path.join(
+  __dirname,
+  "../../../knowledge-base/vectors",
+);
 
 // ==========================================
 // Load all vectors
@@ -16,33 +19,48 @@ const vectorsFolder = path.join(__dirname, "../../../knowledge-base/vectors");
 
 let vectors = [];
 
-const files = fs.readdirSync(vectorsFolder);
-
-for (const file of files) {
-  if (!file.endsWith(".json")) continue;
-
-  const fileVectors = JSON.parse(
-    fs.readFileSync(path.join(vectorsFolder, file), "utf8"),
+if (!fs.existsSync(vectorsFolder)) {
+  console.error(
+    `ERROR: Vector folder does not exist: ${vectorsFolder}`,
   );
+} else {
+  const files = fs.readdirSync(vectorsFolder);
 
-  fileVectors.forEach((chunk) => {
-    chunk.document = file;
-    vectors.push(chunk);
-  });
+  for (const file of files) {
+    if (!file.endsWith(".json")) continue;
+
+    try {
+      const filePath = path.join(vectorsFolder, file);
+
+      const fileVectors = JSON.parse(
+        fs.readFileSync(filePath, "utf8"),
+      );
+
+      fileVectors.forEach((chunk) => {
+        chunk.document = file;
+        vectors.push(chunk);
+      });
+    } catch (error) {
+      console.error(
+        `ERROR: Failed to load vector file ${file}:`,
+        error.message,
+      );
+    }
+  }
+
+  console.log(
+    `Loaded ${vectors.length} chunks from ${
+      files.filter((file) => file.endsWith(".json")).length
+    } documents`,
+  );
 }
-
-console.log(
-  `✅ Loaded ${vectors.length} chunks from ${
-    files.filter((file) => file.endsWith(".json")).length
-  } documents`,
-);
 
 // ==========================================
 // Clean text
 // ==========================================
 
 function cleanText(text) {
-  return text
+  return String(text || "")
     .toLowerCase()
     .replace(/[^\w\s]/g, " ")
     .replace(/\s+/g, " ")
@@ -80,21 +98,74 @@ function getKeywords(question) {
     "me",
     "please",
     "which",
+    "i",
+    "my",
+    "we",
+    "our",
+    "you",
+    "your",
   ]);
 
   // Normalize related words
   const aliases = {
     technologies: "technology",
+    technology: "technology",
     tech: "technology",
+
     frameworks: "framework",
+    framework: "framework",
+
     databases: "database",
+    database: "database",
+
     frontends: "frontend",
+    frontend: "frontend",
+
     backends: "backend",
+    backend: "backend",
+
+    shifts: "shift",
+    shift: "shift",
+
+    schedules: "schedule",
+    scheduling: "schedule",
+    scheduled: "schedule",
+
+    rosters: "roster",
+    roster: "roster",
+
+    employees: "employee",
+    employee: "employee",
+
+    guards: "guard",
+    guard: "guard",
+
+    applicants: "applicant",
+    applicants: "applicant",
+    applicant: "applicant",
+
+    approvals: "approve",
+    approved: "approve",
+    approving: "approve",
+    approve: "approve",
+
+    branches: "branch",
+    branch: "branch",
+
+    notifications: "notification",
+    notification: "notification",
+
+    messages: "message",
+    message: "message",
   };
 
   return cleanText(question)
     .split(" ")
-    .filter((word) => word.length > 2 && !stopWords.has(word))
+    .filter(
+      (word) =>
+        word.length > 2 &&
+        !stopWords.has(word),
+    )
     .map((word) => aliases[word] || word);
 }
 
@@ -185,32 +256,155 @@ function sectionMatchScore(question, chunk) {
   // Docker questions
   // ==========================================
 
-  if (q.includes("docker")) {
-    if (section.includes("docker")) {
+  const isDockerQuestion =
+    q.includes("docker") ||
+    q.includes("container") ||
+    q.includes("docker compose");
+
+  if (isDockerQuestion) {
+    if (
+      section.includes("docker") ||
+      section.includes("container")
+    ) {
       return 1;
     }
 
-    if (text.includes("docker")) {
+    if (
+      text.includes("docker") ||
+      text.includes("container")
+    ) {
       return 0.8;
     }
   }
 
   // ==========================================
-  // Git questions
+  // Git / GitHub questions
   // ==========================================
 
-  if (
+  const isGitQuestion =
     q.includes("git") ||
     q.includes("github") ||
     q.includes("branch") ||
     q.includes("commit") ||
-    q.includes("pull request")
-  ) {
-    if (section.includes("git")) {
+    q.includes("pull request") ||
+    q.includes("merge");
+
+  if (isGitQuestion) {
+    if (
+      section.includes("git") ||
+      section.includes("github") ||
+      section.includes("pull request")
+    ) {
       return 1;
     }
 
-    if (text.includes("git")) {
+    if (
+      text.includes("git") ||
+      text.includes("github") ||
+      text.includes("pull request")
+    ) {
+      return 0.8;
+    }
+  }
+
+  // ==========================================
+  // Shift questions
+  // ==========================================
+
+  const isShiftQuestion =
+    q.includes("shift") ||
+    q.includes("schedule") ||
+    q.includes("roster") ||
+    q.includes("applicant") ||
+    q.includes("approve shift") ||
+    q.includes("create a shift") ||
+    q.includes("create shift");
+
+  if (isShiftQuestion) {
+    if (
+      section.includes("shift") ||
+      section.includes("schedule") ||
+      section.includes("roster") ||
+      section.includes("applicant")
+    ) {
+      return 1;
+    }
+
+    if (
+      text.includes("shift") ||
+      text.includes("schedule") ||
+      text.includes("roster") ||
+      text.includes("applicant")
+    ) {
+      return 0.8;
+    }
+  }
+
+  // ==========================================
+  // Guard questions
+  // ==========================================
+
+  const isGuardQuestion =
+    q.includes("guard") ||
+    q.includes("employee") ||
+    q.includes("worker");
+
+  if (isGuardQuestion) {
+    if (
+      section.includes("guard") ||
+      section.includes("employee")
+    ) {
+      return 1;
+    }
+
+    if (
+      text.includes("guard") ||
+      text.includes("employee")
+    ) {
+      return 0.8;
+    }
+  }
+
+  // ==========================================
+  // Notification questions
+  // ==========================================
+
+  const isNotificationQuestion =
+    q.includes("notification") ||
+    q.includes("notify") ||
+    q.includes("alert");
+
+  if (isNotificationQuestion) {
+    if (section.includes("notification")) {
+      return 1;
+    }
+
+    if (text.includes("notification")) {
+      return 0.8;
+    }
+  }
+
+  // ==========================================
+  // Message questions
+  // ==========================================
+
+  const isMessageQuestion =
+    q.includes("message") ||
+    q.includes("conversation") ||
+    q.includes("chat");
+
+  if (isMessageQuestion) {
+    if (
+      section.includes("message") ||
+      section.includes("conversation")
+    ) {
+      return 1;
+    }
+
+    if (
+      text.includes("message") ||
+      text.includes("conversation")
+    ) {
       return 0.8;
     }
   }
@@ -232,7 +426,11 @@ function sectionMatchScore(question, chunk) {
       return 1;
     }
 
-    if (text.includes("secureshift is a workforce management platform")) {
+    if (
+      text.includes(
+        "secureshift is a workforce management platform",
+      )
+    ) {
       return 0.8;
     }
   }
@@ -244,15 +442,48 @@ function sectionMatchScore(question, chunk) {
 // Semantic search
 // ==========================================
 
-export async function semanticSearch(question, topK = 5) {
-  const questionEmbedding = await createEmbedding(question);
+export async function semanticSearch(
+  question,
+  topK = 5,
+) {
+  if (!question || typeof question !== "string") {
+    return {
+      results: [],
+      bestScore: 0,
+    };
+  }
 
+  if (vectors.length === 0) {
+    console.warn(
+      "WARNING: No knowledge-base vectors are loaded.",
+    );
+
+    return {
+      results: [],
+      bestScore: 0,
+    };
+  }
+
+  // Create embedding for the user's question
+  const questionEmbedding =
+    await createEmbedding(question);
+
+  // Score every knowledge-base chunk
   const scored = vectors.map((chunk) => {
-    const semantic = cosineSimilarity(questionEmbedding, chunk.embedding);
+    const semantic = cosineSimilarity(
+      questionEmbedding,
+      chunk.embedding,
+    );
 
-    const keyword = keywordScore(question, chunk);
+    const keyword = keywordScore(
+      question,
+      chunk,
+    );
 
-    const sectionMatch = sectionMatchScore(question, chunk);
+    const sectionMatch = sectionMatchScore(
+      question,
+      chunk,
+    );
 
     /*
       Final score:
@@ -262,15 +493,16 @@ export async function semanticSearch(question, topK = 5) {
       Section matching    = 40%
     */
 
-    const score = semantic * 0.35 + keyword * 0.25 + sectionMatch * 0.4;
+    const score =
+      semantic * 0.35 +
+      keyword * 0.25 +
+      sectionMatch * 0.4;
 
     return {
       ...chunk,
-
       semanticScore: semantic,
       keywordScore: keyword,
       sectionMatchScore: sectionMatch,
-
       score,
     };
   });
@@ -283,35 +515,75 @@ export async function semanticSearch(question, topK = 5) {
 
   const results = scored.slice(0, topK);
 
-  const bestScore = results[0]?.score || 0;
+  const bestScore =
+    results[0]?.score || 0;
 
   // ==========================================
   // Debug output
   // ==========================================
 
-  console.log("\n========== SEMANTIC SEARCH ==========");
+  console.log(
+    "\n========== SEMANTIC SEARCH ==========",
+  );
 
   console.log("Question:", question);
 
+  console.log(
+    "Total vectors:",
+    vectors.length,
+  );
+
   results.forEach((result, index) => {
-    console.log(`\n--- Result ${index + 1} ---`);
+    console.log(
+      `\n--- Result ${index + 1} ---`,
+    );
 
-    console.log("Final Score:", result.score.toFixed(3));
+    console.log(
+      "Final Score:",
+      result.score.toFixed(3),
+    );
 
-    console.log("Semantic:", result.semanticScore.toFixed(3));
+    console.log(
+      "Semantic:",
+      result.semanticScore.toFixed(3),
+    );
 
-    console.log("Keyword:", result.keywordScore.toFixed(3));
+    console.log(
+      "Keyword:",
+      result.keywordScore.toFixed(3),
+    );
 
-    console.log("Section:", result.sectionMatchScore.toFixed(3));
+    console.log(
+      "Section:",
+      result.sectionMatchScore.toFixed(3),
+    );
 
-    console.log("Document:", result.document);
+    console.log(
+      "Document:",
+      result.document,
+    );
 
-    console.log("Section Name:", result.section);
+    console.log(
+      "Section Name:",
+      result.section,
+    );
 
-    console.log("Text:", result.text.substring(0, 300).replace(/\n/g, " "));
+    console.log(
+      "Text:",
+      String(result.text || "")
+        .substring(0, 300)
+        .replace(/\n/g, " "),
+    );
   });
 
-  console.log("\n======================================\n");
+  console.log(
+    "\nBest Score:",
+    bestScore.toFixed(3),
+  );
+
+  console.log(
+    "======================================\n",
+  );
 
   return {
     results,

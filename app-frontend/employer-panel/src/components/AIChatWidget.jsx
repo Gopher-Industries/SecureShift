@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 import ChatHeader from "./ChatHeader";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import SuggestionCards from "./SuggestionCards";
+import http from "../lib/http";
+
+const AI_TIMEOUT = 120000; // 120 seconds
 
 export default function AIChatWidget() {
   const [open, setOpen] = useState(false);
-  const [rendered, setRendered] = useState(false); // controls mount/unmount for exit animation
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
-  const [buttonPop, setButtonPop] = useState(false);
 
   const [messages, setMessages] = useState([
     {
@@ -20,27 +21,14 @@ export default function AIChatWidget() {
     },
   ]);
 
-  // Handle mount/unmount so the closing animation can play before removal
-  useEffect(() => {
-    if (open) {
-      setRendered(true);
-    } else if (rendered) {
-      const timeout = setTimeout(() => setRendered(false), 220); // match CSS duration
-      return () => clearTimeout(timeout);
-    }
-  }, [open]);
-
-  function toggleOpen() {
-    setButtonPop(true);
-    setTimeout(() => setButtonPop(false), 250);
-    setOpen((prev) => !prev);
-  }
-
   async function sendMessage(customQuestion) {
-    const currentQuestion = customQuestion || question;
+    const currentQuestion = (
+      customQuestion !== undefined ? customQuestion : question
+    ).trim();
 
-    if (!currentQuestion.trim() || loading) return;
+    if (!currentQuestion || loading) return;
 
+    // Add user message immediately
     setMessages((prev) => [
       ...prev,
       {
@@ -52,25 +40,40 @@ export default function AIChatWidget() {
     setQuestion("");
     setLoading(true);
 
+    const controller = new AbortController();
+
+    // Abort request after 120 seconds
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, AI_TIMEOUT);
+
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/v1/ai/chat",
+      console.log("Sending AI question:", currentQuestion);
+
+      const response = await http.post(
+        "/ai/chat",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            question: currentQuestion,
-          }),
+          question: currentQuestion,
+        },
+        {
+          signal: controller.signal,
+          timeout: AI_TIMEOUT,
         }
       );
 
-      if (!response.ok) {
-        throw new Error("AI request failed");
-      }
+      clearTimeout(timeoutId);
 
-      const data = await response.json();
+      console.log("AI response status:", response.status);
+
+      const data = response.data;
+
+      console.log("AI response:", data);
+
+      if (!data.success) {
+        throw new Error(
+          data?.message || "SecureShift AI failed to generate a response."
+        );
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -78,20 +81,50 @@ export default function AIChatWidget() {
           role: "assistant",
           content:
             data.answer || "I couldn't generate an answer.",
-          sources: data.sources || [],
-          confidence: data.confidence || 0,
+
+          sources: Array.isArray(data.sources)
+            ? data.sources
+            : [],
+
+          confidence:
+            typeof data.confidence === "number"
+              ? data.confidence
+              : 0,
+
           mode: data.mode || "general",
         },
       ]);
     } catch (err) {
+      clearTimeout(timeoutId);
+
       console.error("AI Chat Error:", err);
+
+      let errorMessage =
+        "Sorry, I couldn't connect to SecureShift AI. Please try again.";
+
+      if (err.name === "AbortError") {
+        errorMessage =
+          "SecureShift AI is taking longer than expected. Please try again.";
+      } else if (err.code === "ECONNABORTED") {
+        errorMessage =
+          "SecureShift AI is taking longer than expected. Please try again.";
+      } else if (err.response?.status === 401) {
+        errorMessage =
+          "Your session has expired. Please log in again.";
+      } else if (err.response?.status === 403) {
+        errorMessage =
+          "You do not have permission to use SecureShift AI.";
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        console.error("AI Error Message:", err.message);
+      }
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content:
-            "Sorry, I couldn't connect to SecureShift AI. Please try again.",
+          content: errorMessage,
         },
       ]);
     } finally {
@@ -101,54 +134,12 @@ export default function AIChatWidget() {
 
   return (
     <>
-      {/* Keyframes + small helper classes, scoped via unique names */}
-      <style>{`
-        @keyframes sswidget-panel-in {
-          0% {
-            opacity: 0;
-            transform: translateY(24px) scale(0.96);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        @keyframes sswidget-panel-out {
-          0% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(16px) scale(0.97);
-          }
-        }
-        @keyframes sswidget-pop {
-          0% { transform: scale(1); }
-          40% { transform: scale(0.85); }
-          70% { transform: scale(1.08); }
-          100% { transform: scale(1); }
-        }
-        @keyframes sswidget-pulse {
-          0%, 100% { box-shadow: 0 5px 15px rgba(0,0,0,.25), 0 0 0 0 rgba(37,99,235,0.5); }
-          50% { box-shadow: 0 5px 15px rgba(0,0,0,.25), 0 0 0 10px rgba(37,99,235,0); }
-        }
-        .sswidget-fab {
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .sswidget-fab:hover {
-          transform: scale(1.08);
-        }
-        .sswidget-fab:active {
-          transform: scale(0.94);
-        }
-      `}</style>
-
       {/* Floating AI Button */}
       <button
-        onClick={toggleOpen}
-        aria-label={open ? "Close SecureShift AI" : "Open SecureShift AI"}
-        className="sswidget-fab"
+        onClick={() => setOpen(!open)}
+        aria-label={
+          open ? "Close SecureShift AI" : "Open SecureShift AI"
+        }
         style={{
           position: "fixed",
           bottom: 25,
@@ -163,26 +154,13 @@ export default function AIChatWidget() {
           cursor: "pointer",
           zIndex: 9999,
           boxShadow: "0 5px 15px rgba(0,0,0,.25)",
-          animation: buttonPop
-            ? "sswidget-pop 0.25s ease"
-            : !open
-            ? "sswidget-pulse 2.4s ease-in-out infinite"
-            : "none",
         }}
       >
-        <span
-          style={{
-            display: "inline-block",
-            transition: "transform 0.25s ease",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-        >
-          {open ? "✕" : "🤖"}
-        </span>
+        {open ? "✕" : "🤖"}
       </button>
 
       {/* AI Chat Window */}
-      {rendered && (
+      {open && (
         <div
           style={{
             position: "fixed",
@@ -207,11 +185,6 @@ export default function AIChatWidget() {
             boxShadow: "0 10px 30px rgba(0,0,0,.25)",
 
             zIndex: 9999,
-
-            transformOrigin: "bottom right",
-            animation: open
-              ? "sswidget-panel-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards"
-              : "sswidget-panel-out 0.2s ease forwards",
           }}
         >
           <ChatHeader onClose={() => setOpen(false)} />

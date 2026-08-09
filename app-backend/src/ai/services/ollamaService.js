@@ -1,104 +1,162 @@
 import { Ollama } from "ollama";
 
+const OLLAMA_HOST =
+  process.env.OLLAMA_HOST || "http://host.docker.internal:11434";
+
+const OLLAMA_MODEL = "llama3.2";
+
 const ollama = new Ollama({
-  host: process.env.OLLAMA_HOST || "http://host.docker.internal:11434",
+  host: OLLAMA_HOST,
 });
 
 export async function askOllama(question, chunks = []) {
-  let systemPrompt;
-  let userPrompt;
+  console.log("\n========== ASKING OLLAMA ==========");
+  console.log("Host:", OLLAMA_HOST);
+  console.log("Model:", OLLAMA_MODEL);
+  console.log("Question:", question);
+  console.log("Chunks:", chunks.length);
 
-  // Documentation found
-  if (chunks.length > 0) {
-    const context = chunks
-      .map(
-        (chunk) => `
+  try {
+    let systemPrompt;
+    let userPrompt;
+
+    // =========================================================
+    // DOCUMENTATION MODE
+    // =========================================================
+
+    if (chunks.length > 0) {
+      const context = chunks
+        .map(
+          (chunk, index) => `
+SOURCE ${index + 1}
 Document: ${chunk.document}
 Section: ${chunk.section}
+Score: ${chunk.score}
 
 ${chunk.text}
 `,
-      )
-      .join("\n\n=============================\n\n");
+        )
+        .join("\n\n=============================\n\n");
 
-    systemPrompt = `
+      systemPrompt = `
 You are SecureShift AI, the official AI assistant for the SecureShift workforce management platform.
 
-Your job is to answer questions accurately using the supplied documentation.
+Your job is to answer the user's question using ONLY the supplied SecureShift documentation.
 
-Rules:
+IMPORTANT RULES:
 
-1. The documentation below comes from the official SecureShift onboarding guide.
+1. The supplied documentation is the source of truth.
 
-2. If the documentation contains the answer,
-   answer from it.
+2. NEVER invent information that is not present in the documentation.
 
-3. If Docker commands exist,
-   reproduce them exactly.
+3. NEVER create imaginary buttons, pages, URLs, API endpoints, commands, technologies, steps, or features.
 
-4. If a list of technologies exists,
-   list every technology mentioned.
+4. If the documentation gives a Docker command, reproduce the command exactly as written.
 
-5. Explain the answer in simple English.
+5. If the question asks for Docker commands, ONLY show Docker commands that appear in the supplied documentation.
 
-6. NEVER say the documentation does not contain information if it clearly appears in the supplied context.
+6. If the documentation only partially answers the question, explain only what the documentation supports.
 
-7. Never interpret SecureShift as malware, hacking software, or anything malicious.
+7. If the documentation does not provide enough information to answer the question, say:
+"Based on the available SecureShift documentation, I don't have enough information to give the complete answer."
 
-8. When someone asks
-   "How do I build SecureShift?"
-   they mean
-   "How do I build and run the SecureShift project locally?"
+8. Do not use general knowledge to invent missing SecureShift-specific instructions.
 
-9. If the documentation only partially answers,
-   answer using the documentation first,
-   then clearly say:
+9. Answer in simple English.
 
-   "Additional explanation (general software engineering knowledge):"
+10. Use Markdown.
 
-   before adding any extra information.
+11. Keep the answer concise and directly answer the question.
 
-Always answer in Markdown.
-`;
+12. SecureShift is a workforce management platform. Do not interpret it as malware or malicious software.
 
-    userPrompt = `
-Documentation
+13. When the user asks "How do I build SecureShift?", interpret this as:
+"How do I build and run the SecureShift project locally?"
 
+DOCUMENTATION:
 ${context}
-
-Question
-
-${question}
 `;
-  } else {
-    systemPrompt = `
+
+      userPrompt = `
+Question:
+${question}
+
+Answer the question using only the documentation above.
+`;
+    } else {
+      // =========================================================
+      // GENERAL MODE
+      // =========================================================
+
+      systemPrompt = `
 You are SecureShift AI.
 
-No SecureShift documentation matched this question.
+No relevant SecureShift documentation was found for this question.
 
-Answer as an experienced software engineering assistant.
+Answer briefly as a general software engineering assistant.
 
-Be concise.
+Do not claim that information is specific to SecureShift unless it is known from the question.
 
 Use Markdown.
 `;
 
-    userPrompt = question;
+      userPrompt = question;
+    }
+
+    console.log("System prompt length:", systemPrompt.length);
+    console.log("User prompt length:", userPrompt.length);
+    console.log("Sending request to Ollama...");
+
+    const startTime = Date.now();
+
+    const response = await ollama.chat({
+      model: OLLAMA_MODEL,
+
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: userPrompt,
+        },
+      ],
+
+      stream: false,
+
+      options: {
+        temperature: 0.1,
+        num_predict: 300,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+
+    console.log("✅ Ollama response received");
+    console.log("Response time:", responseTime, "ms");
+
+    const answer = response?.message?.content?.trim();
+
+    if (!answer) {
+      throw new Error("Ollama returned an empty response.");
+    }
+
+    console.log("Answer length:", answer.length);
+    console.log("===================================\n");
+
+    return answer;
+  } catch (error) {
+    console.error("\n========== OLLAMA ERROR ==========");
+    console.error("Message:", error.message);
+    console.error("Name:", error.name);
+
+    if (error.cause) {
+      console.error("Cause:", error.cause);
+    }
+
+    console.error("==================================\n");
+
+    throw new Error(`SecureShift AI error: ${error.message}`);
   }
-
-  const response = await ollama.chat({
-    model: "llama3.2",
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-      {
-        role: "user",
-        content: userPrompt,
-      },
-    ],
-  });
-
-  return response.message.content;
 }

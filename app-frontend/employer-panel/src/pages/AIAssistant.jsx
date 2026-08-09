@@ -1,55 +1,50 @@
 import { useState } from "react";
+import http from "../lib/http";
 
 export default function AIAssistant() {
-
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
 
- async function askAI() {
-  if (!question.trim()) return;
+  async function askAI() {
+    if (!question.trim() || loading) return;
 
-  setLoading(true);
+    setLoading(true);
+    setAnswer("");
 
-  console.log("Sending question:", question);
+    try {
+      const response = await http.post("/ai/chat", {
+        question: question.trim(),
+      });
 
-  try {
-    const response = await fetch(
-      "http://localhost:5000/api/v1/ai/chat",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          question,
-        }),
+      const data = response.data;
+
+      if (!data.success) {
+        throw new Error(
+          data.message || "SecureShift AI failed to generate a response."
+        );
       }
-    );
 
-    console.log("HTTP Status:", response.status);
+      setAnswer(data.answer || "I couldn't generate an answer.");
+    } catch (err) {
+      console.error("AI Error:", err);
 
-    const data = await response.json();
-
-    console.log("Response:", data);
-
-    if (data.success) {
-      setAnswer(data.answer);
-    } else {
-      setAnswer(data.message || "Unknown error");
+      if (err.response?.status === 401) {
+        setAnswer("Your session has expired. Please log in again.");
+      } else if (err.response?.status === 403) {
+        setAnswer("You do not have permission to use SecureShift AI.");
+      } else if (err.response?.data?.message) {
+        setAnswer(err.response.data.message);
+      } else {
+        setAnswer("Unable to contact SecureShift AI.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Fetch Error:", err);
-    setAnswer("Unable to contact AI.");
   }
 
-  setLoading(false);
-}
-
   return (
-
     <div style={{ padding: "30px" }}>
-
       <h1>SecureShift AI Assistant</h1>
 
       <textarea
@@ -58,6 +53,7 @@ export default function AIAssistant() {
         placeholder="Ask a question..."
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
+        disabled={loading}
       />
 
       <br />
@@ -65,7 +61,7 @@ export default function AIAssistant() {
 
       <button
         onClick={askAI}
-        disabled={loading}
+        disabled={loading || !question.trim()}
       >
         {loading ? "Thinking..." : "Ask AI"}
       </button>
@@ -79,14 +75,12 @@ export default function AIAssistant() {
         style={{
           border: "1px solid #ddd",
           padding: "15px",
-          minHeight: "120px"
+          minHeight: "120px",
+          whiteSpace: "pre-wrap",
         }}
       >
         {answer}
       </div>
-
     </div>
-
   );
-
 }
