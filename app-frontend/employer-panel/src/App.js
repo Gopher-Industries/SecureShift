@@ -30,6 +30,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
+import { NotificationProvider } from './components/NotificationContext';
 
 import i18n from './i18n';
 function TaskRoute() {
@@ -141,10 +142,12 @@ function App() {
   }, [language]);
 
   return (
-    <Router>
+  <Router>
+    <NotificationProvider>
       <AppRoutes language={language} setLanguage={setLanguage} />
-    </Router>
-  );
+    </NotificationProvider>
+  </Router>
+);
 }
 
 export default App;
