@@ -141,7 +141,6 @@ function getKeywords(question) {
     guard: "guard",
 
     applicants: "applicant",
-    applicants: "applicant",
     applicant: "applicant",
 
     approvals: "approve",
