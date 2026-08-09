@@ -49,25 +49,25 @@ export default function AuditLogs() {
   };
 
   const handleApplyFilters = () => {
-  if (page === 1) {
-    fetchLogs();
-  } else {
-    setPage(1);
-  }
-};
+    if (page === 1) {
+      fetchLogs();
+    } else {
+      setPage(1);
+    }
+  };
 
- const handleClearFilters = () => {
-  setUserId('');
-  setAction('');
-  setRole('');
-  setFrom('');
-  setTo('');
-  if (page === 1) {
-    setTimeout(fetchLogs, 0);
-  } else {
-    setPage(1);
-  }
-};
+  const handleClearFilters = () => {
+    setUserId('');
+    setAction('');
+    setRole('');
+    setFrom('');
+    setTo('');
+    if (page === 1) {
+      setTimeout(fetchLogs, 0);
+    } else {
+      setPage(1);
+    }
+  };
 
   const handlePurgeConfirmed = async () => {
     setPurging(true);
