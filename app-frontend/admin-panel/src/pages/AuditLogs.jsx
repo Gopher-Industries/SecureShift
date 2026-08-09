@@ -49,19 +49,25 @@ export default function AuditLogs() {
   };
 
   const handleApplyFilters = () => {
-    setPage(1);
+  if (page === 1) {
     fetchLogs();
-  };
-
-  const handleClearFilters = () => {
-    setUserId('');
-    setAction('');
-    setRole('');
-    setFrom('');
-    setTo('');
+  } else {
     setPage(1);
+  }
+};
+
+ const handleClearFilters = () => {
+  setUserId('');
+  setAction('');
+  setRole('');
+  setFrom('');
+  setTo('');
+  if (page === 1) {
     setTimeout(fetchLogs, 0);
-  };
+  } else {
+    setPage(1);
+  }
+};
 
   const handlePurgeConfirmed = async () => {
     setPurging(true);
