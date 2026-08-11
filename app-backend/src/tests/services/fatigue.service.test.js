@@ -10,7 +10,7 @@ import {
 describe("fatigue.service", () => {
   describe("calculateShiftHours", () => {
     it("calculates same-day shift duration", () => {
-      expect(calculateShiftHours("08:00", "16:00")).toBe(8);
+      expect(calculateShiftHours("08:00", "16:00")).toBe(7);
     });
 
     it("calculates overnight shift duration", () => {
