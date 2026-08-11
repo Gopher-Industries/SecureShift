@@ -268,6 +268,18 @@ npm run test
 
 Unit and integration tests are managed via Jest (or Mocha/Chai if used).
 
+### CI tests
+
+Pull requests run the following stable, database-free backend suites:
+
+- `tests/env.config.test.js`
+- `tests/seed.safety.test.js`
+- `src/tests/services/fatigue.service.test.js`
+
+Run the same allowlist locally with `npm run test:ci`. The complete legacy suite is intentionally
+not a required pull request gate while some suites have known database, environment, and ESM
+mocking reliability issues.
+
 ### Test Database Configuration
 Database-connected tests use a dedicated MongoDB database `secureshift_test`.
 1. Create a test environment file:
