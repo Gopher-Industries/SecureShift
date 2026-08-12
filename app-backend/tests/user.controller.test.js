@@ -1,8 +1,18 @@
 import request from "supertest";
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
+import {
+  startTestDatabase,
+  clearDatabase,
+  closeTestDatabase,
+} from "./db-helper.js";
 import app from "../src/app.js";
 
 import User from "../src/models/User.js";
+import Admin from "../src/models/Admin.js";
+import Employer from "../src/models/Employer.js";
+import Guard from "../src/models/Guard.js";
+
+import jwt from "jsonwebtoken";
 
 describe("User Controller API Tests", () => {
   let admin;
@@ -14,20 +24,21 @@ describe("User Controller API Tests", () => {
   let createdGuardId;
 
   beforeAll(async () => {
-    await mongoose.connect(process.env.MONGO_URI);
+    await startTestDatabase();
 
     admin = await User.create({
       name: "Admin",
       email: "admin@test.com",
       role: "admin",
-      password: "hashed",
+      password: "Password123!",
     });
 
     employer = await User.create({
       name: "Employer",
       email: "employer@test.com",
       role: "employer",
-      password: "hashed",
+      password: "Password123!",
+      ABN: "12345678901",
       favourites: [],
     });
 
@@ -35,26 +46,40 @@ describe("User Controller API Tests", () => {
       name: "Guard",
       email: "guard@test.com",
       role: "guard",
-      password: "hashed",
+      password: "Password123!",
     });
 
     createdGuardId = guard._id;
 
-    adminToken = "Bearer admin-token";
-    employerToken = "Bearer employer-token";
-    guardToken = "Bearer guard-token";
+    employerToken = jwt.sign(
+      { id: employer._id, role: employer.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" },
+    );
+
+    guardToken = jwt.sign(
+      { id: guard._id, role: guard.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" },
+    );
+
+    adminToken = jwt.sign(
+      { id: admin._id, role: admin.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" },
+    );
   });
 
   afterAll(async () => {
-    await User.deleteMany({});
-    await mongoose.connection.close();
+    await clearDatabase();
+    await closeTestDatabase();
   });
 
   /* ---------------- GET MY PROFILE ---------------- */
   test("Get logged-in user profile", async () => {
     const res = await request(app)
       .get("/api/v1/users/me")
-      .set("Authorization", employerToken);
+      .set("Authorization", `Bearer ${employerToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty("email");
@@ -64,7 +89,7 @@ describe("User Controller API Tests", () => {
   test("Admin can list all users", async () => {
     const res = await request(app)
       .get("/api/v1/users")
-      .set("Authorization", adminToken);
+      .set("Authorization", `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.users.length).toBeGreaterThan(0);
@@ -73,16 +98,16 @@ describe("User Controller API Tests", () => {
   test("Non-admin cannot list users", async () => {
     const res = await request(app)
       .get("/api/v1/users")
-      .set("Authorization", guardToken);
+      .set("Authorization", `Bearer ${guardToken}`);
 
-    expect(res.statusCode).toBe(500); // or 403 depending middleware
+    expect(res.statusCode).toBe(403); // or 403 depending middleware
   });
 
   /* ---------------- UPDATE PROFILE ---------------- */
   test("User can update own profile", async () => {
     const res = await request(app)
       .put("/api/v1/users/me")
-      .set("Authorization", employerToken)
+      .set("Authorization", `Bearer ${employerToken}`)
       .send({ name: "Updated Employer" });
 
     expect(res.statusCode).toBe(200);
@@ -93,7 +118,7 @@ describe("User Controller API Tests", () => {
   test("Admin can get any user profile", async () => {
     const res = await request(app)
       .get(`/api/v1/users/${guard._id}`)
-      .set("Authorization", adminToken);
+      .set("Authorization", `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.role).toBe("guard");
@@ -103,7 +128,7 @@ describe("User Controller API Tests", () => {
   test("Admin updates user profile", async () => {
     const res = await request(app)
       .put(`/api/v1/users/${guard._id}`)
-      .set("Authorization", adminToken)
+      .set("Authorization", `Bearer ${adminToken}`)
       .send({ name: "Guard Updated" });
 
     expect(res.statusCode).toBe(200);
@@ -114,7 +139,7 @@ describe("User Controller API Tests", () => {
   test("Get all guards", async () => {
     const res = await request(app)
       .get("/api/v1/users/guards")
-      .set("Authorization", employerToken);
+      .set("Authorization", `Bearer ${employerToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -126,12 +151,12 @@ describe("User Controller API Tests", () => {
       name: "Temp",
       email: "temp@test.com",
       role: "guard",
-      password: "hashed",
+      password: "Password123!",
     });
 
     const res = await request(app)
       .delete(`/api/v1/users/${tempUser._id}`)
-      .set("Authorization", adminToken);
+      .set("Authorization", `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("User deleted successfully");
@@ -141,7 +166,7 @@ describe("User Controller API Tests", () => {
   test("Employer gets profile", async () => {
     const res = await request(app)
       .get("/api/v1/users/profile")
-      .set("Authorization", employerToken);
+      .set("Authorization", `Bearer ${employerToken}`);
 
     expect(res.statusCode).toBe(200);
   });
@@ -150,7 +175,7 @@ describe("User Controller API Tests", () => {
   test("Register push token", async () => {
     const res = await request(app)
       .post("/api/v1/users/push-token")
-      .set("Authorization", employerToken)
+      .set("Authorization", `Bearer ${employerToken}`)
       .send({
         token: "abc123",
         platform: "ios",
@@ -165,7 +190,7 @@ describe("User Controller API Tests", () => {
   test("Add favourite guard", async () => {
     const res = await request(app)
       .post(`/api/v1/users/favourites/${createdGuardId}`)
-      .set("Authorization", employerToken);
+      .set("Authorization", `Bearer ${employerToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.favourites.length).toBeGreaterThan(0);
@@ -174,7 +199,7 @@ describe("User Controller API Tests", () => {
   test("Get favourite guards", async () => {
     const res = await request(app)
       .get("/api/v1/users/favourites")
-      .set("Authorization", employerToken);
+      .set("Authorization", `Bearer ${employerToken}`);
 
     expect(res.statusCode).toBe(200);
   });
@@ -182,7 +207,7 @@ describe("User Controller API Tests", () => {
   test("Remove favourite guard", async () => {
     const res = await request(app)
       .delete(`/api/v1/users/favourites/${createdGuardId}`)
-      .set("Authorization", employerToken);
+      .set("Authorization", `Bearer ${employerToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body.favourites)).toBe(true);
@@ -192,7 +217,7 @@ describe("User Controller API Tests", () => {
   test("Guard cannot access employer-only favourites", async () => {
     const res = await request(app)
       .get("/api/v1/users/favourites")
-      .set("Authorization", guardToken);
+      .set("Authorization", `Bearer ${guardToken}`);
 
     expect(res.statusCode).toBe(403);
   });

@@ -1,6 +1,7 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './EmployerDashboard.css';
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import "./EmployerDashboard.css";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -105,20 +106,17 @@ const severityRank = {
 };
 
 const formatLocation = (location) => {
-  if (!location) return 'No location';
-  if (typeof location === 'string') return location;
-
+  if (!location) return "No location";
+  if (typeof location === "string") return location;
   return [location.street, location.suburb, location.state, location.postcode]
     .filter(Boolean)
     .join(', ');
 };
 
 const formatShiftDate = (value) => {
-  if (!value) return '--';
-  if (typeof value !== 'string') return String(value);
-
+  if (!value) return "--";
+  if (typeof value !== "string") return String(value);
   if (/^\d{2}-\d{2}-\d{4}$/.test(value)) return value;
-
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('en-GB');
 };
@@ -127,26 +125,21 @@ const parseIncidentDateTime = (incident) => {
   const [day, month, year] = incident.date.split('-').map(Number);
   const baseDate = new Date(year, month - 1, day);
   const timeMatch = incident.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-
   if (!timeMatch) return baseDate.getTime();
-
   let hours = Number(timeMatch[1]);
   const minutes = Number(timeMatch[2]);
   const meridian = timeMatch[3].toUpperCase();
-
-  if (meridian === 'PM' && hours < 12) hours += 12;
-  if (meridian === 'AM' && hours === 12) hours = 0;
-
+  if (meridian === "PM" && hours < 12) hours += 12;
+  if (meridian === "AM" && hours === 12) hours = 0;
   baseDate.setHours(hours, minutes, 0, 0);
   return baseDate.getTime();
 };
 
 const getShiftStatusCategory = (shift) => {
-  const text = String(shift?.status?.text || '').toLowerCase();
-  const tone = String(shift?.status?.tone || '').toLowerCase();
-
-  if (tone.includes('pending') || text.includes('pending')) return 'Pending';
-  if (tone.includes('completed') || text.includes('completed')) return 'Completed';
+  const text = String(shift?.status?.text || "").toLowerCase();
+  const tone = String(shift?.status?.tone || "").toLowerCase();
+  if (tone.includes("pending") || text.includes("pending")) return "Pending";
+  if (tone.includes("completed") || text.includes("completed")) return "Completed";
   if (
     tone.includes('confirmed') ||
     tone.includes('open') ||
@@ -155,12 +148,12 @@ const getShiftStatusCategory = (shift) => {
   ) {
     return 'Open';
   }
-
-  return 'All';
+  return "All";
 };
 
 export default function EmployerDashboard() {
-  const [view, setView] = useState('list');
+  const { t, i18n } = useTranslation();
+  const [view, setView] = useState("list");
   const reviewScroller = useRef(null);
   const navigate = useNavigate();
 
@@ -260,8 +253,7 @@ export default function EmployerDashboard() {
   useEffect(() => {
     const fetchShifts = async () => {
       try {
-        const token = localStorage.getItem('token');
-
+        const token = localStorage.getItem("token");
         const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -342,8 +334,7 @@ export default function EmployerDashboard() {
 
         setShifts(normalizedShifts);
       } catch (err) {
-        setError(err.message || 'Failed to load shifts.');
-
+        setError(err.message || "Failed to load shifts.");
         setShifts([
           {
             id: 1,
@@ -469,8 +460,7 @@ export default function EmployerDashboard() {
       const matchesStatus =
         statusTab === 'All' ? true : getShiftStatusCategory(shift) === statusTab;
       const matchesPriority =
-        priorityFilter === 'All' ? true : String(shift.priority) === priorityFilter;
-
+        priorityFilter === "All" ? true : String(shift.priority) === priorityFilter;
       return matchesStatus && matchesPriority;
     });
   }, [priorityFilter, shifts, statusTab]);
@@ -578,14 +568,67 @@ export default function EmployerDashboard() {
   const fatiguedGuardList = (fatigueDashboard?.guards ?? []).filter((guard) => {
     return guard.isFatigued === true;
   });
+  // Helper function to get translated status
+  const getTranslatedStatus = (status) => {
+    if (!status) return '';
+    const statusMap = {
+      'pending': t('pending'),
+      'open': t('open'),
+      'completed': t('completed'),
+      'resolved': t('resolved'),
+      'high': t('high'),
+      'medium': t('medium'),
+      'low': t('low'),
+      'all': t('all'),
+      'pending approval': t('pendingApproval'),
+      'confirmed': t('open'),
+      'rejected': t('reject'),
+    };
+    return statusMap[status?.toLowerCase()] || status;
+  };
+
+  // Helper function to get translated priority
+  const getTranslatedPriority = (priority) => {
+    if (!priority) return '';
+    const priorityMap = {
+      'high': t('high'),
+      'medium': t('medium'),
+      'low': t('low'),
+    };
+    return priorityMap[priority?.toLowerCase()] || priority;
+  };
+
+  // Helper function to get translated status for tabs
+  const getTranslatedTabLabel = (tab) => {
+    const tabMap = {
+      'All': t('all'),
+      'Pending': t('pending'),
+      'Open': t('open'),
+      'Completed': t('completed'),
+    };
+    return tabMap[tab] || tab;
+  };
+
+  // Helper function to get translated filter labels
+  const getTranslatedFilterLabel = (filter) => {
+    const filterMap = {
+      'All': t('all'),
+      'High': t('high'),
+      'Medium': t('medium'),
+      'Low': t('low'),
+    };
+    return filterMap[filter] || filter;
+  };
 
   return (
     <div className="ss-page">
       <main className="ss-main">
         <div className="ss-overview-head">
           <div>
-            <h2 className="ss-h1">Overview</h2>
-            <p className="ss-overview-subtitle">{shifts.length} shifts · last updated just now</p>
+            <h2 className="ss-h1">{t('overview')}</h2>
+            <p className="ss-overview-subtitle">
+              {t('shiftsCount', { count: shifts.length })}
+            </p>
           </div>
 
           <button
@@ -593,7 +636,7 @@ export default function EmployerDashboard() {
             onClick={() => navigate('/create-shift')}
             type="button"
           >
-            <IconPlus className="ss-plus" /> Create Shift
+            <IconPlus className="ss-plus" /> {t('createShift')}
           </button>
         </div>
 
@@ -607,7 +650,7 @@ export default function EmployerDashboard() {
                   className={`ss-tab ${statusTab === tab ? 'is-active' : ''}`}
                   onClick={() => setStatusTab(tab)}
                 >
-                  {tab}
+                  {getTranslatedTabLabel(tab)}
                   <span className="ss-tab__count">{tabCounts[tab]}</span>
                 </button>
               ))}
@@ -618,6 +661,7 @@ export default function EmployerDashboard() {
                 className={`ss-viewtoggle__btn ${view === 'list' ? 'is-active' : ''}`}
                 onClick={() => setView('list')}
                 type="button"
+                aria-label={t('listView')}
               >
                 <IconList />
               </button>
@@ -625,6 +669,7 @@ export default function EmployerDashboard() {
                 className={`ss-viewtoggle__btn ${view === 'grid' ? 'is-active' : ''}`}
                 onClick={() => setView('grid')}
                 type="button"
+                aria-label={t('gridView')}
               >
                 <IconGrid />
               </button>
@@ -632,15 +677,15 @@ export default function EmployerDashboard() {
           </div>
 
           <div className="ss-filterbar">
-            <span className="ss-filterbar__label">Priority</span>
-            {['All', 'High', 'Medium', 'Low'].map((chip) => (
+            <span className="ss-filterbar__label">{t('priority')}</span>
+            {["All", "High", "Medium", "Low"].map((chip) => (
               <button
                 key={chip}
                 type="button"
                 className={`ss-chip-btn ${priorityFilter === chip ? 'is-active' : ''}`}
                 onClick={() => setPriorityFilter(chip)}
               >
-                {chip}
+                {getTranslatedFilterLabel(chip)}
               </button>
             ))}
           </div>
@@ -648,17 +693,17 @@ export default function EmployerDashboard() {
           {view === 'list' ? (
             <div className="ss-table">
               <div className="ss-table__head">
-                <div>Shift</div>
-                <div>Priority</div>
-                <div>Date / Time</div>
-                <div>Pay</div>
-                <div>Status</div>
+                <div>{t('shift')}</div>
+                <div>{t('priority')}</div>
+                <div>{t('dateTime')}</div>
+                <div>{t('pay')}</div>
+                <div>{t('status')}</div>
               </div>
 
-              {loading && <div className="ss-empty-state">Loading shifts...</div>}
+              {loading && <div className="ss-empty-state">{t('loadingShifts')}</div>}
               {error && <div className="ss-empty-state ss-empty-state--error">{error}</div>}
               {!loading && !error && filteredShifts.length === 0 && (
-                <div className="ss-empty-state">No shifts match the selected filters.</div>
+                <div className="ss-empty-state">{t('noShifts')}</div>
               )}
 
               {!loading &&
@@ -674,7 +719,7 @@ export default function EmployerDashboard() {
                       <span
                         className={`ss-badge ss-badge--priority-${String(shift.priority).toLowerCase()}`}
                       >
-                        {shift.priority}
+                        {getTranslatedPriority(shift.priority)}
                       </span>
                     </div>
 
@@ -689,13 +734,13 @@ export default function EmployerDashboard() {
                       </div>
                     </div>
 
-                    <div className="ss-pay-col">${shift.payRate}/hr</div>
+                    <div className="ss-pay-col">${shift.payRate}{t('perHour')}</div>
 
                     <div>
                       <span
                         className={`ss-badge ss-badge--status-${String(shift.status.tone).toLowerCase()}`}
                       >
-                        {shift.status.text}
+                        {getTranslatedStatus(shift.status.text)}
                       </span>
                     </div>
                   </div>
@@ -724,12 +769,12 @@ export default function EmployerDashboard() {
                     <span
                       className={`ss-badge ss-badge--priority-${String(shift.priority).toLowerCase()}`}
                     >
-                      {shift.priority}
+                      {getTranslatedPriority(shift.priority)}
                     </span>
                     <span
                       className={`ss-badge ss-badge--status-${String(shift.status.tone).toLowerCase()}`}
                     >
-                      {shift.status.text}
+                      {getTranslatedStatus(shift.status.text)}
                     </span>
                   </div>
                 </div>
@@ -739,7 +784,11 @@ export default function EmployerDashboard() {
 
           <div className="ss-pagination">
             <div className="ss-pagination__meta">
-              Showing {showingStart}-{showingEnd} of {filteredShifts.length}
+              {t('showing', { 
+                start: showingStart, 
+                end: showingEnd, 
+                total: filteredShifts.length 
+              })}
             </div>
 
             <div className="ss-pagination__controls">
@@ -748,6 +797,7 @@ export default function EmployerDashboard() {
                 className="ss-page-btn"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                aria-label={t('previous')}
               >
                 ‹
               </button>
@@ -768,6 +818,7 @@ export default function EmployerDashboard() {
                 className="ss-page-btn"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                aria-label={t('next')}
               >
                 ›
               </button>
@@ -981,7 +1032,10 @@ export default function EmployerDashboard() {
         <div className="ss-section-head">
           <h2 className="ss-section-title">Incident Reports</h2>
           <p className="ss-section-subtitle">
-            {incidentSummary.pending} pending · {incidentSummary.total} total
+            {t('pendingIncidents', { 
+              count: incidentSummary.pending, 
+              total: incidentSummary.total 
+            })}
           </p>
         </div>
 
@@ -989,31 +1043,34 @@ export default function EmployerDashboard() {
           <div className="ss-incident-toolbar">
             <input
               className="ss-incident-search"
-              placeholder="Search by incident ID, guard, shift or description"
+              placeholder={t('searchIncident')}
               value={incidentQuery}
               onChange={(e) => setIncidentQuery(e.target.value)}
             />
-            <select
-              value={incidentStatusFilter}
+            <select 
+              value={incidentStatusFilter} 
               onChange={(e) => setIncidentStatusFilter(e.target.value)}
             >
-              <option value="All">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Resolved">Resolved</option>
+              <option value="All">{t('allStatuses')}</option>
+              <option value="Pending">{t('pending')}</option>
+              <option value="Resolved">{t('resolved')}</option>
             </select>
-            <select
-              value={incidentSeverityFilter}
+            <select 
+              value={incidentSeverityFilter} 
               onChange={(e) => setIncidentSeverityFilter(e.target.value)}
             >
-              <option value="All">All Severities</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
+              <option value="All">{t('allSeverities')}</option>
+              <option value="High">{t('high')}</option>
+              <option value="Medium">{t('medium')}</option>
+              <option value="Low">{t('low')}</option>
             </select>
-            <select value={incidentSort} onChange={(e) => setIncidentSort(e.target.value)}>
-              <option value="Newest">Sort Newest</option>
-              <option value="Oldest">Sort Oldest</option>
-              <option value="Severity">Sort Severity</option>
+            <select 
+              value={incidentSort} 
+              onChange={(e) => setIncidentSort(e.target.value)}
+            >
+              <option value="Newest">{t('sortNewest')}</option>
+              <option value="Oldest">{t('sortOldest')}</option>
+              <option value="Severity">{t('sortSeverity')}</option>
             </select>
             <button
               className="ss-reset-btn"
@@ -1025,20 +1082,20 @@ export default function EmployerDashboard() {
                 setIncidentSort('Newest');
               }}
             >
-              Reset
+              {t('reset')}
             </button>
           </div>
 
           <div className="ss-incident-summary">
-            <span>{incidentSummary.total} Total</span>
-            <span>{incidentSummary.pending} Pending</span>
-            <span>{incidentSummary.resolved} Resolved</span>
-            <span>{filteredIncidents.length} Showing</span>
+            <span>{incidentSummary.total} {t('total')}</span>
+            <span>{incidentSummary.pending} {t('pending')}</span>
+            <span>{incidentSummary.resolved} {t('resolved')}</span>
+            <span>{filteredIncidents.length} {t('showingResults')}</span>
           </div>
 
           <div className="ss-incident-list">
             {filteredIncidents.length === 0 && (
-              <div className="ss-empty-state">No incident reports match the current filters.</div>
+              <div className="ss-empty-state">{t('noIncidents')}</div>
             )}
 
             {filteredIncidents.map((inc) => (
@@ -1057,7 +1114,6 @@ export default function EmployerDashboard() {
                 </div>
 
                 <div className="ss-incident-shift">{inc.shift}</div>
-
                 <div className="ss-incident-id">{inc.id}</div>
 
                 <div className="ss-incident-date">
@@ -1067,12 +1123,12 @@ export default function EmployerDashboard() {
 
                 <div className="ss-incident-badges">
                   <span className={`ss-badge ss-badge--priority-${inc.severity.toLowerCase()}`}>
-                    {inc.severity}
+                    {getTranslatedPriority(inc.severity)}
                   </span>
                   <span
                     className={`ss-badge ss-badge--status-${inc.status === 'Resolved' ? 'completed' : 'pending'}`}
                   >
-                    {inc.status}
+                    {getTranslatedStatus(inc.status)}
                   </span>
                 </div>
 
@@ -1081,7 +1137,7 @@ export default function EmployerDashboard() {
                   type="button"
                   onClick={() => openIncidentModal(inc)}
                 >
-                  Review
+                  {t('review')}
                 </button>
               </div>
             ))}
@@ -1089,19 +1145,21 @@ export default function EmployerDashboard() {
         </div>
 
         <div className="ss-section-head ss-section-head--reviews">
-          <h2 className="ss-section-title">Recent Reviews</h2>
+          <h2 className="ss-section-title">{t('recentReviews')}</h2>
           <div className="ss-review-arrows">
-            <button
-              className="ss-mini-arrow"
-              onClick={() => scrollByAmount(reviewScroller, -300)}
+            <button 
+              className="ss-mini-arrow" 
+              onClick={() => scrollByAmount(reviewScroller, -300)} 
               type="button"
+              aria-label={t('previous')}
             >
               ‹
             </button>
-            <button
-              className="ss-mini-arrow"
-              onClick={() => scrollByAmount(reviewScroller, 300)}
+            <button 
+              className="ss-mini-arrow" 
+              onClick={() => scrollByAmount(reviewScroller, 300)} 
               type="button"
+              aria-label={t('next')}
             >
               ›
             </button>
@@ -1146,10 +1204,10 @@ export default function EmployerDashboard() {
             <div className="create-shift-header">
               <div>
                 <h1>
-                  Incident Details (<span className="ss-incident-id">{selectedIncident.id}</span>)
+                  {t('incidentDetails')} (<span className="ss-incident-id">{selectedIncident.id}</span>)
                 </h1>
-                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-                  Recorded on: {selectedIncident.date} at {selectedIncident.time}
+                <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>
+                  {t('recordedOn', { date: selectedIncident.date, time: selectedIncident.time })}
                 </p>
               </div>
               <span
@@ -1157,19 +1215,19 @@ export default function EmployerDashboard() {
                   selectedIncident.status === 'Resolved' ? 'completed' : 'pending'
                 }`}
               >
-                {selectedIncident.status}
+                {getTranslatedStatus(selectedIncident.status)}
               </span>
             </div>
 
             <div className="form-grid" style={{ marginBottom: '20px' }}>
               <div className="form-group">
-                <label>Reported By</label>
-                <div className="ss-input-static" style={{ padding: '10px', borderRadius: '4px' }}>
+                <label>{t('reportedBy')}</label>
+                <div className="ss-input-static" style={{ padding: "10px", borderRadius: "4px" }}>
                   {selectedIncident.guard}
                 </div>
               </div>
               <div className="form-group">
-                <label>Assign Severity Level</label>
+                <label>{t('assignSeverity')}</label>
                 <select
                   value={incidentDraft.severity}
                   onChange={(e) =>
@@ -1177,34 +1235,34 @@ export default function EmployerDashboard() {
                   }
                   style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
                 >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
+                  <option value="Low">{t('low')}</option>
+                  <option value="Medium">{t('medium')}</option>
+                  <option value="High">{t('high')}</option>
                 </select>
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label>Guard&apos;s Description</label>
+            <div className="form-group" style={{ marginBottom: "20px" }}>
+              <label>{t('guardsDescription')}</label>
               <div className="ss-incident-description">{selectedIncident.description}</div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '20px' }}>
-              <label>Evidence Photos</label>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ marginBottom: "20px" }}>
+              <label>{t('evidencePhotos')}</label>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 {(selectedIncident.photos || []).map((url, idx) => (
-                  <img key={idx} src={url} alt="incident evidence" className="ss-evidence-img" />
+                  <img key={idx} src={url} alt={t('evidencePhotos')} className="ss-evidence-img" />
                 ))}
                 {(!selectedIncident.photos || selectedIncident.photos.length === 0) && (
-                  <p style={{ margin: 0, color: '#666' }}>No evidence photos attached.</p>
+                  <p style={{ margin: 0, color: "#666" }}>{t('noPhotos')}</p>
                 )}
               </div>
             </div>
 
             <div className="form-group">
-              <label>Employer Comments</label>
+              <label>{t('employerComments')}</label>
               <textarea
-                placeholder="Add internal notes..."
+                placeholder={t('addNotes')}
                 value={incidentDraft.comments}
                 onChange={(e) =>
                   setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))
@@ -1226,7 +1284,7 @@ export default function EmployerDashboard() {
                   )
                 }
               >
-                Mark as Resolved
+                {t('markResolved')}
               </button>
               <button
                 className="secondary"
@@ -1239,14 +1297,10 @@ export default function EmployerDashboard() {
                   )
                 }
               >
-                Save as Pending
+                {t('savePending')}
               </button>
-              <button
-                className="secondary"
-                style={{ color: '#666' }}
-                onClick={() => setSelectedIncident(null)}
-              >
-                Close
+              <button className="secondary" style={{ color: "#666" }} onClick={() => setSelectedIncident(null)}>
+                {t('close')}
               </button>
             </div>
           </div>

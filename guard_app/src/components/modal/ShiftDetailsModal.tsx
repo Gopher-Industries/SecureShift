@@ -4,19 +4,21 @@ import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import ShiftRequestModal from './ShiftRequestModal';
+import { formatAttendanceTime } from '../functions/formatAttendanceTime';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
 import type { AppColors } from '../../theme/colors';
-import { formatAttendanceTime } from '../functions/formatAttendanceTime';
 
 type Props = {
   shift: AppliedShift | CompletedShift | AllShift | null;
   visible: boolean;
   onClose: () => void;
   colors: AppColors;
+  onApply?: () => void;
+  applying?: boolean;
 };
 
-function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
+function ShiftDetailsModal({ shift, visible, onClose, colors, onApply, applying = false }: Props) {
   const s = getStyles(colors);
   const { t } = useTranslation();
   const [requestVisible, setRequestVisible] = useState<boolean>(false);
@@ -103,6 +105,17 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
                 </View>
               </View>
             </View>
+            {status === 'Available' && onApply ? (
+              <TouchableOpacity
+                style={[s.applyButton, applying && s.applyButtonDisabled]}
+                onPress={onApply}
+                disabled={applying}
+              >
+                <Text style={s.applyButtonText}>
+                  {applying ? 'Applying...' : 'Apply for Shift'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
             {hasAttendance ? (
               <View style={s.modalRequirements}>
                 <Text style={s.modalRequirementsTitle}>Attendance History</Text>
@@ -134,6 +147,7 @@ function ShiftDetailsModal({ shift, visible, onClose, colors }: Props) {
         visible={requestVisible}
         onClose={() => setRequestVisible(false)}
         colors={colors}
+        shift={shift}
       />
     </Modal>
   );
@@ -245,5 +259,22 @@ const getStyles = (colors: AppColors) =>
     modalTagText: {
       fontSize: 12,
       color: colors.text,
+    },
+    applyButton: {
+      marginTop: 16,
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+
+    applyButtonDisabled: {
+      opacity: 0.6,
+    },
+
+    applyButtonText: {
+      color: colors.white,
+      fontSize: 15,
+      fontWeight: '700',
     },
   });

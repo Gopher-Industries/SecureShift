@@ -7,10 +7,12 @@ import {
   completeShift,
   getMyShifts,
   rateShift,
-  listAvailableShifts, // dynamic by role
+  listAvailableShifts,
   getShiftHistory,
   updateShift,
   getEmployerFatigueDashboard,
+  getShiftById,
+  deleteShift,
 } from "../controllers/shift.controller.js";
 
 const router = express.Router();
@@ -201,8 +203,9 @@ router
  */
 router
   .route("/:id")
-  .patch(protect, authorizeRole("employer", "admin"), updateShift);
-
+  .get(protect, authorizeRole("employer", "admin"), getShiftById)
+  .patch(protect, authorizeRole("employer", "admin"), updateShift)
+  .delete(protect, authorizeRole("employer", "admin"), deleteShift);
 /**
  * @swagger
  * /api/v1/shifts/{id}:

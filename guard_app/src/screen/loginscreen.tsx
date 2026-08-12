@@ -24,7 +24,7 @@ import { registerPushTokenIfNeeded } from '../lib/pushNotifications';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen({ navigation, route }: any) {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
   const { t } = useTranslation();
@@ -32,7 +32,9 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    route?.params?.sessionExpired ? t('login.sessionExpired') : null,
+  );
   const [otpMode, setOtpMode] = useState(false);
   const [otp, setOtp] = useState('');
   const [submitting, setSubmitting] = useState(false);

@@ -1,13 +1,40 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import app from "../app.js";
-
-import Guard from "../models/Guard.js";
+import {
+  startTestDatabase,
+  clearDatabase,
+  closeTestDatabase,
+} from "./db-helper.js";
+import app from "../src/app.js";
+import User from "../src/models/User.js";
+import Guard from "../src/models/Guard.js";
+import Admin from "../src/models/Admin.js";
 import GuardVerification from "../src/models/GuardVerification.js";
 import ManualVerification from "../src/models/ManualVerification.js";
 
 jest.mock("../src/adapters/verification/nswAdapter.js", () => ({
   verifyNSW: jest.fn(),
+}));
+
+// Mock auth middleware to bypass JWT validation
+jest.mock("../src/middleware/auth.js", () => ({
+  __esModule: true,
+  default: (req, res, next) => {
+    const userId = req.headers["x-user-id"] || "test-user-id";
+    const role = req.headers["x-user-role"] || "guard";
+    req.user = {
+      _id: userId,
+      id: userId,
+      role,
+    };
+    next();
+  },
+}));
+
+// Mock licenceCrypto for recheck functionality
+jest.mock("../src/utils/crypto.js", () => ({
+  encryptLicence: jest.fn().mockReturnValue("encrypted"),
+  decryptLicence: jest.fn().mockReturnValue("LIC123"),
 }));
 
 import { verifyNSW } from "../src/adapters/verification/nswAdapter.js";
@@ -19,19 +46,21 @@ describe("Verification Controller", () => {
   let adminToken;
 
   beforeAll(async () => {
-    await mongoose.connect(process.env.MONGO_URI);
+    await startTestDatabase();
 
     guard = await Guard.create({
       name: "Test Guard",
       email: "guard@test.com",
       role: "guard",
+      password: "Password123!",
       license: { status: "pending" },
     });
 
-    admin = await Guard.create({
+    admin = await User.create({
       name: "Admin",
       email: "admin@test.com",
       role: "admin",
+      password: "Password123!",
     });
 
     guardToken = "Bearer guard-token";
@@ -39,10 +68,8 @@ describe("Verification Controller", () => {
   });
 
   afterAll(async () => {
-    await Guard.deleteMany({});
-    await GuardVerification.deleteMany({});
-    await ManualVerification.deleteMany({});
-    await mongoose.connection.close();
+    await clearDatabase();
+    await closeTestDatabase();
   });
 
   /* ---------------- START VERIFICATION (NSW SUCCESS) ---------------- */
@@ -58,6 +85,8 @@ describe("Verification Controller", () => {
     const res = await request(app)
       .post("/api/v1/verification/start")
       .set("Authorization", guardToken)
+      .set("x-user-id", guard._id.toString())
+      .set("x-user-role", "guard")
       .send({
         guardId: guard._id,
         jurisdiction: "NSW",
@@ -82,6 +111,8 @@ describe("Verification Controller", () => {
     const res = await request(app)
       .post("/api/v1/verification/start")
       .set("Authorization", guardToken)
+      .set("x-user-id", guard._id.toString())
+      .set("x-user-role", "guard")
       .send({
         guardId: guard._id,
         jurisdiction: "NSW",
@@ -97,6 +128,8 @@ describe("Verification Controller", () => {
     const res = await request(app)
       .post("/api/v1/verification/start")
       .set("Authorization", guardToken)
+      .set("x-user-id", guard._id.toString())
+      .set("x-user-role", "guard")
       .send({
         guardId: guard._id,
         jurisdiction: "QLD",
@@ -111,7 +144,9 @@ describe("Verification Controller", () => {
   test("Guard can view own verification status", async () => {
     const res = await request(app)
       .get(`/api/v1/verification/status/${guard._id}`)
-      .set("Authorization", guardToken);
+      .set("Authorization", guardToken)
+      .set("x-user-id", guard._id.toString())
+      .set("x-user-role", "guard");
 
     expect([200, 404]).toContain(res.statusCode);
   });
@@ -122,11 +157,14 @@ describe("Verification Controller", () => {
       name: "Other",
       email: "other@test.com",
       role: "guard",
+      password: "Password123!",
     });
 
     const res = await request(app)
       .get(`/api/v1/verification/status/${otherGuard._id}`)
-      .set("Authorization", guardToken);
+      .set("Authorization", guardToken)
+      .set("x-user-id", guard._id.toString())
+      .set("x-user-role", "guard");
 
     expect(res.statusCode).toBe(403);
   });
@@ -149,7 +187,9 @@ describe("Verification Controller", () => {
 
     const res = await request(app)
       .post(`/api/v1/verification/recheck/${guard._id}`)
-      .set("Authorization", adminToken);
+      .set("Authorization", adminToken)
+      .set("x-user-id", admin._id.toString())
+      .set("x-user-role", "admin");
 
     expect([200, 400, 404]).toContain(res.statusCode);
   });
@@ -159,6 +199,7 @@ describe("Verification Controller", () => {
     const manual = await ManualVerification.create({
       guardId: guard._id,
       status: "pending",
+      jurisdiction: "QLD",
     });
 
     const verification = await GuardVerification.create({
@@ -172,7 +213,9 @@ describe("Verification Controller", () => {
 
     const res = await request(app)
       .post(`/api/v1/verification/recheck/${guard._id}`)
-      .set("Authorization", adminToken);
+      .set("Authorization", adminToken)
+      .set("x-user-id", admin._id.toString())
+      .set("x-user-role", "admin");
 
     expect([200, 400]).toContain(res.statusCode);
   });
@@ -182,6 +225,8 @@ describe("Verification Controller", () => {
     const res = await request(app)
       .post("/api/v1/verification/start")
       .set("Authorization", guardToken)
+      .set("x-user-id", guard._id.toString())
+      .set("x-user-role", "guard")
       .send({
         guardId: guard._id,
       });
