@@ -12,6 +12,7 @@ export type AppliedShift = {
     checkInTime?: string;
     checkOutTime?: string;
   };
+  pinned?: boolean;
 };
 
 export type CompletedShift = {
@@ -29,6 +30,7 @@ export type CompletedShift = {
     checkInTime?: string;
     checkOutTime?: string;
   };
+  pinned?: boolean;
 };
 
 export type AllShift = {
@@ -44,6 +46,7 @@ export type AllShift = {
     checkInTime?: string;
     checkOutTime?: string;
   };
+  pinned?: boolean;
 };
 
 export type ShiftCardItem = AppliedShift | CompletedShift | AllShift;
