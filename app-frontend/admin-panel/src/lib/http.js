@@ -12,11 +12,11 @@ const http = axios.create({
 // Attach JWT to every request
 http.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
+
   return config;
 });
 
@@ -29,16 +29,16 @@ export function attach401Handler(onUnauthorized) {
     (error) => {
       const hadActiveSession = !!localStorage.getItem('token');
       const isUnauthorized = error?.response?.status === 401;
-      
+
       if (isUnauthorized && hadActiveSession) {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        
+
         if (onUnauthorized) {
           onUnauthorized();
         }
       }
-      
+
       throw error;
     }
   );
