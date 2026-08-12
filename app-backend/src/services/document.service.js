@@ -1,4 +1,8 @@
+import fs from "fs";
+import path from "path";
+import mongoose from "mongoose";
 import User from "../models/User.js";
+import { resolveUploadPath } from "../utils/uploadPath.js";
 // CREATE DOCUMENT
 export const createDocument = async (data, user) => {
   const { userId, type, expiryDate, imageUrl } = data;
@@ -83,7 +87,15 @@ export const getAllDocuments = async (query) => {
 
 //  Get single document
 export const getDocumentById = async (docId) => {
-  const user = await User.findOne({ "documents._id": docId });
+  // Cast explicitly, see the note in getDocumentFileForUser. Without this the
+  // query never matches and every lookup returns "Document not found".
+  if (!mongoose.Types.ObjectId.isValid(docId)) {
+    throw new Error("Document not found");
+  }
+
+  const user = await User.findOne({
+    "documents._id": new mongoose.Types.ObjectId(docId),
+  });
 
   if (!user) throw new Error("Document not found");
 
@@ -110,7 +122,14 @@ export const updateDocumentExpiry = async (docId, expiryDate, user) => {
     throw new Error("Invalid expiry date");
   }
 
-  const targetUser = await User.findOne({ "documents._id": docId });
+  // Same casting issue as getDocumentById.
+  if (!mongoose.Types.ObjectId.isValid(docId)) {
+    throw new Error("Document not found");
+  }
+
+  const targetUser = await User.findOne({
+    "documents._id": new mongoose.Types.ObjectId(docId),
+  });
 
   if (!targetUser) throw new Error("Document not found");
 
@@ -127,4 +146,64 @@ export const updateDocumentExpiry = async (docId, expiryDate, user) => {
   await targetUser.save();
 
   return { message: "Document expiry updated successfully" };
+};
+
+/**
+ * Locate the file behind a document and confirm the caller may have it.
+ *
+ * Access follows the least privilege rules agreed for BE 028:
+ *   - a guard may retrieve their own documents
+ *   - an admin may retrieve anyone's
+ *   - employers are not granted licence access, because there is no reliable
+ *     guard to employer link in the current model. Shift offers applicants,
+ *     acceptedBy and guardIds, which mean three different things, so choosing
+ *     one would be a product decision rather than an implementation detail.
+ *
+ * Errors carry a status for the controller to surface:
+ *   403 the caller is authenticated but not allowed this document
+ *   404 no such document, or the record exists but its file is gone
+ *
+ * @param {string} docId
+ * @param {{ id: string, role: string }} requester from req.user
+ * @returns {Promise<{ path: string, filename: string }>}
+ */
+export const getDocumentFileForUser = async (docId, requester) => {
+  const httpError = (status, message) => {
+    const err = new Error(message);
+    err.status = status;
+    return err;
+  };
+
+  if (!mongoose.Types.ObjectId.isValid(docId)) {
+    throw httpError(404, "Document not found");
+  }
+
+  // Cast explicitly. "documents" is declared on the Guard discriminator rather
+  // than the base User schema, so Mongoose cannot resolve the path to cast the
+  // string itself and the query would silently match nothing.
+  const owner = await User.findOne({
+    "documents._id": new mongoose.Types.ObjectId(docId),
+  });
+  if (!owner) throw httpError(404, "Document not found");
+
+  const requesterId = String(requester?.id || requester?._id || "");
+  const isOwner = String(owner._id) === requesterId;
+  const isAdmin = requester?.role === "admin";
+
+  // Lou's spec for this ticket: authenticated but not permitted is a 403, not
+  // a 404. That is deliberate here even though the availability endpoints hide
+  // existence behind a 404.
+  if (!isOwner && !isAdmin) {
+    throw httpError(403, "Not authorized to retrieve this document");
+  }
+
+  const doc = owner.documents.id(docId);
+  if (!doc) throw httpError(404, "Document not found");
+
+  const resolved = resolveUploadPath(doc.imageUrl);
+  if (!resolved || !fs.existsSync(resolved)) {
+    throw httpError(404, "Document file not found");
+  }
+
+  return { path: resolved, filename: path.basename(resolved) };
 };

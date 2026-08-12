@@ -275,14 +275,20 @@ export const uploadAttachment = async (req, res, next) => {
       return next(new ErrorResponse("No file uploaded", 400));
     }
 
-    incident.attachments.push({
+    // Build the subdocument first so it has an _id, then point fileUrl at the
+    // route that actually serves the file. It previously pointed at
+    // /uploads/<filename>, which nothing serves, so the URL always failed.
+    const attachment = incident.attachments.create({
       fileName: req.file.filename,
       originalName: req.file.originalname,
-      fileUrl: `/uploads/${req.file.filename}`,
+      fileUrl: "pending",
       mimeType: req.file.mimetype,
       fileSize: req.file.size,
       mediaType: getMediaType(req.file.mimetype),
     });
+
+    attachment.fileUrl = `/api/v1/incidents/${incident._id}/attachments/${attachment._id}`;
+    incident.attachments.push(attachment);
 
     await incident.save();
 

@@ -247,7 +247,12 @@ router.delete("/:id", authorizePermissions("incident:delete"), deleteIncident);
  *     description: |
  *       Upload a supported file and attach it to an existing incident.
  *
- *       Supported files: images, videos, audio, and PDFs.
+ *       Supported files: images, videos, audio and PDFs, up to 25MB.
+ *
+ *       The `fileUrl` returned on each attachment points at the retrieval
+ *       endpoint below, `GET /api/v1/incidents/{id}/attachments/{attachmentId}`.
+ *       It previously pointed at `/uploads/<filename>`, which nothing serves,
+ *       so that URL always failed.
  *     tags: [Incidents]
  *     security:
  *       - bearerAuth: []
