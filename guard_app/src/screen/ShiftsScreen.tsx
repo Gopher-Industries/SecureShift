@@ -49,7 +49,7 @@ function mapMineShifts(
         : [];
 
       const attendance = attendanceRecords.find((record) => {
-        const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
+        const recordShiftId = typeof record.shiftId === 'object' ? record.shiftId?._id : record.shiftId;
 
         return String(recordShiftId) === String(s._id);
       });
@@ -70,8 +70,8 @@ function mapMineShifts(
         status,
         attendance: attendance
           ? {
-              checkInTime: attendance.clockIn ?? undefined,
-              checkOutTime: attendance.clockOut ?? undefined,
+              checkInTime: attendance.checkInTime ?? undefined,
+              checkOutTime: attendance.checkOutTime ?? undefined,
             }
           : undefined,
       };
@@ -83,7 +83,7 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: any[] = []): Comple
     .filter((s) => s.status === 'completed')
     .map((s) => {
       const attendance = attendanceRecords.find((record) => {
-        const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
+        const recordShiftId = typeof record.shiftId === 'object' ? record.shiftId?._id : record.shiftId;
 
         return String(recordShiftId) === String(s._id);
       });
@@ -100,8 +100,8 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: any[] = []): Comple
         rating: 0,
         attendance: attendance
           ? {
-              checkInTime: attendance.clockIn ?? undefined,
-              checkOutTime: attendance.clockOut ?? undefined,
+              checkInTime: attendance.checkInTime ?? undefined,
+              checkOutTime: attendance.checkOutTime ?? undefined,
             }
           : undefined,
       };

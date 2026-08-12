@@ -136,15 +136,15 @@ export default function ShiftDetailsScreen() {
         const records = await getUserAttendance(userId);
 
         const match = records.find((record) => {
-          const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
+          const recordShiftId = typeof record.shiftId === 'object' ? record.shiftId?._id : record.shiftId;
 
           return String(recordShiftId) === String(shift._id);
         });
 
-        if (match?.clockIn || match?.clockOut) {
+        if (match?.checkInTime || match?.checkOutTime) {
           const synced: AttendanceState = {
-            checkInTime: match.clockIn ?? storedAttendance?.checkInTime,
-            checkOutTime: match.clockOut ?? storedAttendance?.checkOutTime,
+            checkInTime: match.checkInTime ?? storedAttendance?.checkInTime,
+            checkOutTime: match.checkOutTime ?? storedAttendance?.checkOutTime,
           };
 
           setAttendance(synced);
@@ -248,8 +248,8 @@ export default function ShiftDetailsScreen() {
         const res = await checkIn(shift._id, loc);
 
         const next: AttendanceState = {
-          checkInTime: res.attendance?.clockIn ?? new Date().toISOString(),
-          checkOutTime: res.attendance?.clockOut ?? undefined,
+          checkInTime: res.attendance?.checkInTime ?? new Date().toISOString(),
+          checkOutTime: res.attendance?.checkOutTime ?? undefined,
         };
 
         setAttendance(next);
@@ -271,8 +271,8 @@ export default function ShiftDetailsScreen() {
         const res = await checkOut(shift._id, loc);
 
         const next: AttendanceState = {
-          checkInTime: res.attendance?.clockIn ?? attendance?.checkInTime,
-          checkOutTime: res.attendance?.clockOut ?? new Date().toISOString(),
+          checkInTime: res.attendance?.checkInTime ?? attendance?.checkInTime,
+          checkOutTime: res.attendance?.checkOutTime ?? new Date().toISOString(),
         };
 
         setAttendance(next);
