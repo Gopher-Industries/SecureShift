@@ -1,12 +1,20 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import "./EmployerDashboard.css";
-import translations from '../i18n/translations';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './EmployerDashboard.css';
 
 /* --- icons --- */
 const IconCalendar = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+    <rect
+      x="3"
+      y="4"
+      width="18"
+      height="18"
+      rx="3"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
     <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" />
     <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" />
     <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" />
@@ -16,15 +24,47 @@ const IconCalendar = (props) => (
 const IconClock = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
     <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
-    <line x1="12" y1="6" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <line x1="12" y1="12" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line
+      x1="12"
+      y1="6"
+      x2="12"
+      y2="12"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="12"
+      y1="12"
+      x2="16"
+      y2="14"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 const IconPlus = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line
+      x1="12"
+      y1="5"
+      x2="12"
+      y2="19"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="5"
+      y1="12"
+      x2="19"
+      y2="12"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -53,7 +93,7 @@ const IconUser = (props) => (
 );
 
 const Star = ({ filled }) => (
-  <svg viewBox="0 0 24 24" className={`star ${filled ? "filled" : ""}`}>
+  <svg viewBox="0 0 24 24" className={`star ${filled ? 'filled' : ''}`}>
     <path d="M12 2l3.09 6.28 6.93 1-5 4.86L18.18 22 12 18.56 5.82 22l1.16-7.86-5-4.86 6.93-1L12 2z" />
   </svg>
 );
@@ -65,26 +105,26 @@ const severityRank = {
 };
 
 const formatLocation = (location) => {
-  if (!location) return "No location";
-  if (typeof location === "string") return location;
+  if (!location) return 'No location';
+  if (typeof location === 'string') return location;
 
   return [location.street, location.suburb, location.state, location.postcode]
     .filter(Boolean)
-    .join(", ");
+    .join(', ');
 };
 
 const formatShiftDate = (value) => {
-  if (!value) return "--";
-  if (typeof value !== "string") return String(value);
+  if (!value) return '--';
+  if (typeof value !== 'string') return String(value);
 
   if (/^\d{2}-\d{2}-\d{4}$/.test(value)) return value;
 
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString("en-GB");
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('en-GB');
 };
 
 const parseIncidentDateTime = (incident) => {
-  const [day, month, year] = incident.date.split("-").map(Number);
+  const [day, month, year] = incident.date.split('-').map(Number);
   const baseDate = new Date(year, month - 1, day);
   const timeMatch = incident.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
 
@@ -94,101 +134,133 @@ const parseIncidentDateTime = (incident) => {
   const minutes = Number(timeMatch[2]);
   const meridian = timeMatch[3].toUpperCase();
 
-  if (meridian === "PM" && hours < 12) hours += 12;
-  if (meridian === "AM" && hours === 12) hours = 0;
+  if (meridian === 'PM' && hours < 12) hours += 12;
+  if (meridian === 'AM' && hours === 12) hours = 0;
 
   baseDate.setHours(hours, minutes, 0, 0);
   return baseDate.getTime();
 };
 
 const getShiftStatusCategory = (shift) => {
-  const text = String(shift?.status?.text || "").toLowerCase();
-  const tone = String(shift?.status?.tone || "").toLowerCase();
+  const text = String(shift?.status?.text || '').toLowerCase();
+  const tone = String(shift?.status?.tone || '').toLowerCase();
 
-  if (tone.includes("pending") || text.includes("pending")) return "Pending";
-  if (tone.includes("completed") || text.includes("completed")) return "Completed";
+  if (tone.includes('pending') || text.includes('pending')) return 'Pending';
+  if (tone.includes('completed') || text.includes('completed')) return 'Completed';
   if (
-    tone.includes("confirmed") ||
-    tone.includes("open") ||
-    text.includes("confirmed") ||
-    text.includes("open")
+    tone.includes('confirmed') ||
+    tone.includes('open') ||
+    text.includes('confirmed') ||
+    text.includes('open')
   ) {
-    return "Open";
+    return 'Open';
   }
 
-  return "All";
+  return 'All';
 };
 
 export default function EmployerDashboard() {
-  const [view, setView] = useState("list");
+  const [view, setView] = useState('list');
   const reviewScroller = useRef(null);
   const navigate = useNavigate();
 
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [fatigueError, setFatigueError] = useState(null);
+  const [fatigueLoading, setFatigueLoading] = useState(true);
 
-  const [statusTab, setStatusTab] = useState("All");
-  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [statusTab, setStatusTab] = useState('All');
+  const [priorityFilter, setPriorityFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [fatigueDashboard, setFatigueDashboard] = useState(null);
 
   const [selectedIncident, setSelectedIncident] = useState(null);
-  const [incidentDraft, setIncidentDraft] = useState({ severity: "Medium", comments: "" });
-  const [incidentQuery, setIncidentQuery] = useState("");
-  const [incidentStatusFilter, setIncidentStatusFilter] = useState("All");
-  const [incidentSeverityFilter, setIncidentSeverityFilter] = useState("All");
-  const [incidentSort, setIncidentSort] = useState("Newest");
+  const [incidentDraft, setIncidentDraft] = useState({ severity: 'Medium', comments: '' });
+  const [incidentQuery, setIncidentQuery] = useState('');
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState('All');
+  const [incidentSeverityFilter, setIncidentSeverityFilter] = useState('All');
+  const [incidentSort, setIncidentSort] = useState('Newest');
+  const [expandedGuard, setExpandedGuard] = useState(null);
 
   const [incidents, setIncidents] = useState([
     {
-      id: "INC-9921",
-      guard: "John Doe",
-      shift: "Crowd Control - Marvel",
-      date: "09-08-2025",
-      time: "10:45 PM",
-      status: "Pending",
-      severity: "High",
+      id: 'INC-9921',
+      guard: 'John Doe',
+      shift: 'Crowd Control - Marvel',
+      date: '09-08-2025',
+      time: '10:45 PM',
+      status: 'Pending',
+      severity: 'High',
       description:
-        "A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.",
+        'A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.',
       photos: [
-        "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80",
+        'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80',
       ],
-      comments: "",
+      comments: '',
     },
     {
-      id: "INC-9920",
-      guard: "Leah Carter",
-      shift: "Gate Check - MCG",
-      date: "08-08-2025",
-      time: "08:15 PM",
-      status: "Resolved",
-      severity: "Medium",
+      id: 'INC-9920',
+      guard: 'Leah Carter',
+      shift: 'Gate Check - MCG',
+      date: '08-08-2025',
+      time: '08:15 PM',
+      status: 'Resolved',
+      severity: 'Medium',
       description:
-        "A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.",
+        'A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.',
       photos: [],
-      comments: "Resolved on site, no further action required.",
+      comments: 'Resolved on site, no further action required.',
     },
     {
-      id: "INC-9919",
-      guard: "Aiden Ross",
-      shift: "Shopping Centre Security - Chadstone",
-      date: "07-08-2025",
-      time: "03:05 PM",
-      status: "Pending",
-      severity: "Low",
+      id: 'INC-9919',
+      guard: 'Aiden Ross',
+      shift: 'Shopping Centre Security - Chadstone',
+      date: '07-08-2025',
+      time: '03:05 PM',
+      status: 'Pending',
+      severity: 'Low',
       description:
-        "Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.",
+        'Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.',
       photos: [
-        "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80",
+        'https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80',
       ],
-      comments: "",
+      comments: '',
     },
   ]);
 
   useEffect(() => {
+    const fetchFatigue = async () => {
+      try {
+        const token = localStorage.getItem('token');
+
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/fatigue`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || `Failed to load fatigue data`);
+        }
+
+        setFatigueDashboard(data.dashboard);
+      } catch (err) {
+        setFatigueError(err.message || 'Failed to load fatigue dashboard.');
+      } finally {
+        setFatigueLoading(false);
+      }
+    };
+
+    fetchFatigue();
+  }, []);
+
+  useEffect(() => {
     const fetchShifts = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
 
         const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
           headers: {
@@ -199,121 +271,149 @@ export default function EmployerDashboard() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to load shifts.");
+          throw new Error(data.message || 'Failed to load shifts.');
         }
 
         const rawShifts = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
 
         const normalizedShifts = rawShifts.map((shift, idx) => {
+          const guardName =
+            shift.guardName ||
+            (typeof shift.guard === 'string' ? shift.guard : null) ||
+            shift.guard?.name ||
+            shift.guard?.fullName ||
+            shift.acceptedBy?.name ||
+            shift.acceptedBy?.fullName ||
+            (typeof shift.acceptedBy === 'string' ? shift.acceptedBy : null) ||
+            shift.assignedGuard?.name ||
+            shift.assignedGuard?.fullName ||
+            (typeof shift.assignedGuard === 'string' ? shift.assignedGuard : null) ||
+            shift.user?.name ||
+            shift.user?.fullName ||
+            null;
+          const startTime = shift.startTime || shift.start || null;
+          const endTime = shift.endTime || shift.end || null;
+          const rawDate = shift.date || shift.shiftDate || null;
           const rawStatus = shift.status;
           const normalizedStatus =
-            typeof rawStatus === "object" && rawStatus !== null
+            typeof rawStatus === 'object' && rawStatus !== null
               ? {
-                  text: rawStatus.text || "Pending",
-                  tone: rawStatus.tone || "pending",
+                  text: rawStatus.text || 'Pending',
+                  tone: rawStatus.tone || 'pending',
                 }
               : {
-                  text: rawStatus || "Pending",
-                  tone:
-                    String(rawStatus || "pending").toLowerCase().includes("confirm")
-                      ? "confirmed"
-                      : String(rawStatus || "pending").toLowerCase().includes("complete")
-                        ? "completed"
-                        : String(rawStatus || "pending").toLowerCase().includes("reject")
-                          ? "rejected"
-                          : "pending",
+                  text: rawStatus || 'Pending',
+                  tone: String(rawStatus || 'pending')
+                    .toLowerCase()
+                    .includes('confirm')
+                    ? 'confirmed'
+                    : String(rawStatus || 'pending')
+                          .toLowerCase()
+                          .includes('complete')
+                      ? 'completed'
+                      : String(rawStatus || 'pending')
+                            .toLowerCase()
+                            .includes('reject')
+                        ? 'rejected'
+                        : 'pending',
                 };
 
           return {
             id: shift._id || shift.id || idx,
-            title: shift.title || shift.role || "Shift 1",
+            title: shift.title || shift.role || 'Shift 1',
             location: formatLocation(shift.location || shift.venue),
             date: formatShiftDate(shift.date || shift.shiftDate),
+            rawDate,
             time:
               shift.startTime && shift.endTime
                 ? `${shift.startTime} - ${shift.endTime}`
-                : shift.time || "--",
+                : shift.time || '--',
+            startTime,
+            endTime,
             status: normalizedStatus,
             payRate: shift.payRate ?? shift.rate ?? shift.hourlyRate ?? 0,
-            priority:
-              shift.priority || (idx % 3 === 0 ? "High" : idx % 3 === 1 ? "Medium" : "Low"),
+            priority: shift.priority || (idx % 3 === 0 ? 'High' : idx % 3 === 1 ? 'Medium' : 'Low'),
+            guardName,
+            guard: shift.guard || null,
+            acceptedBy: shift.acceptedBy || null,
+            assignedGuard: shift.assignedGuard || null,
           };
         });
 
         setShifts(normalizedShifts);
       } catch (err) {
-        setError(err.message || "Failed to load shifts.");
+        setError(err.message || 'Failed to load shifts.');
 
         setShifts([
           {
             id: 1,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 2,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 3,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 4,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 5,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 6,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 21, 2026",
-            time: "13:00 - 21:00",
-            status: { text: "Pending", tone: "pending" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 21, 2026',
+            time: '13:00 - 21:00',
+            status: { text: 'Pending', tone: 'pending' },
             payRate: 25,
-            priority: "Medium",
+            priority: 'Medium',
           },
           {
             id: 7,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 22, 2026",
-            time: "09:00 - 17:00",
-            status: { text: "Completed", tone: "completed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 22, 2026',
+            time: '09:00 - 17:00',
+            status: { text: 'Completed', tone: 'completed' },
             payRate: 24,
-            priority: "Low",
+            priority: 'Low',
           },
         ]);
       } finally {
@@ -324,31 +424,41 @@ export default function EmployerDashboard() {
     fetchShifts();
   }, []);
 
+  useEffect(() => {
+    if (!expandedGuard) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setExpandedGuard(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [expandedGuard]);
+
   const reviews = useMemo(
     () => [
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
     ],
     []
@@ -357,9 +467,9 @@ export default function EmployerDashboard() {
   const filteredShifts = useMemo(() => {
     return shifts.filter((shift) => {
       const matchesStatus =
-        statusTab === "All" ? true : getShiftStatusCategory(shift) === statusTab;
+        statusTab === 'All' ? true : getShiftStatusCategory(shift) === statusTab;
       const matchesPriority =
-        priorityFilter === "All" ? true : String(shift.priority) === priorityFilter;
+        priorityFilter === 'All' ? true : String(shift.priority) === priorityFilter;
 
       return matchesStatus && matchesPriority;
     });
@@ -389,9 +499,9 @@ export default function EmployerDashboard() {
   const tabCounts = useMemo(() => {
     return {
       All: shifts.length,
-      Pending: shifts.filter((s) => getShiftStatusCategory(s) === "Pending").length,
-      Open: shifts.filter((s) => getShiftStatusCategory(s) === "Open").length,
-      Completed: shifts.filter((s) => getShiftStatusCategory(s) === "Completed").length,
+      Pending: shifts.filter((s) => getShiftStatusCategory(s) === 'Pending').length,
+      Open: shifts.filter((s) => getShiftStatusCategory(s) === 'Open').length,
+      Completed: shifts.filter((s) => getShiftStatusCategory(s) === 'Completed').length,
     };
   }, [shifts]);
 
@@ -408,21 +518,21 @@ export default function EmployerDashboard() {
           incident.description.toLowerCase().includes(normalizedQuery);
 
         const matchesStatus =
-          incidentStatusFilter === "All" || incident.status === incidentStatusFilter;
+          incidentStatusFilter === 'All' || incident.status === incidentStatusFilter;
 
         const matchesSeverity =
-          incidentSeverityFilter === "All" || incident.severity === incidentSeverityFilter;
+          incidentSeverityFilter === 'All' || incident.severity === incidentSeverityFilter;
 
         return matchesQuery && matchesStatus && matchesSeverity;
       })
       .sort((a, b) => {
-        if (incidentSort === "Newest") {
+        if (incidentSort === 'Newest') {
           return parseIncidentDateTime(b) - parseIncidentDateTime(a);
         }
-        if (incidentSort === "Oldest") {
+        if (incidentSort === 'Oldest') {
           return parseIncidentDateTime(a) - parseIncidentDateTime(b);
         }
-        if (incidentSort === "Severity") {
+        if (incidentSort === 'Severity') {
           return (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
         }
         return 0;
@@ -433,8 +543,8 @@ export default function EmployerDashboard() {
     return incidents.reduce(
       (acc, incident) => {
         acc.total += 1;
-        if (incident.status === "Pending") acc.pending += 1;
-        if (incident.status === "Resolved") acc.resolved += 1;
+        if (incident.status === 'Pending') acc.pending += 1;
+        if (incident.status === 'Resolved') acc.resolved += 1;
         return acc;
       },
       { total: 0, pending: 0, resolved: 0 }
@@ -444,7 +554,9 @@ export default function EmployerDashboard() {
   const updateIncident = (id, newStatus, newSeverity, newComments) => {
     setIncidents((prev) =>
       prev.map((inc) =>
-        inc.id === id ? { ...inc, status: newStatus, severity: newSeverity, comments: newComments } : inc
+        inc.id === id
+          ? { ...inc, status: newStatus, severity: newSeverity, comments: newComments }
+          : inc
       )
     );
     setSelectedIncident(null);
@@ -454,14 +566,18 @@ export default function EmployerDashboard() {
     setSelectedIncident(incident);
     setIncidentDraft({
       severity: incident.severity,
-      comments: incident.comments || "",
+      comments: incident.comments || '',
     });
   };
 
   const scrollByAmount = (ref, amt) => {
     if (!ref.current) return;
-    ref.current.scrollBy({ left: amt, behavior: "smooth" });
+    ref.current.scrollBy({ left: amt, behavior: 'smooth' });
   };
+
+  const fatiguedGuardList = (fatigueDashboard?.guards ?? []).filter((guard) => {
+    return guard.isFatigued === true;
+  });
 
   return (
     <div className="ss-page">
@@ -469,14 +585,12 @@ export default function EmployerDashboard() {
         <div className="ss-overview-head">
           <div>
             <h2 className="ss-h1">Overview</h2>
-            <p className="ss-overview-subtitle">
-              {shifts.length} shifts · last updated just now
-            </p>
+            <p className="ss-overview-subtitle">{shifts.length} shifts · last updated just now</p>
           </div>
 
           <button
             className="ss-primary ss-primary--wide"
-            onClick={() => navigate("/create-shift")}
+            onClick={() => navigate('/create-shift')}
             type="button"
           >
             <IconPlus className="ss-plus" /> Create Shift
@@ -486,11 +600,11 @@ export default function EmployerDashboard() {
         <div className="ss-dashboard-card">
           <div className="ss-topbar">
             <div className="ss-tabs">
-              {["All", "Pending", "Open", "Completed"].map((tab) => (
+              {['All', 'Pending', 'Open', 'Completed'].map((tab) => (
                 <button
                   key={tab}
                   type="button"
-                  className={`ss-tab ${statusTab === tab ? "is-active" : ""}`}
+                  className={`ss-tab ${statusTab === tab ? 'is-active' : ''}`}
                   onClick={() => setStatusTab(tab)}
                 >
                   {tab}
@@ -501,15 +615,15 @@ export default function EmployerDashboard() {
 
             <div className="ss-viewtoggle">
               <button
-                className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`}
-                onClick={() => setView("list")}
+                className={`ss-viewtoggle__btn ${view === 'list' ? 'is-active' : ''}`}
+                onClick={() => setView('list')}
                 type="button"
               >
                 <IconList />
               </button>
               <button
-                className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
-                onClick={() => setView("grid")}
+                className={`ss-viewtoggle__btn ${view === 'grid' ? 'is-active' : ''}`}
+                onClick={() => setView('grid')}
                 type="button"
               >
                 <IconGrid />
@@ -519,11 +633,11 @@ export default function EmployerDashboard() {
 
           <div className="ss-filterbar">
             <span className="ss-filterbar__label">Priority</span>
-            {["All", "High", "Medium", "Low"].map((chip) => (
+            {['All', 'High', 'Medium', 'Low'].map((chip) => (
               <button
                 key={chip}
                 type="button"
-                className={`ss-chip-btn ${priorityFilter === chip ? "is-active" : ""}`}
+                className={`ss-chip-btn ${priorityFilter === chip ? 'is-active' : ''}`}
                 onClick={() => setPriorityFilter(chip)}
               >
                 {chip}
@@ -531,7 +645,7 @@ export default function EmployerDashboard() {
             ))}
           </div>
 
-          {view === "list" ? (
+          {view === 'list' ? (
             <div className="ss-table">
               <div className="ss-table__head">
                 <div>Shift</div>
@@ -642,7 +756,7 @@ export default function EmployerDashboard() {
                 <button
                   key={page}
                   type="button"
-                  className={`ss-page-btn ${currentPage === page ? "is-active" : ""}`}
+                  className={`ss-page-btn ${currentPage === page ? 'is-active' : ''}`}
                   onClick={() => setCurrentPage(page)}
                 >
                   {page}
@@ -662,6 +776,209 @@ export default function EmployerDashboard() {
         </div>
 
         <div className="ss-section-head">
+          <h2 className="ss-section-title">Shift Fatigue Monitoring</h2>
+          <p className="ss-section-subtitle">Fatigue signals from recent shifts</p>
+        </div>
+
+        <div className="ss-dashboard-card">
+          {fatigueLoading && <div className="ss-fatigue__loading">Loading fatigue data...</div>}
+          {fatigueError && <div className="ss-fatigue__error">{fatigueError}</div>}
+          {!fatigueLoading && !fatigueError && (
+            <div className="ss-fatigue">
+              <div className="ss-fatigue__summary">
+                <div className="ss-fatigue__title">Risk Signals</div>
+                <div className="ss-fatigue__stats">
+                  <div className="ss-fatigue__stat">
+                    <div className="ss-fatigue__stat-value">
+                      {fatigueDashboard?.summary?.guardsMonitored ?? '--'}
+                    </div>
+                    <div className="ss-fatigue__stat-label">Guards Monitored</div>
+                  </div>
+                  <div className="ss-fatigue__stat">
+                    <div className="ss-fatigue__stat-value">
+                      {fatigueDashboard?.summary?.fatiguedGuards ?? '--'}
+                    </div>
+                    <div className="ss-fatigue__stat-label">Fatigued Guards</div>
+                  </div>
+                  <div className="ss-fatigue__stat">
+                    <div className="ss-fatigue__stat-value">
+                      {fatigueDashboard?.summary?.averageFatigueScore ?? '--'}%
+                    </div>
+                    <div className="ss-fatigue__stat-label">Avg Fatigue Score</div>
+                  </div>
+                </div>
+              </div>
+              <div className="ss-fatigue__list">
+                <div className="ss-fatigue__title">Fatigued Guards</div>
+                {fatigueDashboard.summary.guardsMonitored === 0 ? (
+                  <div className="ss-fatigue__empty">No guards are currently being monitored.</div>
+                ) : fatiguedGuardList.length === 0 ? (
+                  <div className="ss-fatigue__empty">No fatigue risks detected yet.</div>
+                ) : (
+                  <div className="ss-fatigue__rows">
+                    {fatiguedGuardList.map((guard) => {
+                      const isExpanded = expandedGuard?.guardId === guard.guardId;
+
+                      const guardShifts = shifts.filter((shift) => {
+                        return shift.acceptedBy?._id === guard.guardId;
+                      });
+
+                      const guardName = guardShifts[0]?.guardName ?? guard.guardId;
+
+                      return (
+                        <div
+                          className={`ss-fatigue__row ${isExpanded ? 'is-expanded' : ''}`}
+                          key={guard.guardId}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() =>
+                            setExpandedGuard(
+                              isExpanded
+                                ? null
+                                : {
+                                    ...guard,
+                                    guardName: guardName,
+                                    shifts: guardShifts,
+                                  }
+                            )
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setExpandedGuard(
+                                isExpanded
+                                  ? null
+                                  : {
+                                      ...guard,
+                                      guardName: guardName,
+                                      shifts: guardShifts,
+                                    }
+                              );
+                            }
+                          }}
+                        >
+                          <div className="ss-fatigue__guard">
+                            <div className="ss-fatigue__guard-name">{guardName}</div>
+                            <div className="ss-fatigue__guard-sub">
+                              Fatigue Score {guard.fatigueScore}%
+                            </div>
+                          </div>
+                          <div className="ss-fatigue__metric">
+                            <span className="ss-fatigue__metric-value">
+                              {guard.metrics.shiftsThisWeek}
+                            </span>
+                            <span className="ss-fatigue__metric-label">Shifts This Week</span>
+                          </div>
+                          <div className="ss-fatigue__metric">
+                            <span className="ss-fatigue__metric-value">
+                              {guard.metrics.hoursThisDay}
+                            </span>
+                            <span className="ss-fatigue__metric-label">Hours Today</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {expandedGuard && (
+          <div
+            className="ss-fatigue__modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setExpandedGuard(null)}
+          >
+            <div className="ss-fatigue__modal" onClick={(event) => event.stopPropagation()}>
+              <div className="ss-fatigue__modal-header">
+                <div>
+                  <div className="ss-fatigue__modal-title">{expandedGuard.guardName}</div>
+                  <div className="ss-fatigue__guard-sub">
+                    Fatigue Score {expandedGuard.fatigueScore}%
+                  </div>
+                </div>
+                <button
+                  className="ss-fatigue__modal-close"
+                  onClick={() => setExpandedGuard(null)}
+                  aria-label="Close fatigue details"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="ss-fatigue__modal-metrics">
+                <div className="ss-fatigue__modal-metrics-title">Current Workload</div>
+                <div className="ss-fatigue__modal-metrics-item">
+                  <span>{expandedGuard.metrics.shiftsThisWeek} </span>
+                  <span>Shifts This Week</span>
+                </div>
+                <div className="ss-fatigue__modal-metrics-item">
+                  <span>{expandedGuard.metrics.hoursThisWeek} </span>
+                  <span>Hours This Week</span>
+                </div>
+                <div className="ss-fatigue__modal-metrics-item">
+                  <span>{expandedGuard.metrics.hoursThisDay} </span>
+                  <span>Hours Today</span>
+                </div>
+              </div>
+              <div className="ss-fatigue__warnings">
+                <div className="ss-fatigue__warnings-title">Warnings</div>
+                {expandedGuard.warnings.length === 0 ? (
+                  <div className="ss-fatigue__warnings-indicator">
+                    <span>There are currently no fatigue warnings</span>
+                  </div>
+                ) : (
+                  expandedGuard.warnings.map((warning, index) => {
+                    return (
+                      <div key={index} className="ss-fatigue__warnings-indicator">
+                        {warning}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              <div className="ss-fatigue__detail">
+                <div className="ss-fatigue__detail-subtitle">Guard Shift Details</div>
+                {expandedGuard.shifts.map((shiftItem, index) => {
+                  const locationText =
+                    typeof shiftItem.location === 'string'
+                      ? shiftItem.location
+                      : shiftItem.location
+                        ? [
+                            shiftItem.location.street,
+                            shiftItem.location.suburb,
+                            shiftItem.location.state,
+                          ]
+                            .filter(Boolean)
+                            .join(', ')
+                        : 'No location';
+
+                  const dateText = shiftItem.date
+                    ? new Date(`${shiftItem.rawDate}`).toLocaleDateString('en-GB')
+                    : '--';
+
+                  return (
+                    <div className="ss-fatigue__detail-row" key={index}>
+                      <div className="ss-fatigue__detail-title">{shiftItem.title}</div>
+                      <div className="ss-fatigue__detail-meta">
+                        <span>{dateText}</span>
+                        <span>
+                          {shiftItem.startTime} - {shiftItem.endTime}
+                        </span>
+                        <span>{locationText}</span>
+                        <span>Status: {shiftItem.status.text}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="ss-section-head">
           <h2 className="ss-section-title">Incident Reports</h2>
           <p className="ss-section-subtitle">
             {incidentSummary.pending} pending · {incidentSummary.total} total
@@ -676,12 +993,18 @@ export default function EmployerDashboard() {
               value={incidentQuery}
               onChange={(e) => setIncidentQuery(e.target.value)}
             />
-            <select value={incidentStatusFilter} onChange={(e) => setIncidentStatusFilter(e.target.value)}>
+            <select
+              value={incidentStatusFilter}
+              onChange={(e) => setIncidentStatusFilter(e.target.value)}
+            >
               <option value="All">All Statuses</option>
               <option value="Pending">Pending</option>
               <option value="Resolved">Resolved</option>
             </select>
-            <select value={incidentSeverityFilter} onChange={(e) => setIncidentSeverityFilter(e.target.value)}>
+            <select
+              value={incidentSeverityFilter}
+              onChange={(e) => setIncidentSeverityFilter(e.target.value)}
+            >
               <option value="All">All Severities</option>
               <option value="High">High</option>
               <option value="Medium">Medium</option>
@@ -696,10 +1019,10 @@ export default function EmployerDashboard() {
               className="ss-reset-btn"
               type="button"
               onClick={() => {
-                setIncidentQuery("");
-                setIncidentStatusFilter("All");
-                setIncidentSeverityFilter("All");
-                setIncidentSort("Newest");
+                setIncidentQuery('');
+                setIncidentStatusFilter('All');
+                setIncidentSeverityFilter('All');
+                setIncidentSort('Newest');
               }}
             >
               Reset
@@ -723,9 +1046,9 @@ export default function EmployerDashboard() {
                 <div className="ss-incident-row__line" />
                 <div className="ss-incident-avatar">
                   {inc.guard
-                    .split(" ")
+                    .split(' ')
                     .map((name) => name[0])
-                    .join("")
+                    .join('')
                     .slice(0, 2)}
                 </div>
 
@@ -747,7 +1070,7 @@ export default function EmployerDashboard() {
                     {inc.severity}
                   </span>
                   <span
-                    className={`ss-badge ss-badge--status-${inc.status === "Resolved" ? "completed" : "pending"}`}
+                    className={`ss-badge ss-badge--status-${inc.status === 'Resolved' ? 'completed' : 'pending'}`}
                   >
                     {inc.status}
                   </span>
@@ -768,10 +1091,18 @@ export default function EmployerDashboard() {
         <div className="ss-section-head ss-section-head--reviews">
           <h2 className="ss-section-title">Recent Reviews</h2>
           <div className="ss-review-arrows">
-            <button className="ss-mini-arrow" onClick={() => scrollByAmount(reviewScroller, -300)} type="button">
+            <button
+              className="ss-mini-arrow"
+              onClick={() => scrollByAmount(reviewScroller, -300)}
+              type="button"
+            >
               ‹
             </button>
-            <button className="ss-mini-arrow" onClick={() => scrollByAmount(reviewScroller, 300)} type="button">
+            <button
+              className="ss-mini-arrow"
+              onClick={() => scrollByAmount(reviewScroller, 300)}
+              type="button"
+            >
               ›
             </button>
           </div>
@@ -807,29 +1138,33 @@ export default function EmployerDashboard() {
 
       {selectedIncident && (
         <div className="create-shift-modal-backdrop" onClick={() => setSelectedIncident(null)}>
-          <div className="create-shift-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
+          <div
+            className="create-shift-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '700px' }}
+          >
             <div className="create-shift-header">
               <div>
                 <h1>
                   Incident Details (<span className="ss-incident-id">{selectedIncident.id}</span>)
                 </h1>
-                <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
                   Recorded on: {selectedIncident.date} at {selectedIncident.time}
                 </p>
               </div>
               <span
                 className={`ss-badge ss-badge--status-${
-                  selectedIncident.status === "Resolved" ? "completed" : "pending"
+                  selectedIncident.status === 'Resolved' ? 'completed' : 'pending'
                 }`}
               >
                 {selectedIncident.status}
               </span>
             </div>
 
-            <div className="form-grid" style={{ marginBottom: "20px" }}>
+            <div className="form-grid" style={{ marginBottom: '20px' }}>
               <div className="form-group">
                 <label>Reported By</label>
-                <div className="ss-input-static" style={{ padding: "10px", borderRadius: "4px" }}>
+                <div className="ss-input-static" style={{ padding: '10px', borderRadius: '4px' }}>
                   {selectedIncident.guard}
                 </div>
               </div>
@@ -837,8 +1172,10 @@ export default function EmployerDashboard() {
                 <label>Assign Severity Level</label>
                 <select
                   value={incidentDraft.severity}
-                  onChange={(e) => setIncidentDraft((prev) => ({ ...prev, severity: e.target.value }))}
-                  style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }}
+                  onChange={(e) =>
+                    setIncidentDraft((prev) => ({ ...prev, severity: e.target.value }))
+                  }
+                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
@@ -847,19 +1184,19 @@ export default function EmployerDashboard() {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: "20px" }}>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
               <label>Guard&apos;s Description</label>
               <div className="ss-incident-description">{selectedIncident.description}</div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: "20px" }}>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
               <label>Evidence Photos</label>
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {(selectedIncident.photos || []).map((url, idx) => (
                   <img key={idx} src={url} alt="incident evidence" className="ss-evidence-img" />
                 ))}
                 {(!selectedIncident.photos || selectedIncident.photos.length === 0) && (
-                  <p style={{ margin: 0, color: "#666" }}>No evidence photos attached.</p>
+                  <p style={{ margin: 0, color: '#666' }}>No evidence photos attached.</p>
                 )}
               </div>
             </div>
@@ -869,19 +1206,21 @@ export default function EmployerDashboard() {
               <textarea
                 placeholder="Add internal notes..."
                 value={incidentDraft.comments}
-                onChange={(e) => setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))}
-                style={{ border: "1px solid #ddd", borderRadius: "4px", padding: "10px" }}
+                onChange={(e) =>
+                  setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))
+                }
+                style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }}
                 rows={4}
               />
             </div>
 
-            <div className="actions" style={{ marginTop: "30px" }}>
+            <div className="actions" style={{ marginTop: '30px' }}>
               <button
                 className="primary"
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    "Resolved",
+                    'Resolved',
                     incidentDraft.severity,
                     incidentDraft.comments
                   )
@@ -894,7 +1233,7 @@ export default function EmployerDashboard() {
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    "Pending",
+                    'Pending',
                     incidentDraft.severity,
                     incidentDraft.comments
                   )
@@ -902,7 +1241,11 @@ export default function EmployerDashboard() {
               >
                 Save as Pending
               </button>
-              <button className="secondary" style={{ color: "#666" }} onClick={() => setSelectedIncident(null)}>
+              <button
+                className="secondary"
+                style={{ color: '#666' }}
+                onClick={() => setSelectedIncident(null)}
+              >
                 Close
               </button>
             </div>
