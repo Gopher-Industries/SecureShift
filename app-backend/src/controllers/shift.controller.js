@@ -1,10 +1,7 @@
 import mongoose from "mongoose";
 import Shift from "../models/Shift.js";
 import Branch from "../models/Branch.js";
-import Guard from "../models/Guard.js";
-import Availability from "../models/Availability.js";
 import {
-  assessGuardFatigue,
   getEndOfWeek,
   getStartOfWeek,
   assessCurrentGuardFatigue,
