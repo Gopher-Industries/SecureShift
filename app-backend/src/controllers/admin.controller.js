@@ -415,7 +415,18 @@ export const deleteMessageById = async (req, res) => {
  */
 const getAllDocuments = (guard) => {
   const allDocuments = [];
-  if (guard.license && guard.license.status !== "none") {
+
+  const modernDocs = (guard.documents || []).map((doc) => {
+    const docObj = doc.toObject ? doc.toObject() : doc;
+    return {
+      ...docObj,
+      status: docObj.verificationStatus,
+    };
+  });
+
+  const hasModernLicense = modernDocs.some((d) => d.type === "license");
+
+  if (guard.license && guard.license.status !== "none" && !hasModernLicense) {
     allDocuments.push({
       type: "license",
       status: guard.license?.status,
@@ -427,11 +438,22 @@ const getAllDocuments = (guard) => {
     });
   }
 
-  if (guard.documents && Array.isArray(guard.documents)) {
-    allDocuments.push(...guard.documents);
+  allDocuments.push(...modernDocs);
+
+  const seenTypes = new Set();
+  const deduped = [];
+  for (const doc of allDocuments) {
+    if (doc.type === "license") {
+      if (!seenTypes.has("license")) {
+        seenTypes.add("license");
+        deduped.push(doc);
+      }
+    } else {
+      deduped.push(doc);
+    }
   }
 
-  return allDocuments;
+  return deduped;
 };
 
 /**
@@ -492,6 +514,11 @@ const formatDocumentForResponse = (doc) => {
   const baseDoc = {
     type: doc.type || "license",
     status: doc.status || "none",
+    id: doc._id || null,
+    imageUrl: doc.imageUrl || null,
+    rejectionReason: doc.rejectionReason || null,
+    reviewedAt: doc.reviewedAt || null,
+    verifiedBy: doc.verifiedBy || null,
   };
 
   if (doc.expiryDate) {
