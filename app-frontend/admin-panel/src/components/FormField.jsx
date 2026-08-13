@@ -87,7 +87,11 @@ export default function FormField({
         />
       )}
 
-      {error ? <p style={styles.error}>{error}</p> : hint ? <p style={styles.hint}>{hint}</p> : null}
+      {error ? (
+        <p style={styles.error}>{error}</p>
+      ) : hint ? (
+        <p style={styles.hint}>{hint}</p>
+      ) : null}
     </div>
   );
 }
