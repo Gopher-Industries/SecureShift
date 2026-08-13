@@ -1,22 +1,30 @@
-import mongoose from "mongoose";
 import fs from "fs";
+import path from "path";
+import mongoose from "mongoose";
+import multer from "multer";
 
 import { downloadDocumentFile } from "../src/controllers/document.controller.js";
+import { handleUploadError } from "../src/config/multer.js";
 import User from "../src/models/User.js";
 import { resolveUploadPath, uploadExists } from "../src/utils/uploadPath.js";
 import { uploadsDir } from "../src/config/uploadsDir.js";
 
-// Replace the model's DB call and the filesystem check so the tests never touch
-// Mongo or the real uploads folder.
+// Point the uploads directory at a temp folder for the duration of the run, so
+// the tests use the real filesystem without touching the project's uploads.
+// The factory is self contained because jest hoists it above the imports.
+jest.mock("../src/config/uploadsDir.js", () => {
+  const os = require("os");
+  const nodePath = require("path");
+  return {
+    __esModule: true,
+    uploadsDir: nodePath.join(os.tmpdir(), "secureshift-be028-tests"),
+  };
+});
+
+// Only the model's DB call is mocked. Everything else runs for real.
 jest.mock("../src/models/User.js", () => ({
   __esModule: true,
   default: { findOne: jest.fn() },
-}));
-
-jest.mock("fs", () => ({
-  __esModule: true,
-  default: { existsSync: jest.fn() },
-  existsSync: jest.fn(),
 }));
 
 const OWNER_ID = new mongoose.Types.ObjectId().toString();
@@ -24,6 +32,9 @@ const OTHER_ID = new mongoose.Types.ObjectId().toString();
 const ADMIN_ID = new mongoose.Types.ObjectId().toString();
 const EMPLOYER_ID = new mongoose.Types.ObjectId().toString();
 const DOC_ID = new mongoose.Types.ObjectId().toString();
+
+const LICENCE = "licence.png";
+const LICENCE_BYTES = "licence-file-contents";
 
 const mockRes = () => {
   const res = {};
@@ -40,31 +51,38 @@ const mockReq = (overrides = {}) => ({
 });
 
 // A user document holding one embedded document record, shaped the way
-// Mongoose returns it (documents.id(...) looks up a subdocument by id).
-const mockOwner = (imageUrl = "/uploads/licence.png", ownerId = OWNER_ID) => ({
+// Mongoose returns it. documents.id(...) looks up a subdocument by id.
+const mockOwner = (imageUrl = `/uploads/${LICENCE}`, ownerId = OWNER_ID) => ({
   _id: ownerId,
   documents: {
     id: jest.fn().mockReturnValue(imageUrl ? { _id: DOC_ID, imageUrl } : null),
   },
 });
 
+beforeAll(() => {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  fs.writeFileSync(path.join(uploadsDir, LICENCE), LICENCE_BYTES);
+});
+
+afterAll(() => {
+  fs.rmSync(uploadsDir, { recursive: true, force: true });
+});
+
 describe("Upload path resolution", () => {
   test("resolves a bare filename inside the uploads directory", () => {
-    const resolved = resolveUploadPath("licence.png");
-    expect(resolved).toBe(`${uploadsDir}/licence.png`);
+    expect(resolveUploadPath(LICENCE)).toBe(path.join(uploadsDir, LICENCE));
   });
 
   test("resolves a stored /uploads/ reference to the same place", () => {
-    expect(resolveUploadPath("/uploads/licence.png")).toBe(
-      `${uploadsDir}/licence.png`,
+    expect(resolveUploadPath(`/uploads/${LICENCE}`)).toBe(
+      path.join(uploadsDir, LICENCE),
     );
   });
 
   test("refuses a path traversal attempt", () => {
-    // basename strips the traversal, so this must not escape the folder.
     const resolved = resolveUploadPath("../../../../etc/passwd");
-    expect(resolved).toBe(`${uploadsDir}/passwd`);
-    expect(resolved).not.toContain("etc/passwd");
+    expect(resolved).toBe(path.join(uploadsDir, "passwd"));
+    expect(resolved).not.toContain(`${path.sep}etc${path.sep}passwd`);
   });
 
   test("returns null for values that cannot be a filename", () => {
@@ -76,33 +94,30 @@ describe("Upload path resolution", () => {
     expect(resolveUploadPath("..")).toBeNull();
   });
 
-  test("uploadExists is false when the file is not on disk", () => {
-    fs.existsSync.mockReturnValue(false);
-    expect(uploadExists("/uploads/licence.png")).toBe(false);
+  test("uploadExists reflects whether the file is really on disk", () => {
+    expect(uploadExists(`/uploads/${LICENCE}`)).toBe(true);
+    expect(uploadExists("/uploads/not-here.png")).toBe(false);
   });
 });
 
 describe("downloadDocumentFile", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    fs.existsSync.mockReturnValue(true);
   });
 
   test("401 when there is no authenticated user", async () => {
-    const req = mockReq({ user: undefined });
     const res = mockRes();
 
-    await downloadDocumentFile(req, res);
+    await downloadDocumentFile(mockReq({ user: undefined }), res);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.download).not.toHaveBeenCalled();
   });
 
   test("404 when the document id is not a valid ObjectId", async () => {
-    const req = mockReq({ params: { id: "not-an-id" } });
     const res = mockRes();
 
-    await downloadDocumentFile(req, res);
+    await downloadDocumentFile(mockReq({ params: { id: "not-an-id" } }), res);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(User.findOne).not.toHaveBeenCalled();
@@ -131,7 +146,7 @@ describe("downloadDocumentFile", () => {
   });
 
   test("403 when the document belongs to another user", async () => {
-    User.findOne.mockResolvedValue(mockOwner("/uploads/licence.png", OTHER_ID));
+    User.findOne.mockResolvedValue(mockOwner(`/uploads/${LICENCE}`, OTHER_ID));
     const res = mockRes();
 
     await downloadDocumentFile(mockReq(), res);
@@ -147,41 +162,42 @@ describe("downloadDocumentFile", () => {
     await downloadDocumentFile(mockReq(), res);
 
     expect(res.download).toHaveBeenCalledWith(
-      `${uploadsDir}/licence.png`,
-      "licence.png",
+      path.join(uploadsDir, LICENCE),
+      LICENCE,
     );
     expect(res.status).not.toHaveBeenCalledWith(403);
   });
 
   test("200 and sends the file to an admin for someone else's document", async () => {
-    User.findOne.mockResolvedValue(mockOwner("/uploads/licence.png", OTHER_ID));
-    const req = mockReq({
-      user: { id: ADMIN_ID, _id: ADMIN_ID, role: "admin" },
-    });
+    User.findOne.mockResolvedValue(mockOwner(`/uploads/${LICENCE}`, OTHER_ID));
     const res = mockRes();
 
-    await downloadDocumentFile(req, res);
+    await downloadDocumentFile(
+      mockReq({ user: { id: ADMIN_ID, _id: ADMIN_ID, role: "admin" } }),
+      res,
+    );
 
     expect(res.download).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalledWith(403);
   });
 
   test("403 for an employer, licence access is out of scope for BE 028", async () => {
-    User.findOne.mockResolvedValue(mockOwner("/uploads/licence.png", OTHER_ID));
-    const req = mockReq({
-      user: { id: EMPLOYER_ID, _id: EMPLOYER_ID, role: "employer" },
-    });
+    User.findOne.mockResolvedValue(mockOwner(`/uploads/${LICENCE}`, OTHER_ID));
     const res = mockRes();
 
-    await downloadDocumentFile(req, res);
+    await downloadDocumentFile(
+      mockReq({
+        user: { id: EMPLOYER_ID, _id: EMPLOYER_ID, role: "employer" },
+      }),
+      res,
+    );
 
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.download).not.toHaveBeenCalled();
   });
 
   test("404 when the record exists but its file is missing from disk", async () => {
-    User.findOne.mockResolvedValue(mockOwner());
-    fs.existsSync.mockReturnValue(false);
+    User.findOne.mockResolvedValue(mockOwner("/uploads/deleted-file.png"));
     const res = mockRes();
 
     await downloadDocumentFile(mockReq(), res);
@@ -206,10 +222,69 @@ describe("downloadDocumentFile", () => {
 
     await downloadDocumentFile(mockReq(), res);
 
-    // It resolves to <uploads>/passwd, which does not exist, so it 404s
-    // rather than serving a file from elsewhere on the server.
-    const sent = res.download.mock.calls[0]?.[0];
-    if (sent) expect(sent.startsWith(uploadsDir)).toBe(true);
-    expect(sent).not.toBe("/etc/passwd");
+    // It resolves to <uploads>/passwd, which does not exist, so it 404s rather
+    // than serving a file from elsewhere on the server.
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.download).not.toHaveBeenCalled();
+  });
+});
+
+describe("handleUploadError", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test("an oversized file becomes a 400 that states the limit", () => {
+    const res = mockRes();
+    const next = jest.fn();
+
+    handleUploadError(new multer.MulterError("LIMIT_FILE_SIZE"), {}, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: expect.stringContaining("25MB"),
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("any other multer error becomes a 400 rather than a 500", () => {
+    const res = mockRes();
+    const next = jest.fn();
+
+    handleUploadError(
+      new multer.MulterError("LIMIT_FILE_COUNT"),
+      {},
+      res,
+      next,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("a rejected file type becomes a 400 carrying the reason", () => {
+    const res = mockRes();
+    const next = jest.fn();
+    const rejected = new Error("Only PDF files are allowed");
+    rejected.status = 400;
+
+    handleUploadError(rejected, {}, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Only PDF files are allowed",
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("an unrelated failure is passed on rather than reported as a bad request", () => {
+    const res = mockRes();
+    const next = jest.fn();
+    const serverFault = new Error("disk unavailable");
+
+    handleUploadError(serverFault, {}, res, next);
+
+    expect(next).toHaveBeenCalledWith(serverFault);
+    expect(res.status).not.toHaveBeenCalled();
   });
 });

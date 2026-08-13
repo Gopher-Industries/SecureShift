@@ -11,7 +11,7 @@ import {
 
 import auth from "../middleware/auth.js";
 import { authorizePermissions } from "../middleware/rbac.js";
-import { upload } from "../config/multer.js";
+import { upload, handleUploadError } from "../config/multer.js";
 
 const router = express.Router();
 
@@ -293,6 +293,7 @@ router.post(
   "/:id/attachments",
   authorizePermissions("incident:update"),
   upload.single("file"),
+  handleUploadError,
   uploadAttachment,
 );
 
