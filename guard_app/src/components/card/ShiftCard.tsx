@@ -36,10 +36,10 @@ function ShiftCard({
     status === 'Confirmed'
       ? colors.status.confirmed
       : status === 'Pending'
-      ? colors.link
-      : status === 'Available'
-      ? colors.primary
-      : colors.muted;
+        ? colors.link
+        : status === 'Available'
+          ? colors.primary
+          : colors.muted;
 
   // Pin/unpin action: shows a pin toggle button when a handler is provided,
   // and reflects the current pinned state of the shift via the icon used.
