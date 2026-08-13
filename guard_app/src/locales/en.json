@@ -123,6 +123,7 @@
     "pending": "Pending",
     "confirmed": "Confirmed",
     "rejected": "Rejected",
+    "pinned": "Pinned",
     "date": "Date:",
     "time": "Time:",
     "location": "Location:",
