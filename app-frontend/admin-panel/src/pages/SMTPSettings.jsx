@@ -113,6 +113,8 @@ export default function SMTPSettings() {
     if (!settings.SMTP_HOST.trim()) return 'Host is required';
     if (!settings.SMTP_PORT || Number.isNaN(Number(settings.SMTP_PORT)))
       return 'Port must be a number';
+    if (!settings.SMTP_USER.trim()) return 'Username is required';
+    if (!settings.SMTP_PASS.trim()) return 'Password is required';
     if (!settings.SMTP_FROM_EMAIL.trim()) return 'From Email is required';
     return '';
   };
@@ -131,11 +133,7 @@ export default function SMTPSettings() {
       setSaveError('');
       setSaveSuccess('');
 
-      // Don't send an empty password — leaving it blank means "keep existing".
-      const body = { ...settings };
-      if (!body.SMTP_PASS) delete body.SMTP_PASS;
-
-      await updateSmtpSettings(body);
+      await updateSmtpSettings(settings);
       await loadSettings(true);
       setSaveSuccess('Settings saved.');
     } catch (err) {
@@ -243,9 +241,8 @@ export default function SMTPSettings() {
                   style={styles.input}
                   value={settings.SMTP_PASS}
                   onChange={handleChange('SMTP_PASS')}
-                  placeholder="Leave blank to keep existing password"
+                  placeholder="Enter SMTP password"
                 />
-                <p style={styles.hint}>Leave blank to keep the currently saved password.</p>
               </div>
 
               <div style={styles.field}>
