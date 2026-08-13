@@ -85,6 +85,12 @@ function ShiftCard({
             </View>
           )}
         </View>
+
+        {isPinned ? (
+          <View style={s.pinnedBadge}>
+            <Text style={s.pinnedBadgeText}>{t('shifts.pinned', 'Pinned')}</Text>
+          </View>
+        ) : null}
       </View>
 
       <Text style={s.cardCompany}>{shift.company}</Text>
@@ -146,6 +152,19 @@ const getStyles = (colors: AppColors) =>
     },
     pinBtnIcon: {
       fontSize: 16,
+    },
+    pinnedBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: colors.yellowSoft,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      marginTop: 6,
+    },
+    pinnedBadgeText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.status.pending,
     },
     cardStatusBadge: {
       paddingHorizontal: 10,
