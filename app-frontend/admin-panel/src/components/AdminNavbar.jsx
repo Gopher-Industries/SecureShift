@@ -1,18 +1,20 @@
 import { useNavigate } from 'react-router-dom';
 import useAdminAuth from '../hooks/useAdminAuth';
 
-export default function AdminNavbar() {
+export default function AdminNavbar({ onMenuClick }) {
   const navigate = useNavigate();
   const { logout, role } = useAdminAuth();
+
   const onLogout = () => {
     logout();
     navigate('/login', { replace: true });
   };
+
   return (
     <header
       style={{
         display: 'flex',
-        justifyContent: 'flex-end',
+        justifyContent: 'space-between',
         alignItems: 'center',
         gap: 12,
         padding: '10px 24px',
@@ -20,20 +22,38 @@ export default function AdminNavbar() {
         borderBottom: '1px solid #e5e7eb',
       }}
     >
-      <span style={{ color: '#555' }}>Signed in as {role || 'admin'}</span>
       <button
-        onClick={onLogout}
+        onClick={onMenuClick}
+        className="admin-hamburger"
+        aria-label="Toggle menu"
         style={{
-          padding: '6px 14px',
-          background: '#274b93',
-          color: '#fff',
+          background: 'none',
           border: 'none',
-          borderRadius: 4,
+          fontSize: 24,
           cursor: 'pointer',
+          padding: 4,
+          color: '#18284f',
         }}
       >
-        Log out
+        ☰
       </button>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ color: '#555' }}>Signed in as {role || 'admin'}</span>
+        <button
+          onClick={onLogout}
+          style={{
+            padding: '6px 14px',
+            background: '#274b93',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 4,
+            cursor: 'pointer',
+          }}
+        >
+          Log out
+        </button>
+      </div>
     </header>
   );
 }
