@@ -12,6 +12,7 @@ type Props = {
   showApply?: boolean;
   onApply?: () => void;
   applying?: boolean;
+  onTogglePin?: (shift: ShiftCardItem) => void;
   colors: AppColors;
 };
 
@@ -21,6 +22,7 @@ function ShiftCard({
   showApply = false,
   onApply,
   applying = false,
+  onTogglePin,
   colors,
 }: Props) {
   const { t } = useTranslation();
@@ -34,16 +36,36 @@ function ShiftCard({
     status === 'Confirmed'
       ? colors.status.confirmed
       : status === 'Pending'
-        ? colors.link
-        : status === 'Available'
-          ? colors.primary
-          : colors.muted;
+      ? colors.link
+      : status === 'Available'
+      ? colors.primary
+      : colors.muted;
+
+  // Pin/unpin action: shows a pin toggle button when a handler is provided,
+  // and reflects the current pinned state of the shift via the icon used.
+  const isPinned = 'pinned' in shift && shift.pinned === true;
+
+  const handleTogglePin = () => {
+    onTogglePin?.(shift);
+  };
 
   return (
     <TouchableOpacity style={s.card} onPress={onPress} activeOpacity={0.9}>
       <View style={s.cardHeader}>
         <View style={s.cardTitleSection}>
           <Text style={s.cardTitle}>{shift.title}</Text>
+
+          {onTogglePin ? (
+            <TouchableOpacity
+              style={s.pinBtn}
+              onPress={handleTogglePin}
+              accessibilityRole="button"
+              accessibilityLabel={isPinned ? 'Unpin shift' : 'Pin shift'}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={s.pinBtnIcon}>{isPinned ? '📌' : '📍'}</Text>
+            </TouchableOpacity>
+          ) : null}
 
           {showApply && status === 'Available' ? (
             <TouchableOpacity
@@ -116,6 +138,14 @@ const getStyles = (colors: AppColors) =>
       fontWeight: '700',
       color: colors.text,
       flex: 1,
+    },
+    pinBtn: {
+      paddingHorizontal: 4,
+      paddingVertical: 2,
+      marginLeft: 8,
+    },
+    pinBtnIcon: {
+      fontSize: 16,
     },
     cardStatusBadge: {
       paddingHorizontal: 10,
