@@ -1,6 +1,6 @@
 import AuditLog from "../models/AuditLogs.js"; // your separate model
+import AUDIT_LOG_ENABLED from "../config/audit.js";
 
-const AUDIT_LOG_ENABLED = process.env.AUDIT_LOG_ENABLED === "true";
 const IS_DEV = process.env.NODE_ENV === "development";
 
 // Define all action constants
