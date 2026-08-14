@@ -25,10 +25,12 @@ const router = express.Router();
  * @swagger
  * /api/v1/auth/register:
  *   post:
- *     summary: Register a new Employer/Admin
- *     description: 
+ *     summary: Register a new Employer
+ *     description:
+ *       - Only employers can register through this public endpoint.
  *       - Employers **must** include an ABN.
  *       - Guards must use `/api/v1/auth/register/guard` because a license image is required.
+ *       - Administrator accounts must be created through an authorised administrative workflow.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -49,7 +51,7 @@ const router = express.Router();
  *                 example: "SecureShift1!"
  *               role:
  *                 type: string
- *                 enum: [employer, admin]
+ *                 enum: [employer]
  *                 example: employer
  *               phone:
  *                 type: string
@@ -61,16 +63,16 @@ const router = express.Router();
  *               address:
  *                 type: object
  *                 properties:
- *                   street: 
+ *                   street:
  *                     type: string
  *                     example: "123 Main Street"
- *                   suburb: 
+ *                   suburb:
  *                     type: string
  *                     example: "Melbourne"
- *                   state: 
+ *                   state:
  *                     type: string
  *                     example: "VIC"
- *                   postcode: 
+ *                   postcode:
  *                     type: string
  *                     example: "3000"
  *     responses:
