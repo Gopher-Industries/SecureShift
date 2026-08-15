@@ -249,6 +249,11 @@ function AllTab({ navigation }: Props) {
       },
     ]);
   };
+
+  const handleTogglePin = (shift: AllShift) => {  
+    setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+  };
+  
   const filtered = rows
     .filter((shift) =>
       `${shift.title} ${shift.company} ${shift.site}`
@@ -414,6 +419,7 @@ function AllTab({ navigation }: Props) {
               showApply
               onApply={() => handleApply(item.id)}
               applying={applyingId === item.id}
+              onTogglePin={handleTogglePin}
             />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -482,6 +488,10 @@ function AppliedTab({ navigation }: Props) {
     navigation.navigate('ShiftRequests');
   };
 
+  const handleTogglePin = (shift: AppliedShift) => {
+    setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+  };
+
   return (
     <View style={s.screen}>
       <TouchableOpacity style={s.requestsButton} onPress={handleViewRequests}>
@@ -511,7 +521,7 @@ function AppliedTab({ navigation }: Props) {
           keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
+            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} onTogglePin={handleTogglePin} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
@@ -574,6 +584,10 @@ function CompletedTab({ navigation }: Props) {
     navigation.navigate('ShiftRequests');
   };
 
+  const handleTogglePin = (shift: CompletedShift) => {
+    setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+  };
+
   return (
     <View style={s.screen}>
       <TouchableOpacity style={s.requestsButton} onPress={handleViewRequests}>
@@ -607,7 +621,7 @@ function CompletedTab({ navigation }: Props) {
           keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
+            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} onTogglePin={handleTogglePin} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noCompleted')}</Text>}
