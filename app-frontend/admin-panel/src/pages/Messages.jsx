@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getMessages, deleteMessage, getUsers } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
@@ -132,7 +132,8 @@ function useKeyboardShortcuts({
     const handleKeyDown = (e) => {
       // Only trigger if not typing in input fields
       const target = e.target;
-      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+      const isInput =
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
       if (isInput) return;
 
       // Ctrl+Shift+F or Cmd+Shift+F to focus search
@@ -188,16 +189,18 @@ function useKeyboardShortcuts({
 // NEW: Keyboard shortcuts indicator component
 function KeyboardShortcuts() {
   return (
-    <div style={{ 
-      fontSize: 11, 
-      color: '#999', 
-      marginTop: 8, 
-      padding: '4px 8px',
-      background: '#f5f5f5',
-      borderRadius: '4px',
-      display: 'inline-block',
-      marginBottom: 8
-    }}>
+    <div
+      style={{
+        fontSize: 11,
+        color: '#999',
+        marginTop: 8,
+        padding: '4px 8px',
+        background: '#f5f5f5',
+        borderRadius: '4px',
+        display: 'inline-block',
+        marginBottom: 8,
+      }}
+    >
       <span>⌨️ </span>
       <span style={{ marginRight: 12 }}>Ctrl+Shift+F: Focus search</span>
       <span style={{ marginRight: 12 }}>Ctrl+Enter: Apply filters</span>
@@ -355,10 +358,10 @@ export default function Messages() {
     onClearFilters: handleClearFilters,
     onApplyFilters: handleApplyFilters,
     onDeleteSelected: () => {
-      const firstActiveMessage = messages.find(m => !m.isDeleted);
+      const firstActiveMessage = messages.find((m) => !m.isDeleted);
       if (firstActiveMessage) openDeleteConfirm(firstActiveMessage);
     },
-    hasSelectedMessage: !!messages.find(m => !m.isDeleted),
+    hasSelectedMessage: !!messages.find((m) => !m.isDeleted),
     isModalOpen: !!confirmTarget,
   });
 
