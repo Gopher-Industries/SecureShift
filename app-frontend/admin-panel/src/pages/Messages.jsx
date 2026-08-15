@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { getMessages, deleteMessage, getUsers } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
@@ -119,6 +119,93 @@ const EMPTY_FILTERS = {
   to: '',
   includeDeleted: false,
 };
+
+// NEW: Keyboard shortcuts helper
+function useKeyboardShortcuts({
+  onClearFilters,
+  onApplyFilters,
+  onDeleteSelected,
+  hasSelectedMessage,
+  isModalOpen,
+}) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only trigger if not typing in input fields
+      const target = e.target;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+      if (isInput) return;
+
+      // Ctrl+Shift+F or Cmd+Shift+F to focus search
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="Type a name"]');
+        if (searchInput) searchInput.focus();
+      }
+
+      // ESC to close modal
+      if (e.key === 'Escape' && isModalOpen) {
+        e.preventDefault();
+        const cancelButtons = document.querySelectorAll('button');
+        for (const btn of cancelButtons) {
+          if (btn.textContent.trim() === 'Cancel') {
+            btn.click();
+            break;
+          }
+        }
+      }
+
+      // Ctrl+Enter or Cmd+Enter to apply filters
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        onApplyFilters(e);
+      }
+
+      // Ctrl+Backspace or Cmd+Backspace to clear filters
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Backspace') {
+        e.preventDefault();
+        onClearFilters();
+      }
+
+      // Delete key to delete selected message
+      if (e.key === 'Delete' && hasSelectedMessage && !isModalOpen) {
+        e.preventDefault();
+        // Find and click the first delete button in the table
+        const deleteBtns = document.querySelectorAll('button');
+        for (const btn of deleteBtns) {
+          if (btn.textContent.trim() === 'Delete' && btn.closest('tr')) {
+            btn.click();
+            break;
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClearFilters, onApplyFilters, onDeleteSelected, hasSelectedMessage, isModalOpen]);
+}
+
+// NEW: Keyboard shortcuts indicator component
+function KeyboardShortcuts() {
+  return (
+    <div style={{ 
+      fontSize: 11, 
+      color: '#999', 
+      marginTop: 8, 
+      padding: '4px 8px',
+      background: '#f5f5f5',
+      borderRadius: '4px',
+      display: 'inline-block',
+      marginBottom: 8
+    }}>
+      <span>⌨️ </span>
+      <span style={{ marginRight: 12 }}>Ctrl+Shift+F: Focus search</span>
+      <span style={{ marginRight: 12 }}>Ctrl+Enter: Apply filters</span>
+      <span style={{ marginRight: 12 }}>Ctrl+Backspace: Clear filters</span>
+      <span>Delete: Delete selected message</span>
+    </div>
+  );
+}
 
 // Admin page for viewing, filtering and moderating messages
 export default function Messages() {
@@ -263,12 +350,27 @@ export default function Messages() {
 
   const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / PAGE_SIZE));
 
+  // NEW: Setup keyboard shortcuts
+  useKeyboardShortcuts({
+    onClearFilters: handleClearFilters,
+    onApplyFilters: handleApplyFilters,
+    onDeleteSelected: () => {
+      const firstActiveMessage = messages.find(m => !m.isDeleted);
+      if (firstActiveMessage) openDeleteConfirm(firstActiveMessage);
+    },
+    hasSelectedMessage: !!messages.find(m => !m.isDeleted),
+    isModalOpen: !!confirmTarget,
+  });
+
   return (
     <div>
       <h1>Messages</h1>
       <p style={{ color: '#777', marginTop: -8 }}>
         View and moderate platform messages. Deleting a message hides it (soft delete).
       </p>
+
+      {/* NEW: Keyboard shortcuts indicator */}
+      <KeyboardShortcuts />
 
       <form
         onSubmit={handleApplyFilters}
@@ -278,6 +380,7 @@ export default function Messages() {
           alignItems: 'flex-end',
           flexWrap: 'wrap',
           marginBottom: 16,
+          marginTop: 8,
         }}
       >
         <UserTypeahead
