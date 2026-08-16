@@ -250,10 +250,10 @@ function AllTab({ navigation }: Props) {
     ]);
   };
 
-  const handleTogglePin = (shift: AllShift) => {  
+  const handleTogglePin = (shift: AllShift) => {
     setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
   };
-  
+
   const filtered = rows
     .filter((shift) =>
       `${shift.title} ${shift.company} ${shift.site}`
@@ -521,7 +521,12 @@ function AppliedTab({ navigation }: Props) {
           keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} onTogglePin={handleTogglePin} />
+            <ShiftCard
+              shift={item}
+              onPress={() => setSelectedShift(item)}
+              colors={colors}
+              onTogglePin={handleTogglePin}
+          />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
@@ -621,7 +626,12 @@ function CompletedTab({ navigation }: Props) {
           keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} onTogglePin={handleTogglePin} />
+            <ShiftCard
+              shift={item}
+              onPress={() => setSelectedShift(item)}
+              colors={colors}
+              onTogglePin={handleTogglePin}
+          />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noCompleted')}</Text>}
