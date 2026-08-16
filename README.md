@@ -160,6 +160,153 @@ npm start                   # runs on http://localhost:3001 by default
 
 It defaults to port 3001 so it runs alongside the Employer Panel (3000). Log in at `http://localhost:3001/login` with an **admin** account (backend `POST /api/v1/admin/login`); non-admin users are rejected.
 
+## AI Knowledge Assistant
+
+
+The Employer Panel includes an AI Knowledge Assistant using a local
+Retrieval-Augmented Generation (RAG) setup.
+
+
+### Knowledge Base
+
+
+The AI knowledge base is based on:
+
+
+```text
+app-backend/knowledge-base/docs/onboarding.txt
+
+The generated vector index is stored at:
+
+app-backend/knowledge-base/vectors/onboarding.json
+
+The onboarding guide PDF is stored at:
+
+app-backend/knowledge-base/guide/Onboarding.pdf
+
+The AI implementation is located under:
+
+app-backend/src/ai/
+
+It includes:
+
+Text chunking
+Embedding generation
+Vector indexing
+Vector search and similarity retrieval
+Knowledge-base services
+Ollama integration
+AI controller and routes
+Embedding Generation
+
+The vector index is generated using:
+
+app-backend/src/ai/indexing/buildIndex.js
+
+The embedding process uses Ollama with the nomic-embed-text embedding
+model.
+
+The process is:
+
+onboarding.txt
+      ↓
+buildIndex.js
+      ↓
+Ollama
+      ↓
+nomic-embed-text
+      ↓
+vectors/onboarding.json
+
+The current embeddings use 768 dimensions.
+
+Whenever onboarding.txt is changed, the vector index should be
+regenerated so that the embeddings remain synchronised with the
+knowledge-base content.
+
+Regenerating the Vector Index
+
+Before regenerating the vector index, make sure the Ollama service is
+running and the nomic-embed-text model is available.
+
+The indexing implementation is located at:
+
+app-backend/src/ai/indexing/buildIndex.js
+
+Run the indexing process using the command configured for buildIndex.js
+in app-backend/package.json.
+
+The generated vector index is:
+
+app-backend/knowledge-base/vectors/onboarding.json
+
+After regeneration, verify that the vector index corresponds to the
+current contents of onboarding.txt.
+
+When onboarding.txt is modified, regenerate the vector index before
+committing the knowledge-base changes.
+
+Ollama Dependency
+
+The AI Knowledge Assistant requires an Ollama service reachable by the
+backend on port 11434.
+
+The required embedding model is:
+
+nomic-embed-text
+
+When running through Docker Compose, the backend should communicate with
+the Ollama service using its Docker Compose service name rather than
+assuming that localhost refers to the Ollama container.
+
+The AI dependency is:
+
+Backend
+   ↓
+Ollama :11434
+   ↓
+nomic-embed-text
+AI Docker Services
+
+The AI setup includes the backend, Ollama, AI indexer, and Ollama model
+services.
+
+Check the running services with:
+
+docker compose ps
+
+View backend logs:
+
+docker compose logs -f backend
+
+View Ollama logs:
+
+docker compose logs -f ollama
+
+View AI indexer logs:
+
+docker compose logs -f ai-indexer
+
+If the service names differ, use the service names displayed by:
+
+docker compose ps
+Updating the AI Knowledge Base
+
+When updating the onboarding knowledge:
+
+Modify:
+app-backend/knowledge-base/docs/onboarding.txt
+Regenerate the vector index using:
+app-backend/src/ai/indexing/buildIndex.js
+Verify the generated file:
+app-backend/knowledge-base/vectors/onboarding.json
+Ensure the generated vectors correspond to the updated
+onboarding.txt.
+Commit the source document and regenerated vector index together.
+
+This keeps the vector index synchronised with the knowledge-base
+content and prevents the stored embeddings from becoming outdated.
+
 ## Verifying the Setup
 
 Once Docker is running:
