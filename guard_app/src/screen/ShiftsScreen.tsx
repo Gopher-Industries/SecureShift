@@ -251,7 +251,11 @@ function AllTab({ navigation }: Props) {
   };
 
   const handleTogglePin = (shift: AllShift) => {
-    setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+    try {
+      setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+    } catch (error) {
+      Alert.alert('Error', 'Could not update pinned status. Please try again.');
+    }
   };
 
   const filtered = rows
@@ -489,7 +493,11 @@ function AppliedTab({ navigation }: Props) {
   };
 
   const handleTogglePin = (shift: AppliedShift) => {
-    setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+    try {
+      setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+    } catch (error) {
+      Alert.alert('Error', 'Could not update pinned status. Please try again.');
+    }
   };
 
   return (
@@ -590,7 +598,11 @@ function CompletedTab({ navigation }: Props) {
   };
 
   const handleTogglePin = (shift: CompletedShift) => {
-    setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+    try {
+      setRows((prev) => prev.map((s) => (s.id === shift.id ? { ...s, pinned: !s.pinned } : s)));
+    } catch (error) {
+      Alert.alert('Error', 'Could not update pinned status. Please try again.');
+    }
   };
 
   return (
