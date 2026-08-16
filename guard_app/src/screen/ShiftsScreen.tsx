@@ -526,7 +526,7 @@ function AppliedTab({ navigation }: Props) {
               onPress={() => setSelectedShift(item)}
               colors={colors}
               onTogglePin={handleTogglePin}
-          />
+            />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
@@ -631,7 +631,7 @@ function CompletedTab({ navigation }: Props) {
               onPress={() => setSelectedShift(item)}
               colors={colors}
               onTogglePin={handleTogglePin}
-          />
+            />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noCompleted')}</Text>}
