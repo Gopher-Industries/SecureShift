@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 
+import { getUserAttendance, type Attendance } from '../api/attendance';
 import { getMe } from '../api/auth';
 import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
 import CalendarView from '../components/calendar/CalendarView';
@@ -24,7 +25,6 @@ import ShiftCard from '../components/card/ShiftCard';
 import ShiftDetailsModal from '../components/modal/ShiftDetailsModal';
 import ViewToggle from '../components/toggle/ViewToggle';
 import { useAppTheme } from '../theme';
-import { getUserAttendance, type Attendance } from '../api/attendance';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
@@ -303,6 +303,8 @@ function AllTab({ navigation }: Props) {
         <View style={s.searchContainer}>
           <Text style={s.searchIcon}>🔍</Text>
           <TextInput
+            accessible={true}
+            accessibilityLabel={t('shifts.search')}
             value={q}
             onChangeText={setQ}
             placeholder={t('shifts.search')}

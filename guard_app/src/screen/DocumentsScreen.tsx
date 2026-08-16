@@ -186,6 +186,8 @@ export default function DocumentsScreen() {
 
         <Text style={styles.label}>{t('docs.documentType')}</Text>
         <TouchableOpacity
+          accessible={true}
+          accessibilityLabel={t('docs.selectDocumentType')}
           style={styles.dropdown}
           onPress={() => setShowDropdown(!showDropdown)}
           disabled={uploading}
@@ -226,6 +228,8 @@ export default function DocumentsScreen() {
         )}
 
         <TouchableOpacity
+          accessible={true}
+          accessibilityLabel={t('docs.addDocument')}
           style={[styles.uploadArea, !selectedDocType && styles.uploadAreaDisabled]}
           onPress={pickAndUploadDocument}
           disabled={!selectedDocType || uploading}
@@ -252,7 +256,9 @@ export default function DocumentsScreen() {
 
         {documents.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon}>📄</Text>
+            <Text style={styles.emptyStateIcon} accessibilityLabel={t('docs.noDocumentsUploaded')}>
+              📄
+            </Text>
             <Text style={styles.emptyStateText}>{t('docs.noDocumentsUploaded')}</Text>
             <Text style={styles.emptyStateSubtext}>{t('docs.noDocumentsSubtext')}</Text>
           </View>

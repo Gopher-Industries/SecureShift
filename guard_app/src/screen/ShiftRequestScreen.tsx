@@ -71,7 +71,12 @@ export default function ShiftRequestScreen() {
 
   return (
     <View style={styles.screen}>
-      <TouchableOpacity style={styles.dropdown} onPress={() => setShowDropdown(!showDropdown)}>
+      <TouchableOpacity
+        accessible={true}
+        accessibilityLabel={t('shifts.filterRequests')}
+        style={styles.dropdown}
+        onPress={() => setShowDropdown(!showDropdown)}
+      >
         <Ionicons name="filter-outline" size={22} />
       </TouchableOpacity>
 
