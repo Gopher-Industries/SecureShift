@@ -46,9 +46,7 @@ function UserTypeahead({
 
     return users
       .filter(
-        (u) =>
-          (u.name || '').toLowerCase().includes(q) ||
-          (u.email || '').toLowerCase().includes(q)
+        (u) => (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
       )
       .slice(0, 8);
   }, [query, users, selectedId]);
@@ -120,8 +118,7 @@ function UserTypeahead({
                   cursor: 'pointer',
                 }}
               >
-                {personLabel(u)}{' '}
-                <span style={{ color: '#999' }}>({u.role})</span>
+                {personLabel(u)} <span style={{ color: '#999' }}>({u.role})</span>
               </button>
             </li>
           ))}
@@ -156,9 +153,7 @@ function useKeyboardShortcuts({
       // Do not trigger shortcuts while typing in form fields.
       const target = e.target;
       const isInput =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'SELECT';
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
 
       if (isInput) return;
 
@@ -195,13 +190,7 @@ function useKeyboardShortcuts({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [
-    searchInputRef,
-    onClearFilters,
-    onApplyFilters,
-    onCloseModal,
-    isModalOpen,
-  ]);
+  }, [searchInputRef, onClearFilters, onApplyFilters, onCloseModal, isModalOpen]);
 }
 
 // Keyboard shortcuts indicator component
@@ -220,12 +209,8 @@ function KeyboardShortcuts() {
       }}
     >
       <span>⌨️ </span>
-      <span style={{ marginRight: 12 }}>
-        Ctrl+Shift+F: Focus search
-      </span>
-      <span style={{ marginRight: 12 }}>
-        Ctrl+Enter: Apply filters
-      </span>
+      <span style={{ marginRight: 12 }}>Ctrl+Shift+F: Focus search</span>
+      <span style={{ marginRight: 12 }}>Ctrl+Enter: Apply filters</span>
       <span>Ctrl+Backspace: Clear filters</span>
     </div>
   );
@@ -281,20 +266,12 @@ export default function Messages() {
       const params = {
         page,
         limit: PAGE_SIZE,
-        ...(appliedFilters.senderId
-          ? { sender: appliedFilters.senderId }
-          : {}),
-        ...(appliedFilters.receiverId
-          ? { receiver: appliedFilters.receiverId }
-          : {}),
-        ...(appliedFilters.conversationId
-          ? { conversationId: appliedFilters.conversationId }
-          : {}),
+        ...(appliedFilters.senderId ? { sender: appliedFilters.senderId } : {}),
+        ...(appliedFilters.receiverId ? { receiver: appliedFilters.receiverId } : {}),
+        ...(appliedFilters.conversationId ? { conversationId: appliedFilters.conversationId } : {}),
         ...(appliedFilters.from ? { from: appliedFilters.from } : {}),
         ...(appliedFilters.to ? { to: appliedFilters.to } : {}),
-        ...(appliedFilters.includeDeleted
-          ? { includeDeleted: 'true' }
-          : {}),
+        ...(appliedFilters.includeDeleted ? { includeDeleted: 'true' } : {}),
       };
 
       const data = await getMessages(params);
@@ -310,9 +287,7 @@ export default function Messages() {
         }
       );
     } catch (err) {
-      setError(
-        err?.response?.data?.message || 'Failed to load messages'
-      );
+      setError(err?.response?.data?.message || 'Failed to load messages');
     } finally {
       setLoading(false);
     }
@@ -365,10 +340,7 @@ export default function Messages() {
       setDeleting(true);
       setDeleteError('');
 
-      await deleteMessage(
-        confirmTarget._id,
-        deleteReason ? { reason: deleteReason } : undefined
-      );
+      await deleteMessage(confirmTarget._id, deleteReason ? { reason: deleteReason } : undefined);
 
       setConfirmTarget(null);
       setDeleteReason('');
@@ -380,9 +352,7 @@ export default function Messages() {
         fetchMessages();
       }
     } catch (err) {
-      setDeleteError(
-        err?.response?.data?.message || 'Failed to delete message'
-      );
+      setDeleteError(err?.response?.data?.message || 'Failed to delete message');
     } finally {
       setDeleting(false);
     }
@@ -422,20 +392,14 @@ export default function Messages() {
         r.isDeleted ? (
           <span style={{ color: '#999' }}>{'\u2014'}</span>
         ) : (
-          <button
-            type="button"
-            onClick={() => openDeleteConfirm(r)}
-          >
+          <button type="button" onClick={() => openDeleteConfirm(r)}>
             Delete
           </button>
         ),
     },
   ];
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil((pagination.total || 0) / PAGE_SIZE)
-  );
+  const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / PAGE_SIZE));
 
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
@@ -451,8 +415,7 @@ export default function Messages() {
       <h1>Messages</h1>
 
       <p style={{ color: '#777', marginTop: -8 }}>
-        View and moderate platform messages. Deleting a message hides it
-        (soft delete).
+        View and moderate platform messages. Deleting a message hides it (soft delete).
       </p>
 
       <KeyboardShortcuts />
@@ -638,11 +601,7 @@ export default function Messages() {
         <p style={{ color: '#c00' }}>{error}</p>
       ) : (
         <>
-          <DataTable
-            columns={columns}
-            rows={messages}
-            empty="No messages found"
-          />
+          <DataTable columns={columns} rows={messages} empty="No messages found" />
 
           {pagination.total > 0 && (
             <div
@@ -656,16 +615,13 @@ export default function Messages() {
               }}
             >
               <span>
-                Page {pagination.page} of {totalPages} ({pagination.total}{' '}
-                total)
+                Page {pagination.page} of {totalPages} ({pagination.total} total)
               </span>
 
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   type="button"
-                  onClick={() =>
-                    setPage((p) => Math.max(1, p - 1))
-                  }
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                 >
                   Prev
@@ -684,11 +640,7 @@ export default function Messages() {
         </>
       )}
 
-      <Modal
-        open={!!confirmTarget}
-        title="Delete this message?"
-        onClose={closeDeleteConfirm}
-      >
+      <Modal open={!!confirmTarget} title="Delete this message?" onClose={closeDeleteConfirm}>
         {confirmTarget && (
           <div
             style={{
@@ -698,9 +650,7 @@ export default function Messages() {
             }}
           >
             <p style={{ margin: 0, color: '#555' }}>
-              From{' '}
-              <strong>{personLabel(confirmTarget.sender)}</strong>{' '}
-              to{' '}
+              From <strong>{personLabel(confirmTarget.sender)}</strong> to{' '}
               <strong>{personLabel(confirmTarget.receiver)}</strong>
               {': '}
               <em>{previewContent(confirmTarget.content)}</em>
@@ -713,8 +663,7 @@ export default function Messages() {
                 color: '#777',
               }}
             >
-              This hides the message from users but keeps it in the
-              database (soft delete).
+              This hides the message from users but keeps it in the database (soft delete).
             </p>
 
             <label
@@ -726,7 +675,6 @@ export default function Messages() {
               }}
             >
               Reason (optional)
-
               <textarea
                 value={deleteReason}
                 onChange={(e) => setDeleteReason(e.target.value)}
@@ -739,11 +687,7 @@ export default function Messages() {
               />
             </label>
 
-            {deleteError && (
-              <p style={{ color: '#c00', margin: 0 }}>
-                {deleteError}
-              </p>
-            )}
+            {deleteError && <p style={{ color: '#c00', margin: 0 }}>{deleteError}</p>}
 
             <div
               style={{
@@ -752,19 +696,11 @@ export default function Messages() {
                 justifyContent: 'flex-end',
               }}
             >
-              <button
-                type="button"
-                onClick={closeDeleteConfirm}
-                disabled={deleting}
-              >
+              <button type="button" onClick={closeDeleteConfirm} disabled={deleting}>
                 Cancel
               </button>
 
-              <button
-                type="button"
-                onClick={confirmDelete}
-                disabled={deleting}
-              >
+              <button type="button" onClick={confirmDelete} disabled={deleting}>
                 {deleting ? 'Deleting\u2026' : 'Delete message'}
               </button>
             </div>
