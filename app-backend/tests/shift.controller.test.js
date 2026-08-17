@@ -240,7 +240,19 @@ describe("Shift Controller API Tests", () => {
     expect(Array.isArray(res.body.items)).toBe(true);
   });
 
-  /* ---------------- SHIFT HISTORY ---------------- */
+  /* ---------------- MY SHIFTS / HISTORY ROUTE ORDER ---------------- */
+  test("GET /myshifts is not treated as /:id=myshifts", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.message).not.toBe("Invalid id");
+  });
+
   test("Guard fetch shift history", async () => {
     const res = await request(app)
       .get("/api/v1/shifts/history")
@@ -250,6 +262,19 @@ describe("Shift Controller API Tests", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty("items");
+    expect(res.body.message).not.toBe("Invalid id");
+  });
+
+  test("GET /:id still returns a single shift", async () => {
+    const res = await request(app)
+      .get(`/api/v1/shifts/${shiftId}`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body._id).toBe(shiftId);
+    expect(Array.isArray(res.body)).toBe(false);
   });
 
   /* ---------------- COMPLETE SHIFT ---------------- */
