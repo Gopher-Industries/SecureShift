@@ -23,13 +23,13 @@ describe('CalendarView pinned shifts', () => {
         status: 'Available',
         pinned: true,
       },
-  ];
+    ];
     const { getByText } = render(
       <CalendarView shifts={shifts} onShiftPress={() => {}} colors={COLORS} />,
     );
 
-  expect(getByText('📌')).toBeTruthy();
-});
+    expect(getByText('📌')).toBeTruthy();
+  });
 
   it('does not show a pin marker when no shift on that day is pinned', () => {
     const shifts = [
@@ -47,5 +47,5 @@ describe('CalendarView pinned shifts', () => {
     );
 
     expect(queryByText('📌')).toBeNull();
-});
+  });
 });
