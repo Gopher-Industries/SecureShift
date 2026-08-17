@@ -148,13 +148,13 @@ const SMTPIcon = ({ size = 24, color = 'currentColor' }) => (
 );
 
 const items = [
-  ['/dashboard', 'Dashboard', <DashboardIcon />],
-  ['/users', 'Users', <UsersIcon />],
-  ['/guard-verification', 'Guard Verification', <GuardIcon />],
-  ['/shifts', 'Shifts', <ShiftIcon />],
-  ['/audit-logs', 'Audit Logs', <AuditIcon />],
-  ['/messages', 'Messages', <ChatIcon />],
-  ['/smtp-settings', 'SMTP Settings', <SMTPIcon />],
+  ['/dashboard', 'Dashboard', DashboardIcon],
+  ['/users', 'Users', UsersIcon],
+  ['/guard-verification', 'Guard Verification', GuardIcon],
+  ['/shifts', 'Shifts', ShiftIcon],
+  ['/audit-logs', 'Audit Logs', AuditIcon],
+  ['/messages', 'Messages', ChatIcon],
+  ['/smtp-settings', 'SMTP Settings', SMTPIcon],
 ];
 
 export default function AdminSidebar() {
@@ -212,7 +212,7 @@ export default function AdminSidebar() {
         </span>
       </div>
       <nav>
-        {items.map(([to, label, iconSVG]) => (
+        {items.map(([to, label, Icon]) => (
           <NavLink
             key={to}
             to={to}
@@ -231,7 +231,9 @@ export default function AdminSidebar() {
                 gap: '8px',
               }}
             >
-              <div style={{ flexShrink: 0, display: 'flex' }}>{iconSVG}</div>
+              <div style={{ flexShrink: 0, display: 'flex' }}>
+                <Icon />
+              </div>
               <span
                 style={{
                   opacity: collapsed ? 0 : 1,
