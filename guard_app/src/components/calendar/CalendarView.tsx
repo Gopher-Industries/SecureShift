@@ -20,13 +20,13 @@ function addDays(d: Date, days: number) {
   return copy;
 }
 
-type Props<T extends { id: string; date: string; title: string; status?: string }> = {
+type Props<T extends { id: string; date: string; title: string; status?: string; pinned?: boolean }> = {
   shifts: T[];
   onShiftPress: (shift: T) => void;
   colors: AppColors;
 };
 
-function CalendarView<T extends { id: string; date: string; title: string; status?: string }>({
+function CalendarView<T extends { id: string; date: string; title: string; status?: string; pinned?: boolean }>({
   shifts,
   onShiftPress,
   colors,
@@ -49,6 +49,9 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
       const key = dateKeyLocal(new Date(shift.date));
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(shift);
+    });
+    map.forEach((dayShifts) => {
+      dayShifts.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
     });
     return map;
   }, [shifts]);
@@ -111,12 +114,16 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
               <Text style={[s.calDayNumber, !inMonth && s.calDayNumberDim]}>{d.getDate()}</Text>
               {hasShifts && (
                 <View style={s.calShiftIndicators}>
-                  {dayShifts.slice(0, 3).map((shift, i) => (
+                  {dayShifts.slice(0, 3).map((shift, i) =>
+                  shift.pinned ? (
+                    <Text key={i} style={s.calPinnedDot} accessibilityLabel="Pinned shift">📌</Text>
+                    ) : (
                     <View
                       key={i}
                       style={[s.calShiftDot, { backgroundColor: getStatusColor(shift.status) }]}
-                    />
-                  ))}
+                      />
+                    ),
+                  )}
                 </View>
               )}
             </TouchableOpacity>
@@ -235,6 +242,10 @@ const getStyles = (colors: AppColors) =>
       width: 6,
       height: 6,
       borderRadius: 3,
+    },
+    calPinnedDot: {
+      fontSize: 8,
+      lineHeight: 8,
     },
     calLegend: {
       flexDirection: 'row',
