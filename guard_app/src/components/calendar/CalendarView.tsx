@@ -20,7 +20,9 @@ function addDays(d: Date, days: number) {
   return copy;
 }
 
-type Props<T extends { id: string; date: string; title: string; status?: string; pinned?: boolean }> = {
+type Props<
+  T extends { id: string; date: string; title: string; status?: string; pinned?: boolean },
+> = {
   shifts: T[];
   onShiftPress: (shift: T) => void;
   colors: AppColors;
