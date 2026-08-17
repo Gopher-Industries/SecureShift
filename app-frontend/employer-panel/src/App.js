@@ -22,6 +22,8 @@ import Footer from './components/Footer';
 import PageTitleHandler from './components/PageTitleHandler';
 
 import ProtectedRoute from './routes/ProtectedRoute';
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
+import KeyboardShortcutModal from './components/KeyboardShortcutModal';
 
 import Timesheet from './pages/Timesheet';
 import DailyMonitoring from './pages/DailyMonitoring';
@@ -54,6 +56,7 @@ function ProtectedLayout({ children, language, setLanguage }) {
 
 function AppRoutes({ language, setLanguage }) {
   const navigate = useNavigate();
+  const { isHelpModalOpen, closeHelpModal } = useKeyboardShortcuts(navigate);
 
   useEffect(() => {
     attach401Handler(() => navigate('/login'));
@@ -68,6 +71,7 @@ function AppRoutes({ language, setLanguage }) {
   return (
     <>
       <PageTitleHandler />
+      <KeyboardShortcutModal isOpen={isHelpModalOpen} onClose={closeHelpModal} />
       <Routes>
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<Login />} />
