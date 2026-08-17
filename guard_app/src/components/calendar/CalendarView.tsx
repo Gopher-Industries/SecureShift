@@ -123,8 +123,8 @@ function CalendarView<
                       <View
                         key={i}
                         style={[s.calShiftDot, { backgroundColor: getStatusColor(shift.status) }]}
-                        />
-                  ),
+                      />
+                    ),
                   )}
                 </View>
               )}
