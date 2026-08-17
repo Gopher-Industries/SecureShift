@@ -16,20 +16,35 @@ function todayIso() {
 describe('CalendarView pinned shifts', () => {
   it('shows a pin marker on a day that has a pinned shift', () => {
     const shifts = [
-      { id: '1', title: 'Night Security Guard', date: todayIso(), status: 'Available', pinned: true },
-      ];
+      {
+        id: '1',
+        title: 'Night Security Guard',
+        date: todayIso(),
+        status: 'Available',
+        pinned: true,
+      },
+  ];
+    const { getByText } = render(
+      <CalendarView shifts={shifts} onShiftPress={() => {}} colors={COLORS} />,
+    );
 
-     const { getByText } = render(<CalendarView shifts={shifts} onShiftPress={() => {}} colors={COLORS} />);
-
-    expect(getByText('📌')).toBeTruthy();
+  expect(getByText('📌')).toBeTruthy();
 });
 
-it('does not show a pin marker when no shift on that day is pinned', () => {
-  const shifts = [
-    { id: '1', title: 'Night Security Guard', date: todayIso(), status: 'Available', pinned: false },
+  it('does not show a pin marker when no shift on that day is pinned', () => {
+    const shifts = [
+      {
+        id: '1',
+        title: 'Night Security Guard',
+        date: todayIso(),
+        status: 'Available',
+        pinned: false,
+      },
     ];
 
-   const { queryByText } = render(<CalendarView shifts={shifts} onShiftPress={() => {}} colors={COLORS} />);
+    const { queryByText } = render(
+      <CalendarView shifts={shifts} onShiftPress={() => {}} colors={COLORS} />,
+    );
 
     expect(queryByText('📌')).toBeNull();
 });
