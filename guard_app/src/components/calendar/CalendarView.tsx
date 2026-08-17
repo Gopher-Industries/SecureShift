@@ -28,11 +28,9 @@ type Props<
   colors: AppColors;
 };
 
-function CalendarView<T extends { id: string; date: string; title: string; status?: string; pinned?: boolean }>({
-  shifts,
-  onShiftPress,
-  colors,
-}: Props<T>) {
+function CalendarView<
+  T extends { id: string; date: string; title: string; status?: string; pinned?: boolean },
+>({ shifts, onShiftPress, colors }: Props<T>) {
   const s = getStyles(colors);
   const { t } = useTranslation();
   const [monthCursor, setMonthCursor] = useState(() => new Date());
@@ -117,14 +115,16 @@ function CalendarView<T extends { id: string; date: string; title: string; statu
               {hasShifts && (
                 <View style={s.calShiftIndicators}>
                   {dayShifts.slice(0, 3).map((shift, i) =>
-                  shift.pinned ? (
-                    <Text key={i} style={s.calPinnedDot} accessibilityLabel="Pinned shift">📌</Text>
+                    shift.pinned ? (
+                      <Text key={i} style={s.calPinnedDot} accessibilityLabel="Pinned shift">
+                        📌
+                      </Text>
                     ) : (
-                    <View
-                      key={i}
-                      style={[s.calShiftDot, { backgroundColor: getStatusColor(shift.status) }]}
-                      />
-                    ),
+                      <View
+                        key={i}
+                        style={[s.calShiftDot, { backgroundColor: getStatusColor(shift.status) }]}
+                        />
+                  ),
                   )}
                 </View>
               )}
