@@ -407,16 +407,6 @@ AUDIT_LOG_ENABLED=true
 Restart the backend after changing this value because environment configuration
 is loaded during application startup.
 
-The local OTP flow records:
-
-| Outcome | Audit record |
-| --- | --- |
-| OTP email accepted by SMTP | `OTP_SENT` |
-| OTP verified and JWT issued | `LOGIN_SUCCESS` with `metadata.step: "OTP_VERIFIED"` |
-| OTP email delivery failed | `OTP_DELIVERY_FAILED` |
-
-Audit records do not contain OTP values, JWTs, SMTP passwords, or email bodies.
-
 To inspect recent OTP audit records:
 
 ```bash
