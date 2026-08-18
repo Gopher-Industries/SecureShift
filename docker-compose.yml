@@ -25,6 +25,10 @@ services:
       mailpit:
         condition: service_healthy
     restart: unless-stopped
+    volumes:
+      # Keep uploaded licence and incident files across container rebuilds.
+      # Without this the container filesystem is discarded and every upload is lost.
+      - uploads-data:/app/uploads
     networks:
       - secureshift
     command: npm start
@@ -86,6 +90,7 @@ services:
 
 volumes:
   mongo-data:
+  uploads-data:
 
 networks:
   secureshift:
