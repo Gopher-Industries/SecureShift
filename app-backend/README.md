@@ -421,6 +421,84 @@ docker exec secureshift-db mongosh \
     }).sort({ timestamp: -1 }).limit(10).forEach(printjson);
   '
 ```
+## Local vs Shared Integration Database
+
+SecureShift supports two development database workflows.
+
+### Local development
+
+Use the local MongoDB database for normal development, automated/local testing, seed/reset operations, and Docker Compose.
+
+Activate the local backend environment:
+
+```bash
+cd app-backend
+cp .env.local .env
+```
+
+Start local MongoDB if required:
+
+```bash
+docker compose up -d mongodb
+```
+
+Then start the backend:
+
+```bash
+npm run dev
+```
+
+### Shared integration testing
+
+Use the shared Atlas integration database only when multiple developers or clients need to work with the same records, such as Guard App registration followed by Admin Panel verification.
+
+Obtain `.env.integration` privately from the backend lead. Do not commit it.
+
+Activate it with:
+
+```bash
+cd app-backend
+cp .env.integration .env
+npm run dev
+```
+
+Docker Compose should not be used for the backend in this mode because the Compose backend is intentionally configured for local MongoDB.
+
+Verify the active database without displaying credentials:
+
+```bash
+node -e "require('dotenv').config({path:'.env'}); const u=new URL(process.env.MONGO_URI); console.log('Host:',u.hostname); console.log('Database:',u.pathname)"
+```
+
+Expected integration database:
+
+```text
+Host: secureshift-integration.mcgzunx.mongodb.net
+Database: /secureshift_integration
+```
+
+Before switching environments, stop any existing backend process on port 5000. A stale backend may continue serving data from the previously selected database.
+
+### Integration test data
+
+The shared database contains a small stable set of fake integration fixtures, including an admin, employer, pending guard, and verified guard.
+
+Integration fixture credentials are provided privately to authorised testers.
+
+Do not:
+
+- commit `.env`, `.env.local`, or `.env.integration`;
+- use real personal information;
+- run local seed/reset commands against Atlas;
+- run destructive database tests against the shared integration database.
+
+Switch back to local development with:
+
+```bash
+cp .env.local .env
+npm run dev
+```
+
 
 In MongoDB Compass, filter by user with:
 
