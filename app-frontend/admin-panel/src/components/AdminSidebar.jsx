@@ -12,8 +12,15 @@ const items = [
 
 export default function AdminSidebar() {
   return (
-    <aside style={{ width: 220, background: '#18284f', color: '#fff', paddingTop: 16 }}>
-      <div style={{ padding: '0 20px 16px', fontWeight: 700, fontSize: 18 }}>SecureShift Admin</div>
+    <aside
+      style={{
+        width: 220,
+        background: '#072261',
+        color: '#fff',
+        paddingTop: 16,
+        flexShrink: 0,
+      }}
+    >
       <nav>
         {items.map(([to, label]) => (
           <NavLink
@@ -21,7 +28,7 @@ export default function AdminSidebar() {
             to={to}
             style={({ isActive }) => ({
               display: 'block',
-              padding: '10px 20px',
+              padding: '12px 20px',
               color: '#fff',
               textDecoration: 'none',
               background: isActive ? '#274b93' : 'transparent',
