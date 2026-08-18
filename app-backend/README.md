@@ -268,6 +268,33 @@ npm run test
 
 Unit and integration tests are managed via Jest (or Mocha/Chai if used).
 
+### CI tests
+
+Pull requests run the following stable, database-free backend suites:
+
+- `tests/env.config.test.js`
+- `tests/seed.safety.test.js`
+- `src/tests/services/fatigue.service.test.js`
+
+Run the same allowlist locally with `npm run test:ci`. The complete legacy suite is intentionally
+not a required pull request gate while some suites have known database, environment, and ESM
+mocking reliability issues.
+
+### Test Database Configuration
+Database-connected tests use a dedicated MongoDB database `secureshift_test`.
+1. Create a test environment file:
+    ```bash
+    cp .env.example .env.test
+    ```
+2. Edit .env.test and set the test database URI:
+    ```bash
+    NODE_ENV=test
+    MONGO_URI=mongodb://localhost:27017/secureshift_test
+    ```
+Safety notice: Tests run destructive operations like deleteMany({}). The test
+runner includes safety checks that reject any database other than secureshift_test,
+localhost, or mongodb:// protocol. Atlas/SRV URIs will fail immediately.
+
 ## Timesheet API
 
 Generated timesheets are exposed under `/api/v1/timesheets`.
@@ -379,16 +406,6 @@ AUDIT_LOG_ENABLED=true
 
 Restart the backend after changing this value because environment configuration
 is loaded during application startup.
-
-The local OTP flow records:
-
-| Outcome | Audit record |
-| --- | --- |
-| OTP email accepted by SMTP | `OTP_SENT` |
-| OTP verified and JWT issued | `LOGIN_SUCCESS` with `metadata.step: "OTP_VERIFIED"` |
-| OTP email delivery failed | `OTP_DELIVERY_FAILED` |
-
-Audit records do not contain OTP values, JWTs, SMTP passwords, or email bodies.
 
 To inspect recent OTP audit records:
 

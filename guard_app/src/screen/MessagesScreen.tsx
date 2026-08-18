@@ -610,8 +610,8 @@ const getStyles = (colors: AppColors) =>
       padding: 2,
     },
     contextChip: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       borderRadius: 14,
     },
     contextChipActive: { backgroundColor: colors.white },

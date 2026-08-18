@@ -4,16 +4,9 @@ import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { listShiftRequests, ShiftRequestDto } from '../api/shiftRequest';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
-
-interface ShiftRequest {
-  id: string;
-  type: 'SWAP' | 'LEAVE';
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  created_at: string;
-  reason?: string;
-}
 
 export default function ShiftRequestScreen() {
   const { colors } = useAppTheme();
@@ -23,65 +16,27 @@ export default function ShiftRequestScreen() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-  const [allRows, setAllRows] = useState<ShiftRequest[]>([]);
-  const [rows, setRows] = useState<ShiftRequest[]>([]);
+  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
+  const [allRows, setAllRows] = useState<ShiftRequestDto[]>([]);
+  const [rows, setRows] = useState<ShiftRequestDto[]>([]);
 
   const STATUS_TYPES = [
-    { id: 'all', label: 'All' },
-    { id: 'pending', label: t('shifts.pending') },
-    { id: 'approved', label: t('shifts.approved') },
-    { id: 'rejected', label: t('shifts.rejected') },
+    { id: 'ALL', label: 'All' },
+    { id: 'PENDING', label: t('shifts.pending') },
+    { id: 'APPROVED', label: t('shifts.approved') },
+    { id: 'REJECTED', label: t('shifts.rejected') },
   ];
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
 
-      //DUMMY DATA
-      const row1: ShiftRequest = {
-        id: 'id',
-        type: 'SWAP',
-        status: 'PENDING',
-        created_at: new Date().toDateString(),
-        reason: 'The reason is I really want a day off',
-      };
-      const row2: ShiftRequest = {
-        id: 'id2',
-        type: 'LEAVE',
-        status: 'APPROVED',
-        created_at: new Date().toDateString(),
-        reason: 'The reason is I am testing stuff',
-      };
-      const row3: ShiftRequest = {
-        id: 'id3',
-        type: 'SWAP',
-        status: 'REJECTED',
-        created_at: new Date().toDateString(),
-      };
-      const row4: ShiftRequest = {
-        id: 'id4',
-        type: 'LEAVE',
-        status: 'PENDING',
-        created_at: new Date().toDateString(),
-        reason: 'The reason is I really want a day off',
-      };
-      const row5: ShiftRequest = {
-        id: 'id5',
-        type: 'SWAP',
-        status: 'APPROVED',
-        created_at: new Date().toDateString(),
-        reason: 'The reason is I am testing stuff',
-      };
-      const row6: ShiftRequest = {
-        id: 'id6',
-        type: 'LEAVE',
-        status: 'REJECTED',
-        created_at: new Date().toDateString(),
-      };
+      const res = await listShiftRequests();
 
-      setAllRows([row1, row2, row3, row4, row5, row6]);
-      setRows(allRows);
+      if (!res.success) throw error;
+
+      setAllRows(res.items);
+      setRows(res.items);
       setError('');
     } catch (e: unknown) {
       setError(t('shifts.requestError'));
@@ -92,18 +47,18 @@ export default function ShiftRequestScreen() {
 
   useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
 
-  const handleFilter = (filter: 'all' | 'pending' | 'approved' | 'rejected') => {
-    if (filter == 'pending') {
-      setFilter('pending');
+  const handleFilter = (filter: 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED') => {
+    if (filter == 'PENDING') {
+      setFilter('PENDING');
       setRows(allRows.filter((row) => row.status == 'PENDING'));
-    } else if (filter == 'approved') {
-      setFilter('approved');
+    } else if (filter == 'APPROVED') {
+      setFilter('APPROVED');
       setRows(allRows.filter((row) => row.status == 'APPROVED'));
-    } else if (filter == 'rejected') {
-      setFilter('rejected');
+    } else if (filter == 'REJECTED') {
+      setFilter('REJECTED');
       setRows(allRows.filter((row) => row.status == 'REJECTED'));
     } else {
-      setFilter('all');
+      setFilter('ALL');
       setRows(allRows);
     }
   };
@@ -116,7 +71,12 @@ export default function ShiftRequestScreen() {
 
   return (
     <View style={styles.screen}>
-      <TouchableOpacity style={styles.dropdown} onPress={() => setShowDropdown(!showDropdown)}>
+      <TouchableOpacity
+        accessible={true}
+        accessibilityLabel={t('shifts.filterRequests')}
+        style={styles.dropdown}
+        onPress={() => setShowDropdown(!showDropdown)}
+      >
         <Ionicons name="filter-outline" size={22} />
       </TouchableOpacity>
 
@@ -130,10 +90,10 @@ export default function ShiftRequestScreen() {
               style={[styles.dropdownItem, filter === status.id && styles.dropdownItemSelected]}
               onPress={() => {
                 if (
-                  status.id == 'all' ||
-                  status.id == 'pending' ||
-                  status.id == 'approved' ||
-                  status.id == 'rejected'
+                  status.id == 'ALL' ||
+                  status.id == 'PENDING' ||
+                  status.id == 'APPROVED' ||
+                  status.id == 'REJECTED'
                 ) {
                   handleFilter(status.id);
                 }
@@ -161,7 +121,7 @@ export default function ShiftRequestScreen() {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardTitleSection}>
-                  <Text style={styles.cardTitle}>{item.id}</Text>
+                  <Text style={styles.cardTitle}>{item._id}</Text>
                   <View
                     style={[
                       styles.cardStatusBadge,
@@ -181,6 +141,13 @@ export default function ShiftRequestScreen() {
 
               <Text style={styles.cardReason}>{item.reason ?? '---'}</Text>
 
+              {item.rejectionReason != null && item.rejectionReason != '' && (
+                <View style={styles.cardRow}>
+                  <Text style={styles.cardRejection}>{t('shifts.rejected')} </Text>
+                  <Text style={styles.cardValue}>{item.rejectionReason}</Text>
+                </View>
+              )}
+
               <View style={styles.cardRow}>
                 <Text style={styles.cardLabel}>{t('shifts.requestType')}</Text>
                 <Text style={styles.cardValue}>
@@ -188,9 +155,45 @@ export default function ShiftRequestScreen() {
                 </Text>
               </View>
 
+              {item.type === 'LEAVE' && (
+                <View>
+                  <View style={styles.cardRow}>
+                    <Text style={styles.cardLabel}>{t('shifts.leaveStart')}</Text>
+                    <Text style={styles.cardValue}>
+                      {typeof item.leaveStartDate === 'string'
+                        ? new Date(Date.parse(item.leaveStartDate)).toDateString()
+                        : '---'}
+                    </Text>
+                  </View>
+                  <View style={styles.cardRow}>
+                    <Text style={styles.cardLabel}>{t('shifts.leaveEnd')}</Text>
+                    <Text style={styles.cardValue}>
+                      {typeof item.leaveEndDate === 'string'
+                        ? new Date(Date.parse(item.leaveEndDate)).toDateString()
+                        : '---'}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {item.type === 'SWAP' && (
+                <View style={styles.cardRow}>
+                  <Text style={styles.cardLabel}>{t('shifts.requestedDate')}</Text>
+                  <Text style={styles.cardValue}>
+                    {typeof item.createdAt === 'string'
+                      ? new Date(Date.parse(item.createdAt)).toDateString()
+                      : '---'}
+                  </Text>
+                </View>
+              )}
+
               <View style={styles.cardRow}>
                 <Text style={styles.cardLabel}>{t('shifts.requestedDate')}</Text>
-                <Text style={styles.cardValue}>{item.created_at}</Text>
+                <Text style={styles.cardValue}>
+                  {typeof item.createdAt === 'string'
+                    ? new Date(Date.parse(item.createdAt)).toDateString()
+                    : '---'}
+                </Text>
               </View>
             </View>
           )}
@@ -218,14 +221,14 @@ const getStyles = (colors: AppColors) =>
       color: colors.muted,
       marginTop: 40,
       fontSize: 24,
-      fontWeight: 600,
+      fontWeight: '600',
     },
     errorText: {
       textAlign: 'center',
       color: colors.status.rejected,
       marginTop: 40,
       fontSize: 24,
-      fontWeight: 600,
+      fontWeight: '600',
     },
     cardList: {
       paddingBottom: 95,
@@ -267,6 +270,13 @@ const getStyles = (colors: AppColors) =>
       fontSize: 13,
       color: colors.muted,
       marginBottom: 12,
+    },
+    cardRejection: {
+      fontSize: 13,
+      color: colors.status.rejected,
+      fontWeight: '600',
+      width: 65,
+      marginBottom: 6,
     },
     cardRow: {
       flexDirection: 'row',

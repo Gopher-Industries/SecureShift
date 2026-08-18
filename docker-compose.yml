@@ -18,12 +18,17 @@ services:
       SMTP_SECURE: "false"
       SMTP_AUTH_REQUIRED: "false"
       SMTP_FROM_EMAIL: local@example.test
+      VERIFICATION_ENABLED: "false"
     depends_on:
       mongodb:
         condition: service_healthy
       mailpit:
         condition: service_healthy
     restart: unless-stopped
+    volumes:
+      # Keep uploaded licence and incident files across container rebuilds.
+      # Without this the container filesystem is discarded and every upload is lost.
+      - uploads-data:/app/uploads
     networks:
       - secureshift
     command: npm start
@@ -85,6 +90,7 @@ services:
 
 volumes:
   mongo-data:
+  uploads-data:
 
 networks:
   secureshift:

@@ -34,7 +34,9 @@ const options = {
       },
     ],
   },
-  apis: ["./src/routes/*.js"], // Adjust path if your route files are elsewhere
+  apis: ["./src/routes/*.js"].filter(
+    (path) => !path.includes("verification.routes.js"),
+  ), // Adjust path if your route files are elsewhere
 };
 
 const swaggerSpec = swaggerJsdoc(options);

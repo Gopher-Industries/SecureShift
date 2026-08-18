@@ -1,6 +1,6 @@
 import AuditLog from "../models/AuditLogs.js"; // your separate model
+import AUDIT_LOG_ENABLED from "../config/audit.js";
 
-const AUDIT_LOG_ENABLED = process.env.AUDIT_LOG_ENABLED === "true";
 const IS_DEV = process.env.NODE_ENV === "development";
 
 // Define all action constants
@@ -28,6 +28,9 @@ export const ACTIONS = {
 
   USER_SOFT_DELETED: "USER_SOFT_DELETED",
   AVAILABILITY_UPDATED: "AVAILABILITY_UPDATED",
+  AVAILABILITY_SLOT_CREATED: "AVAILABILITY_SLOT_CREATED",
+  AVAILABILITY_SLOT_DELETED: "AVAILABILITY_SLOT_DELETED",
+  AVAILABILITY_SLOTS_CLEARED: "AVAILABILITY_SLOTS_CLEARED",
   RATINGS_SUBMITTED: "RATINGS_SUBMITTED",
 
   SITE_CREATED: "SITE_CREATED",

@@ -239,7 +239,7 @@ router.delete("/favourites/:guardId", auth, loadUser, removeFavouriteGuard);
  * @swagger
  * /api/v1/users/guards:
  *   get:
- *     summary: Get all guards (Admin + Employee only)
+ *     summary: Get all guards (Admin + Employer only)
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -255,7 +255,7 @@ router.get(
   "/guards",
   auth,
   loadUser,
-  authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYEE),
+  authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYER),
   authorizePermissions("user:read"),
   getAllGuards,
 );

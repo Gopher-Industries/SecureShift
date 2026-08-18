@@ -17,7 +17,8 @@
     "invalidInput": "अमान्य इनपुट",
     "loginFailed": "लॉग इन असफल",
     "otpFailed": "OTP सत्यापन असफल",
-    "otpMsgReq": "अपना OTP कोड दर्ज करें।"
+    "otpMsgReq": "अपना OTP कोड दर्ज करें।",
+    "sessionExpired": "आपका सत्र समाप्त हो गया है। कृपया फिर से लॉग इन करें।"
   },
   "signup": {
     "title": "अपना खाता बनाएं",
@@ -100,7 +101,9 @@
     "markRead": "सभी को पढ़ा हुआ चिह्नित करें"
   },
   "profile": {
+    "yourProfilePic": "आपकी प्रोफ़ाइल तस्वीर",
     "edit": "संपादित करें",
+    "editProfile": "प्रोफ़ाइल संपादित करें",
     "perfSummary": "प्रदर्शन सारांश",
     "totalShifts": "कुल शिफ्ट्स",
     "rating": "रेटिंग",
@@ -144,17 +147,29 @@
     "swap": "स्वैप",
     "leave": "छुट्टी",
     "selectRequestType": "अनुरोध प्रकार चुनें",
+    "filterRequests": "शिफ्ट अनुरोध फ़िल्टर करें",
     "reasonHint": "माफ करें मैं बीमार हूं...",
     "requestedTime": "अनुरोधित समय",
+    "swapGuard": "अनुरोधित गार्ड",
+    "guardHint": "जॉन स्मिथ...",
+    "swapShift": "प्रतिस्थापन शिफ्ट",
+    "shiftHint": "प्रतिस्थापन शिफ्ट नाम..",
+    "selectStart": "प्रारंभ चुनें",
+    "selectEnd": "अंत चुनें",
+    "leaveStart": "प्रारंभ छोड़ें",
+    "leaveEnd": "अंत छोड़ें",
     "selectDate": "तारीख चुनें",
     "selectTime": "समय चुनें",
     "notFound": "कोई शिफ्ट अनुरोध नहीं मिला",
     "requestError": "अनुरोध लोड करने में विफल।",
     "alerts": {
-      "missingTimeHead": "तारीख या समय गुम है",
-      "missingTimeMsg": "वह तारीख और समय दर्ज करें जब आप अपनी शिफ्ट बदलना चाहते हैं।",
-      "invalidDateHead": "अमान्य तारीख",
-      "invalidDateMsg": "चुनी गई तारीख अमान्य है"
+      "missingDateHead": "लापता तिथि",
+      "missingDateMsg": "वह तारीख डालें, जिस पर आप अपनी शिफ्ट ले जाना चाहते हैं.",
+      "invalidDateHead": "अमान्य दिनांक",
+      "invalidDateMsg": "चयनित दिनांक अमान्य है",
+      "requestCreated": "अनुरोध बनाया गया",
+      "requestFailed": "अनुरोध विफल रहा",
+      "successMessage": "आपका अनुरोध आपके नियोक्ता को भेज दिया गया है"
     }
   },
   "timesheet": {
@@ -325,6 +340,7 @@
     "notifBody": "आपको हॉस्पिटल कॉम्प्लेक्स शिफ्ट असाइन की गई है।"
   },
   "payroll": {
+    "payroll": "वेतन",
     "period": "अवधि:",
     "guardID": "गार्ड आईडी:",
     "site": "साइट:",
