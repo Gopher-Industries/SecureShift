@@ -17,7 +17,8 @@
     "invalidInput": "Invalid input",
     "loginFailed": "Login failed",
     "otpFailed": "OTP verification failed",
-    "otpMsgReq": "Enter your OTP code."
+    "otpMsgReq": "Enter your OTP code.",
+    "sessionExpired": "Your session has expired. Please log in again."
   },
   "signup": {
     "title": "Create your account",
@@ -99,7 +100,9 @@
     "markRead": "Mark all as read"
   },
   "profile": {
+    "yourProfilePic": "Your profile picture",
     "edit": "Edit",
+    "editProfile": "Edit profile",
     "perfSummary": "Performance Summary",
     "totalShifts": "Total Shifts",
     "rating": "Rating",
@@ -142,6 +145,7 @@
     "reason": "Reason",
     "swap": "Swap",
     "leave": "Leave",
+    "filterRequests": "Filter Shift Requests",
     "selectRequestType": "Select Request Type",
     "reasonHint": "Sorry I'm sick...",
     "requestedTime": "Requested Time",
@@ -330,6 +334,7 @@
     "notifBody": "You have been assigned to Hospital Complex shift."
   },
   "payroll": {
+    "payroll": "Payroll",
     "period": "Period:",
     "guardID": "GuardID:",
     "site": "Site:",

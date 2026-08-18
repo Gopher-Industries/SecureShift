@@ -268,6 +268,33 @@ npm run test
 
 Unit and integration tests are managed via Jest (or Mocha/Chai if used).
 
+### CI tests
+
+Pull requests run the following stable, database-free backend suites:
+
+- `tests/env.config.test.js`
+- `tests/seed.safety.test.js`
+- `src/tests/services/fatigue.service.test.js`
+
+Run the same allowlist locally with `npm run test:ci`. The complete legacy suite is intentionally
+not a required pull request gate while some suites have known database, environment, and ESM
+mocking reliability issues.
+
+### Test Database Configuration
+Database-connected tests use a dedicated MongoDB database `secureshift_test`.
+1. Create a test environment file:
+    ```bash
+    cp .env.example .env.test
+    ```
+2. Edit .env.test and set the test database URI:
+    ```bash
+    NODE_ENV=test
+    MONGO_URI=mongodb://localhost:27017/secureshift_test
+    ```
+Safety notice: Tests run destructive operations like deleteMany({}). The test
+runner includes safety checks that reject any database other than secureshift_test,
+localhost, or mongodb:// protocol. Atlas/SRV URIs will fail immediately.
+
 ## Timesheet API
 
 Generated timesheets are exposed under `/api/v1/timesheets`.
@@ -380,16 +407,6 @@ AUDIT_LOG_ENABLED=true
 Restart the backend after changing this value because environment configuration
 is loaded during application startup.
 
-The local OTP flow records:
-
-| Outcome | Audit record |
-| --- | --- |
-| OTP email accepted by SMTP | `OTP_SENT` |
-| OTP verified and JWT issued | `LOGIN_SUCCESS` with `metadata.step: "OTP_VERIFIED"` |
-| OTP email delivery failed | `OTP_DELIVERY_FAILED` |
-
-Audit records do not contain OTP values, JWTs, SMTP passwords, or email bodies.
-
 To inspect recent OTP audit records:
 
 ```bash
@@ -404,6 +421,84 @@ docker exec secureshift-db mongosh \
     }).sort({ timestamp: -1 }).limit(10).forEach(printjson);
   '
 ```
+## Local vs Shared Integration Database
+
+SecureShift supports two development database workflows.
+
+### Local development
+
+Use the local MongoDB database for normal development, automated/local testing, seed/reset operations, and Docker Compose.
+
+Activate the local backend environment:
+
+```bash
+cd app-backend
+cp .env.local .env
+```
+
+Start local MongoDB if required:
+
+```bash
+docker compose up -d mongodb
+```
+
+Then start the backend:
+
+```bash
+npm run dev
+```
+
+### Shared integration testing
+
+Use the shared Atlas integration database only when multiple developers or clients need to work with the same records, such as Guard App registration followed by Admin Panel verification.
+
+Obtain `.env.integration` privately from the backend lead. Do not commit it.
+
+Activate it with:
+
+```bash
+cd app-backend
+cp .env.integration .env
+npm run dev
+```
+
+Docker Compose should not be used for the backend in this mode because the Compose backend is intentionally configured for local MongoDB.
+
+Verify the active database without displaying credentials:
+
+```bash
+node -e "require('dotenv').config({path:'.env'}); const u=new URL(process.env.MONGO_URI); console.log('Host:',u.hostname); console.log('Database:',u.pathname)"
+```
+
+Expected integration database:
+
+```text
+Host: secureshift-integration.mcgzunx.mongodb.net
+Database: /secureshift_integration
+```
+
+Before switching environments, stop any existing backend process on port 5000. A stale backend may continue serving data from the previously selected database.
+
+### Integration test data
+
+The shared database contains a small stable set of fake integration fixtures, including an admin, employer, pending guard, and verified guard.
+
+Integration fixture credentials are provided privately to authorised testers.
+
+Do not:
+
+- commit `.env`, `.env.local`, or `.env.integration`;
+- use real personal information;
+- run local seed/reset commands against Atlas;
+- run destructive database tests against the shared integration database.
+
+Switch back to local development with:
+
+```bash
+cp .env.local .env
+npm run dev
+```
+
 
 In MongoDB Compass, filter by user with:
 

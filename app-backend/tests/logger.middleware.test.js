@@ -57,4 +57,36 @@ describe("audit middleware environment configuration", () => {
     });
     expect(save).toHaveBeenCalledTimes(1);
   });
+
+  test("does not persist an audit record when AUDIT_LOG_ENABLED=false", async () => {
+    process.env.AUDIT_LOG_ENABLED = "false";
+
+    const save = jest.fn().mockResolvedValue(undefined);
+    const AuditLog = jest.fn(() => ({ save }));
+
+    jest.doMock("../src/models/AuditLogs.js", () => ({
+      __esModule: true,
+      default: AuditLog,
+    }));
+
+    const { auditMiddleware } = await import("../src/middleware/logger.js");
+    const req = {};
+    const next = jest.fn();
+
+    auditMiddleware(req, {}, next);
+    await req.audit.log("user-id", "OTP_SENT", { source: "test" });
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(AuditLog).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  test("rejects an invalid AUDIT_LOG_ENABLED value", async () => {
+    process.env.AUDIT_LOG_ENABLED = "invalid";
+
+    await expect(import("../src/middleware/logger.js")).rejects.toThrow(
+      "Invalid AUDIT_LOG_ENABLED value 'invalid'. Expected 'true' or 'false'.",
+    );
+  });
+
 });

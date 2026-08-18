@@ -17,7 +17,8 @@
     "invalidInput": "输入无效",
     "loginFailed": "登录失败",
     "otpFailed": "OTP验证失败",
-    "otpMsgReq": "输入您的OTP验证码。"
+    "otpMsgReq": "输入您的OTP验证码。",
+    "sessionExpired": "您的登录已过期，请重新登录。"
   },
   "signup": {
     "title": "创建您的账号",
@@ -99,7 +100,9 @@
     "markRead": "全部标为已读"
   },
   "profile": {
+    "yourProfilePic": "你的个人资料图片",
     "edit": "编辑",
+    "editProfile": "编辑个人资料",
     "perfSummary": "表现摘要",
     "totalShifts": "总排班数",
     "rating": "评分",
@@ -145,6 +148,7 @@
     "selectRequestType": "选择请求类型",
     "reasonHint": "抱歉我生病了...",
     "requestedTime": "请求时间",
+    "filterRequests": "筛选移位请求",
     "swapGuard": "请求警卫",
     "guardHint": "约翰·史密斯...",
     "swapShift": "替补班次",
@@ -331,6 +335,7 @@
     "notifBody": "您已被分配到医院综合楼班次。"
   },
   "payroll": {
+    "payroll": "工资单",
     "period": "期间:",
     "guardID": "保安ID:",
     "site": "地点:",

@@ -17,7 +17,8 @@
     "invalidInput": "ਗਲਤ ਇਨਪੁੱਟ",
     "loginFailed": "ਲਾਗਇਨ ਅਸਫਲ",
     "otpFailed": "OTP ਜਾਂਚ ਅਸਫਲ",
-    "otpMsgReq": "ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ OTP ਕੋਡ ਦਰਜ ਕਰੋ।"
+    "otpMsgReq": "ਕਿਰਪਾ ਕਰਕੇ ਆਪਣਾ OTP ਕੋਡ ਦਰਜ ਕਰੋ।",
+    "sessionExpired": "ਤੁਹਾਡਾ ਸੈਸ਼ਨ ਖਤਮ ਹੋ ਗਿਆ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਲਾਗਇਨ ਕਰੋ।"
   },
 
   "signup": {
@@ -106,7 +107,9 @@
   },
 
   "profile": {
+    "yourProfilePic": "ਤੁਹਾਡੀ ਪ੍ਰੋਫਾਈਲ ਤਸਵੀਰ",
     "edit": "ਸੰਪਾਦਿਤ ਕਰੋ",
+    "editProfile": "ਪ੍ਰੋਫਾਈਲ ਸੰਪਾਦਿਤ ਕਰੋ",
     "perfSummary": "ਕਾਰਗੁਜ਼ਾਰੀ ਸੰਖੇਪ",
     "totalShifts": "ਕੁੱਲ ਸ਼ਿਫਟਾਂ",
     "rating": "ਰੇਟਿੰਗ",
@@ -142,6 +145,7 @@
     "noCompleted": "ਕੋਈ ਪੂਰੀ ਸ਼ਿਫਟ ਨਹੀਂ ਮਿਲੀ",
     "accepted": "ਸਵੀਕਾਰਿਆ ਗਿਆ",
     "approved": "ਮਨਜ਼ੂਰ",
+    "filterRequests": "ਫਿਲਟਰ ਸ਼ਿਫਟ ਬੇਨਤੀਆਂ",
     "createRequest": "ਬੇਨਤੀ ਬਣਾਓ",
     "viewRequests": "ਸਵੈਪ ਅਤੇ ਛੁੱਟੀ ਬੇਨਤੀਆਂ",
     "change": "ਬਦਲੋ",
@@ -263,6 +267,7 @@
   },
 
   "payroll": {
+    "payroll": "ਤਨਖਾਹ",
     "period": "ਮਿਆਦ:",
     "guardID": "ਗਾਰਡ ਆਈਡੀ:",
     "site": "ਸਾਈਟ:",
