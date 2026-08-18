@@ -56,7 +56,7 @@ export function ToastProvider({ children, duration = 3000 }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div style={styles.viewport}>
+      <div style={styles.viewport} role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} style={styles.toast(t.type)}>
             {t.message}
