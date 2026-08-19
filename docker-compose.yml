@@ -84,6 +84,19 @@ services:
       - secureshift
     command: npm start
 
+  frontend-admin:
+    build:
+      context: ./app-frontend/admin-panel
+    container_name: secureshift-frontend-admin
+    ports:
+      - "${ADMIN_FRONTEND_HOST_PORT:-3001}:3001"
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:${BACKEND_HOST_PORT:-5000}/api/v1
+    restart: unless-stopped
+    networks:
+      - secureshift
+    command: npm start
+    
 volumes:
   mongo-data:
 
