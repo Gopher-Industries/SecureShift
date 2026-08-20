@@ -1,9 +1,8 @@
 /* eslint-env jest */
-/* global describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, jest */
+/* global describe, it, expect, beforeAll, afterAll, beforeEach, afterEach */
 
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { jest } from '@jest/globals';
 import Notification from "../models/Notification.js";
 import { createNotification } from "../controllers/notification.controller.js";
 
@@ -39,12 +38,43 @@ const createTestUser = () => ({
   email: "test@example.com",
 });
 
-// Use Jest spy functions (jest is available via eslint-env jest)
+// Custom mockResponse without jest.fn()
 const mockResponse = () => {
-  const res = {
-    status: jest.fn().mockReturnThis(),
-    json: jest.fn().mockReturnThis()
+  const res = {};
+
+  // Initialize call tracking arrays
+  res.statusCalls = [];
+  res.jsonCalls = [];
+
+  // Status method that tracks calls
+  res.status = function(...args) {
+    res.statusCalls.push(args);
+    return res;
   };
+
+  // JSON method that tracks calls
+  res.json = function(...args) {
+    res.jsonCalls.push(args);
+    return res;
+  };
+
+  // Helper methods for assertions
+  res.getStatusCalls = function() {
+    return res.statusCalls;
+  };
+
+  res.getJsonCalls = function() {
+    return res.jsonCalls;
+  };
+
+  res.getLastStatusCall = function() {
+    return res.statusCalls[res.statusCalls.length - 1];
+  };
+
+  res.getLastJsonCall = function() {
+    return res.jsonCalls[res.jsonCalls.length - 1];
+  };
+
   return res;
 };
 
@@ -183,9 +213,11 @@ describe("notification.controller - createNotification", () => {
       // Act
       await createNotification(req, res);
 
-      // Assert
-      expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({
+      // Assert - Using custom mock assertions
+      expect(res.statusCalls).toHaveLength(1);
+      expect(res.statusCalls[0][0]).toBe(403);
+      expect(res.jsonCalls).toHaveLength(1);
+      expect(res.jsonCalls[0][0]).toEqual({
         message: "You are not allowed to create notifications",
       });
     });
@@ -206,9 +238,11 @@ describe("notification.controller - createNotification", () => {
       // Act
       await createNotification(req, res);
 
-      // Assert
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
+      // Assert - Using custom mock assertions
+      expect(res.statusCalls).toHaveLength(1);
+      expect(res.statusCalls[0][0]).toBe(400);
+      expect(res.jsonCalls).toHaveLength(1);
+      expect(res.jsonCalls[0][0]).toEqual({
         message: "userId, type, and message are required",
       });
     });
