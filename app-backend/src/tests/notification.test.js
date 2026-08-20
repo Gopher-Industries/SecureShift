@@ -47,31 +47,31 @@ const mockResponse = () => {
   res.jsonCalls = [];
 
   // Status method that tracks calls
-  res.status = function(...args) {
+  res.status = function (...args) {
     res.statusCalls.push(args);
     return res;
   };
 
   // JSON method that tracks calls
-  res.json = function(...args) {
+  res.json = function (...args) {
     res.jsonCalls.push(args);
     return res;
   };
 
   // Helper methods for assertions
-  res.getStatusCalls = function() {
+  res.getStatusCalls = function () {
     return res.statusCalls;
   };
 
-  res.getJsonCalls = function() {
+  res.getJsonCalls = function () {
     return res.jsonCalls;
   };
 
-  res.getLastStatusCall = function() {
+  res.getLastStatusCall = function () {
     return res.statusCalls[res.statusCalls.length - 1];
   };
 
-  res.getLastJsonCall = function() {
+  res.getLastJsonCall = function () {
     return res.jsonCalls[res.jsonCalls.length - 1];
   };
 
@@ -102,7 +102,7 @@ describe("notification.controller - createNotification", () => {
 
       // Assert
       const notification = await Notification.findOne({
-        message: "Test notification"
+        message: "Test notification",
       });
 
       expect(notification).toBeTruthy();
@@ -134,12 +134,14 @@ describe("notification.controller - createNotification", () => {
 
       // Assert
       const notification = await Notification.findOne({
-        message: "Test notification with spoof attempt"
+        message: "Test notification with spoof attempt",
       });
 
       expect(notification).toBeTruthy();
       expect(notification.createdBy.toString()).toBe(user._id.toString());
-      expect(notification.createdBy.toString()).not.toBe(maliciousUserId.toString());
+      expect(notification.createdBy.toString()).not.toBe(
+        maliciousUserId.toString(),
+      );
     });
 
     it("should require createdBy in schema", async () => {
