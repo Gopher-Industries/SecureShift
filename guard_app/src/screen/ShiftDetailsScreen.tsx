@@ -73,6 +73,22 @@ function parseTimeToDate(baseDateValue: string | Date, timeValue?: string) {
   return baseDate;
 }
 
+function getShiftWindow(shiftDate: string | Date, startTime?: string, endTime?: string) {
+  const start = parseTimeToDate(shiftDate, startTime);
+  const end = parseTimeToDate(shiftDate, endTime);
+
+  if (!start || !end) {
+    return { start, end };
+  }
+
+  // Handle overnight shifts, e.g. 22:00 - 06:00
+  if (end <= start) {
+    end.setDate(end.getDate() + 1);
+  }
+
+  return { start, end };
+}
+
 function toRadians(value: number) {
   return (value * Math.PI) / 180;
 }
@@ -135,16 +151,12 @@ export default function ShiftDetailsScreen() {
 
         const records = await getUserAttendance(userId);
 
-        const match = records.find((record) => {
-          const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
+        const match = records.find((record) => String(record.shiftId) === String(shift._id));
 
-          return String(recordShiftId) === String(shift._id);
-        });
-
-        if (match?.clockIn || match?.clockOut) {
+        if (match?.checkInTime || match?.checkOutTime) {
           const synced: AttendanceState = {
-            checkInTime: match.clockIn ?? storedAttendance?.checkInTime,
-            checkOutTime: match.clockOut ?? storedAttendance?.checkOutTime,
+            checkInTime: match.checkInTime ?? storedAttendance?.checkInTime,
+            checkOutTime: match.checkOutTime ?? storedAttendance?.checkOutTime,
           };
 
           setAttendance(synced);
@@ -181,11 +193,23 @@ export default function ShiftDetailsScreen() {
       };
     }
 
-    const shiftStart = parseTimeToDate(shift.date, shift.startTime);
+    const { start: shiftStart, end: shiftEnd } = getShiftWindow(
+      shift.date,
+      shift.startTime,
+      shift.endTime,
+    );
+
     if (shiftStart && now < shiftStart) {
       return {
         title: 'Check-in unavailable',
         message: 'You cannot check in before the shift start time.',
+      };
+    }
+
+    if (shiftEnd && now > shiftEnd) {
+      return {
+        title: 'Check-in unavailable',
+        message: 'You cannot check in after the shift has ended.',
       };
     }
 
@@ -206,6 +230,27 @@ export default function ShiftDetailsScreen() {
   };
 
   const validateCheckOutRules = (loc: Coordinates) => {
+    const now = new Date();
+    const { start: shiftStart, end: shiftEnd } = getShiftWindow(
+      shift.date,
+      shift.startTime,
+      shift.endTime,
+    );
+
+    if (shiftStart && now < shiftStart) {
+      return {
+        title: 'Check-out unavailable',
+        message: 'You cannot check out before the shift start time.',
+      };
+    }
+
+    if (shiftEnd && now > shiftEnd) {
+      return {
+        title: 'Check-out unavailable',
+        message: 'You cannot check out after the shift has ended.',
+      };
+    }
+
     const shiftCoords = getShiftCoordinates(shift);
 
     if (shiftCoords) {
@@ -248,8 +293,8 @@ export default function ShiftDetailsScreen() {
         const res = await checkIn(shift._id, loc);
 
         const next: AttendanceState = {
-          checkInTime: res.attendance?.clockIn ?? new Date().toISOString(),
-          checkOutTime: res.attendance?.clockOut ?? undefined,
+          checkInTime: res.attendance?.checkInTime ?? new Date().toISOString(),
+          checkOutTime: res.attendance?.checkOutTime ?? undefined,
         };
 
         setAttendance(next);
@@ -271,8 +316,8 @@ export default function ShiftDetailsScreen() {
         const res = await checkOut(shift._id, loc);
 
         const next: AttendanceState = {
-          checkInTime: res.attendance?.clockIn ?? attendance?.checkInTime,
-          checkOutTime: res.attendance?.clockOut ?? new Date().toISOString(),
+          checkInTime: res.attendance?.checkInTime ?? attendance?.checkInTime,
+          checkOutTime: res.attendance?.checkOutTime ?? new Date().toISOString(),
         };
 
         setAttendance(next);
