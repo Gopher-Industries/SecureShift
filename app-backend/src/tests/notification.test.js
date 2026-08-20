@@ -1,3 +1,4 @@
+/* eslint-env jest */
 /* global describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, jest */
 
 import mongoose from "mongoose";
