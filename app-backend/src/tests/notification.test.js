@@ -38,7 +38,7 @@ const createTestUser = () => ({
   email: "test@example.com",
 });
 
-// Use Jest spy functions
+// Use Jest spy functions (jest is available via eslint-env jest)
 const mockResponse = () => {
   const res = {
     status: jest.fn().mockReturnThis(),
