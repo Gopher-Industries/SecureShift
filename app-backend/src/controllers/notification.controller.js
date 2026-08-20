@@ -65,7 +65,7 @@ export const createNotification = async (req, res) => {
       title: title || "",
       message,
       data: data || {},
-      createdBy: req.user._id,
+      createdBy: req.user._id, // Always use authenticated user
     });
 
     res.status(201).json(notification);
