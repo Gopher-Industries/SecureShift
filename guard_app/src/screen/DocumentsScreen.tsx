@@ -187,6 +187,8 @@ export default function DocumentsScreen() {
 
         <Text style={styles.label}>{t('docs.documentType')}</Text>
         <TouchableOpacity
+          accessible={true}
+          accessibilityLabel={t('docs.selectDocumentType')}
           style={styles.dropdown}
           onPress={() => setShowDropdown(!showDropdown)}
           disabled={uploading}
@@ -227,6 +229,8 @@ export default function DocumentsScreen() {
         )}
 
         <TouchableOpacity
+          accessible={true}
+          accessibilityLabel={t('docs.addDocument')}
           style={[styles.uploadArea, !selectedDocType && styles.uploadAreaDisabled]}
           onPress={pickAndUploadDocument}
           disabled={!selectedDocType || uploading}

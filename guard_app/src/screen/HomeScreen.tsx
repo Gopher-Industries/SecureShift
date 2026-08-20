@@ -5,10 +5,6 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fetchGuardScore, GuardScore } from '../api/guardScore';
-import { getUserProfile } from '../api/profile';
-import EmptyState from '../components/EmptyState';
-import LoadingState from '../components/LoadingState';
 import {
   Button,
   Dimensions,
@@ -22,6 +18,10 @@ import {
   View,
 } from 'react-native';
 
+import { fetchGuardScore, GuardScore } from '../api/guardScore';
+import { getUserProfile } from '../api/profile';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
 import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
@@ -78,7 +78,9 @@ const StatCard = ({
   return (
     <View style={[styles.statCard, extraStyle]}>
       <View style={styles.statTop}>
-        <View style={styles.statIcon}>{icon}</View>
+        <View style={styles.statIcon} accessible={true} accessibilityLabel={label}>
+          {icon}
+        </View>
         <Text style={styles.statValue}>{value}</Text>
       </View>
       <Text style={styles.statLabel}>{label}</Text>
@@ -137,34 +139,44 @@ export default function HomeScreen() {
       headerStyle: { backgroundColor: colors.header },
       headerTintColor: colors.white,
       headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 5 }}>
           <TouchableOpacity
+            accessible={true}
+            accessibilityLabel={t('incidentReport.title')}
             onPress={() => navigation.navigate('IncidentReports')}
-            style={{ paddingHorizontal: 8 }}
+            style={{ paddingHorizontal: 8, paddingVertical: 5 }}
           >
             <Ionicons name="alert-circle-outline" size={22} color={colors.white} />
           </TouchableOpacity>
           <TouchableOpacity
+            accessible={true}
+            accessibilityLabel={t('payroll.payroll')}
             onPress={() => navigation.navigate('Payroll')}
-            style={{ paddingHorizontal: 8 }}
+            style={{ paddingHorizontal: 8, paddingVertical: 5 }}
           >
             <Ionicons name="card-outline" size={22} color={colors.white} />
           </TouchableOpacity>
           <TouchableOpacity
+            accessible={true}
+            accessibilityLabel={t('nav.messages')}
             onPress={() => navigation.navigate('Messages')}
-            style={{ paddingHorizontal: 8 }}
+            style={{ paddingHorizontal: 8, paddingVertical: 5 }}
           >
             <Ionicons name="chatbubble-outline" size={22} color={colors.white} />
           </TouchableOpacity>
           <TouchableOpacity
+            accessible={true}
+            accessibilityLabel={t('nav.notifications')}
             onPress={() => navigation.navigate('Notifications')}
-            style={{ paddingHorizontal: 8 }}
+            style={{ paddingHorizontal: 8, paddingVertical: 5 }}
           >
             <Ionicons name="notifications-outline" size={22} color={colors.white} />
           </TouchableOpacity>
           <TouchableOpacity
+            accessible={true}
+            accessibilityLabel={t('nav.settings')}
             onPress={() => navigation.navigate('Settings')}
-            style={{ paddingLeft: 8 }}
+            style={{ paddingHorizontal: 8, paddingVertical: 5 }}
           >
             <Ionicons name="settings-outline" size={22} color={colors.white} />
           </TouchableOpacity>

@@ -105,7 +105,9 @@
     "markRead": "全部標為已讀"
   },
   "profile": {
+    "yourProfilePic": "你的個人資料圖片",
     "edit": "編輯",
+    "editProfile": "編輯個人資料",
     "perfSummary": "表現摘要",
     "totalShifts": "總排班數",
     "rating": "評分",
@@ -148,6 +150,7 @@
     "reason": "原因",
     "swap": "換班",
     "leave": "請假",
+    "filterRequests": "過濾換班請求",
     "selectRequestType": "選擇請求類型",
     "reasonHint": "抱歉我生病了...",
     "requestedTime": "請求時間",
@@ -337,6 +340,7 @@
     "notifBody": "您已被分配到醫院綜合大樓班次。"
   },
   "payroll": {
+    "payroll": "薪資單",
     "period": "期間:",
     "guardID": "保安ID:",
     "site": "地點:",
