@@ -53,7 +53,12 @@
     "requiredFields": "請填寫所有必填欄位",
     "tryAgain": "重試",
     "invalidName": "名字只能包含字母、空格、連字號（-）和撇號（'）。",
-    "weakPassword": "密碼至少需要 6 個字元，且需包含大寫、小寫字母、數字和特殊字元。"
+    "weakPassword": "密碼至少需要 6 個字元，且需包含大寫、小寫字母、數字和特殊字元。",
+    "crashTitle": "出錯了",
+    "crashMessage": "此頁面發生問題，你可以重試。"
+  },
+  "net": {
+    "offline": "沒有網路連線"
   },
   "home": {
     "welcome": "歡迎回來，{{name}}！",

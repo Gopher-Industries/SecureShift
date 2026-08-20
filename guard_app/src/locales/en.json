@@ -53,7 +53,12 @@
     "requiredFields": "Please fill all required fields",
     "tryAgain": "Try again",
     "invalidName": "Name can only contain letters, spaces, hyphens (-), and apostrophes (').",
-    "weakPassword": "Password needs 6+ chars with uppercase, lowercase, number, and special character."
+    "weakPassword": "Password needs 6+ chars with uppercase, lowercase, number, and special character.",
+    "crashTitle": "Something went wrong",
+    "crashMessage": "The app had a problem on this screen. You can try again."
+  },
+  "net": {
+    "offline": "No internet connection"
   },
   "home": {
     "welcome": "Welcome back, {{name}}!",

@@ -53,7 +53,12 @@
     "requiredFields": "请填写所有必填项",
     "tryAgain": "重试",
     "invalidName": "名字只能包含字母、空格、连字符（-）和撇号（'）。",
-    "weakPassword": "密码至少需要 6 个字符，且需包含大写、小写字母、数字和特殊字符。"
+    "weakPassword": "密码至少需要 6 个字符，且需包含大写、小写字母、数字和特殊字符。",
+    "crashTitle": "出错了",
+    "crashMessage": "此页面出现问题，你可以重试。"
+  },
+  "net": {
+    "offline": "没有网络连接"
   },
   "home": {
     "welcome": "欢迎回来，{{name}}！",

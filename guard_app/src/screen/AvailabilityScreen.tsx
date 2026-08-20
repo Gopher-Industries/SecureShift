@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 
 import { getMe } from '../api/auth';
 import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
@@ -13,6 +13,7 @@ import AvailabilityWeeklyView from '../components/view/AvailabilityWeeklyView';
 import AvailabilityMonthlyView from '../components/view/AvailabilityMonthlyView';
 import AvailabilityCalendarModal from '../components/calendar/AvailabilityCalendarModal';
 import AvailabilityViewToggle from '../components/toggle/AvailabilityViewToggle';
+import LoadingState from '../components/LoadingState';
 
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -279,12 +280,7 @@ export default function AvailabilityScreen() {
   const goToToday = () => setCurrentDate(new Date());
 
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={styles.loadingText}>{t('avail.loading')}</Text>
-      </View>
-    );
+    return <LoadingState />;
   }
 
   const headerDate =
@@ -387,13 +383,6 @@ export default function AvailabilityScreen() {
 const getStyles = (colors: AppColors) =>
   StyleSheet.create({
     fullContainer: { flex: 1, backgroundColor: colors.bg },
-    centered: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: colors.bg,
-    },
-    loadingText: { marginTop: 8, color: colors.text },
     errorText: { color: colors.status.rejected, marginBottom: 12 },
 
     navigation: {
