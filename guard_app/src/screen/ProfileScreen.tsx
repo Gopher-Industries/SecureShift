@@ -248,6 +248,23 @@ export default function ProfileScreen({ navigation, route }: any) {
             ))}
           </View>
         </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.card}
+          onPress={() => navigation.navigate('Equipment')}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons
+              name="construct-outline"
+              size={20}
+              color={colors.primary}
+              style={{ marginRight: 10 }}
+            />
+            <Text style={styles.cardTitle}>Equipment</Text>
+          </View>
+
+          <Text style={styles.infoText}>View assigned equipment and report faults.</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

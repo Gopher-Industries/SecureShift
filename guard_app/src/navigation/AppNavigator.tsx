@@ -22,6 +22,7 @@ import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
 import TermsScreen from '../screen/TermsScreen';
 import { useAppTheme } from '../theme';
+import EquipmentScreen from '../screen/EquipmentScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -34,6 +35,7 @@ export type RootStackParamList = {
   Payroll: undefined;
   PrivacyPolicy: undefined;
   EditProfile: undefined;
+  Equipment: undefined;
   Messages:
     | {
         context?: 'shift' | 'general';
@@ -77,6 +79,11 @@ export default function AppNavigator() {
         contentStyle: { backgroundColor: colors.bg },
       }}
     >
+      <Stack.Screen
+        name="Equipment"
+        component={EquipmentScreen}
+        options={{ headerShown: true, title: 'Equipment' }}
+      />
       <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={LoginScreen} />
