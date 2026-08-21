@@ -5,9 +5,7 @@ import FormField from './FormField';
 describe('FormField', () => {
   it('renders a label and input, and calls onChange when typed into', async () => {
     const onChange = jest.fn();
-    render(
-      <FormField id="smtp-host" label="Host" value="" onChange={onChange} />
-    );
+    render(<FormField id="smtp-host" label="Host" value="" onChange={onChange} />);
 
     const input = screen.getByLabelText('Host');
     expect(input).toBeInTheDocument();
@@ -17,9 +15,7 @@ describe('FormField', () => {
   });
 
   it('appends an asterisk to the label when required is true', () => {
-    render(
-      <FormField id="email" label="Email" value="" onChange={jest.fn()} required />
-    );
+    render(<FormField id="email" label="Email" value="" onChange={jest.fn()} required />);
 
     expect(screen.getByText('Email *')).toBeInTheDocument();
   });
@@ -69,9 +65,7 @@ describe('FormField', () => {
   });
 
   it('renders a textarea when as="textarea"', () => {
-    render(
-      <FormField id="notes" label="Notes" value="" onChange={jest.fn()} as="textarea" />
-    );
+    render(<FormField id="notes" label="Notes" value="" onChange={jest.fn()} as="textarea" />);
 
     expect(screen.getByLabelText('Notes').tagName).toBe('TEXTAREA');
   });

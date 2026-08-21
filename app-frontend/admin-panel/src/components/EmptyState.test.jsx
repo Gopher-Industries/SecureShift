@@ -11,9 +11,7 @@ describe('EmptyState', () => {
   });
 
   it('renders a custom title, icon, and message', () => {
-    render(
-      <EmptyState icon="🔍" title="No users found" message="Try adjusting your filters." />
-    );
+    render(<EmptyState icon="🔍" title="No users found" message="Try adjusting your filters." />);
 
     expect(screen.getByText('No users found')).toBeInTheDocument();
     expect(screen.getByText('🔍')).toBeInTheDocument();
@@ -29,9 +27,7 @@ describe('EmptyState', () => {
 
   it('renders an action button when actionLabel and onAction are both provided', async () => {
     const onAction = jest.fn();
-    render(
-      <EmptyState title="No branches yet" actionLabel="Add branch" onAction={onAction} />
-    );
+    render(<EmptyState title="No branches yet" actionLabel="Add branch" onAction={onAction} />);
 
     const button = screen.getByRole('button', { name: 'Add branch' });
     expect(button).toBeInTheDocument();

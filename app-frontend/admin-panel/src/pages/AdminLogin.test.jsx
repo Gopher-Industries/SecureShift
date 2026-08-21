@@ -34,9 +34,7 @@ describe('AdminLogin', () => {
     await waitFor(() =>
       expect(mockLogin).toHaveBeenCalledWith('admin.local@secureshift.test', 'SecureShift1!')
     );
-    await waitFor(() =>
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true })
-    );
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true }));
   });
 
   it('shows an error message when login fails', async () => {
@@ -85,4 +83,3 @@ describe('AdminLogin', () => {
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
   });
 });
-
