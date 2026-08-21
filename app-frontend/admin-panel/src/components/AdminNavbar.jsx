@@ -38,7 +38,7 @@ export default function AdminNavbar({ onMenuClick }) {
         ☰
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
         <span style={{ color: '#555' }}>Signed in as {role || 'admin'}</span>
         <button
           onClick={onLogout}

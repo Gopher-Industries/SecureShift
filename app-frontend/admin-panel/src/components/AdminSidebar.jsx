@@ -13,7 +13,6 @@ const items = [
 export default function AdminSidebar({ isOpen, onClose }) {
   return (
     <>
-      {}
       {isOpen && (
         <div
           onClick={onClose}
