@@ -287,4 +287,71 @@ describe("Shift Controller API Tests", () => {
 
     expect(res.statusCode).toBe(403);
   });
+  /* ---------------- DUPLICATE SHIFT (BE-048) ---------------- */
+
+  test("Employer can duplicate their own shift", async () => {
+    const newDate = "2026-12-15";
+
+    const res = await request(app)
+      .post(`/api/v1/shifts/${shiftId}/duplicate`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({ date: newDate });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.message).toBe("Shift duplicated successfully");
+    expect(res.body.shift).toHaveProperty("_id");
+    expect(res.body.shift.status).toBe("draft");
+    expect(res.body.shift.createdBy.toString()).toBe(
+      employer._id.toString(),
+    );
+    expect(new Date(res.body.shift.date).toISOString()).toContain(newDate);
+  });
+
+  test("Duplicate shift requires a new date", async () => {
+    const res = await request(app)
+      .post(`/api/v1/shifts/${shiftId}/duplicate`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({});
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("A new shift date is required");
+  });
+
+  test("Employer cannot duplicate another employer's shift", async () => {
+    const res = await request(app)
+      .post(`/api/v1/shifts/${shiftId}/duplicate`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", new mongoose.Types.ObjectId().toString())
+      .set("x-user-role", "employer")
+      .send({ date: "2026-12-16" });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toBe(
+      "You can only duplicate your own shifts",
+    );
+  });
+
+  test("Duplicate shift resets lifecycle data", async () => {
+    const res = await request(app)
+      .post(`/api/v1/shifts/${shiftId}/duplicate`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({ date: "2026-12-17" });
+
+    expect(res.statusCode).toBe(201);
+
+    const duplicatedShift = res.body.shift;
+
+    expect(duplicatedShift.status).toBe("draft");
+    expect(duplicatedShift.applicants).toEqual([]);
+    expect(duplicatedShift.guardIds).toEqual([]);
+    expect(duplicatedShift.ratedByGuard).toBe(false);
+    expect(duplicatedShift.ratedByEmployer).toBe(false);
+  });
+
 });
