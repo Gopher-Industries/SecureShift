@@ -100,7 +100,9 @@
     "markRead": "બધીને વાંચેલી તરીકે ચિહ્નિત કરો"
   },
   "profile": {
+    "yourProfilePic": "તમારો પ્રોફાઇલ ફોટો",
     "edit": "સંપાદિત કરો",
+    "editProfile": "પ્રોફાઇલ સંપાદિત કરો",
     "perfSummary": "પ્રદર્શન સારાંશ",
     "totalShifts": "કુલ શિફ્ટ્સ",
     "rating": "રેટિંગ",
@@ -144,6 +146,7 @@
     "swap": "બદલી",
     "leave": "રજા",
     "selectRequestType": "વિનંતી પ્રકાર પસંદ કરો",
+    "filterRequests": "ફિલ્ટર શિફ્ટ વિનંતીઓ",
     "reasonHint": "માફ કરશો, હું બીમાર છું...",
     "requestedTime": "વિનંતી કરેલ સમય",
     "swapGuard": "વિનંતી થયેલ રક્ષક",
@@ -331,6 +334,7 @@
     "notifBody": "તમને Hospital Complex શિફ્ટ માટે સોંપવામાં આવ્યા છે."
   },
   "payroll": {
+    "payroll": "પગારપત્રક",
     "period": "સમયગાળો:",
     "guardID": "ગાર્ડ ID:",
     "site": "સાઇટ:",

@@ -3,6 +3,7 @@ import {
   getDocumentById,
   updateDocumentExpiry,
   createDocument,
+  getDocumentFileForUser,
 } from "../services/document.service.js";
 
 /**
@@ -62,5 +63,28 @@ export const updateDocument = async (req, res) => {
     res.status(200).json(result);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+};
+
+/**
+ * GET /api/v1/documents/:id/file
+ *
+ * Send the file behind a document record. All rules live in the service, so
+ * this only turns the result into a response.
+ */
+export const downloadDocumentFile = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const file = await getDocumentFileForUser(req.params.id, req.user);
+    return res.download(file.path, file.filename);
+  } catch (err) {
+    if (err?.status) {
+      return res.status(err.status).json({ message: err.message });
+    }
+    console.error("Document file download error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };

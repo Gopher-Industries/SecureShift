@@ -15,8 +15,8 @@ import {
   Image,
 } from 'react-native';
 
-import { getUserProfile } from '../api/profile';
 import { fetchGuardScore, GuardScore } from '../api/guardScore';
+import { getUserProfile } from '../api/profile';
 import { LocalStorage } from '../lib/localStorage';
 import { LicenseStatus } from '../models/License';
 import { UserProfile } from '../models/UserProfile';
@@ -132,10 +132,19 @@ export default function ProfileScreen({ navigation, route }: any) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.avatarContainer}>
           {profileImage ? (
-            <Image source={{ uri: profileImage }} style={styles.avatar} />
+            <Image
+              source={{ uri: profileImage }}
+              style={styles.avatar}
+              accessibilityLabel={t('profile.yourProfilePic')}
+            />
           ) : (
             <View style={styles.avatar}>
-              <Ionicons name="person" size={60} color={colors.white} />
+              <Ionicons
+                name="person"
+                size={60}
+                color={colors.white}
+                accessibilityLabel={t('profile.yourProfilePic')}
+              />
             </View>
           )}
         </View>
@@ -149,7 +158,11 @@ export default function ProfileScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.editButtonContainer}>
-          <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={handleEditProfile}
+            accessibilityLabel={t('profile.editProfile')}
+          >
             <Ionicons name="pencil" size={16} color={colors.primary} />
             <Text style={styles.editButtonText}>{t('profile.edit')}</Text>
           </TouchableOpacity>
