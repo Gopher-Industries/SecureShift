@@ -10,6 +10,7 @@ import {
   listAvailableShifts,
   getShiftHistory,
   updateShift,
+  getEmployerFatigueDashboard,
   getShiftById,
   deleteShift,
 } from "../controllers/shift.controller.js";
@@ -507,5 +508,24 @@ router
 router
   .route("/history")
   .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
+/**
+ * @swagger
+ * /api/v1/shifts/fatigue
+ *   get:
+ *     summary: Get fatigue metrics (Employer only)
+ *     description: |
+ *       • Employer → fatigue metrics based on the assigned guard's workload during the
+ *                    current week.
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: Guard fatigue summary for the employer }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ */
+router
+  .route("/fatigue")
+  .get(protect, authorizeRole("employer"), getEmployerFatigueDashboard);
 
 export default router;
