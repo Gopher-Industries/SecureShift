@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./EmployerDashboard.css";
+import RefreshButton from "../components/RefreshButton";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -177,15 +178,20 @@ export default function EmployerDashboard() {
     },
   ]);
 
-  useEffect(() => {
-    const fetchShifts = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  const fetchShifts = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
         const data = await response.json();
 
@@ -232,6 +238,7 @@ export default function EmployerDashboard() {
         });
 
         setShifts(normalizedShifts);
+        setLastRefreshed(new Date());
       } catch (err) {
         setError(err.message || "Failed to load shifts.");
         setShifts([
@@ -308,9 +315,11 @@ export default function EmployerDashboard() {
         ]);
       } finally {
         setLoading(false);
+        setIsRefreshing(false);
       }
     };
 
+  useEffect(() => {
     fetchShifts();
   }, []);
 
@@ -515,13 +524,20 @@ export default function EmployerDashboard() {
             </p>
           </div>
 
-          <button
-            className="ss-primary ss-primary--wide"
-            onClick={() => navigate("/create-shift")}
-            type="button"
-          >
-            <IconPlus className="ss-plus" /> {t('createShift')}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <RefreshButton
+              onRefresh={() => fetchShifts(true)}
+              isRefreshing={isRefreshing}
+              lastRefreshed={lastRefreshed}
+            />
+            <button
+              className="ss-primary ss-primary--wide"
+              onClick={() => navigate("/create-shift")}
+              type="button"
+            >
+              <IconPlus className="ss-plus" /> {t('createShift')}
+            </button>
+          </div>
         </div>
 
         <div className="ss-dashboard-card">
