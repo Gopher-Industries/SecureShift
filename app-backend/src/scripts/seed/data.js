@@ -513,5 +513,61 @@ export const buildSeedData = (now = new Date()) => {
         isRead: false,
       },
     ],
+    faqs: [
+      {
+        _id: SEED_IDS.faqs.register,
+        question: "How do I register as a guard?",
+        answer:
+          "To register as a guard, visit the registration page, fill in your personal details, and upload a clear image of your security license. Your registration will be reviewed by an admin.",
+        category: "general",
+        displayOrder: 1,
+        isActive: true,
+      },
+      {
+        _id: SEED_IDS.faqs.applyShift,
+        question: "How do I apply for a shift?",
+        answer:
+          "Log in to your account, navigate to the 'Available Shifts' section, browse through the list of open shifts, and click 'Apply' on the shift you're interested in. The employer will review your application.",
+        category: "general",
+        displayOrder: 2,
+        isActive: true,
+      },
+      {
+        _id: SEED_IDS.faqs.cancelShift,
+        question: "Can I cancel a shift after being approved?",
+        answer:
+          "Yes, you can request to cancel a shift, but you must do so at least 24 hours before the shift start time. Use the 'Shift Request' feature to submit a cancellation request for employer approval.",
+        category: "shift",
+        displayOrder: 3,
+        isActive: true,
+      },
+      {
+        _id: SEED_IDS.faqs.payrollDate,
+        question: "When is payroll processed and paid?",
+        answer:
+          "Payroll is processed on a weekly basis. Approved shifts are included in the next payroll cycle. Payment is typically processed within 3-5 business days after approval.",
+        category: "payroll",
+        displayOrder: 4,
+        isActive: true,
+      },
+      {
+        _id: SEED_IDS.faqs.licenseVerification,
+        question: "How long does license verification take?",
+        answer:
+          "License verification typically takes 24-48 hours for NSW automated verification. For other states, manual verification may take 3-5 business days. You'll receive a notification once your license is verified.",
+        category: "verification",
+        displayOrder: 5,
+        isActive: true,
+      },
+      {
+        _id: SEED_IDS.faqs.resetPassword,
+        question: "I forgot my password. How do I reset it?",
+        answer:
+          "Click on the 'Forgot Password' link on the login page. Enter your registered email address, and we'll send you a password reset link. If you don't receive the email, check your spam folder.",
+        category: "account",
+        displayOrder: 6,
+        isActive: true,
+      },
+    ],
   };
 };

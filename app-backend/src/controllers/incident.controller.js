@@ -3,10 +3,10 @@ import Shift from "../models/Shift.js";
 import { ErrorResponse } from "../utils/errorResponse.js";
 import { ACTIONS } from "../middleware/logger.js";
 import path from "path";
-import { fileURLToPath } from "url";
+// import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 const validStatuses = ["SUBMITTED", "IN_REVIEW", "RESOLVED"];
 
@@ -31,7 +31,10 @@ export const createIncident = async (req, res, next) => {
 
     if (!shiftId || !severity || !description) {
       return next(
-        new ErrorResponse("shiftId, severity, and description are required", 400)
+        new ErrorResponse(
+          "shiftId, severity, and description are required",
+          400,
+        ),
       );
     }
 
@@ -112,8 +115,8 @@ export const updateIncident = async (req, res, next) => {
         return next(
           new ErrorResponse(
             `Invalid status transition from ${currentStatus} to ${nextStatus}`,
-            400
-          )
+            400,
+          ),
         );
       }
     }
@@ -129,7 +132,7 @@ export const updateIncident = async (req, res, next) => {
     await req.audit.log(req.user._id, ACTIONS.INCIDENT_UPDATED, {
       incidentId: incident._id,
       updatedFields: Object.keys(req.body).filter((field) =>
-        allowedFields.includes(field)
+        allowedFields.includes(field),
       ),
     });
 
@@ -200,7 +203,9 @@ export const getIncidents = async (req, res, next) => {
     }
 
     if (req.user.role === "employer") {
-      const shifts = await Shift.find({ createdBy: req.user._id }).select("_id");
+      const shifts = await Shift.find({ createdBy: req.user._id }).select(
+        "_id",
+      );
       query.shiftId = { $in: shifts.map((s) => s._id) };
     }
 
@@ -270,14 +275,20 @@ export const uploadAttachment = async (req, res, next) => {
       return next(new ErrorResponse("No file uploaded", 400));
     }
 
-    incident.attachments.push({
+    // Build the subdocument first so it has an _id, then point fileUrl at the
+    // route that actually serves the file. It previously pointed at
+    // /uploads/<filename>, which nothing serves, so the URL always failed.
+    const attachment = incident.attachments.create({
       fileName: req.file.filename,
       originalName: req.file.originalname,
-      fileUrl: `/uploads/${req.file.filename}`,
+      fileUrl: "pending",
       mimeType: req.file.mimetype,
       fileSize: req.file.size,
       mediaType: getMediaType(req.file.mimetype),
     });
+
+    attachment.fileUrl = `/api/v1/incidents/${incident._id}/attachments/${attachment._id}`;
+    incident.attachments.push(attachment);
 
     await incident.save();
 
@@ -316,7 +327,8 @@ export const getAttachment = async (req, res, next) => {
       return next(new ErrorResponse("Attachment not found", 404));
     }
 
-    const filePath = path.join(__dirname, "..", "uploads", attachment.fileName);
+    // const filePath = path.join(__dirname, "..", "uploads", attachment.fileName);
+    const filePath = path.join(process.cwd(), "uploads", attachment.fileName);
     res.download(filePath);
   } catch (err) {
     next(err);

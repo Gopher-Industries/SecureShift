@@ -3,11 +3,13 @@ import {
   getShiftRequestForUser,
   listShiftRequestsForUser,
   reviewShiftRequest,
-} from '../services/shiftrequest.service.js';
+} from "../services/shiftrequest.service.js";
 
 const handleError = (res, error) => {
   const statusCode = error.statusCode || 500;
-  return res.status(statusCode).json({ message: error.message || 'Shift request operation failed' });
+  return res
+    .status(statusCode)
+    .json({ message: error.message || "Shift request operation failed" });
 };
 
 export const createShiftRequest = async (req, res) => {
@@ -20,7 +22,7 @@ export const createShiftRequest = async (req, res) => {
     return res.status(201).json({
       success: true,
       data: shiftRequest,
-      message: 'Shift request created',
+      message: "Shift request created",
     });
   } catch (error) {
     return handleError(res, error);

@@ -3,12 +3,12 @@ import {
   getAllSites,
   updateSite,
   deleteSite,
-} from '../src/controllers/branch.controller.js';
+} from "../src/controllers/branch.controller.js";
 
-import Branch from '../src/models/Branch.js';
-import { ACTIONS } from '../src/middleware/logger.js';
+import Branch from "../src/models/Branch.js";
+import { ACTIONS } from "../src/middleware/logger.js";
 
-jest.mock('../src/models/Branch.js');
+jest.mock("../src/models/Branch.js");
 
 const mockRes = () => {
   const res = {};
@@ -18,7 +18,7 @@ const mockRes = () => {
 };
 
 const mockReq = (overrides = {}) => ({
-  user: { id: 'emp123', role: 'employer' },
+  user: { id: "emp123", role: "employer" },
   body: {},
   params: {},
   audit: {
@@ -27,8 +27,7 @@ const mockReq = (overrides = {}) => ({
   ...overrides,
 });
 
-describe('Branch Controller', () => {
-
+describe("Branch Controller", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -36,24 +35,27 @@ describe('Branch Controller', () => {
   // -------------------------
   // CREATE SITE
   // -------------------------
-  test('should create site successfully', async () => {
+  test("should create site successfully", async () => {
     Branch.findOne.mockResolvedValue(null);
-    Branch.prototype.save = jest.fn().mockResolvedValue(true);
 
     const mockSite = {
-      _id: 'site123',
-      name: 'Site A',
-      code: 'A1',
+      _id: "site123",
+      name: "Site A",
+      code: "A1",
       location: {},
     };
 
-    Branch.mockImplementation(() => mockSite);
+    const mockSave = jest.fn().mockResolvedValue(true);
+    Branch.mockImplementation(() => ({
+      ...mockSite,
+      save: mockSave,
+    }));
 
     const req = mockReq({
       body: {
-        name: 'Site A',
-        code: 'A1',
-        location: { city: 'Melbourne' },
+        name: "Site A",
+        code: "A1",
+        location: { city: "Melbourne" },
       },
     });
 
@@ -65,13 +67,13 @@ describe('Branch Controller', () => {
     expect(req.audit.log).toHaveBeenCalled();
   });
 
-  test('should return 400 if site code already exists', async () => {
-    Branch.findOne.mockResolvedValue({ _id: 'existing' });
+  test("should return 400 if site code already exists", async () => {
+    Branch.findOne.mockResolvedValue({ _id: "existing" });
 
     const req = mockReq({
       body: {
-        name: 'Site A',
-        code: 'A1',
+        name: "Site A",
+        code: "A1",
       },
     });
 
@@ -81,19 +83,19 @@ describe('Branch Controller', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      message: 'Site code already exists',
+      message: "Site code already exists",
     });
   });
 
   // -------------------------
   // GET ALL SITES
   // -------------------------
-  test('should get all sites', async () => {
+  test("should get all sites", async () => {
     Branch.find.mockReturnValue({
       sort: jest.fn().mockReturnValue({
         lean: jest.fn().mockResolvedValue([
-          { _id: '1', name: 'A' },
-          { _id: '2', name: 'B' },
+          { _id: "1", name: "A" },
+          { _id: "2", name: "B" },
         ]),
       }),
     });
@@ -107,18 +109,18 @@ describe('Branch Controller', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         count: 2,
-      })
+      }),
     );
   });
 
   // -------------------------
   // UPDATE SITE
   // -------------------------
-  test('should update site successfully', async () => {
+  test("should update site successfully", async () => {
     const mockSite = {
-      _id: 'site123',
-      name: 'Old Name',
-      code: 'A1',
+      _id: "site123",
+      name: "Old Name",
+      code: "A1",
       location: {},
       save: jest.fn().mockResolvedValue(true),
     };
@@ -126,9 +128,9 @@ describe('Branch Controller', () => {
     Branch.findOne.mockResolvedValue(mockSite);
 
     const req = mockReq({
-      params: { id: 'site123' },
+      params: { id: "site123" },
       body: {
-        name: 'New Name',
+        name: "New Name",
       },
     });
 
@@ -136,16 +138,16 @@ describe('Branch Controller', () => {
 
     await updateSite(req, res);
 
-    expect(mockSite.name).toBe('New Name');
+    expect(mockSite.name).toBe("New Name");
     expect(res.status).toHaveBeenCalledWith(200);
     expect(req.audit.log).toHaveBeenCalled();
   });
 
-  test('should return 404 if site not found on update', async () => {
+  test("should return 404 if site not found on update", async () => {
     Branch.findOne.mockResolvedValue(null);
 
     const req = mockReq({
-      params: { id: 'site123' },
+      params: { id: "site123" },
     });
 
     const res = mockRes();
@@ -158,9 +160,9 @@ describe('Branch Controller', () => {
   // -------------------------
   // DELETE SITE
   // -------------------------
-  test('should delete site successfully (soft delete)', async () => {
+  test("should delete site successfully (soft delete)", async () => {
     const mockSite = {
-      _id: 'site123',
+      _id: "site123",
       isActive: true,
       save: jest.fn().mockResolvedValue(true),
     };
@@ -168,7 +170,7 @@ describe('Branch Controller', () => {
     Branch.findOne.mockResolvedValue(mockSite);
 
     const req = mockReq({
-      params: { id: 'site123' },
+      params: { id: "site123" },
     });
 
     const res = mockRes();
@@ -180,11 +182,11 @@ describe('Branch Controller', () => {
     expect(req.audit.log).toHaveBeenCalled();
   });
 
-  test('should return 404 if site not found on delete', async () => {
+  test("should return 404 if site not found on delete", async () => {
     Branch.findOne.mockResolvedValue(null);
 
     const req = mockReq({
-      params: { id: 'site123' },
+      params: { id: "site123" },
     });
 
     const res = mockRes();
@@ -193,5 +195,4 @@ describe('Branch Controller', () => {
 
     expect(res.status).toHaveBeenCalledWith(404);
   });
-
 });

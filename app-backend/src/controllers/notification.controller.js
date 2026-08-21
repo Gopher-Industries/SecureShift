@@ -1,4 +1,4 @@
-import Notification from '../models/Notification.js';
+import Notification from "../models/Notification.js";
 
 /**
  * GET /notifications
@@ -16,7 +16,7 @@ export const getNotifications = async (req, res) => {
     const filter = { userId };
 
     if (type) filter.type = type;
-    if (isRead !== undefined) filter.isRead = isRead === 'true';
+    if (isRead !== undefined) filter.isRead = isRead === "true";
 
     const notifications = await Notification.find(filter)
       .sort({ createdAt: -1 })
@@ -42,35 +42,31 @@ export const getNotifications = async (req, res) => {
  */
 export const createNotification = async (req, res) => {
   try {
+    // Remove createdBy from destructuring to prevent spoofing
     const { userId, type, title, message, data } = req.body;
 
     // Required field validation
     if (!userId || !type || !message) {
       return res.status(400).json({
-        message: 'userId, type, and message are required',
+        message: "userId, type, and message are required",
       });
     }
 
-    const allowedRoles = [
-      'super_admin',
-      'admin',
-      'branch_admin',
-      'employer',
-    ];
+    const allowedRoles = ["super_admin", "admin", "branch_admin", "employer"];
 
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
-        message: 'You are not allowed to create notifications',
+        message: "You are not allowed to create notifications",
       });
     }
 
     const notification = await Notification.create({
       userId,
       type,
-      title: title || '',
+      title: title || "",
       message,
       data: data || {},
-      createdBy: req.user._id,
+      createdBy: req.user._id, // Always use authenticated user
     });
 
     res.status(201).json(notification);
@@ -91,7 +87,7 @@ export const getNotificationById = async (req, res) => {
     });
 
     if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
+      return res.status(404).json({ message: "Notification not found" });
     }
 
     res.json(notification);
@@ -112,11 +108,11 @@ export const markAsRead = async (req, res) => {
         userId: req.user._id,
       },
       { isRead: true },
-      { new: true }
+      { new: true },
     );
 
     if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
+      return res.status(404).json({ message: "Notification not found" });
     }
 
     res.json(notification);
@@ -131,10 +127,7 @@ export const markAsRead = async (req, res) => {
  */
 export const markAllAsRead = async (req, res) => {
   try {
-    await Notification.updateMany(
-      { userId: req.user._id },
-      { isRead: true }
-    );
+    await Notification.updateMany({ userId: req.user._id }, { isRead: true });
 
     res.json({ success: true });
   } catch (err) {

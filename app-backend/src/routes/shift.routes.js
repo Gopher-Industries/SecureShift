@@ -1,5 +1,5 @@
-import express from 'express';
-import protect from '../middleware/auth.js';
+import express from "express";
+import protect from "../middleware/auth.js";
 import {
   createShift,
   applyForShift,
@@ -7,25 +7,31 @@ import {
   completeShift,
   getMyShifts,
   rateShift,
-  listAvailableShifts, // dynamic by role
+  listAvailableShifts,
   getShiftHistory,
   updateShift,
-} from '../controllers/shift.controller.js';
+  getShiftById,
+  deleteShift,
+} from "../controllers/shift.controller.js";
 
 const router = express.Router();
 
 /**
  * Inline role guards (same pattern as authorizeAdmin in users.route)
  */
-const authorizeRole = (...allowed) => (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-  if (!allowed.includes(req.user.role)) {
-    return res.status(403).json({ message: 'Forbidden: insufficient permissions' });
-  }
-  next();
-};
+const authorizeRole =
+  (...allowed) =>
+  (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    if (!allowed.includes(req.user.role)) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: insufficient permissions" });
+    }
+    next();
+  };
 
 /**
  * @swagger
@@ -40,9 +46,9 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *   get:
  *     summary: List shifts (dynamic by role)
  *     description: |
- *       • **Guard** → Available shifts (`open`/`applied`) not created by the guard, date ≥ today.  
- *       • **Employer** → Your shifts with applicants waiting for approval (`status: applied`).  
- *       • **Admin** → All shifts with applicants waiting for approval (`status: applied`).  
+ *       • **Guard** → Available shifts (`open`/`applied`) not created by the guard, date ≥ today.
+ *       • **Employer** → Your shifts with applicants waiting for approval (`status: applied`).
+ *       • **Admin** → All shifts with applicants waiting for approval (`status: applied`).
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
@@ -182,18 +188,25 @@ const authorizeRole = (...allowed) => (req, res, next) => {
  *       403: { description: Forbidden }
  */
 router
-  .route('/')
-  .get(protect, authorizeRole('guard', 'employer', 'admin'), listAvailableShifts)
-  .post(protect, authorizeRole('employer'), createShift);
+  .route("/")
+  .get(
+    protect,
+    authorizeRole("guard", "employer", "admin"),
+    listAvailableShifts,
+  )
+  .post(protect, authorizeRole("employer"), createShift);
 
 /**
  * PATCH /api/v1/shifts/:id
  * Allows employers (owners) or admins to update editable fields.
  */
-router
-  .route('/:id')
-  .patch(protect, authorizeRole('employer', 'admin'), updateShift);
+router.route("/myshifts").get(protect, getMyShifts);
 
+router
+  .route("/:id")
+  .get(protect, authorizeRole("employer", "admin"), getShiftById)
+  .patch(protect, authorizeRole("employer", "admin"), updateShift)
+  .delete(protect, authorizeRole("employer", "admin"), deleteShift);
 /**
  * @swagger
  * /api/v1/shifts/{id}:
@@ -290,9 +303,7 @@ router
  *       403: { description: Forbidden }
  *       404: { description: Shift not found }
  */
-router
-  .route('/:id/apply')
-  .put(protect, authorizeRole('guard'), applyForShift);
+router.route("/:id/apply").put(protect, authorizeRole("guard"), applyForShift);
 
 /**
  * @swagger
@@ -374,8 +385,8 @@ router
  *         description: Shift not found
  */
 router
-  .route('/:id/approve')
-  .put(protect, authorizeRole('employer', 'admin'), approveShift);
+  .route("/:id/approve")
+  .put(protect, authorizeRole("employer", "admin"), approveShift);
 
 /**
  * @swagger
@@ -400,8 +411,8 @@ router
  *       404: { description: Shift not found }
  */
 router
-  .route('/:id/complete')
-  .put(protect, authorizeRole('employer', 'admin'), completeShift);
+  .route("/:id/complete")
+  .put(protect, authorizeRole("employer", "admin"), completeShift);
 
 /**
  * @swagger
@@ -409,9 +420,9 @@ router
  *   get:
  *     summary: Get shifts for the logged-in user
  *     description: |
- *       Guard → applied/assigned/past  
- *       Employer → created  
- *       Admin → all  
+ *       Guard → applied/assigned/past
+ *       Employer → created
+ *       Admin → all
  *       Use `?status=past` to return only completed shifts.
  *     tags: [Shifts]
  *     security:
@@ -428,9 +439,6 @@ router
  *       200: { description: List of shifts }
  *       401: { description: Unauthorized }
  */
-router
-  .route('/myshifts')
-  .get(protect, getMyShifts);
 
 /**
  * @swagger
@@ -438,8 +446,8 @@ router
  *   patch:
  *     summary: Submit a rating (role-aware)
  *     description: |
- *       • Guard: Only the **assignedGuard** can rate. Updates **guardRating** (one time, tracked by `ratedByGuard`).  
- *       • Employer: Only the **creator (employer)** can rate. Updates **employerRating** (one time, tracked by `ratedByEmployer`).  
+ *       • Guard: Only the **assignedGuard** can rate. Updates **guardRating** (one time, tracked by `ratedByGuard`).
+ *       • Employer: Only the **creator (employer)** can rate. Updates **employerRating** (one time, tracked by `ratedByEmployer`).
  *       • Ratings are allowed **only after** the shift status is `completed`.
  *     tags: [Shifts]
  *     security:
@@ -477,8 +485,8 @@ router
  *         description: Shift not found
  */
 router
-  .route('/:id/rate')
-  .patch(protect, authorizeRole('guard', 'employer'), rateShift);
+  .route("/:id/rate")
+  .patch(protect, authorizeRole("guard", "employer"), rateShift);
 
 /**
  * @swagger
@@ -486,8 +494,8 @@ router
  *   get:
  *     summary: Get shift history (Guard/Employer only)
  *     description: |
- *       • Guard → all past/completed shifts the guard worked on.  
- *       • Employer → all past/completed shifts the employer created.  
+ *       • Guard → all past/completed shifts the guard worked on.
+ *       • Employer → all past/completed shifts the employer created.
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
@@ -497,7 +505,7 @@ router
  *       403: { description: Forbidden }
  */
 router
-  .route('/history')
-  .get(protect, authorizeRole('guard', 'employer'), getShiftHistory);
+  .route("/history")
+  .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
 
 export default router;

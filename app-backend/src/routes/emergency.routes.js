@@ -53,12 +53,7 @@ const router = express.Router();
  *       201:
  *         description: SOS triggered successfully
  */
-router.post(
-  "/sos",
-  auth,
-  allowRoles("guard"),
-  triggerSOS
-);
+router.post("/sos", auth, allowRoles("guard"), triggerSOS);
 
 /**
  * @swagger
@@ -73,12 +68,7 @@ router.post(
  *       200:
  *         description: SOS history fetched
  */
-router.get(
-  "/sos",
-  auth,
-  allowRoles("admin", "employer"),
-  getSOSHistory
-);
+router.get("/sos", auth, allowRoles("admin", "employer"), getSOSHistory);
 
 registerSOSInteractionRoutes(router, "/sos");
 
@@ -111,11 +101,6 @@ registerSOSInteractionRoutes(router, "/sos");
  *       200:
  *         description: SOS updated
  */
-router.put(
-  "/sos/:id",
-  auth,
-  allowRoles("admin", "employer"),
-  updateSOSStatus
-);
+router.put("/sos/:id", auth, allowRoles("admin", "employer"), updateSOSStatus);
 
 export default router;

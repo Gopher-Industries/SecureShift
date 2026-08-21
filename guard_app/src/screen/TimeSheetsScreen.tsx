@@ -1,5 +1,6 @@
 // src/screen/TimesheetsScreen.tsx
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AxiosError } from 'axios';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,70 +11,51 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 
-import { getUserAttendance, type Attendance } from '../api/attendance';
-import http from '../lib/http';
+import { myShifts, type ShiftDto } from '../api/shifts';
+import { getAllMyTimesheets, type Timesheet } from '../api/timesheets';
 import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
+import { fmtShiftLabel, formatHours, formatTimesheetDateTime, sumHours } from '../utils/timesheet';
 
-function safeDate(d?: string | null) {
-  if (!d) return null;
-  const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? null : dt;
-}
+import type { RootStackParamList } from '../navigation/AppNavigator';
+import type { AppColors } from '../theme/colors';
 
-function fmtDateTime(d?: string | null) {
-  const dt = safeDate(d);
-  if (!dt) return '—';
-  return dt.toLocaleString();
-}
-
-function fmtShiftLabel(att: Attendance) {
-  const s = att.shiftId;
-
-  if (s && typeof s === 'object') {
-    const title = s.title ?? 'Shift';
-    const date = s.date ? new Date(s.date).toDateString() : '';
-    const time = s.startTime && s.endTime ? `${s.startTime} - ${s.endTime}` : '';
-    return [title, date, time].filter(Boolean).join(' • ');
-  }
-
-  return `Shift ID: ${String(att.shiftId)}`;
-}
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function TimesheetsScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<Nav>();
   const { colors } = useAppTheme();
   const s = getStyles(colors);
   const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [items, setItems] = useState<Attendance[]>([]);
+  const [items, setItems] = useState<Timesheet[]>([]);
+  const [shiftsById, setShiftsById] = useState<Record<string, ShiftDto>>({});
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     try {
-      const { data: me } = await http.get('/users/me');
-      const userId = me?._id;
-
-      if (!userId) {
-        throw new Error('Unable to find logged-in user');
-      }
-
-      const rows = await getUserAttendance(userId);
+      setError(null);
+      const [rows, shifts] = await Promise.all([
+        getAllMyTimesheets(),
+        myShifts().catch(() => [] as ShiftDto[]),
+      ]);
       setItems(rows);
+      setShiftsById(Object.fromEntries(shifts.map((shift) => [shift._id, shift])));
     } catch (e: unknown) {
+      let msg = t('timesheet.error');
+
       if (e instanceof AxiosError) {
-        const msg = e?.response?.data?.message ?? e?.message ?? 'Failed to load timesheets';
-        Alert.alert('Error', msg);
+        msg = e?.response?.data?.message ?? e?.message ?? msg;
       } else if (e instanceof Error) {
-        Alert.alert('Error', e.message);
-      } else {
-        Alert.alert('Error', 'Failed to load timesheets');
+        msg = e.message;
       }
+
+      setItems([]);
+      setError(msg);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -91,65 +73,70 @@ export default function TimesheetsScreen() {
     await load();
   };
 
-  const renderItem = ({ item }: { item: Attendance }) => {
-    const checkedIn = !!item.checkInTime;
-    const checkedOut = !!item.checkOutTime;
+  const onRetry = async () => {
+    setLoading(true);
+    await load();
+  };
 
-    const hours =
-      item.checkInTime && item.checkOutTime
-        ? (
-            (new Date(item.checkOutTime).getTime() - new Date(item.checkInTime).getTime()) /
-            (1000 * 60 * 60)
-          ).toFixed(1) +
-          ' ' +
-          t('timesheet.hrs')
-        : '—';
+  const renderItem = ({ item }: { item: Timesheet }) => (
+    <TouchableOpacity
+      style={s.card}
+      onPress={() => navigation.navigate('TimesheetDetails', { timesheetId: item.id })}
+    >
+      <Text style={s.title}>{fmtShiftLabel(shiftsById[item.shiftId], item.shiftId)}</Text>
+
+      <View style={s.row}>
+        <Text style={s.label}>{t('timesheet.checkIn')}</Text>
+        <Text style={s.value}>{formatTimesheetDateTime(item.checkInTime)}</Text>
+      </View>
+
+      <View style={s.row}>
+        <Text style={s.label}>{t('timesheet.checkOut')}</Text>
+        <Text style={s.value}>{formatTimesheetDateTime(item.checkOutTime)}</Text>
+      </View>
+
+      <View style={s.row}>
+        <Text style={s.label}>{t('timesheet.hours')}</Text>
+        <Text style={s.value}>
+          {formatHours(item.actualHours)} {t('timesheet.hrs')}
+        </Text>
+      </View>
+
+      <View style={s.row}>
+        <Text style={s.label}>{t('timesheet.payable')}</Text>
+        <Text style={s.value}>
+          {formatHours(item.payableHours)} {t('timesheet.hrs')}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderSummary = () => {
+    if (items.length === 0) return null;
 
     return (
-      <TouchableOpacity
-        style={s.card}
-        onPress={() =>
-          navigation.navigate('ShiftDetails', {
-            shiftId: typeof item.shiftId === 'object' ? item.shiftId?._id : item.shiftId,
-          })
-        }
-      >
-        <Text style={s.title}>{fmtShiftLabel(item)}</Text>
+      <View style={s.summary}>
+        <Text style={s.summaryTitle}>{t('timesheet.summary')}</Text>
 
         <View style={s.row}>
-          <Text style={s.label}>{t('timesheet.checkIn')}</Text>
-          <Text style={s.value}>{fmtDateTime(item.checkInTime)}</Text>
+          <Text style={s.label}>{t('timesheet.totalShifts')}</Text>
+          <Text style={s.value}>{items.length}</Text>
         </View>
 
         <View style={s.row}>
-          <Text style={s.label}>{t('timesheet.checkOut')}</Text>
-          <Text style={s.value}>{fmtDateTime(item.checkOutTime)}</Text>
-        </View>
-
-        <View style={s.row}>
-          <Text style={s.label}>{t('timesheet.hours')}</Text>
-          <Text style={s.value}>{hours}</Text>
-        </View>
-
-        <View style={s.rowBetween}>
-          <Text style={s.meta}>
-            {t('timesheet.status')}{' '}
-            <Text style={checkedIn ? s.ok : s.muted}>
-              {checkedOut
-                ? t('timesheet.completed')
-                : checkedIn
-                  ? t('timesheet.inProgress')
-                  : t('timesheet.notStarted')}
-            </Text>
+          <Text style={s.label}>{t('timesheet.actual')}</Text>
+          <Text style={s.value}>
+            {formatHours(sumHours(items.map((item) => item.actualHours)))} {t('timesheet.hrs')}
           </Text>
-
-          <View style={[s.badge, item.locationVerified ? s.badgeOk : s.badgeWarn]}>
-            <Text style={[s.badgeText, item.locationVerified ? s.badgeTextOk : s.badgeTextWarn]}>
-              {item.locationVerified ? t('timesheet.verified') : t('timesheet.notVerified')}
-            </Text>
-          </View>
         </View>
-      </TouchableOpacity>
+
+        <View style={s.row}>
+          <Text style={s.label}>{t('timesheet.payable')}</Text>
+          <Text style={s.value}>
+            {formatHours(sumHours(items.map((item) => item.payableHours)))} {t('timesheet.hrs')}
+          </Text>
+        </View>
+      </View>
     );
   };
 
@@ -162,14 +149,27 @@ export default function TimesheetsScreen() {
     );
   }
 
+  if (error) {
+    return (
+      <View style={s.center}>
+        <Text style={s.errorTitle}>{t('timesheet.error')}</Text>
+        <Text style={s.errorText}>{error}</Text>
+        <TouchableOpacity style={s.retryBtn} onPress={onRetry}>
+          <Text style={s.retryText}>{t('timesheet.retry')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={s.container}>
       <FlatList
         data={items}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={s.listContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListHeaderComponent={renderSummary()}
         ListEmptyComponent={<Text style={s.empty}>{t('timesheet.empty')}</Text>}
       />
     </View>
@@ -187,6 +187,8 @@ const getStyles = (colors: AppColors) =>
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      padding: 24,
+      backgroundColor: colors.bg,
     },
 
     loadingText: {
@@ -200,6 +202,32 @@ const getStyles = (colors: AppColors) =>
       color: colors.muted,
     },
 
+    errorTitle: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+
+    errorText: {
+      color: colors.muted,
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+
+    retryBtn: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 10,
+    },
+
+    retryText: {
+      color: colors.white,
+      fontWeight: '700',
+    },
+
     card: {
       backgroundColor: colors.card,
       borderRadius: 14,
@@ -207,6 +235,22 @@ const getStyles = (colors: AppColors) =>
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+
+    summary: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+
+    summaryTitle: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: colors.text,
+      marginBottom: 10,
     },
 
     title: {
@@ -230,56 +274,6 @@ const getStyles = (colors: AppColors) =>
     value: {
       flex: 1,
       color: colors.muted,
-    },
-
-    rowBetween: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-
-    meta: {
-      marginTop: 8,
-      color: colors.text,
-      fontWeight: '700',
-    },
-
-    ok: {
-      color: colors.status.confirmed,
-      fontWeight: '800',
-    },
-
-    muted: {
-      color: colors.muted,
-      fontWeight: '800',
-    },
-
-    badge: {
-      marginTop: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 999,
-    },
-
-    badgeOk: {
-      backgroundColor: colors.greenSoft,
-    },
-
-    badgeWarn: {
-      backgroundColor: colors.primarySoft,
-    },
-
-    badgeText: {
-      fontWeight: '800',
-      fontSize: 12,
-    },
-
-    badgeTextOk: {
-      color: colors.status.confirmed,
-    },
-
-    badgeTextWarn: {
-      color: colors.link,
     },
 
     listContainer: {

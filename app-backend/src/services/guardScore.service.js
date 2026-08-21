@@ -1,13 +1,13 @@
-import mongoose from 'mongoose';
-import Shift from '../models/Shift.js';
-import ShiftAttendance from '../models/ShiftAttendance.js';
-import Incident from '../models/Incident.js';
-import { ErrorResponse } from '../utils/errorResponse.js';
+import mongoose from "mongoose";
+import Shift from "../models/Shift.js";
+import ShiftAttendance from "../models/ShiftAttendance.js";
+import Incident from "../models/Incident.js";
+import { ErrorResponse } from "../utils/errorResponse.js";
 
 const GRACE_PERIOD_MS = 5 * 60 * 1000;
 
 function buildShiftStartDate(shiftDate, startTime) {
-  const [hour, minute] = String(startTime).split(':').map(Number);
+  const [hour, minute] = String(startTime).split(":").map(Number);
   const d = new Date(shiftDate);
   d.setUTCHours(hour, minute, 0, 0);
   return d;
@@ -15,47 +15,56 @@ function buildShiftStartDate(shiftDate, startTime) {
 
 export async function computeGuardScore(guardId) {
   if (!mongoose.Types.ObjectId.isValid(guardId)) {
-    throw new ErrorResponse('Invalid guard ID', 400);
+    throw new ErrorResponse("Invalid guard ID", 400);
   }
 
   const guardObjectId = new mongoose.Types.ObjectId(guardId);
 
-  const [assignedShifts, attendanceRecords, incidentCounts] = await Promise.all([
-    Shift.find({
-      acceptedBy: guardObjectId,
-      status: { $in: ['assigned', 'completed'] },
-    }).lean(),
+  const [assignedShifts, attendanceRecords, incidentCounts] = await Promise.all(
+    [
+      Shift.find({
+        acceptedBy: guardObjectId,
+        status: { $in: ["assigned", "completed"] },
+      }).lean(),
 
-    ShiftAttendance.find({
-      guardId: guardObjectId,
-      checkInTime: { $ne: null },
-    })
-      .populate('shiftId', 'date startTime')
-      .lean(),
+      ShiftAttendance.find({
+        guardId: guardObjectId,
+        checkInTime: { $ne: null },
+      })
+        .populate("shiftId", "date startTime")
+        .lean(),
 
-    Incident.aggregate([
-      { $match: { guardId: guardObjectId, isDeleted: { $ne: true } } },
-      { $group: { _id: '$severity', count: { $sum: 1 } } },
-    ]),
-  ]);
+      Incident.aggregate([
+        { $match: { guardId: guardObjectId, isDeleted: { $ne: true } } },
+        { $group: { _id: "$severity", count: { $sum: 1 } } },
+      ]),
+    ],
+  );
 
   const totalAssigned = assignedShifts.length;
 
   if (totalAssigned === 0) {
-    return { score: null, reason: 'Insufficient shift data' };
+    return { score: null, reason: "Insufficient shift data" };
   }
 
   // Component 1 — Punctuality (35 pts)
-  const validAttendance = attendanceRecords.filter((r) => r.shiftId?.date && r.shiftId?.startTime);
+  const validAttendance = attendanceRecords.filter(
+    (r) => r.shiftId?.date && r.shiftId?.startTime,
+  );
   const totalCheckins = validAttendance.length;
   const onTimeCheckins = validAttendance.filter((r) => {
-    const cutoff = buildShiftStartDate(r.shiftId.date, r.shiftId.startTime).getTime() + GRACE_PERIOD_MS;
+    const cutoff =
+      buildShiftStartDate(r.shiftId.date, r.shiftId.startTime).getTime() +
+      GRACE_PERIOD_MS;
     return new Date(r.checkInTime).getTime() <= cutoff;
   }).length;
-  const punctualityScore = totalCheckins > 0 ? (onTimeCheckins / totalCheckins) * 35 : 0;
+  const punctualityScore =
+    totalCheckins > 0 ? (onTimeCheckins / totalCheckins) * 35 : 0;
 
   // Component 2 — Shift Completion (35 pts)
-  const completedShifts = assignedShifts.filter((s) => s.status === 'completed').length;
+  const completedShifts = assignedShifts.filter(
+    (s) => s.status === "completed",
+  ).length;
   const completionScore = (completedShifts / totalAssigned) * 35;
 
   // Component 3 — Incident Score (30 pts)
@@ -66,11 +75,16 @@ export async function computeGuardScore(guardId) {
   const highCount = severityCounts.high ?? 0;
   const mediumCount = severityCounts.medium ?? 0;
   const lowCount = severityCounts.low ?? 0;
-  const deduction = ((5 * highCount + 2 * mediumCount + 1 * lowCount) / Math.max(totalAssigned, 1)) * 10;
+  const deduction =
+    ((5 * highCount + 2 * mediumCount + 1 * lowCount) /
+      Math.max(totalAssigned, 1)) *
+    10;
   const incidentScore = Math.max(0, 30 - deduction);
 
   const score = Math.round(
-    Math.max(0, punctualityScore) + Math.max(0, completionScore) + incidentScore
+    Math.max(0, punctualityScore) +
+      Math.max(0, completionScore) +
+      incidentScore,
   );
 
   return {
