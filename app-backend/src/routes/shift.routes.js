@@ -12,6 +12,7 @@ import {
   updateShift,
   getShiftById,
   deleteShift,
+  duplicateShift,
 } from "../controllers/shift.controller.js";
 
 const router = express.Router();
@@ -201,6 +202,63 @@ router
  * Allows employers (owners) or admins to update editable fields.
  */
 router.route("/myshifts").get(protect, getMyShifts);
+
+/**
+ * @swagger
+ * /api/v1/shifts/{id}/duplicate:
+ *   post:
+ *     summary: Duplicate an employer's own shift
+ *     description: |
+ *       Creates a new draft shift using reusable details from an existing
+ *       shift. The employer must own the source shift and must provide
+ *       a new shift date. Applicants, assignments, ratings and lifecycle
+ *       state are reset.
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Source shift ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - date
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2026-12-15"
+ *                 description: New date for the duplicated shift
+ *     responses:
+ *       201:
+ *         description: Shift duplicated successfully as a draft
+ *       400:
+ *         description: Invalid shift ID, missing date, or invalid date
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Employer does not own the source shift
+ *       404:
+ *         description: Source shift not found
+ */
+router.post(
+  "/:id/duplicate",
+  protect,
+  authorizeRole("employer"),
+  duplicateShift,
+);
+
+router
+  .route("/history")
+  .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
 
 router
   .route("/:id")
@@ -504,8 +562,5 @@ router
  *       401: { description: Unauthorized }
  *       403: { description: Forbidden }
  */
-router
-  .route("/history")
-  .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
 
 export default router;
