@@ -197,16 +197,62 @@ router
   .post(protect, authorizeRole("employer"), createShift);
 
 /**
- * PATCH /api/v1/shifts/:id
- * Allows employers (owners) or admins to update editable fields.
+ * @swagger
+ * /api/v1/shifts/myshifts:
+ *   get:
+ *     summary: Get shifts for the logged-in user
+ *     description: |
+ *       Guard → applied/assigned/past
+ *       Employer → created
+ *       Admin → all
+ *       Use `?status=past` to return only completed shifts.
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [past]
+ *         required: false
+ *         description: Filter completed shifts
+ *     responses:
+ *       200: { description: List of shifts }
+ *       401: { description: Unauthorized }
  */
 router.route("/myshifts").get(protect, getMyShifts);
 
+/**
+ * @swagger
+ * /api/v1/shifts/history:
+ *   get:
+ *     summary: Get shift history (Guard/Employer only)
+ *     description: |
+ *       • Guard → all past/completed shifts the guard worked on.
+ *       • Employer → all past/completed shifts the employer created.
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: List of completed shifts for the user }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ */
+router
+  .route("/history")
+  .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
+
+/**
+ * PATCH /api/v1/shifts/:id
+ * Allows employers (owners) or admins to update editable fields.
+ */
 router
   .route("/:id")
   .get(protect, authorizeRole("employer", "admin"), getShiftById)
   .patch(protect, authorizeRole("employer", "admin"), updateShift)
   .delete(protect, authorizeRole("employer", "admin"), deleteShift);
+
 /**
  * @swagger
  * /api/v1/shifts/{id}:
@@ -416,32 +462,6 @@ router
 
 /**
  * @swagger
- * /api/v1/shifts/myshifts:
- *   get:
- *     summary: Get shifts for the logged-in user
- *     description: |
- *       Guard → applied/assigned/past
- *       Employer → created
- *       Admin → all
- *       Use `?status=past` to return only completed shifts.
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [past]
- *         required: false
- *         description: Filter completed shifts
- *     responses:
- *       200: { description: List of shifts }
- *       401: { description: Unauthorized }
- */
-
-/**
- * @swagger
  * /api/v1/shifts/{id}/rate:
  *   patch:
  *     summary: Submit a rating (role-aware)
@@ -487,25 +507,5 @@ router
 router
   .route("/:id/rate")
   .patch(protect, authorizeRole("guard", "employer"), rateShift);
-
-/**
- * @swagger
- * /api/v1/shifts/history:
- *   get:
- *     summary: Get shift history (Guard/Employer only)
- *     description: |
- *       • Guard → all past/completed shifts the guard worked on.
- *       • Employer → all past/completed shifts the employer created.
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200: { description: List of completed shifts for the user }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- */
-router
-  .route("/history")
-  .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
 
 export default router;
