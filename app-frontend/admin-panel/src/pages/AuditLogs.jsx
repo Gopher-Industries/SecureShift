@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import http from '../lib/http';
+import Modal from '../components/Modal';
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
@@ -222,62 +223,35 @@ export default function AuditLogs() {
 
       {/* Details Modal */}
       {selectedLog && (
-        <div
-          onClick={() => setSelectedLog(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
+        <Modal open={true} title="Log Details" onClose={() => setSelectedLog(null)}>
+          <p>
+            <strong>Timestamp:</strong> {new Date(selectedLog.timestamp).toLocaleString()}
+          </p>
+          <p>
+            <strong>Action:</strong> {selectedLog.action}
+          </p>
+          <p>
+            <strong>User:</strong> {selectedLog.user?.name || '—'} (
+            {selectedLog.user?.email || 'N/A'})
+          </p>
+          <p>
+            <strong>Role:</strong> {selectedLog.user?.role || '—'}
+          </p>
+          <p>
+            <strong>Metadata:</strong>
+          </p>
+          <pre
             style={{
-              backgroundColor: 'white',
-              padding: '24px',
-              borderRadius: '8px',
-              minWidth: '400px',
-              maxWidth: '600px',
-              maxHeight: '80vh',
-              overflowY: 'auto',
+              backgroundColor: '#f5f5f5',
+              padding: '10px',
+              borderRadius: '4px',
+              overflowX: 'auto',
             }}
           >
-            <h2>Log Details</h2>
-            <p>
-              <strong>Timestamp:</strong> {new Date(selectedLog.timestamp).toLocaleString()}
-            </p>
-            <p>
-              <strong>Action:</strong> {selectedLog.action}
-            </p>
-            <p>
-              <strong>User:</strong> {selectedLog.user?.name || '—'} (
-              {selectedLog.user?.email || 'N/A'})
-            </p>
-            <p>
-              <strong>Role:</strong> {selectedLog.user?.role || '—'}
-            </p>
-            <p>
-              <strong>Metadata:</strong>
-            </p>
-            <pre
-              style={{
-                backgroundColor: '#f5f5f5',
-                padding: '10px',
-                borderRadius: '4px',
-                overflowX: 'auto',
-              }}
-            >
-              {JSON.stringify(selectedLog.metadata, null, 2)}
-            </pre>
-            <button onClick={() => setSelectedLog(null)}>Close</button>
-          </div>
-        </div>
+            {JSON.stringify(selectedLog.metadata, null, 2)}
+          </pre>
+          <button onClick={() => setSelectedLog(null)}>Close</button>
+        </Modal>
       )}
 
       {/* Purge Confirmation Modal */}
