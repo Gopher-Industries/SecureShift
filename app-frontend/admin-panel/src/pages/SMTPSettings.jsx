@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getSmtpSettings, updateSmtpSettings, testSmtpSettings } from '../service/adminAPI';
 import LoadingComponent from '../components/LoadingComponent';
+import FormField from '../components/FormField';
+import { useToast } from '../components/Toast';
 import colors from '../theme/colors';
 
 const styles = {
@@ -19,25 +21,6 @@ const styles = {
   },
   cardTitle: { color: colors.text, fontSize: 18, fontWeight: 600, margin: '0 0 4px' },
   cardSubtitle: { color: colors.muted, fontSize: 13, margin: '0 0 20px' },
-  field: { marginBottom: 16 },
-  label: {
-    display: 'block',
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: 600,
-    marginBottom: 6,
-  },
-  input: {
-    width: '100%',
-    boxSizing: 'border-box',
-    padding: '8px 10px',
-    fontSize: 14,
-    color: colors.text,
-    background: colors.white,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 6,
-  },
-  hint: { color: colors.muted, fontSize: 12, marginTop: 4 },
   button: {
     background: colors.primary,
     color: colors.white,
@@ -74,19 +57,23 @@ const EMPTY_SETTINGS = {
 // SMTP / Email settings page — Sprint 2.
 // Step 1: load existing settings via GET /admin/smtp-settings.
 // Step 2: edit + save via PUT /admin/smtp-settings.
+//
+// AP-019: field markup now uses the shared FormField component, and
+// save/test-email results surface via the shared Toast (useToast) instead
+// of a page-local success banner — demonstrating the reusable component
+// library on a real, already-working page.
 export default function SMTPSettings() {
+  const { showToast } = useToast();
   const [settings, setSettings] = useState(EMPTY_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState('');
   const [testEmail, setTestEmail] = useState('');
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null); // { ok: boolean, message: string }
 
   // silent = true skips the loading flag so we don't blow away the form
-  // (and the save success message) after a save.
+  // after a save.
   const loadSettings = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
@@ -106,7 +93,6 @@ export default function SMTPSettings() {
 
   const handleChange = (field) => (e) => {
     setSettings((prev) => ({ ...prev, [field]: e.target.value }));
-    setSaveSuccess('');
   };
 
   const validate = () => {
@@ -124,18 +110,16 @@ export default function SMTPSettings() {
     const validationError = validate();
     if (validationError) {
       setSaveError(validationError);
-      setSaveSuccess('');
       return;
     }
 
     try {
       setSaving(true);
       setSaveError('');
-      setSaveSuccess('');
 
       await updateSmtpSettings(settings);
       await loadSettings(true);
-      setSaveSuccess('Settings saved.');
+      showToast('Settings saved.', 'success');
     } catch (err) {
       setSaveError(err?.response?.data?.message || 'Failed to save SMTP settings');
     } finally {
@@ -148,20 +132,16 @@ export default function SMTPSettings() {
   const handleTestEmail = async (e) => {
     e.preventDefault();
     if (!testEmail.trim()) {
-      setTestResult({ ok: false, message: 'Enter an email address to send the test to.' });
+      showToast('Enter an email address to send the test to.', 'error');
       return;
     }
 
     try {
       setTesting(true);
-      setTestResult(null);
       await testSmtpSettings({ testEmail: testEmail.trim() });
-      setTestResult({ ok: true, message: `Test email sent to ${testEmail.trim()}.` });
+      showToast(`Test email sent to ${testEmail.trim()}.`, 'success');
     } catch (err) {
-      setTestResult({
-        ok: false,
-        message: err?.response?.data?.message || 'Failed to send test email',
-      });
+      showToast(err?.response?.data?.message || 'Failed to send test email', 'error');
     } finally {
       setTesting(false);
     }
@@ -180,82 +160,53 @@ export default function SMTPSettings() {
         <div style={styles.row}>
           <div style={styles.card}>
             <form onSubmit={handleSave}>
-              <div style={styles.field}>
-                <label style={styles.label} htmlFor="smtp-host">
-                  Host
-                </label>
-                <input
-                  id="smtp-host"
-                  style={styles.input}
-                  value={settings.SMTP_HOST}
-                  onChange={handleChange('SMTP_HOST')}
-                />
-              </div>
+              <FormField
+                id="smtp-host"
+                label="Host"
+                value={settings.SMTP_HOST}
+                onChange={handleChange('SMTP_HOST')}
+              />
 
-              <div style={styles.field}>
-                <label style={styles.label} htmlFor="smtp-port">
-                  Port
-                </label>
-                <input
-                  id="smtp-port"
-                  style={styles.input}
-                  value={settings.SMTP_PORT}
-                  onChange={handleChange('SMTP_PORT')}
-                />
-              </div>
+              <FormField
+                id="smtp-port"
+                label="Port"
+                value={settings.SMTP_PORT}
+                onChange={handleChange('SMTP_PORT')}
+              />
 
-              <div style={styles.field}>
-                <label style={styles.label} htmlFor="smtp-secure">
-                  Secure (TLS)
-                </label>
-                <select
-                  id="smtp-secure"
-                  style={styles.input}
-                  value={settings.SMTP_SECURE}
-                  onChange={handleChange('SMTP_SECURE')}
-                >
-                  <option value="false">false</option>
-                  <option value="true">true</option>
-                </select>
-              </div>
+              <FormField
+                id="smtp-secure"
+                label="Secure (TLS)"
+                as="select"
+                value={settings.SMTP_SECURE}
+                onChange={handleChange('SMTP_SECURE')}
+              >
+                <option value="false">false</option>
+                <option value="true">true</option>
+              </FormField>
 
-              <div style={styles.field}>
-                <label style={styles.label} htmlFor="smtp-user">
-                  Username
-                </label>
-                <input
-                  id="smtp-user"
-                  style={styles.input}
-                  value={settings.SMTP_USER}
-                  onChange={handleChange('SMTP_USER')}
-                />
-              </div>
+              <FormField
+                id="smtp-user"
+                label="Username"
+                value={settings.SMTP_USER}
+                onChange={handleChange('SMTP_USER')}
+              />
 
-              <div style={styles.field}>
-                <label style={styles.label} htmlFor="smtp-pass">
-                  Password
-                </label>
-                <input
-                  id="smtp-pass"
-                  type="password"
-                  style={styles.input}
-                  value={settings.SMTP_PASS}
-                  onChange={handleChange('SMTP_PASS')}
-                  placeholder="Enter SMTP password"
-                />
-              </div>
+              <FormField
+                id="smtp-pass"
+                label="Password"
+                type="password"
+                value={settings.SMTP_PASS}
+                onChange={handleChange('SMTP_PASS')}
+                placeholder="Enter SMTP password"
+              />
 
-              <div style={styles.field}>
-                <label style={styles.label} htmlFor="smtp-from">
-                  From Email
-                </label>
-                <input
-                  id="smtp-from"
-                  style={styles.input}
-                  value={settings.SMTP_FROM_EMAIL}
-                  onChange={handleChange('SMTP_FROM_EMAIL')}
-                />
-              </div>
+              <FormField
+                id="smtp-from"
+                label="From Email"
+                value={settings.SMTP_FROM_EMAIL}
+                onChange={handleChange('SMTP_FROM_EMAIL')}
+              />
 
               <button
                 type="submit"
@@ -266,7 +217,6 @@ export default function SMTPSettings() {
               </button>
 
               {saveError && <div style={styles.message(false)}>{saveError}</div>}
-              {saveSuccess && <div style={styles.message(true)}>{saveSuccess}</div>}
             </form>
           </div>
 
@@ -277,22 +227,14 @@ export default function SMTPSettings() {
               first if you just edited them.
             </p>
             <form onSubmit={handleTestEmail}>
-              <div style={styles.field}>
-                <label style={styles.label} htmlFor="smtp-test-email">
-                  Send to
-                </label>
-                <input
-                  id="smtp-test-email"
-                  type="email"
-                  style={styles.input}
-                  value={testEmail}
-                  onChange={(e) => {
-                    setTestEmail(e.target.value);
-                    setTestResult(null);
-                  }}
-                  placeholder="you@example.com"
-                />
-              </div>
+              <FormField
+                id="smtp-test-email"
+                label="Send to"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
 
               <button
                 type="submit"
@@ -301,8 +243,6 @@ export default function SMTPSettings() {
               >
                 {testing ? 'Sending…' : 'Send Test Email'}
               </button>
-
-              {testResult && <div style={styles.message(testResult.ok)}>{testResult.message}</div>}
             </form>
           </div>
         </div>

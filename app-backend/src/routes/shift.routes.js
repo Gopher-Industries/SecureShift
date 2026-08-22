@@ -252,6 +252,7 @@ router
   .get(protect, authorizeRole("employer", "admin"), getShiftById)
   .patch(protect, authorizeRole("employer", "admin"), updateShift)
   .delete(protect, authorizeRole("employer", "admin"), deleteShift);
+
 /**
  * @swagger
  * /api/v1/shifts/{id}:
