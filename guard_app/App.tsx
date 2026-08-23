@@ -6,8 +6,11 @@ import {
 } from '@react-navigation/native';
 // App.tsx
 import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import './src/i18n'; // Initialize i18n
+import ErrorBoundary from './src/components/ErrorBoundary';
+import OfflineBanner from './src/components/OfflineBanner';
 import { attach401Handler } from './src/lib/http';
 import {
   registerPushTokenIfNeeded,
@@ -66,16 +69,27 @@ function AppContent() {
   };
 
   return (
-    <NavigationContainer theme={navigationTheme} ref={navigationRef}>
-      <AppNavigator />
-    </NavigationContainer>
+    <View style={styles.root}>
+      <OfflineBanner />
+      <NavigationContainer theme={navigationTheme} ref={navigationRef}>
+        <AppNavigator />
+      </NavigationContainer>
+    </View>
   );
 }
 
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

@@ -3,16 +3,10 @@ import { RouteProp, useRoute } from '@react-navigation/native';
 import { AxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 
 import { getTimesheetById, type Timesheet } from '../api/timesheets';
+import LoadingState from '../components/LoadingState';
 import { useAppTheme } from '../theme';
 import { formatHours, formatShiftDate, formatTimesheetDateTime } from '../utils/timesheet';
 
@@ -64,12 +58,7 @@ export default function TimesheetDetailsScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={s.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={s.loadingText}>{t('timesheet.loading')}</Text>
-      </View>
-    );
+    return <LoadingState rows={2} />;
   }
 
   if (error || !timesheet) {
@@ -145,11 +134,6 @@ const getStyles = (colors: AppColors) =>
       alignItems: 'center',
       padding: 24,
       backgroundColor: colors.bg,
-    },
-
-    loadingText: {
-      marginTop: 10,
-      color: colors.muted,
     },
 
     errorTitle: {
