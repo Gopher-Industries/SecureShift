@@ -164,6 +164,13 @@
     "leaveEnd": "Leave End",
     "notFound": "No shift requests found",
     "requestError": "Failed to load requests.",
+    "rateShift": "Rate this shift",
+    "submitRating": "Submit Rating",
+    "submittingRating": "Submitting...",
+    "alreadyRated": "You already rated this shift",
+    "selectRating": "Please pick a star rating first",
+    "ratingFailed": "Could not save your rating",
+    "starLabel": "{{count}} star rating",
     "alerts": {
       "missingDateHead": "Missing Date",
       "missingDateMsg": "Enter the date you want your shift moved to.",
