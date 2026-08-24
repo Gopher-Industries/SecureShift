@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import './ManageShiftDetails.css';
 
 const ManageShiftDetails = () => {
   const { id } = useParams();
@@ -32,9 +33,6 @@ const ManageShiftDetails = () => {
 
         const data = await res.json();
         setShift(data);
-        const data = await res.json();
-        console.log('shift keys:', JSON.stringify(data, null, 2));
-        setShift(data);
       } catch (err) {
         console.error(err);
         setError('Failed to load shift details');
@@ -49,35 +47,37 @@ const ManageShiftDetails = () => {
   // ======================
   // Fetch chat messages
   // ======================
- useEffect(() => {
-  const fetchMessages = async () => {
-    if (!shift) return; // wait for shift to load
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!shift) return; // wait for shift to load
 
-    const guardId = shift.acceptedBy?._id
-      || shift.acceptedBy
-      || shift.assignedGuard?._id
-      || shift.assignedGuard;
+      const guardId =
+        shift.acceptedBy?._id ||
+        shift.acceptedBy ||
+        shift.assignedGuard?._id ||
+        shift.assignedGuard;
 
-    if (!guardId || guardId === 'null') {
-      console.log('no guard assigned yet, skipping message fetch');
-      return;
-    }
+      if (!guardId || guardId === 'null') {
+        console.log('no guard assigned yet, skipping message fetch');
+        return;
+      }
 
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/v1/messages/conversation/${guardId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setMessages(data.data?.conversation?.messages || []);
-    } catch (err) {
-      console.error('Failed to load messages', err);
-    }
-  };
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:5000/api/v1/messages/conversation/${guardId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setMessages(data.data?.conversation?.messages || []);
+      } catch (err) {
+        console.error('Failed to load messages', err);
+      }
+    };
 
-  fetchMessages();
-}, [shift]); // ← shift, not id
+    fetchMessages();
+  }, [shift]); // ← shift, not id
+
   // ======================
   // Approve guard
   // ======================
@@ -107,136 +107,115 @@ const ManageShiftDetails = () => {
   // Send chat message
   // ======================
   const sendMessage = async () => {
-  if (!newMessage.trim()) return;
+    if (!newMessage.trim()) return;
 
-  const guardId = shift?.acceptedBy?._id 
-    || shift?.acceptedBy 
-    || shift?.assignedGuard?._id 
-    || shift?.assignedGuard;
+    const guardId =
+      shift?.acceptedBy?._id ||
+      shift?.acceptedBy ||
+      shift?.assignedGuard?._id ||
+      shift?.assignedGuard;
 
-  if (!guardId || guardId === 'null') {
-    alert('No guard assigned to this shift yet.');
-    return;
-  }
+    if (!guardId || guardId === 'null') {
+      alert('No guard assigned to this shift yet.');
+      return;
+    }
 
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/v1/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        receiverId: guardId,
-        content: newMessage,
-      }),
-    });
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          receiverId: guardId,
+          content: newMessage,
+        }),
+      });
 
-    if (!res.ok) throw new Error('Failed to send message');
+      if (!res.ok) throw new Error('Failed to send message');
 
-    const data = await res.json();
-    setMessages((prev) => [
-      ...prev,
-      {
-        _id: data.data?.messageId,
-        content: data.data?.content || newMessage,
-        senderName: 'You',
-        timestamp: data.data?.timestamp || new Date().toISOString(),
-      },
-    ]);
-    setNewMessage('');
-  } catch (err) {
-    console.error(err);
-    alert('Failed to send message');
-  }
-};
-const data = await res.json();
-console.log('shift:', JSON.stringify(data, null, 2));
-setShift(data);
+      const data = await res.json();
+      setMessages((prev) => [
+        ...prev,
+        {
+          _id: data.data?.messageId,
+          content: data.data?.content || newMessage,
+          senderName: 'You',
+          timestamp: data.data?.timestamp || new Date().toISOString(),
+        },
+      ]);
+      setNewMessage('');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to send message');
+    }
+  };
 
   if (loading) return <p>Loading shift…</p>;
-  if (error) return <p style={{ color: 'red' }}>{error}</p>;
+  if (error) return <p className="msd-error">{error}</p>;
 
   return (
-    <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
-      <button onClick={() => navigate(-1)} style={{ marginBottom: '20px' }}>
+    <div className="msd-container">
+      <button onClick={() => navigate(-1)} className="msd-back-button">
         ← Back
       </button>
 
-      <h1>{shift.title}</h1>
-      <p>
+      <h1 className="msd-title">{shift.title}</h1>
+      <p className="msd-status">
         <strong>Status:</strong> {shift.status}
       </p>
 
-      <hr />
+      <hr className="msd-divider" />
 
       {/* ================= Applicants ================= */}
-      <h2>Applicants</h2>
+      <h2 className="msd-section-heading">Applicants</h2>
 
-      {shift.applicants && shift.applicants.length === 0 && <p>No applicants yet.</p>}
+      {shift.applicants && shift.applicants.length === 0 && (
+        <p className="msd-empty-text">No applicants yet.</p>
+      )}
 
       {shift.applicants &&
         shift.applicants.map((applicant) => (
-          <div
-            key={applicant._id}
-            style={{
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '12px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
+          <div key={applicant._id} className="msd-applicant-card">
             <div>
-              <p style={{ margin: 0, fontWeight: 600 }}>{applicant.name}</p>
-              <p style={{ margin: 0, color: '#666' }}>{applicant.email}</p>
+              <p className="msd-applicant-name">{applicant.name}</p>
+              <p className="msd-applicant-email">{applicant.email}</p>
             </div>
 
-            <button onClick={() => approveGuard(applicant._id)}>Approve</button>
+            <button className="msd-approve-button" onClick={() => approveGuard(applicant._id)}>
+              Approve
+            </button>
           </div>
         ))}
 
-      <hr />
+      <hr className="msd-divider" />
 
       {/* ================= Shift Chat ================= */}
-      <h2>Shift Chat</h2>
+      <h2 className="msd-section-heading">Shift Chat</h2>
 
-      <div
-        style={{
-          border: '1px solid #e0e0e0',
-          borderRadius: '8px',
-          padding: '12px',
-          marginBottom: '12px',
-          maxHeight: '300px',
-          overflowY: 'auto',
-        }}
-      >
-        {messages.length === 0 && <p>No messages yet.</p>}
+      <div className="msd-chat-box">
+        {messages.length === 0 && <p className="msd-empty-text">No messages yet.</p>}
 
         {messages.map((msg) => (
-          <div key={msg._id} style={{ marginBottom: '10px' }}>
-            <strong>{msg.senderName || 'User'}:</strong>
-            <p style={{ margin: '4px 0' }}>{msg.content}</p>
+          <div key={msg._id} className="msd-message">
+            <strong className="msd-message-sender">{msg.senderName || 'User'}:</strong>
+            <p className="msd-message-content">{msg.content}</p>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div className="msd-input-row">
         <input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type a message..."
-          style={{
-            flex: 1,
-            padding: '10px',
-            borderRadius: '6px',
-            border: '1px solid #ccc',
-          }}
+          className="msd-input"
         />
-        <button onClick={sendMessage}>Send</button>
+        <button className="msd-send-button" onClick={sendMessage}>
+          Send
+        </button>
       </div>
     </div>
   );
