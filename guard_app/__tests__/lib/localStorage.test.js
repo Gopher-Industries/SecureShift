@@ -55,4 +55,17 @@ describe('LocalStorage (session storage)', () => {
     expect(await LocalStorage.getProfileImage()).toBeNull();
     expect(await LocalStorage.getPushToken()).toBeNull();
   });
+
+  it('migrates a legacy token from AsyncStorage into SecureStore on first read', async () => {
+    // Simulate an existing install where the token was stored in plaintext.
+    await AsyncStorage.setItem('auth_token', 'legacy-jwt');
+
+    // First read returns it and migrates it.
+    expect(await LocalStorage.getToken()).toBe('legacy-jwt');
+
+    // Plaintext copy is removed; the value now lives in SecureStore.
+    const SecureStore = require('expo-secure-store');
+    expect(await AsyncStorage.getItem('auth_token')).toBeNull();
+    expect(await SecureStore.getItemAsync('auth_token')).toBe('legacy-jwt');
+  });
 });

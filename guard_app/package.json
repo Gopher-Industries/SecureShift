@@ -49,6 +49,7 @@
     "expo-network": "~8.0.8",
     "expo-notifications": "~0.32.17",
     "expo-print": "~15.0.8",
+    "expo-secure-store": "~15.0.8",
     "expo-sharing": "~14.0.8",
     "expo-status-bar": "~3.0.9",
     "i18next": "^26.0.6",
