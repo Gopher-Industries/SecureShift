@@ -1,12 +1,21 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import "./EmployerDashboard.css";
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import './EmployerDashboard.css';
 
 /* --- icons --- */
 const IconCalendar = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+    <rect
+      x="3"
+      y="4"
+      width="18"
+      height="18"
+      rx="3"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
     <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" />
     <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" />
     <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" />
@@ -16,15 +25,47 @@ const IconCalendar = (props) => (
 const IconClock = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
     <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
-    <line x1="12" y1="6" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <line x1="12" y1="12" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line
+      x1="12"
+      y1="6"
+      x2="12"
+      y2="12"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="12"
+      y1="12"
+      x2="16"
+      y2="14"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 const IconPlus = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line
+      x1="12"
+      y1="5"
+      x2="12"
+      y2="19"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <line
+      x1="5"
+      y1="12"
+      x2="19"
+      y2="12"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -53,7 +94,7 @@ const IconUser = (props) => (
 );
 
 const Star = ({ filled }) => (
-  <svg viewBox="0 0 24 24" className={`star ${filled ? "filled" : ""}`}>
+  <svg viewBox="0 0 24 24" className={`star ${filled ? 'filled' : ''}`}>
     <path d="M12 2l3.09 6.28 6.93 1-5 4.86L18.18 22 12 18.56 5.82 22l1.16-7.86-5-4.86 6.93-1L12 2z" />
   </svg>
 );
@@ -65,54 +106,54 @@ const severityRank = {
 };
 
 const formatLocation = (location) => {
-  if (!location) return "No location";
-  if (typeof location === "string") return location;
+  if (!location) return 'No location';
+  if (typeof location === 'string') return location;
   return [location.street, location.suburb, location.state, location.postcode]
     .filter(Boolean)
-    .join(", ");
+    .join(', ');
 };
 
 const formatShiftDate = (value) => {
-  if (!value) return "--";
-  if (typeof value !== "string") return String(value);
+  if (!value) return '--';
+  if (typeof value !== 'string') return String(value);
   if (/^\d{2}-\d{2}-\d{4}$/.test(value)) return value;
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString("en-GB");
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('en-GB');
 };
 
 const parseIncidentDateTime = (incident) => {
-  const [day, month, year] = incident.date.split("-").map(Number);
+  const [day, month, year] = incident.date.split('-').map(Number);
   const baseDate = new Date(year, month - 1, day);
   const timeMatch = incident.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
   if (!timeMatch) return baseDate.getTime();
   let hours = Number(timeMatch[1]);
   const minutes = Number(timeMatch[2]);
   const meridian = timeMatch[3].toUpperCase();
-  if (meridian === "PM" && hours < 12) hours += 12;
-  if (meridian === "AM" && hours === 12) hours = 0;
+  if (meridian === 'PM' && hours < 12) hours += 12;
+  if (meridian === 'AM' && hours === 12) hours = 0;
   baseDate.setHours(hours, minutes, 0, 0);
   return baseDate.getTime();
 };
 
 const getShiftStatusCategory = (shift) => {
-  const text = String(shift?.status?.text || "").toLowerCase();
-  const tone = String(shift?.status?.tone || "").toLowerCase();
-  if (tone.includes("pending") || text.includes("pending")) return "Pending";
-  if (tone.includes("completed") || text.includes("completed")) return "Completed";
+  const text = String(shift?.status?.text || '').toLowerCase();
+  const tone = String(shift?.status?.tone || '').toLowerCase();
+  if (tone.includes('pending') || text.includes('pending')) return 'Pending';
+  if (tone.includes('completed') || text.includes('completed')) return 'Completed';
   if (
-    tone.includes("confirmed") ||
-    tone.includes("open") ||
-    text.includes("confirmed") ||
-    text.includes("open")
+    tone.includes('confirmed') ||
+    tone.includes('open') ||
+    text.includes('confirmed') ||
+    text.includes('open')
   ) {
-    return "Open";
+    return 'Open';
   }
-  return "All";
+  return 'All';
 };
 
 export default function EmployerDashboard() {
   const { t, i18n } = useTranslation();
-  const [view, setView] = useState("list");
+  const [view, setView] = useState('list');
   const reviewScroller = useRef(null);
   const navigate = useNavigate();
 
@@ -120,67 +161,67 @@ export default function EmployerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [statusTab, setStatusTab] = useState("All");
-  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [statusTab, setStatusTab] = useState('All');
+  const [priorityFilter, setPriorityFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedIncident, setSelectedIncident] = useState(null);
-  const [incidentDraft, setIncidentDraft] = useState({ severity: "Medium", comments: "" });
-  const [incidentQuery, setIncidentQuery] = useState("");
-  const [incidentStatusFilter, setIncidentStatusFilter] = useState("All");
-  const [incidentSeverityFilter, setIncidentSeverityFilter] = useState("All");
-  const [incidentSort, setIncidentSort] = useState("Newest");
+  const [incidentDraft, setIncidentDraft] = useState({ severity: 'Medium', comments: '' });
+  const [incidentQuery, setIncidentQuery] = useState('');
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState('All');
+  const [incidentSeverityFilter, setIncidentSeverityFilter] = useState('All');
+  const [incidentSort, setIncidentSort] = useState('Newest');
 
   const [incidents, setIncidents] = useState([
     {
-      id: "INC-9921",
-      guard: "John Doe",
-      shift: "Crowd Control - Marvel",
-      date: "09-08-2025",
-      time: "10:45 PM",
-      status: "Pending",
-      severity: "High",
+      id: 'INC-9921',
+      guard: 'John Doe',
+      shift: 'Crowd Control - Marvel',
+      date: '09-08-2025',
+      time: '10:45 PM',
+      status: 'Pending',
+      severity: 'High',
       description:
-        "A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.",
+        'A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.',
       photos: [
-        "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80",
+        'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80',
       ],
-      comments: "",
+      comments: '',
     },
     {
-      id: "INC-9920",
-      guard: "Leah Carter",
-      shift: "Gate Check - MCG",
-      date: "08-08-2025",
-      time: "08:15 PM",
-      status: "Resolved",
-      severity: "Medium",
+      id: 'INC-9920',
+      guard: 'Leah Carter',
+      shift: 'Gate Check - MCG',
+      date: '08-08-2025',
+      time: '08:15 PM',
+      status: 'Resolved',
+      severity: 'Medium',
       description:
-        "A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.",
+        'A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.',
       photos: [],
-      comments: "Resolved on site, no further action required.",
+      comments: 'Resolved on site, no further action required.',
     },
     {
-      id: "INC-9919",
-      guard: "Aiden Ross",
-      shift: "Shopping Centre Security - Chadstone",
-      date: "07-08-2025",
-      time: "03:05 PM",
-      status: "Pending",
-      severity: "Low",
+      id: 'INC-9919',
+      guard: 'Aiden Ross',
+      shift: 'Shopping Centre Security - Chadstone',
+      date: '07-08-2025',
+      time: '03:05 PM',
+      status: 'Pending',
+      severity: 'Low',
       description:
-        "Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.",
+        'Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.',
       photos: [
-        "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80",
+        'https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80',
       ],
-      comments: "",
+      comments: '',
     },
   ]);
 
   useEffect(() => {
     const fetchShifts = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
         const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -190,7 +231,7 @@ export default function EmployerDashboard() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to load shifts.");
+          throw new Error(data.message || 'Failed to load shifts.');
         }
 
         const rawShifts = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
@@ -198,112 +239,116 @@ export default function EmployerDashboard() {
         const normalizedShifts = rawShifts.map((shift, idx) => {
           const rawStatus = shift.status;
           const normalizedStatus =
-            typeof rawStatus === "object" && rawStatus !== null
+            typeof rawStatus === 'object' && rawStatus !== null
               ? {
-                  text: rawStatus.text || "Pending",
-                  tone: rawStatus.tone || "pending",
+                  text: rawStatus.text || 'Pending',
+                  tone: rawStatus.tone || 'pending',
                 }
               : {
-                  text: rawStatus || "Pending",
-                  tone:
-                    String(rawStatus || "pending").toLowerCase().includes("confirm")
-                      ? "confirmed"
-                      : String(rawStatus || "pending").toLowerCase().includes("complete")
-                        ? "completed"
-                        : String(rawStatus || "pending").toLowerCase().includes("reject")
-                          ? "rejected"
-                          : "pending",
+                  text: rawStatus || 'Pending',
+                  tone: String(rawStatus || 'pending')
+                    .toLowerCase()
+                    .includes('confirm')
+                    ? 'confirmed'
+                    : String(rawStatus || 'pending')
+                          .toLowerCase()
+                          .includes('complete')
+                      ? 'completed'
+                      : String(rawStatus || 'pending')
+                            .toLowerCase()
+                            .includes('reject')
+                        ? 'rejected'
+                        : 'pending',
                 };
 
           return {
             id: shift._id || shift.id || idx,
-            title: shift.title || shift.role || "Shift 1",
+            title: shift.title || shift.role || 'Shift 1',
             location: formatLocation(shift.location || shift.venue),
             date: formatShiftDate(shift.date || shift.shiftDate),
             time:
               shift.startTime && shift.endTime
                 ? `${shift.startTime} - ${shift.endTime}`
-                : shift.time || "--",
+                : shift.time || '--',
             status: normalizedStatus,
             payRate: shift.payRate ?? shift.rate ?? shift.hourlyRate ?? 0,
-            priority:
-              shift.priority || (idx % 3 === 0 ? "High" : idx % 3 === 1 ? "Medium" : "Low"),
+            priority: shift.priority || (idx % 3 === 0 ? 'High' : idx % 3 === 1 ? 'Medium' : 'Low'),
           };
         });
 
         setShifts(normalizedShifts);
       } catch (err) {
-        setError(err.message || "Failed to load shifts.");
+        setError(err.message || 'Failed to load shifts.');
         setShifts([
           {
             id: 1,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 2,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 3,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 4,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 5,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: { text: "Open", tone: "confirmed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 20, 2026',
+            time: '15:04 - 02:04',
+            status: { text: 'Open', tone: 'confirmed' },
             payRate: 23,
-            priority: "High",
+            priority: 'High',
           },
           {
             id: 6,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 21, 2026",
-            time: "13:00 - 21:00",
-            status: { text: "Pending", tone: "pending" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 21, 2026',
+            time: '13:00 - 21:00',
+            status: { text: 'Pending', tone: 'pending' },
             payRate: 25,
-            priority: "Medium",
+            priority: 'Medium',
           },
           {
             id: 7,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 22, 2026",
-            time: "09:00 - 17:00",
-            status: { text: "Completed", tone: "completed" },
+            title: 'Shift 1',
+            location: '740 Bourke St, Docklands VIC',
+            date: 'Mar 22, 2026',
+            time: '09:00 - 17:00',
+            status: { text: 'Completed', tone: 'completed' },
             payRate: 24,
-            priority: "Low",
+            priority: 'Low',
           },
         ]);
       } finally {
@@ -317,28 +362,25 @@ export default function EmployerDashboard() {
   const reviews = useMemo(
     () => [
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
     ],
     []
@@ -347,9 +389,9 @@ export default function EmployerDashboard() {
   const filteredShifts = useMemo(() => {
     return shifts.filter((shift) => {
       const matchesStatus =
-        statusTab === "All" ? true : getShiftStatusCategory(shift) === statusTab;
+        statusTab === 'All' ? true : getShiftStatusCategory(shift) === statusTab;
       const matchesPriority =
-        priorityFilter === "All" ? true : String(shift.priority) === priorityFilter;
+        priorityFilter === 'All' ? true : String(shift.priority) === priorityFilter;
       return matchesStatus && matchesPriority;
     });
   }, [priorityFilter, shifts, statusTab]);
@@ -378,9 +420,9 @@ export default function EmployerDashboard() {
   const tabCounts = useMemo(() => {
     return {
       All: shifts.length,
-      Pending: shifts.filter((s) => getShiftStatusCategory(s) === "Pending").length,
-      Open: shifts.filter((s) => getShiftStatusCategory(s) === "Open").length,
-      Completed: shifts.filter((s) => getShiftStatusCategory(s) === "Completed").length,
+      Pending: shifts.filter((s) => getShiftStatusCategory(s) === 'Pending').length,
+      Open: shifts.filter((s) => getShiftStatusCategory(s) === 'Open').length,
+      Completed: shifts.filter((s) => getShiftStatusCategory(s) === 'Completed').length,
     };
   }, [shifts]);
 
@@ -397,21 +439,21 @@ export default function EmployerDashboard() {
           incident.description.toLowerCase().includes(normalizedQuery);
 
         const matchesStatus =
-          incidentStatusFilter === "All" || incident.status === incidentStatusFilter;
+          incidentStatusFilter === 'All' || incident.status === incidentStatusFilter;
 
         const matchesSeverity =
-          incidentSeverityFilter === "All" || incident.severity === incidentSeverityFilter;
+          incidentSeverityFilter === 'All' || incident.severity === incidentSeverityFilter;
 
         return matchesQuery && matchesStatus && matchesSeverity;
       })
       .sort((a, b) => {
-        if (incidentSort === "Newest") {
+        if (incidentSort === 'Newest') {
           return parseIncidentDateTime(b) - parseIncidentDateTime(a);
         }
-        if (incidentSort === "Oldest") {
+        if (incidentSort === 'Oldest') {
           return parseIncidentDateTime(a) - parseIncidentDateTime(b);
         }
-        if (incidentSort === "Severity") {
+        if (incidentSort === 'Severity') {
           return (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
         }
         return 0;
@@ -422,8 +464,8 @@ export default function EmployerDashboard() {
     return incidents.reduce(
       (acc, incident) => {
         acc.total += 1;
-        if (incident.status === "Pending") acc.pending += 1;
-        if (incident.status === "Resolved") acc.resolved += 1;
+        if (incident.status === 'Pending') acc.pending += 1;
+        if (incident.status === 'Resolved') acc.resolved += 1;
         return acc;
       },
       { total: 0, pending: 0, resolved: 0 }
@@ -433,7 +475,9 @@ export default function EmployerDashboard() {
   const updateIncident = (id, newStatus, newSeverity, newComments) => {
     setIncidents((prev) =>
       prev.map((inc) =>
-        inc.id === id ? { ...inc, status: newStatus, severity: newSeverity, comments: newComments } : inc
+        inc.id === id
+          ? { ...inc, status: newStatus, severity: newSeverity, comments: newComments }
+          : inc
       )
     );
     setSelectedIncident(null);
@@ -443,30 +487,30 @@ export default function EmployerDashboard() {
     setSelectedIncident(incident);
     setIncidentDraft({
       severity: incident.severity,
-      comments: incident.comments || "",
+      comments: incident.comments || '',
     });
   };
 
   const scrollByAmount = (ref, amt) => {
     if (!ref.current) return;
-    ref.current.scrollBy({ left: amt, behavior: "smooth" });
+    ref.current.scrollBy({ left: amt, behavior: 'smooth' });
   };
 
   // Helper function to get translated status
   const getTranslatedStatus = (status) => {
     if (!status) return '';
     const statusMap = {
-      'pending': t('pending'),
-      'open': t('open'),
-      'completed': t('completed'),
-      'resolved': t('resolved'),
-      'high': t('high'),
-      'medium': t('medium'),
-      'low': t('low'),
-      'all': t('all'),
+      pending: t('pending'),
+      open: t('open'),
+      completed: t('completed'),
+      resolved: t('resolved'),
+      high: t('high'),
+      medium: t('medium'),
+      low: t('low'),
+      all: t('all'),
       'pending approval': t('pendingApproval'),
-      'confirmed': t('open'),
-      'rejected': t('reject'),
+      confirmed: t('open'),
+      rejected: t('reject'),
     };
     return statusMap[status?.toLowerCase()] || status;
   };
@@ -475,9 +519,9 @@ export default function EmployerDashboard() {
   const getTranslatedPriority = (priority) => {
     if (!priority) return '';
     const priorityMap = {
-      'high': t('high'),
-      'medium': t('medium'),
-      'low': t('low'),
+      high: t('high'),
+      medium: t('medium'),
+      low: t('low'),
     };
     return priorityMap[priority?.toLowerCase()] || priority;
   };
@@ -485,10 +529,10 @@ export default function EmployerDashboard() {
   // Helper function to get translated status for tabs
   const getTranslatedTabLabel = (tab) => {
     const tabMap = {
-      'All': t('all'),
-      'Pending': t('pending'),
-      'Open': t('open'),
-      'Completed': t('completed'),
+      All: t('all'),
+      Pending: t('pending'),
+      Open: t('open'),
+      Completed: t('completed'),
     };
     return tabMap[tab] || tab;
   };
@@ -496,10 +540,10 @@ export default function EmployerDashboard() {
   // Helper function to get translated filter labels
   const getTranslatedFilterLabel = (filter) => {
     const filterMap = {
-      'All': t('all'),
-      'High': t('high'),
-      'Medium': t('medium'),
-      'Low': t('low'),
+      All: t('all'),
+      High: t('high'),
+      Medium: t('medium'),
+      Low: t('low'),
     };
     return filterMap[filter] || filter;
   };
@@ -510,14 +554,12 @@ export default function EmployerDashboard() {
         <div className="ss-overview-head">
           <div>
             <h2 className="ss-h1">{t('overview')}</h2>
-            <p className="ss-overview-subtitle">
-              {t('shiftsCount', { count: shifts.length })}
-            </p>
+            <p className="ss-overview-subtitle">{t('shiftsCount', { count: shifts.length })}</p>
           </div>
 
           <button
             className="ss-primary ss-primary--wide"
-            onClick={() => navigate("/create-shift")}
+            onClick={() => navigate('/create-shift')}
             type="button"
           >
             <IconPlus className="ss-plus" /> {t('createShift')}
@@ -527,11 +569,11 @@ export default function EmployerDashboard() {
         <div className="ss-dashboard-card">
           <div className="ss-topbar">
             <div className="ss-tabs">
-              {["All", "Pending", "Open", "Completed"].map((tab) => (
+              {['All', 'Pending', 'Open', 'Completed'].map((tab) => (
                 <button
                   key={tab}
                   type="button"
-                  className={`ss-tab ${statusTab === tab ? "is-active" : ""}`}
+                  className={`ss-tab ${statusTab === tab ? 'is-active' : ''}`}
                   onClick={() => setStatusTab(tab)}
                 >
                   {getTranslatedTabLabel(tab)}
@@ -542,16 +584,16 @@ export default function EmployerDashboard() {
 
             <div className="ss-viewtoggle">
               <button
-                className={`ss-viewtoggle__btn ${view === "list" ? "is-active" : ""}`}
-                onClick={() => setView("list")}
+                className={`ss-viewtoggle__btn ${view === 'list' ? 'is-active' : ''}`}
+                onClick={() => setView('list')}
                 type="button"
                 aria-label={t('listView')}
               >
                 <IconList />
               </button>
               <button
-                className={`ss-viewtoggle__btn ${view === "grid" ? "is-active" : ""}`}
-                onClick={() => setView("grid")}
+                className={`ss-viewtoggle__btn ${view === 'grid' ? 'is-active' : ''}`}
+                onClick={() => setView('grid')}
                 type="button"
                 aria-label={t('gridView')}
               >
@@ -562,11 +604,11 @@ export default function EmployerDashboard() {
 
           <div className="ss-filterbar">
             <span className="ss-filterbar__label">{t('priority')}</span>
-            {["All", "High", "Medium", "Low"].map((chip) => (
+            {['All', 'High', 'Medium', 'Low'].map((chip) => (
               <button
                 key={chip}
                 type="button"
-                className={`ss-chip-btn ${priorityFilter === chip ? "is-active" : ""}`}
+                className={`ss-chip-btn ${priorityFilter === chip ? 'is-active' : ''}`}
                 onClick={() => setPriorityFilter(chip)}
               >
                 {getTranslatedFilterLabel(chip)}
@@ -574,7 +616,7 @@ export default function EmployerDashboard() {
             ))}
           </div>
 
-          {view === "list" ? (
+          {view === 'list' ? (
             <div className="ss-table">
               <div className="ss-table__head">
                 <div>{t('shift')}</div>
@@ -618,7 +660,10 @@ export default function EmployerDashboard() {
                       </div>
                     </div>
 
-                    <div className="ss-pay-col">${shift.payRate}{t('perHour')}</div>
+                    <div className="ss-pay-col">
+                      ${shift.payRate}
+                      {t('perHour')}
+                    </div>
 
                     <div>
                       <span
@@ -668,10 +713,10 @@ export default function EmployerDashboard() {
 
           <div className="ss-pagination">
             <div className="ss-pagination__meta">
-              {t('showing', { 
-                start: showingStart, 
-                end: showingEnd, 
-                total: filteredShifts.length 
+              {t('showing', {
+                start: showingStart,
+                end: showingEnd,
+                total: filteredShifts.length,
               })}
             </div>
 
@@ -690,7 +735,7 @@ export default function EmployerDashboard() {
                 <button
                   key={page}
                   type="button"
-                  className={`ss-page-btn ${currentPage === page ? "is-active" : ""}`}
+                  className={`ss-page-btn ${currentPage === page ? 'is-active' : ''}`}
                   onClick={() => setCurrentPage(page)}
                 >
                   {page}
@@ -713,9 +758,9 @@ export default function EmployerDashboard() {
         <div className="ss-section-head">
           <h2 className="ss-section-title">{t('incidentReportsTitle')}</h2>
           <p className="ss-section-subtitle">
-            {t('pendingIncidents', { 
-              count: incidentSummary.pending, 
-              total: incidentSummary.total 
+            {t('pendingIncidents', {
+              count: incidentSummary.pending,
+              total: incidentSummary.total,
             })}
           </p>
         </div>
@@ -728,16 +773,16 @@ export default function EmployerDashboard() {
               value={incidentQuery}
               onChange={(e) => setIncidentQuery(e.target.value)}
             />
-            <select 
-              value={incidentStatusFilter} 
+            <select
+              value={incidentStatusFilter}
               onChange={(e) => setIncidentStatusFilter(e.target.value)}
             >
               <option value="All">{t('allStatuses')}</option>
               <option value="Pending">{t('pending')}</option>
               <option value="Resolved">{t('resolved')}</option>
             </select>
-            <select 
-              value={incidentSeverityFilter} 
+            <select
+              value={incidentSeverityFilter}
               onChange={(e) => setIncidentSeverityFilter(e.target.value)}
             >
               <option value="All">{t('allSeverities')}</option>
@@ -745,10 +790,7 @@ export default function EmployerDashboard() {
               <option value="Medium">{t('medium')}</option>
               <option value="Low">{t('low')}</option>
             </select>
-            <select 
-              value={incidentSort} 
-              onChange={(e) => setIncidentSort(e.target.value)}
-            >
+            <select value={incidentSort} onChange={(e) => setIncidentSort(e.target.value)}>
               <option value="Newest">{t('sortNewest')}</option>
               <option value="Oldest">{t('sortOldest')}</option>
               <option value="Severity">{t('sortSeverity')}</option>
@@ -757,10 +799,10 @@ export default function EmployerDashboard() {
               className="ss-reset-btn"
               type="button"
               onClick={() => {
-                setIncidentQuery("");
-                setIncidentStatusFilter("All");
-                setIncidentSeverityFilter("All");
-                setIncidentSort("Newest");
+                setIncidentQuery('');
+                setIncidentStatusFilter('All');
+                setIncidentSeverityFilter('All');
+                setIncidentSort('Newest');
               }}
             >
               {t('reset')}
@@ -768,10 +810,18 @@ export default function EmployerDashboard() {
           </div>
 
           <div className="ss-incident-summary">
-            <span>{incidentSummary.total} {t('total')}</span>
-            <span>{incidentSummary.pending} {t('pending')}</span>
-            <span>{incidentSummary.resolved} {t('resolved')}</span>
-            <span>{filteredIncidents.length} {t('showingResults')}</span>
+            <span>
+              {incidentSummary.total} {t('total')}
+            </span>
+            <span>
+              {incidentSummary.pending} {t('pending')}
+            </span>
+            <span>
+              {incidentSummary.resolved} {t('resolved')}
+            </span>
+            <span>
+              {filteredIncidents.length} {t('showingResults')}
+            </span>
           </div>
 
           <div className="ss-incident-list">
@@ -784,9 +834,9 @@ export default function EmployerDashboard() {
                 <div className="ss-incident-row__line" />
                 <div className="ss-incident-avatar">
                   {inc.guard
-                    .split(" ")
+                    .split(' ')
                     .map((name) => name[0])
-                    .join("")
+                    .join('')
                     .slice(0, 2)}
                 </div>
 
@@ -807,7 +857,7 @@ export default function EmployerDashboard() {
                     {getTranslatedPriority(inc.severity)}
                   </span>
                   <span
-                    className={`ss-badge ss-badge--status-${inc.status === "Resolved" ? "completed" : "pending"}`}
+                    className={`ss-badge ss-badge--status-${inc.status === 'Resolved' ? 'completed' : 'pending'}`}
                   >
                     {getTranslatedStatus(inc.status)}
                   </span>
@@ -828,17 +878,17 @@ export default function EmployerDashboard() {
         <div className="ss-section-head ss-section-head--reviews">
           <h2 className="ss-section-title">{t('recentReviews')}</h2>
           <div className="ss-review-arrows">
-            <button 
-              className="ss-mini-arrow" 
-              onClick={() => scrollByAmount(reviewScroller, -300)} 
+            <button
+              className="ss-mini-arrow"
+              onClick={() => scrollByAmount(reviewScroller, -300)}
               type="button"
               aria-label={t('previous')}
             >
               ‹
             </button>
-            <button 
-              className="ss-mini-arrow" 
-              onClick={() => scrollByAmount(reviewScroller, 300)} 
+            <button
+              className="ss-mini-arrow"
+              onClick={() => scrollByAmount(reviewScroller, 300)}
               type="button"
               aria-label={t('next')}
             >
@@ -877,29 +927,34 @@ export default function EmployerDashboard() {
 
       {selectedIncident && (
         <div className="create-shift-modal-backdrop" onClick={() => setSelectedIncident(null)}>
-          <div className="create-shift-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
+          <div
+            className="create-shift-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '700px' }}
+          >
             <div className="create-shift-header">
               <div>
                 <h1>
-                  {t('incidentDetails')} (<span className="ss-incident-id">{selectedIncident.id}</span>)
+                  {t('incidentDetails')} (
+                  <span className="ss-incident-id">{selectedIncident.id}</span>)
                 </h1>
-                <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>
+                <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
                   {t('recordedOn', { date: selectedIncident.date, time: selectedIncident.time })}
                 </p>
               </div>
               <span
                 className={`ss-badge ss-badge--status-${
-                  selectedIncident.status === "Resolved" ? "completed" : "pending"
+                  selectedIncident.status === 'Resolved' ? 'completed' : 'pending'
                 }`}
               >
                 {getTranslatedStatus(selectedIncident.status)}
               </span>
             </div>
 
-            <div className="form-grid" style={{ marginBottom: "20px" }}>
+            <div className="form-grid" style={{ marginBottom: '20px' }}>
               <div className="form-group">
                 <label>{t('reportedBy')}</label>
-                <div className="ss-input-static" style={{ padding: "10px", borderRadius: "4px" }}>
+                <div className="ss-input-static" style={{ padding: '10px', borderRadius: '4px' }}>
                   {selectedIncident.guard}
                 </div>
               </div>
@@ -907,8 +962,10 @@ export default function EmployerDashboard() {
                 <label>{t('assignSeverity')}</label>
                 <select
                   value={incidentDraft.severity}
-                  onChange={(e) => setIncidentDraft((prev) => ({ ...prev, severity: e.target.value }))}
-                  style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }}
+                  onChange={(e) =>
+                    setIncidentDraft((prev) => ({ ...prev, severity: e.target.value }))
+                  }
+                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
                 >
                   <option value="Low">{t('low')}</option>
                   <option value="Medium">{t('medium')}</option>
@@ -917,19 +974,19 @@ export default function EmployerDashboard() {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: "20px" }}>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
               <label>{t('guardsDescription')}</label>
               <div className="ss-incident-description">{selectedIncident.description}</div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: "20px" }}>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
               <label>{t('evidencePhotos')}</label>
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {(selectedIncident.photos || []).map((url, idx) => (
                   <img key={idx} src={url} alt={t('evidencePhotos')} className="ss-evidence-img" />
                 ))}
                 {(!selectedIncident.photos || selectedIncident.photos.length === 0) && (
-                  <p style={{ margin: 0, color: "#666" }}>{t('noPhotos')}</p>
+                  <p style={{ margin: 0, color: '#666' }}>{t('noPhotos')}</p>
                 )}
               </div>
             </div>
@@ -939,19 +996,21 @@ export default function EmployerDashboard() {
               <textarea
                 placeholder={t('addNotes')}
                 value={incidentDraft.comments}
-                onChange={(e) => setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))}
-                style={{ border: "1px solid #ddd", borderRadius: "4px", padding: "10px" }}
+                onChange={(e) =>
+                  setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))
+                }
+                style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }}
                 rows={4}
               />
             </div>
 
-            <div className="actions" style={{ marginTop: "30px" }}>
+            <div className="actions" style={{ marginTop: '30px' }}>
               <button
                 className="primary"
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    "Resolved",
+                    'Resolved',
                     incidentDraft.severity,
                     incidentDraft.comments
                   )
@@ -964,7 +1023,7 @@ export default function EmployerDashboard() {
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    "Pending",
+                    'Pending',
                     incidentDraft.severity,
                     incidentDraft.comments
                   )
@@ -972,7 +1031,11 @@ export default function EmployerDashboard() {
               >
                 {t('savePending')}
               </button>
-              <button className="secondary" style={{ color: "#666" }} onClick={() => setSelectedIncident(null)}>
+              <button
+                className="secondary"
+                style={{ color: '#666' }}
+                onClick={() => setSelectedIncident(null)}
+              >
                 {t('close')}
               </button>
             </div>
