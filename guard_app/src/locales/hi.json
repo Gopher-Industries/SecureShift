@@ -406,5 +406,13 @@
     "submitSuccess": "घटना रिपोर्ट सफलतापूर्वक जमा की गई",
     "submitFailed": "घटना रिपोर्ट जमा करने में विफल",
     "cancel": "रद्द करें"
+  },
+  "appLock": {
+    "prompt": "SecureShift अनलॉक करें",
+    "lockedTitle": "SecureShift लॉक है",
+    "lockedMessage": "जारी रखने के लिए पुष्टि करें कि यह आप हैं।",
+    "unlock": "अनलॉक करें",
+    "settingsLabel": "ऐप लॉक (Face ID / PIN)",
+    "unavailable": "अनुपलब्ध"
   }
 }

@@ -401,5 +401,13 @@
     "submitSuccess": "事件报告提交成功",
     "submitFailed": "提交事件报告失败",
     "cancel": "取消"
+  },
+  "appLock": {
+    "prompt": "解锁 SecureShift",
+    "lockedTitle": "SecureShift 已锁定",
+    "lockedMessage": "请验证身份以继续。",
+    "unlock": "解锁",
+    "settingsLabel": "应用锁（Face ID / PIN）",
+    "unavailable": "不可用"
   }
 }

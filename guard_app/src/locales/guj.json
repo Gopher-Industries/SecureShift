@@ -400,5 +400,13 @@
     "submitSuccess": "ઘટના અહેવાલ સફળતાપૂર્વક સબમિટ થયો",
     "submitFailed": "ઘટના અહેવાલ સબમિટ કરવામાં નિષ્ફળતા",
     "cancel": "રદ કરો"
+  },
+  "appLock": {
+    "prompt": "SecureShift અનલૉક કરો",
+    "lockedTitle": "SecureShift લૉક છે",
+    "lockedMessage": "ચાલુ રાખવા માટે ખાતરી કરો કે તે તમે જ છો.",
+    "unlock": "અનલૉક કરો",
+    "settingsLabel": "એપ લૉક (Face ID / PIN)",
+    "unavailable": "અનુપલબ્ધ"
   }
 }
