@@ -12,8 +12,8 @@ const router = Router();
 /**
  * @swagger
  * tags:
- *  - name: Verification
- *    description: Guard licence verification (NSW + manual fallback)
+ *   - name: Verification
+ *     description: Guard licence verification (NSW + manual fallback)
  */
 
 /**
@@ -22,6 +22,8 @@ const router = Router();
  *   post:
  *     summary: Start licence verification for a guard
  *     tags: [Verification]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -30,25 +32,93 @@ const router = Router();
  *             type: object
  *             required: [guardId, jurisdiction, licenceNumber]
  *             properties:
- *               guardId: { type: string }
- *               jurisdiction: { type: string, example: "NSW" }
- *               licenceNumber: { type: string }
- *               firstName: { type: string }
- *               lastName: { type: string }
- *               dob: { type: string, format: date }
+ *               guardId:
+ *                 type: string
+ *               jurisdiction:
+ *                 type: string
+ *                 example: "NSW"
+ *               licenceNumber:
+ *                 type: string
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               dob:
+ *                 type: string
+ *                 format: date
  *     responses:
  *       200:
- *         description: Verification started
+ *         description: NSW verification attempted and result saved
+ *       201:
+ *         description: Manual verification created
+ *       400:
+ *         description: Required verification fields are missing
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
  */
 router.post("/start", auth, startVerification);
 
 /**
- * GET current status snapshot for a guard
+ * @swagger
+ * /api/v1/verification/status/{guardId}:
+ *   get:
+ *     summary: Get the latest verification status for a guard
+ *     description: Accessible by the guard themselves or an admin.
+ *     tags: [Verification]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guardId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Guard ID
+ *     responses:
+ *       200:
+ *         description: Latest verification status
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: No verification found for this guard
+ *       500:
+ *         description: Internal server error
  */
 router.get("/status/:guardId", auth, getStatus);
 
 /**
- * Force a recheck
+ * @swagger
+ * /api/v1/verification/recheck/{guardId}:
+ *   post:
+ *     summary: Recheck a guard licence verification
+ *     description: Accessible by the guard themselves or an admin.
+ *     tags: [Verification]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: guardId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Guard ID
+ *     responses:
+ *       200:
+ *         description: Verification recheck completed or manual verification moved to in_review
+ *       400:
+ *         description: Manual verification ID not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: No verification snapshot found
+ *       500:
+ *         description: Internal server error
  */
 router.post("/recheck/:guardId", auth, recheckVerification);
 
