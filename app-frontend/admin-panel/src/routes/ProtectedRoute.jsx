@@ -1,5 +1,11 @@
 import { Navigate } from 'react-router-dom';
-import { getToken, isAuthenticated, isAdmin, hasExpiredToken, clearSession } from '../utils/authentication';
+import { 
+  getToken, 
+  isAuthenticated, 
+  isAdmin, 
+  hasExpiredToken, 
+  clearSession 
+} from '../utils/authentication';
 
 export default function ProtectedRoute({ children }) {
   const token = getToken();
