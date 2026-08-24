@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { getToken, isAuthenticated, isAdmin } from '../utils/authentication';
+import { getToken, isAuthenticated, isAdmin, hasExpiredToken, clearSession } from '../utils/authentication';
 
 export default function ProtectedRoute({ children }) {
   const token = getToken();
@@ -11,10 +11,15 @@ export default function ProtectedRoute({ children }) {
 
   // A session exists but the token is invalid or expired.
   if (!isAuthenticated()) {
+    // Expired token: clear it and show a message on login.
+    if (hasExpiredToken()) {
+      clearSession();
+      return <Navigate to="/login?sessionExpired=1" replace />;
+    }
     return <Navigate to="/access-denied" replace />;
   }
 
-  // The session is valid, but the user does not have Admin privileges.
+  // Valid session, but not an admin.
   if (!isAdmin()) {
     return <Navigate to="/access-denied" replace />;
   }

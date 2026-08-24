@@ -5,7 +5,7 @@ import { attach401Handler } from './lib/http';
 
 // Auto-logout on 401 responses
 attach401Handler(() => {
-  window.location.href = '/login';
+  window.location.href = '/login?sessionExpired=1';
 });
 
 export default function App() {
