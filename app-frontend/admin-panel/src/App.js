@@ -7,7 +7,7 @@ import { attach401Handler, attachErrorToastHandler } from './lib/http';
 
 // Auto-logout on 401 responses
 attach401Handler(() => {
-  window.location.href = '/login';
+  window.location.href = '/login?sessionExpired=1';
 });
 
 // Wires the global error-toast handler once ToastProvider has mounted

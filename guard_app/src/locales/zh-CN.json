@@ -164,6 +164,13 @@
     "leaveEnd": "离境端",
     "notFound": "未找到排班请求",
     "requestError": "加载请求失败。",
+    "rateShift": "为此班次评分",
+    "submitRating": "提交评分",
+    "submittingRating": "提交中...",
+    "alreadyRated": "您已经为此班次评过分",
+    "selectRating": "请先选择星级评分",
+    "ratingFailed": "无法保存您的评分",
+    "starLabel": "{{count}} 星评分",
     "alerts": {
       "missingDateHead": "缺失日期",
       "missingDateMsg": "输入你想把班次移到哪个日期.",
@@ -401,5 +408,13 @@
     "submitSuccess": "事件报告提交成功",
     "submitFailed": "提交事件报告失败",
     "cancel": "取消"
+  },
+  "appLock": {
+    "prompt": "解锁 SecureShift",
+    "lockedTitle": "SecureShift 已锁定",
+    "lockedMessage": "请验证身份以继续。",
+    "unlock": "解锁",
+    "settingsLabel": "应用锁（Face ID / PIN）",
+    "unavailable": "不可用"
   }
 }

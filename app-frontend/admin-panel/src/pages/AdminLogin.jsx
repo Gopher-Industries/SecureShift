@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import useAdminAuth from '../hooks/useAdminAuth';
 import FormField from '../components/FormField';
 import { required, isEmail, composeValidators, validateForm, isValid } from '../utils/validation';
@@ -24,14 +24,25 @@ const rules = {
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAdminAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
-  const onSubmit = async (e) => {
+  // Show the expired-session message once, then clean the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('sessionExpired') === '1') {
+      setSessionExpired(true);
+      navigate('/login', { replace: true });
+    }
+  }, [location.search, navigate]);
+
+   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -39,6 +50,7 @@ export default function AdminLogin() {
     setFieldErrors(errors);
     if (!isValid(errors)) return; // block submit on invalid input
 
+    setSessionExpired(false);
     setLoading(true);
     try {
       await login(email.trim(), password);
@@ -72,6 +84,19 @@ export default function AdminLogin() {
         }}
       >
         <h2 style={{ marginTop: 0, color: '#274b93' }}>SecureShift Admin</h2>
+        {sessionExpired && (
+          <p
+            role="status"
+            style={{
+              color: '#8a6100',
+              background: '#fff6e0',
+              padding: '8px 10px',
+              borderRadius: 4,
+            }}
+          >
+            Your session has expired. Please log in again.
+          </p>
+        )}
         {error && <p style={{ color: '#c00' }}>{error}</p>}
 
         <FormField
