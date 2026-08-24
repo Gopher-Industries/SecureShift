@@ -25,7 +25,7 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/access-denied" replace />;
   }
 
-  // Valid session, but not an admin.
+  // The session is valid, but the user does not have Admin privileges.
   if (!isAdmin()) {
     return <Navigate to="/access-denied" replace />;
   }
