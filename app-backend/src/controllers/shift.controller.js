@@ -576,32 +576,81 @@ export const getMyShifts = async (req, res) => {
   try {
     const role = req.user.role;
     const uid = req.user._id;
-    const pastOnly = req.query.status === "past";
+
+    // Pagination
+    const pageRaw = req.query.page ?? "1";
+    const limitRaw = req.query.limit ?? "20";
+
+    if (!/^\d+$/.test(String(pageRaw)) || Number(pageRaw) < 1) {
+      return res.status(400).json({
+        message: "page must be a positive integer",
+      });
+    }
+
+    if (!/^\d+$/.test(String(limitRaw)) || Number(limitRaw) < 1) {
+      return res.status(400).json({
+        message: "limit must be a positive integer",
+      });
+    }
+
+    const page = Number(pageRaw);
+    const limit = Math.min(Number(limitRaw), 50);
+    const skip = (page - 1) * limit;
+
+    // Supported status filters
+    const allowedStatuses = [
+      "draft",
+      "open",
+      "applied",
+      "assigned",
+      "completed",
+      "past",
+    ];
+
+    const requestedStatus = req.query.status;
+
+    if (requestedStatus && !allowedStatuses.includes(requestedStatus)) {
+      return res.status(400).json({
+        message: "Invalid status filter",
+      });
+    }
 
     let query = {};
 
+    // Preserve existing role-based access
     if (role === "guard") {
       query = {
         $or: [{ applicants: uid }, { acceptedBy: uid }],
       };
     } else if (role === "employer") {
       query = { createdBy: uid };
-    } // admin sees all
-
-    if (pastOnly) {
-      query = {
-        ...query,
-        status: "completed",
-      };
+    } else if (role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
-    const shifts = await Shift.find(query)
-      .sort({ date: -1, createdAt: -1 })
-      .populate("createdBy", "name email")
-      .populate("acceptedBy", "name email")
-      .populate("applicants", "name email");
+    // Keep the existing "past" behaviour
+    if (requestedStatus) {
+      query.status =
+        requestedStatus === "past" ? "completed" : requestedStatus;
+    }
 
-    return res.json(shifts);
+    const [shifts, total] = await Promise.all([
+      Shift.find(query)
+        .sort({ date: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("createdBy", "name email")
+        .populate("acceptedBy", "name email")
+        .populate("applicants", "name email"),
+      Shift.countDocuments(query),
+    ]);
+
+    return res.json({
+      page,
+      limit,
+      total,
+      items: shifts,
+    });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }

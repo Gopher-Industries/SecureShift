@@ -420,26 +420,52 @@ router
  *   get:
  *     summary: Get shifts for the logged-in user
  *     description: |
- *       Guard → applied/assigned/past
- *       Employer → created
- *       Admin → all
- *       Use `?status=past` to return only completed shifts.
+ *       Returns shifts scoped to the authenticated user's role.
+ *
+ *       Guard -> shifts where the guard has applied or been accepted.
+ *       Employer -> shifts created by the employer.
+ *       Admin -> all shifts.
+ *
+ *       Supports pagination and optional status filtering.
+ *       The legacy `status=past` filter is retained and maps to `completed`.
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         required: false
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 20
+ *         required: false
+ *         description: Number of results per page
+ *       - in: query
  *         name: status
  *         schema:
  *           type: string
- *           enum: [past]
+ *           enum: [draft, open, applied, assigned, completed, past]
  *         required: false
- *         description: Filter completed shifts
+ *         description: Filter shifts by status. `past` maps to `completed`.
  *     responses:
- *       200: { description: List of shifts }
- *       401: { description: Unauthorized }
+ *       200:
+ *         description: Paginated list of shifts
+ *       400:
+ *         description: Invalid page, limit, or status filter
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
-
 /**
  * @swagger
  * /api/v1/shifts/{id}/rate:
