@@ -1,13 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* =========================
+   Payroll Page
+   ========================= */
+
 .payroll-page {
-  background-color: #f4f6fb;
+  background-color: var(--background);
+  color: var(--text-primary);
   min-height: 100vh;
   padding: 30px 20px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .payroll-container {
   max-width: 1100px;
   margin: 0 auto;
 }
+
+/* =========================
+   Header
+   ========================= */
 
 .payroll-header-row {
   display: flex;
@@ -19,7 +34,8 @@
 .payroll-title {
   font-size: 26px;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .payroll-period {
@@ -30,57 +46,91 @@
 
 .payroll-period-label {
   font-size: 14px;
-  color: #718096;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
+/* =========================
+   Month Select
+   ========================= */
+
 .payroll-month-select {
   appearance: none;
-  border: 1.5px solid #cbd5e0;
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   padding: 7px 32px 7px 14px;
   font-size: 14px;
-  color: #1a202c;
-  /* inline svg used as the dropdown arrow */
-  background: white
+  color: var(--text-primary);
+
+  background:
+    var(--surface)
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 8L1 3h10z'/%3E%3C/svg%3E")
     no-repeat right 10px center;
+
   cursor: pointer;
   outline: none;
-  transition: border-color 0.2s;
+
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.2s ease;
 }
 
 .payroll-month-select:focus {
-  border-color: #274b93;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(52, 91, 168, 0.15);
 }
+
+/* =========================
+   Toolbar / Search
+   ========================= */
 
 .payroll-toolbar {
   margin-bottom: 20px;
 }
 
 .payroll-search {
-  border: 1.5px solid #cbd5e0;
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   padding: 9px 16px;
   font-size: 14px;
-  color: #1a202c;
+  color: var(--text-primary);
+  background: var(--surface);
   width: 280px;
   outline: none;
-  transition: border-color 0.2s;
+
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.2s ease;
+}
+
+.payroll-search::placeholder {
+  color: var(--text-secondary);
 }
 
 .payroll-search:focus {
-  border-color: #274b93;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(52, 91, 168, 0.15);
 }
+
+/* =========================
+   Table
+   ========================= */
 
 .payroll-table-wrapper {
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   overflow: hidden;
+
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
-/* table-layout: fixed lets the colgroup percentages take effect */
+/* table-layout: fixed lets colgroup percentages take effect */
+
 .payroll-table {
   width: 100%;
   border-collapse: collapse;
@@ -88,12 +138,15 @@
   table-layout: fixed;
 }
 
+/* =========================
+   Table Header
+   ========================= */
+
 .payroll-guard-thead tr {
-  background: #f7fafc;
-  border-top: 1px solid #e2e8f0;
+  background: var(--surface-secondary);
+  border-top: 1px solid var(--border);
 }
 
-/* remove top border from the very first thead so it doesn't double up with the wrapper */
 .payroll-guard-thead:first-of-type tr {
   border-top: none;
 }
@@ -102,25 +155,35 @@
   padding: 12px 16px;
   text-align: left;
   font-weight: 600;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
+/* =========================
+   Shift Rows
+   ========================= */
+
 .payroll-shift-row {
-  border-bottom: 1px solid #f0f4f8;
-  transition: background 0.15s;
+  border-bottom: 1px solid var(--border);
+  transition:
+    background-color 0.15s ease,
+    color 0.3s ease;
 }
 
 .payroll-shift-row:hover {
-  background: #f7fafc;
+  background: var(--surface-secondary);
 }
 
 .payroll-shift-row td {
   padding: 13px 16px;
-  color: #2d3748;
+  color: var(--text-primary);
 }
+
+/* =========================
+   Guard Cell
+   ========================= */
 
 .guard-cell {
   display: flex;
@@ -132,8 +195,8 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #274b93;
-  color: white;
+  background: var(--primary);
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -142,9 +205,13 @@
   flex-shrink: 0;
 }
 
+/* =========================
+   Total Row
+   ========================= */
+
 .payroll-total-row {
-  background: #f7fafc;
-  border-top: 2px solid #e2e8f0;
+  background: var(--surface-secondary);
+  border-top: 2px solid var(--border);
 }
 
 .payroll-total-label {
@@ -152,33 +219,50 @@
   text-align: right;
   font-weight: 700;
   font-size: 14px;
-  color: #1a202c;
+  color: var(--text-primary);
 }
 
 .payroll-total-amount {
   padding: 12px 16px;
   font-weight: 700;
   font-size: 14px;
-  color: #1a202c;
+  color: var(--text-primary);
 }
+
+/* =========================
+   Spacer
+   ========================= */
 
 .payroll-spacer td {
   height: 12px;
-  background: #f4f6fb;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--background);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   padding: 0;
 }
+
+/* =========================
+   Empty State
+   ========================= */
 
 .payroll-empty {
   text-align: center;
   padding: 48px;
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 15px;
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
+
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
+
+/* =========================
+   Pagination
+   ========================= */
 
 .pagination {
   display: flex;
@@ -190,20 +274,24 @@
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: white;
+  border: 1px solid var(--border);
+  background: var(--surface);
   font-size: 14px;
   cursor: pointer;
-  color: #4a5568;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .page-btn:hover:not(:disabled) {
-  background: #f7fafc;
-  border-color: #cbd5e0;
+  background: var(--surface-secondary);
+  border-color: var(--primary-light);
 }
 
 .page-btn:disabled {
@@ -212,15 +300,63 @@
 }
 
 .page-btn.active-page {
-  background: #274b93;
-  color: white;
-  border-color: #274b93;
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
   font-weight: 600;
 }
 
 .page-ellipsis {
   width: 34px;
   text-align: center;
-  color: #a0aec0;
+  color: var(--text-secondary);
   font-size: 14px;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 768px) {
+  .payroll-page {
+    padding: 24px 16px;
+  }
+
+  .payroll-header-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .payroll-period {
+    width: 100%;
+  }
+
+  .payroll-search {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .payroll-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .payroll-table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 480px) {
+  .payroll-title {
+    font-size: 22px;
+  }
+
+  .payroll-period {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .payroll-month-select {
+    width: 100%;
+  }
 }
