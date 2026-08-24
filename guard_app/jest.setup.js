@@ -25,8 +25,7 @@ jest.mock('expo-secure-store', () => {
 
 // Reset the SecureStore mock between tests so secrets don't leak across cases.
 beforeEach(() => {
-  const SecureStore = require('expo-secure-store');
-  SecureStore.__reset?.();
+  jest.requireMock('expo-secure-store').__reset?.();
 });
 
 // Screens call t(key) without an initialized i18n instance in tests (by design,

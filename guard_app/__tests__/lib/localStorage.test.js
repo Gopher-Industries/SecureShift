@@ -1,6 +1,7 @@
 /* eslint-env jest */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 import { LocalStorage } from '../../src/lib/localStorage';
 
@@ -64,7 +65,6 @@ describe('LocalStorage (session storage)', () => {
     expect(await LocalStorage.getToken()).toBe('legacy-jwt');
 
     // Plaintext copy is removed; the value now lives in SecureStore.
-    const SecureStore = require('expo-secure-store');
     expect(await AsyncStorage.getItem('auth_token')).toBeNull();
     expect(await SecureStore.getItemAsync('auth_token')).toBe('legacy-jwt');
   });
