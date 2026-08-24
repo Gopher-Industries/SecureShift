@@ -82,4 +82,23 @@ describe('AdminLogin', () => {
     resolveLogin({ token: 'abc', role: 'admin' });
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
   });
+
+  it('shows inline validation errors and blocks submit for invalid input', async () => {
+    const mockLogin = jest.fn();
+    useAdminAuth.mockReturnValue({ login: mockLogin });
+
+    render(
+      <MemoryRouter>
+        <AdminLogin />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'abc');
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    expect(await screen.findByText('Enter a valid email address')).toBeInTheDocument();
+    expect(screen.getByText('Password is required')).toBeInTheDocument();
+    expect(mockLogin).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
 });
