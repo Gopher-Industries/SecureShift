@@ -4,7 +4,7 @@ import {
   isAuthenticated,
   isAdmin,
   hasExpiredToken,
-  clearSession
+  clearSession,
 } from '../utils/authentication';
 
 export default function ProtectedRoute({ children }) {
