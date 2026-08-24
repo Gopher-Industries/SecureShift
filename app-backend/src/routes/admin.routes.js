@@ -68,14 +68,47 @@ router.post("/login", adminLogin);
  * @swagger
  * /api/v1/admin/users:
  *   get:
- *     summary: Get all active (non-deleted) users (Admin only)
- *     description: Returns users where isDeleted != true. Password is excluded.
+ *     summary: Get active users with search, role filtering and pagination (Admin only)
+ *     description: Returns active users where isDeleted != true. Passwords are excluded. Supports search by name or email, optional role filtering and capped pagination.
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 20
+ *         description: Number of users per page, capped at 50
+ *       - in: query
+ *         name: q
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive search across user name and email
+ *       - in: query
+ *         name: role
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [guard, employer, admin]
+ *         description: Filter users by role
  *     responses:
  *       200:
- *         description: List of users (non-deleted)
+ *         description: Paginated list of active users
+ *       400:
+ *         description: Invalid pagination or role filter
  *       403:
  *         description: Forbidden
  */
