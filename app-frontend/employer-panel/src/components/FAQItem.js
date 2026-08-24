@@ -10,27 +10,15 @@ export default function FAQItem({ question, answer }) {
 
   return (
     <article className={`faq-item ${isOpen ? 'faq-item--open' : ''}`}>
-      <button
-        type="button"
-        className="faq-question"
-        onClick={toggleFAQ}
-        aria-expanded={isOpen}
-      >
+      <button type="button" className="faq-question" onClick={toggleFAQ} aria-expanded={isOpen}>
         <span className="faq-question-text">{question}</span>
 
-        <span
-          className={`faq-chevron ${isOpen ? 'faq-chevron--open' : ''}`}
-          aria-hidden="true"
-        >
+        <span className={`faq-chevron ${isOpen ? 'faq-chevron--open' : ''}`} aria-hidden="true">
           ▼
         </span>
       </button>
 
-      <div
-        className={`faq-answer-wrapper ${
-          isOpen ? 'faq-answer-wrapper--open' : ''
-        }`}
-      >
+      <div className={`faq-answer-wrapper ${isOpen ? 'faq-answer-wrapper--open' : ''}`}>
         <div className="faq-answer">
           <p>{answer}</p>
         </div>
