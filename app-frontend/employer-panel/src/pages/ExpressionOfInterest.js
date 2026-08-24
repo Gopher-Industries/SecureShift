@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import http from '../lib/http';
+import './ExpressionOfInterest.css';
 
 // Expression of Interest form component
 export default function ExpressionOfInterest() {
@@ -115,22 +116,12 @@ export default function ExpressionOfInterest() {
   };
 
   return (
-    <div
-      style={{
-        fontFamily: 'Poppins, sans-serif',
-        background: '#fafafa',
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div style={{ flex: 1, display: 'flex' }}>
+    <div className="eoi-page">
+      <div className="eoi-body">
         {/* LEFT PANEL - FORM */}
-        <div style={{ width: '50%', background: '#fff', padding: '40px 60px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: '600', marginBottom: '10px' }}>
-            Expression of interest
-          </h1>
-          <p style={{ fontSize: '14px', color: '#1e1e1e', marginBottom: '20px' }}>
+        <div className="eoi-form-panel">
+          <h1 className="eoi-title">Expression of interest</h1>
+          <p className="eoi-intro">
             Only licensed and verified security companies may apply. All EOIs will be reviewed by
             our admin team before access is granted
           </p>
@@ -144,141 +135,78 @@ export default function ExpressionOfInterest() {
               { label: 'Contact email', name: 'contactEmail', placeholder: 'example@mail.com' },
               { label: 'Phone Number', name: 'phone', placeholder: 'Your Number...' },
             ].map((field, i) => (
-              <div key={i} style={{ marginBottom: '18px' }}>
-                <label
-                  style={{
-                    display: 'block',
-                    fontWeight: '600',
-                    marginBottom: '6px',
-                  }}
-                >
-                  {field.label}
-                </label>
+              <div key={i} className="eoi-field">
+                <label className="eoi-label">{field.label}</label>
                 <input
                   type="text"
                   name={field.name}
                   placeholder={field.placeholder}
                   value={form[field.name]}
                   onChange={handleChange}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '25px',
-                    border: '1px solid #ababab',
-                    background: '#ababab',
-                    color: '#fff',
-                  }}
+                  className="eoi-input"
                 />
               </div>
             ))}
 
             {/* Description textarea */}
-            <label style={{ display: 'block', fontWeight: '600', marginBottom: '6px' }}>
-              Brief Description of Services
-            </label>
+            <label className="eoi-label">Brief Description of Services</label>
             <textarea
               name="description"
               placeholder="Your Description..."
               value={form.description}
               onChange={handleChange}
               rows={5}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '8px',
-                border: '1px solid #ababab',
-                background: '#ababab',
-                marginBottom: '16px',
-                color: '#fff',
-              }}
+              className="eoi-textarea"
             />
 
             {/* File upload instructions */}
-            <p style={{ fontSize: '12px', fontWeight: '600', marginBottom: '12px' }}>
+            <p className="eoi-upload-instructions">
               Please upload a valid business license, security certification, and/or relevant
               documentation. PDF, JPG, PNG only.
             </p>
 
             {/* FILE UPLOAD SECTION */}
-            <div
-              style={{
-                border: '2px dashed #ababab',
-                padding: '20px',
-                textAlign: 'center',
-                borderRadius: '8px',
-                marginBottom: '16px',
-              }}
-            >
-              <div style={{ fontWeight: '600' }}>Select a file or drag and drop here</div>
-              <div style={{ fontSize: '12px', color: '#6c6c6c' }}>JPG, PNG or PDF, max 10MB</div>
-              {file && (
-                <div
-                  style={{
-                    marginTop: '10px',
-                    fontSize: '12px',
-                    color: '#274b93',
-                  }}
-                >
-                  Selected: {file.name}
-                </div>
-              )}
+            <div className="eoi-upload-box">
+              <div className="eoi-upload-heading">Select a file or drag and drop here</div>
+              <div className="eoi-upload-subtext">JPG, PNG or PDF, max 10MB</div>
+              {file && <div className="eoi-selected-file">Selected: {file.name}</div>}
               <br />
               {/* Trigger hidden file input */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid #274b93',
-                  background: '#fff',
-                  color: '#274b93',
-                  cursor: 'pointer',
-                }}
+                className="eoi-select-file-button"
               >
                 SELECT FILE
               </button>
               <input
                 ref={fileInputRef}
                 type="file"
-                style={{ display: 'none' }}
+                className="eoi-hidden-file-input"
                 onChange={onSelectFile}
               />
             </div>
 
             {/* Confirm checkbox */}
-            <div style={{ marginBottom: '20px' }}>
+            <div className="eoi-confirm-row">
               <input
                 type="checkbox"
                 name="confirmAccurate"
                 checked={form.confirmAccurate}
                 onChange={handleChange}
-                style={{ marginRight: '8px' }}
+                className="eoi-confirm-checkbox"
               />
               I confirm that the information provided is accurate
             </div>
 
             {/* Submit button */}
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: '25px',
-                background: '#072261',
-                color: '#fff',
-                fontSize: '18px',
-                fontWeight: '600',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
+            <button type="submit" className="eoi-submit-button">
               Submit
             </button>
 
             {/* Link to login */}
-            <p style={{ marginTop: '10px', fontSize: '12px', textAlign: 'center' }}>
-              <a href="/login" style={{ color: '#aa0028', textDecoration: 'none' }}>
+            <p className="eoi-login-link-row">
+              <a href="/login" className="eoi-login-link">
                 Already have an account? Log In!
               </a>
             </p>
@@ -286,16 +214,8 @@ export default function ExpressionOfInterest() {
         </div>
 
         {/* RIGHT PANEL - Logo/branding */}
-        <div
-          style={{
-            width: '50%',
-            background: '#072261',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <img src="logo.svg" alt="Secure Shift Logo" style={{ width: '400px', height: 'auto' }} />
+        <div className="eoi-brand-panel">
+          <img src="logo.svg" alt="Secure Shift Logo" className="eoi-brand-logo" />
         </div>
       </div>
     </div>
