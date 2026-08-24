@@ -44,4 +44,24 @@ export function attach401Handler(onUnauthorized) {
   );
 }
 
+// Show a toast for unexpected errors (network failures, 5xx server errors).
+// 401s are handled separately by attach401Handler (redirects to login).
+// 4xx errors are left to page-level code, since those usually need a
+// specific message (e.g. validation errors on a form).
+export function attachErrorToastHandler(showToast) {
+  http.interceptors.response.use(
+    (res) => res,
+    (err) => {
+      const status = err?.response?.status;
+      if (!status || status >= 500) {
+        const message = !err?.response
+          ? 'Network error — please check your connection.'
+          : 'Something went wrong on the server. Please try again.';
+        showToast(message, 'error');
+      }
+      throw err;
+    }
+  );
+}
+
 export default http;
