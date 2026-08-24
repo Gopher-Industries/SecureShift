@@ -19,25 +19,43 @@ const getNextDayDate = (date) => {
 
 const shiftSchema = yup.object({
   title: yup.string().required('Shift title is required'),
-  siteId: yup.string().required('Select a site').notOneOf(['__new'], 'Save the new site before continuing'),
+  siteId: yup
+    .string()
+    .required('Select a site')
+    .notOneOf(['__new'], 'Save the new site before continuing'),
   date: yup.string().required('Date is required'),
   startTime: yup.string().required('Start time is required'),
-  endTime: yup.string().required('End time is required')
+  endTime: yup
+    .string()
+    .required('End time is required')
     .test('after-start', 'End time must be after start time', function (value) {
       const { startTime, date, shiftType } = this.parent;
       if (!value || !startTime || !date) return true;
       const start = toDateTime(date, startTime);
       let end = toDateTime(date, value);
       if (end <= start) {
-        if (shiftType === 'day') return this.createError({ message: 'Day shifts cannot run overnight' });
+        if (shiftType === 'day')
+          return this.createError({ message: 'Day shifts cannot run overnight' });
         end.setDate(end.getDate() + 1);
       }
       return end > start;
     }),
-  breakMinutes: yup.number().typeError('Break time must be a number').min(0, 'Break time cannot be negative').max(180, 'Break time seems too long').required('Break time is required'),
-  payRate: yup.number().typeError('Pay rate must be a number').min(0, 'Pay rate cannot be negative').required('Pay rate is required'),
+  breakMinutes: yup
+    .number()
+    .typeError('Break time must be a number')
+    .min(0, 'Break time cannot be negative')
+    .max(180, 'Break time seems too long')
+    .required('Break time is required'),
+  payRate: yup
+    .number()
+    .typeError('Pay rate must be a number')
+    .min(0, 'Pay rate cannot be negative')
+    .required('Pay rate is required'),
   shiftType: yup.string().oneOf(['day', 'night']).required(),
-  instructions: yup.string().required('Provide shift instructions').min(10, 'Add a few more details for clarity'),
+  instructions: yup
+    .string()
+    .required('Provide shift instructions')
+    .min(10, 'Add a few more details for clarity'),
   location: yup.string().required('Location is required'),
   guards: yup.array().of(yup.string()),
   newSiteName: yup.string(),
@@ -52,15 +70,40 @@ const guardOptions = [
 ];
 
 const guardAssignments = {
-  'g-smith': [{ date: '2026-01-17', startTime: '13:00', endTime: '21:00', siteName: 'Marvel Stadium' }],
-  'g-chan': [{ date: '2026-01-16', startTime: '09:00', endTime: '17:30', siteName: 'Chadstone Shopping Centre' }],
-  'g-rojas': [{ date: '2026-01-18', startTime: '18:00', endTime: '23:30', siteName: 'AIG Solutions HQ' }],
+  'g-smith': [
+    { date: '2026-01-17', startTime: '13:00', endTime: '21:00', siteName: 'Marvel Stadium' },
+  ],
+  'g-chan': [
+    {
+      date: '2026-01-16',
+      startTime: '09:00',
+      endTime: '17:30',
+      siteName: 'Chadstone Shopping Centre',
+    },
+  ],
+  'g-rojas': [
+    { date: '2026-01-18', startTime: '18:00', endTime: '23:30', siteName: 'AIG Solutions HQ' },
+  ],
   'g-nguyen': [],
 };
 
 const existingShifts = [
-  { id: 'shift-142', siteId: 'marvel-stadium', siteName: 'Marvel Stadium', date: '2026-01-17', startTime: '12:00', endTime: '20:30' },
-  { id: 'shift-205', siteId: 'chadstone', siteName: 'Chadstone Shopping Centre', date: '2026-01-18', startTime: '07:00', endTime: '15:00' },
+  {
+    id: 'shift-142',
+    siteId: 'marvel-stadium',
+    siteName: 'Marvel Stadium',
+    date: '2026-01-17',
+    startTime: '12:00',
+    endTime: '20:30',
+  },
+  {
+    id: 'shift-205',
+    siteId: 'chadstone',
+    siteName: 'Chadstone Shopping Centre',
+    date: '2026-01-18',
+    startTime: '07:00',
+    endTime: '15:00',
+  },
 ];
 
 const mapDefault = { lat: -37.8136, lng: 144.9631 };
@@ -84,7 +127,10 @@ const parseAddress = (address) => {
   }
 
   // 2. Split by comma if present
-  const parts = address.split(',').map(s => s.trim()).filter(Boolean);
+  const parts = address
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   if (parts.length >= 2) {
     street = parts[0];
@@ -100,17 +146,24 @@ const parseAddress = (address) => {
   // 3. If any field is missing, set sensible defaults to avoid backend error
   if (!street) street = 'Unknown';
   if (!suburb) suburb = street; // fallback
-  if (!state) state = 'VIC';    // fallback
+  if (!state) state = 'VIC'; // fallback
   if (!postcode) postcode = '3000'; // fallback
 
   return { street, suburb, state, postcode };
 };
 
 const slugify = (text) =>
-  text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40) || `site-${Date.now()}`;
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 40) || `site-${Date.now()}`;
 
 const loadGooglePlaces = (onReady, onError) => {
-  if (window.google?.maps?.places) { onReady(); return; }
+  if (window.google?.maps?.places) {
+    onReady();
+    return;
+  }
   if (document.getElementById('ss-places-script')) return;
   const script = document.createElement('script');
   script.id = 'ss-places-script';
@@ -130,7 +183,12 @@ const buildShiftPayload = (values, sites, status) => {
 
   // 1. Try to use structured fields from the site (if available)
   let location = {};
-  if (selectedSite?.street && selectedSite?.suburb && selectedSite?.state && selectedSite?.postcode) {
+  if (
+    selectedSite?.street &&
+    selectedSite?.suburb &&
+    selectedSite?.state &&
+    selectedSite?.postcode
+  ) {
     location = {
       street: selectedSite.street,
       suburb: selectedSite.suburb,
@@ -236,13 +294,15 @@ const CreateShift = ({ isModal = false, onClose }) => {
 
   // Load sites
   useEffect(() => {
-    http.get('/branch/site')
+    http
+      .get('/branch/site')
       .then((res) => {
         const fetched = (res.data.sites || []).map((s) => ({
           id: s._id,
           name: s.name,
           address: [s.location?.line1, s.location?.city, s.location?.state, s.location?.postcode]
-            .filter(Boolean).join(', '),
+            .filter(Boolean)
+            .join(', '),
           street: s.location?.line1,
           suburb: s.location?.city,
           state: s.location?.state,
@@ -369,8 +429,12 @@ const CreateShift = ({ isModal = false, onClose }) => {
           payRate: data.payRate || 0,
           shiftType: data.shiftType?.toLowerCase() === 'night' ? 'night' : 'day',
           instructions: data.description || '',
-          location: data.location ? [data.location.street, data.location.suburb, data.location.state].filter(Boolean).join(', ') : '',
-          guards: (data.guardIds || []).map(g => g._id || g),
+          location: data.location
+            ? [data.location.street, data.location.suburb, data.location.state]
+                .filter(Boolean)
+                .join(', ')
+            : '',
+          guards: (data.guardIds || []).map((g) => g._id || g),
           newSiteName: '',
           newSiteAddress: '',
         });
@@ -402,16 +466,29 @@ const CreateShift = ({ isModal = false, onClose }) => {
       (shift) =>
         shift.siteId === payload.siteId &&
         shift.date === payload.date &&
-        overlaps(start, end, toDateTime(shift.date, shift.startTime), toDateTime(shift.date, shift.endTime))
+        overlaps(
+          start,
+          end,
+          toDateTime(shift.date, shift.startTime),
+          toDateTime(shift.date, shift.endTime)
+        )
     );
     if (timeConflicts.length) {
-      issues.push(`Time clash: ${timeConflicts.map(c => `${c.siteName} ${c.startTime}–${c.endTime}`).join(', ')}`);
+      issues.push(
+        `Time clash: ${timeConflicts.map((c) => `${c.siteName} ${c.startTime}–${c.endTime}`).join(', ')}`
+      );
     }
 
     const guardConflicts = (payload.guards || []).flatMap((guardId) => {
       const blocks = guardAssignments[guardId] || [];
-      const hit = blocks.find(b => b.date === payload.date && overlaps(start, end, toDateTime(b.date, b.startTime), toDateTime(b.date, b.endTime)));
-      return hit ? [`${guardOptions.find(g => g.id === guardId)?.name || guardId} busy at ${hit.siteName}`] : [];
+      const hit = blocks.find(
+        (b) =>
+          b.date === payload.date &&
+          overlaps(start, end, toDateTime(b.date, b.startTime), toDateTime(b.date, b.endTime))
+      );
+      return hit
+        ? [`${guardOptions.find((g) => g.id === guardId)?.name || guardId} busy at ${hit.siteName}`]
+        : [];
     });
     if (guardConflicts.length) {
       issues.push(`Guard availability conflicts: ${guardConflicts.join(', ')}`);
@@ -432,7 +509,7 @@ const CreateShift = ({ isModal = false, onClose }) => {
       return;
     }
     try {
-      const parsedNewSite = parseAddress(trimmedAddress); 
+      const parsedNewSite = parseAddress(trimmedAddress);
       const res = await http.post('/branch/site', {
         name: trimmedName,
         code: slugify(trimmedName),
@@ -491,7 +568,8 @@ const CreateShift = ({ isModal = false, onClose }) => {
       setPreviewData(null);
       navigate('/manage-shift');
     } catch (err) {
-      const message = err?.response?.data?.message || err.message || 'Unable to create/update shift';
+      const message =
+        err?.response?.data?.message || err.message || 'Unable to create/update shift';
       setBlockingIssues([message]);
     }
   };
@@ -530,14 +608,20 @@ const CreateShift = ({ isModal = false, onClose }) => {
           <p className="cs-kicker">Shift creation</p>
           <h1 className="cs-title">{editShiftId ? 'Edit draft' : 'Create a new shift'}</h1>
           <p className="cs-subtitle">
-            {editShiftId ? 'Update the draft and save or publish it.' : 'Structured, full-screen flow with guard checks and location precision.'}
+            {editShiftId
+              ? 'Update the draft and save or publish it.'
+              : 'Structured, full-screen flow with guard checks and location precision.'}
           </p>
         </div>
         <div className="cs-topbar__actions">
           <button className="cs-ghost" type="button" onClick={() => navigate('/manage-shift')}>
             Cancel
           </button>
-          <button className="cs-ghost" type="button" onClick={() => navigate('/employer-dashboard')}>
+          <button
+            className="cs-ghost"
+            type="button"
+            onClick={() => navigate('/employer-dashboard')}
+          >
             Back to dashboard
           </button>
         </div>
