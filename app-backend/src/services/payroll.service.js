@@ -523,13 +523,15 @@ const syncPayrollDocuments = async (groups) => {
       periodEnd: key.periodEnd,
     })),
   })
-    .select('guardId employerId periodType periodStart periodEnd status totalAmount approvedAt processedAt')
+    .select(
+      "guardId employerId periodType periodStart periodEnd status totalAmount approvedAt processedAt",
+    )
     .lean();
 
   // build a SET to store the keys of existing payroll documents
   const finalisedKeys = new Set();
   existingRecords.forEach((record) => {
-    if (['APPROVED', 'PROCESSED'].includes(record.status)) {
+    if (["APPROVED", "PROCESSED"].includes(record.status)) {
       const key = `${record.guardId}:${record.periodStart.toISOString()}:${record.periodEnd.toISOString()}`;
       finalisedKeys.add(key);
     }
@@ -542,19 +544,21 @@ const syncPayrollDocuments = async (groups) => {
   });
 
   if (groupsToSync.length === 0) {
-    console.log('All payroll periods are finalised (APPROVED/PROCESSED). No PENDING records to sync.');
+    console.log(
+      "All payroll periods are finalised (APPROVED/PROCESSED). No PENDING records to sync.",
+    );
     return Payroll.find({
-    $or: groups.map((group) => ({
-      guardId: group.guardId,
-      employerId: group.employerId,
-      periodType: group.periodType,
-      periodStart: group.periodStart,
-      periodEnd: group.periodEnd,
-    })),
-  })
-    .populate("guardId", "name")
-    .populate("employerId", "name")
-    .sort({ periodStart: 1, createdAt: 1 });
+      $or: groups.map((group) => ({
+        guardId: group.guardId,
+        employerId: group.employerId,
+        periodType: group.periodType,
+        periodStart: group.periodStart,
+        periodEnd: group.periodEnd,
+      })),
+    })
+      .populate("guardId", "name")
+      .populate("employerId", "name")
+      .sort({ periodStart: 1, createdAt: 1 });
   }
 
   // check for conflicts in derived amounts
@@ -564,20 +568,21 @@ const syncPayrollDocuments = async (groups) => {
       const existing = existingRecords.find(
         (record) =>
           String(record.guardId) === String(group.guardId) &&
-          record.periodStart.toISOString() === group.periodStart.toISOString() &&
-          record.periodEnd.toISOString() === group.periodEnd.toISOString()
+          record.periodStart.toISOString() ===
+            group.periodStart.toISOString() &&
+          record.periodEnd.toISOString() === group.periodEnd.toISOString(),
       );
       if (existing) {
         const amountDiff = Math.abs(existing.totalAmount - group.totalAmount);
         if (amountDiff > 0.01) {
           console.warn(
             `current payroll record has a different amount than the derived amount, ` +
-            `guardId=${group.guardId}, ` +
-            `periodStart=${group.periodStart.toISOString()}, ` +
-            `periodEnd=${group.periodEnd.toISOString()}, ` +
-            `existing total amount=${existing.totalAmount}, ` +
-            `calculated total amount=${group.totalAmount}, ` +
-            `difference=${amountDiff.toFixed(2)}`
+              `guardId=${group.guardId}, ` +
+              `periodStart=${group.periodStart.toISOString()}, ` +
+              `periodEnd=${group.periodEnd.toISOString()}, ` +
+              `existing total amount=${existing.totalAmount}, ` +
+              `calculated total amount=${group.totalAmount}, ` +
+              `difference=${amountDiff.toFixed(2)}`,
           );
           // await AuditLog.create({ action: 'PAYROLL_RECALC_CONFLICT', metadata: {...} });
         }
@@ -585,7 +590,6 @@ const syncPayrollDocuments = async (groups) => {
     }
   }
 
-  
   await Payroll.bulkWrite(
     groupsToSync.map((group) => ({
       updateOne: {
@@ -756,18 +760,18 @@ const buildPayrollQuery = (query, userContext, range) => {
     periodEnd: { $lte: range.end },
   };
 
-  if (role === 'guard') {
+  if (role === "guard") {
     if (guardId && String(guardId) !== String(userId)) {
-      throw createHttpError(403, 'Guards can only access their own payroll');
+      throw createHttpError(403, "Guards can only access their own payroll");
     }
     payrollQuery.guardId = userId;
-  } else if (role === 'employer') {
+  } else if (role === "employer") {
     payrollQuery.employerId = userId;
     if (guardId) payrollQuery.guardId = guardId;
-  } else if (role === 'admin') {
+  } else if (role === "admin") {
     if (guardId) payrollQuery.guardId = guardId;
   } else {
-    throw createHttpError(403, 'Forbidden: unsupported role');
+    throw createHttpError(403, "Forbidden: unsupported role");
   }
 
   return payrollQuery;
@@ -783,8 +787,8 @@ export const getPayrollRecords = async (query, user, options = {}) => {
   if (readOnly) {
     const payrollQuery = buildPayrollQuery(query, userContext, range);
     const payrollDocs = await Payroll.find(payrollQuery)
-      .populate('guardId', 'name')
-      .populate('employerId', 'name')
+      .populate("guardId", "name")
+      .populate("employerId", "name")
       .sort({ periodStart: 1, createdAt: 1 });
 
     return {

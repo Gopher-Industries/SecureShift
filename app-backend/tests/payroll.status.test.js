@@ -11,27 +11,34 @@
  * 5. CSV export does not trigger writes to the database
  * 6. PDF export does not trigger writes to the database
  */
-import { beforeAll, afterAll, beforeEach, describe, expect, test } from '@jest/globals';
-import mongoose from 'mongoose';
+import {
+  beforeAll,
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "@jest/globals";
+import mongoose from "mongoose";
 import {
   startTestDatabase,
   clearDatabase,
   closeTestDatabase,
-} from './db-helper.js';
+} from "./db-helper.js";
 
-import User from '../src/models/User.js';
-import Branch from '../src/models/Branch.js';
-import Shift from '../src/models/Shift.js';
-import ShiftAttendance from '../src/models/ShiftAttendance.js';
-import Payroll from '../src/models/Payroll.js';
+import User from "../src/models/User.js";
+import Branch from "../src/models/Branch.js";
+import Shift from "../src/models/Shift.js";
+import ShiftAttendance from "../src/models/ShiftAttendance.js";
+import Payroll from "../src/models/Payroll.js";
 import {
   getPayrollRecords,
   exportPayrollCsv,
   exportPayrollPdf,
   getPeriodBoundsForDate,
-} from '../src/services/payroll.service.js';
+} from "../src/services/payroll.service.js";
 
-describe('Payroll Status Protection', () => {
+describe("Payroll Status Protection", () => {
   let employer;
   let guard;
   let branch;
@@ -43,22 +50,22 @@ describe('Payroll Status Protection', () => {
     await clearDatabase();
 
     employer = await User.create({
-      name: 'Payroll Employer',
-      email: 'payroll.employer@test.com',
-      role: 'employer',
-      password: 'Password1!',
+      name: "Payroll Employer",
+      email: "payroll.employer@test.com",
+      role: "employer",
+      password: "Password1!",
     });
 
     guard = await User.create({
-      name: 'Payroll Guard',
-      email: 'payroll.guard@test.com',
-      role: 'guard',
-      password: 'Password1!',
+      name: "Payroll Guard",
+      email: "payroll.guard@test.com",
+      role: "guard",
+      password: "Password1!",
     });
 
     branch = await Branch.create({
-      name: 'Payroll Site',
-      code: 'PAY001',
+      name: "Payroll Site",
+      code: "PAY001",
       employerId: employer._id,
       isActive: true,
     });
@@ -78,12 +85,12 @@ describe('Payroll Status Protection', () => {
   // Helper: create a completed shift with attendance record
   const createCompletedShiftWithAttendance = async (
     shiftDate,
-    startTime = '09:00',
-    endTime = '17:00',
+    startTime = "09:00",
+    endTime = "17:00",
     payRate = 38,
   ) => {
     const shift = await Shift.create({
-      title: 'Completed Shift',
+      title: "Completed Shift",
       date: shiftDate,
       startTime,
       endTime,
@@ -92,16 +99,16 @@ describe('Payroll Status Protection', () => {
       acceptedBy: guard._id,
       siteId: branch._id,
       location: {
-        street: 'Main St',
-        suburb: 'CBD',
-        state: 'VIC',
-        postcode: '3000',
+        street: "Main St",
+        suburb: "CBD",
+        state: "VIC",
+        postcode: "3000",
         latitude: -37.8136,
         longitude: 144.9631,
       },
       payRate,
-      shiftType: 'Day',
-      status: 'completed',
+      shiftType: "Day",
+      status: "completed",
     });
 
     const checkIn = new Date(shiftDate);
@@ -112,7 +119,7 @@ describe('Payroll Status Protection', () => {
     await ShiftAttendance.create({
       guardId: guard._id,
       shiftId: shift._id,
-      siteLocation: { type: 'Point', coordinates: [144.9631, -37.8136] },
+      siteLocation: { type: "Point", coordinates: [144.9631, -37.8136] },
       checkInTime: checkIn,
       checkOutTime: checkOut,
       locationVerified: true,
@@ -124,13 +131,13 @@ describe('Payroll Status Protection', () => {
   // Helper: manually create a Payroll record with a specified status.
   // Uses getPeriodBoundsForDate to ensure period boundaries match production logic.
   const createPayrollRecord = async (status, shiftDate, totalAmount = 304) => {
-    const bounds = getPeriodBoundsForDate(shiftDate, 'weekly');
+    const bounds = getPeriodBoundsForDate(shiftDate, "weekly");
     const { periodStart, periodEnd } = bounds;
 
     return Payroll.create({
       guardId: guard._id,
       employerId: employer._id,
-      periodType: 'weekly',
+      periodType: "weekly",
       periodStart,
       periodEnd,
       totalScheduledHours: 8,
@@ -162,25 +169,22 @@ describe('Payroll Status Protection', () => {
   };
 
   // Test 1: PENDING records are recalculated on query
-  test('PENDING records are recalculated on query (amount changes)', async () => {
+  test("PENDING records are recalculated on query (amount changes)", async () => {
     const shiftDate = new Date(baseDate);
     shiftDate.setDate(shiftDate.getDate() + 1);
     await createCompletedShiftWithAttendance(shiftDate);
-    await createPayrollRecord('PENDING', shiftDate, 304);
+    await createPayrollRecord("PENDING", shiftDate, 304);
 
     // Change payRate to trigger recalculation
-    await Shift.updateOne(
-      { acceptedBy: guard._id },
-      { $set: { payRate: 45 } },
-    );
+    await Shift.updateOne({ acceptedBy: guard._id }, { $set: { payRate: 45 } });
 
     const result = await getPayrollRecords(
       {
         startDate: shiftDate.toISOString().slice(0, 10),
         endDate: shiftDate.toISOString().slice(0, 10),
-        periodType: 'weekly',
+        periodType: "weekly",
       },
-      { _id: employer._id, role: 'employer' },
+      { _id: employer._id, role: "employer" },
     );
 
     expect(result.payroll.length).toBe(1);
@@ -189,25 +193,22 @@ describe('Payroll Status Protection', () => {
   });
 
   // Test 2: APPROVED records are NOT recalculated on query
-  test('APPROVED records are NOT recalculated on query (amount unchanged)', async () => {
+  test("APPROVED records are NOT recalculated on query (amount unchanged)", async () => {
     const shiftDate = new Date(baseDate);
     shiftDate.setDate(shiftDate.getDate() + 2);
     await createCompletedShiftWithAttendance(shiftDate);
-    await createPayrollRecord('APPROVED', shiftDate, 304);
+    await createPayrollRecord("APPROVED", shiftDate, 304);
 
     // Change payRate
-    await Shift.updateOne(
-      { acceptedBy: guard._id },
-      { $set: { payRate: 45 } },
-    );
+    await Shift.updateOne({ acceptedBy: guard._id }, { $set: { payRate: 45 } });
 
     const result = await getPayrollRecords(
       {
         startDate: shiftDate.toISOString().slice(0, 10),
         endDate: shiftDate.toISOString().slice(0, 10),
-        periodType: 'weekly',
+        periodType: "weekly",
       },
-      { _id: employer._id, role: 'employer' },
+      { _id: employer._id, role: "employer" },
     );
 
     expect(result.payroll.length).toBe(1);
@@ -216,25 +217,22 @@ describe('Payroll Status Protection', () => {
   });
 
   // Test 3: PROCESSED records are NOT recalculated on query
-  test('PROCESSED records are NOT recalculated on query (amount unchanged)', async () => {
+  test("PROCESSED records are NOT recalculated on query (amount unchanged)", async () => {
     const shiftDate = new Date(baseDate);
     shiftDate.setDate(shiftDate.getDate() + 3);
     await createCompletedShiftWithAttendance(shiftDate);
-    await createPayrollRecord('PROCESSED', shiftDate, 304);
+    await createPayrollRecord("PROCESSED", shiftDate, 304);
 
     // Change payRate
-    await Shift.updateOne(
-      { acceptedBy: guard._id },
-      { $set: { payRate: 45 } },
-    );
+    await Shift.updateOne({ acceptedBy: guard._id }, { $set: { payRate: 45 } });
 
     const result = await getPayrollRecords(
       {
         startDate: shiftDate.toISOString().slice(0, 10),
         endDate: shiftDate.toISOString().slice(0, 10),
-        periodType: 'weekly',
+        periodType: "weekly",
       },
-      { _id: employer._id, role: 'employer' },
+      { _id: employer._id, role: "employer" },
     );
 
     expect(result.payroll.length).toBe(1);
@@ -243,7 +241,7 @@ describe('Payroll Status Protection', () => {
   });
 
   // Test 4: Mixed status query
-  test('Mixed status query: only PENDING changes, APPROVED/PROCESSED remain unchanged', async () => {
+  test("Mixed status query: only PENDING changes, APPROVED/PROCESSED remain unchanged", async () => {
     // Three shifts, each at least a week apart to fall into different payroll periods
     const date1 = new Date(baseDate);
     date1.setDate(date1.getDate() + 4);
@@ -257,9 +255,9 @@ describe('Payroll Status Protection', () => {
     await createCompletedShiftWithAttendance(date3);
 
     // Create records with three different statuses
-    await createPayrollRecord('PENDING', date1, 304);
-    await createPayrollRecord('APPROVED', date2, 304);
-    await createPayrollRecord('PROCESSED', date3, 304);
+    await createPayrollRecord("PENDING", date1, 304);
+    await createPayrollRecord("APPROVED", date2, 304);
+    await createPayrollRecord("PROCESSED", date3, 304);
 
     // Change payRate for all shifts
     await Shift.updateMany(
@@ -277,17 +275,17 @@ describe('Payroll Status Protection', () => {
       {
         startDate: startRange.toISOString().slice(0, 10),
         endDate: endRange.toISOString().slice(0, 10),
-        periodType: 'weekly',
+        periodType: "weekly",
       },
-      { _id: employer._id, role: 'employer' },
+      { _id: employer._id, role: "employer" },
     );
 
     // Should have three records
     expect(result.payroll.length).toBe(3);
 
-    const pending = result.payroll.find((p) => p.status === 'PENDING');
-    const approved = result.payroll.find((p) => p.status === 'APPROVED');
-    const processed = result.payroll.find((p) => p.status === 'PROCESSED');
+    const pending = result.payroll.find((p) => p.status === "PENDING");
+    const approved = result.payroll.find((p) => p.status === "APPROVED");
+    const processed = result.payroll.find((p) => p.status === "PROCESSED");
 
     // Verify all records exist
     expect(pending).toBeDefined();
@@ -301,11 +299,11 @@ describe('Payroll Status Protection', () => {
   });
 
   // Test 5: CSV export does not trigger writes
-  test('CSV export does not trigger writes (read-only mode)', async () => {
+  test("CSV export does not trigger writes (read-only mode)", async () => {
     const shiftDate = new Date(baseDate);
     shiftDate.setDate(shiftDate.getDate() + 7);
     await createCompletedShiftWithAttendance(shiftDate);
-    await createPayrollRecord('PENDING', shiftDate, 304);
+    await createPayrollRecord("PENDING", shiftDate, 304);
 
     const before = await Payroll.findOne({ guardId: guard._id });
 
@@ -313,9 +311,9 @@ describe('Payroll Status Protection', () => {
       {
         startDate: shiftDate.toISOString().slice(0, 10),
         endDate: shiftDate.toISOString().slice(0, 10),
-        periodType: 'weekly',
+        periodType: "weekly",
       },
-      { _id: employer._id, role: 'employer' },
+      { _id: employer._id, role: "employer" },
     );
 
     const after = await Payroll.findOne({ guardId: guard._id });
@@ -326,11 +324,11 @@ describe('Payroll Status Protection', () => {
   });
 
   // Test 6: PDF export does not trigger writes
-  test('PDF export does not trigger writes (read-only mode)', async () => {
+  test("PDF export does not trigger writes (read-only mode)", async () => {
     const shiftDate = new Date(baseDate);
     shiftDate.setDate(shiftDate.getDate() + 8);
     await createCompletedShiftWithAttendance(shiftDate);
-    await createPayrollRecord('PENDING', shiftDate, 304);
+    await createPayrollRecord("PENDING", shiftDate, 304);
 
     const before = await Payroll.findOne({ guardId: guard._id });
 
@@ -338,9 +336,9 @@ describe('Payroll Status Protection', () => {
       {
         startDate: shiftDate.toISOString().slice(0, 10),
         endDate: shiftDate.toISOString().slice(0, 10),
-        periodType: 'weekly',
+        periodType: "weekly",
       },
-      { _id: employer._id, role: 'employer' },
+      { _id: employer._id, role: "employer" },
     );
 
     const after = await Payroll.findOne({ guardId: guard._id });
