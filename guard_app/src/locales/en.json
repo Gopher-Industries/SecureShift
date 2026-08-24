@@ -400,5 +400,13 @@
     "submitSuccess": "Incident report submitted successfully",
     "submitFailed": "Failed to submit incident report",
     "cancel": "Cancel"
+  },
+  "appLock": {
+    "prompt": "Unlock SecureShift",
+    "lockedTitle": "SecureShift is locked",
+    "lockedMessage": "Verify it's you to continue.",
+    "unlock": "Unlock",
+    "settingsLabel": "App lock (Face ID / PIN)",
+    "unavailable": "Unavailable"
   }
 }
