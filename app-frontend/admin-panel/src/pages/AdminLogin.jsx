@@ -42,7 +42,7 @@ export default function AdminLogin() {
     }
   }, [location.search, navigate]);
 
-   const onSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
