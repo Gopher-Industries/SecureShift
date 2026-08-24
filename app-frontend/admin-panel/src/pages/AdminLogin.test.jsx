@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import AdminLogin from './AdminLogin';
 import useAdminAuth from '../hooks/useAdminAuth';
 
@@ -26,7 +26,7 @@ describe('AdminLogin', () => {
 
   describe('login flow', () => {
     beforeEach(() => {
-      require('react-router-dom').useNavigate.mockReturnValue(mockNavigate);
+      useNavigate.mockReturnValue(mockNavigate);
     });
 
     it('logs in successfully and redirects to the dashboard', async () => {
@@ -46,7 +46,9 @@ describe('AdminLogin', () => {
       await waitFor(() =>
         expect(mockLogin).toHaveBeenCalledWith('admin.local@secureshift.test', 'SecureShift1!')
       );
-      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true }));
+      await waitFor(() =>
+        expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true })
+      );
     });
 
     it('shows an error message when login fails', async () => {
@@ -100,7 +102,7 @@ describe('AdminLogin', () => {
     beforeEach(() => {
       useAdminAuth.mockReturnValue({ login: jest.fn() });
       // Use the REAL useNavigate here so the router actually updates the URL.
-      require('react-router-dom').useNavigate.mockImplementation(actualRouter.useNavigate);
+      useNavigate.mockImplementation(actualRouter.useNavigate);
     });
 
     it('shows a session-expired message when redirected with ?sessionExpired=1', async () => {
