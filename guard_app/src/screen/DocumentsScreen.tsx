@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
+import EmptyState from '../components/EmptyState';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
@@ -255,13 +256,11 @@ export default function DocumentsScreen() {
         </Text>
 
         {documents.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon} accessibilityLabel={t('docs.noDocumentsUploaded')}>
-              📄
-            </Text>
-            <Text style={styles.emptyStateText}>{t('docs.noDocumentsUploaded')}</Text>
-            <Text style={styles.emptyStateSubtext}>{t('docs.noDocumentsSubtext')}</Text>
-          </View>
+          <EmptyState
+            icon="document-outline"
+            title={t('docs.noDocumentsUploaded')}
+            message={t('docs.noDocumentsSubtext')}
+          />
         ) : (
           <View style={styles.documentsList}>
             {documents.map((doc) => (
@@ -512,29 +511,5 @@ const getStyles = (colors: AppColors) =>
     deleteButtonText: {
       fontSize: 20,
       color: colors.muted,
-    },
-
-    emptyState: {
-      padding: 40,
-      alignItems: 'center',
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    emptyStateIcon: {
-      fontSize: 48,
-      marginBottom: 16,
-    },
-    emptyStateText: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 4,
-    },
-    emptyStateSubtext: {
-      fontSize: 14,
-      color: colors.muted,
-      textAlign: 'center',
     },
   });

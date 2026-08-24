@@ -42,6 +42,7 @@ export const getNotifications = async (req, res) => {
  */
 export const createNotification = async (req, res) => {
   try {
+    // Remove createdBy from destructuring to prevent spoofing
     const { userId, type, title, message, data } = req.body;
 
     // Required field validation
@@ -65,7 +66,7 @@ export const createNotification = async (req, res) => {
       title: title || "",
       message,
       data: data || {},
-      createdBy: req.user._id,
+      createdBy: req.user._id, // Always use authenticated user
     });
 
     res.status(201).json(notification);
