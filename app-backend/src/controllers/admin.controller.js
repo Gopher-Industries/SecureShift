@@ -73,18 +73,76 @@ export const adminLogin = async (req, res) => {
  */
 export const getAllUsers = async (req, res) => {
   try {
-    // Fetch all users, exclude passwords for security
-    const users = await User.find({ isDeleted: { $ne: true } }).select(
-      "-password",
-    );
+    const pageRaw = req.query.page ?? "1";
+    const limitRaw = req.query.limit ?? "20";
+
+    if (!/^\d+$/.test(String(pageRaw)) || Number(pageRaw) < 1) {
+      return res.status(400).json({
+        message: "page must be a positive integer",
+      });
+    }
+
+    if (!/^\d+$/.test(String(limitRaw)) || Number(limitRaw) < 1) {
+      return res.status(400).json({
+        message: "limit must be a positive integer",
+      });
+    }
+
+    const page = Number(pageRaw);
+    const limit = Math.min(Number(limitRaw), 50);
+    const skip = (page - 1) * limit;
+
+    const { q, role } = req.query;
+
+    const allowedRoles = ["guard", "employer", "admin"];
+
+    if (role && !allowedRoles.includes(role)) {
+      return res.status(400).json({
+        message: "Invalid role filter",
+      });
+    }
+
+    const query = {
+      isDeleted: { $ne: true },
+    };
+
+    if (q && String(q).trim()) {
+      const search = String(q).trim();
+
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (role) {
+      query.role = role;
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select("-password")
+        .sort({ name: 1, email: 1, _id: 1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(query),
+    ]);
+
     await req.audit.log(req.user.id, ACTIONS.VIEW_USERS, {
-      totalUsers: users.length,
+      totalUsers: total,
     });
-    res.status(200).json({ users });
+
+    return res.status(200).json({
+      page,
+      limit,
+      total,
+      users,
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to retrieve users", error: error.message });
+    return res.status(500).json({
+      message: "Failed to retrieve users",
+      error: error.message,
+    });
   }
 };
 
