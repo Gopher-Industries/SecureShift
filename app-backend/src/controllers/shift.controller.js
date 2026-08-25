@@ -630,8 +630,7 @@ export const getMyShifts = async (req, res) => {
 
     // Keep the existing "past" behaviour
     if (requestedStatus) {
-      query.status =
-        requestedStatus === "past" ? "completed" : requestedStatus;
+      query.status = requestedStatus === "past" ? "completed" : requestedStatus;
     }
 
     const [shifts, total] = await Promise.all([
