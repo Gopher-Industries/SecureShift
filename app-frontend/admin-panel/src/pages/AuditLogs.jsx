@@ -256,54 +256,33 @@ export default function AuditLogs() {
 
       {/* Purge Confirmation Modal */}
       {showPurgeConfirm && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'white',
-              padding: '24px',
-              borderRadius: '8px',
-              minWidth: '350px',
-            }}
-          >
-            <h2 style={{ color: '#d9534f' }}>⚠️ Confirm Purge</h2>
-            <p>
-              This will <strong>permanently delete</strong> all audit logs older than{' '}
-              <strong>{purgeDays} days</strong>. This action <strong>cannot be undone</strong>.
-            </p>
-            <p>Are you sure you want to continue?</p>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              <button
-                onClick={handlePurgeConfirmed}
-                disabled={purging}
-                style={{
-                  backgroundColor: '#d9534f',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                {purging ? 'Purging...' : 'Yes, Purge'}
-              </button>
-              <button onClick={() => setShowPurgeConfirm(false)} disabled={purging}>
-                Cancel
-              </button>
-            </div>
+        <Modal open={true}>
+          <h2 style={{ color: '#d9534f' }}>⚠️ Confirm Purge</h2>
+          <p>
+            This will <strong>permanently delete</strong> all audit logs older than{' '}
+            <strong>{purgeDays} days</strong>. This action <strong>cannot be undone</strong>.
+          </p>
+          <p>Are you sure you want to continue?</p>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+            <button
+              onClick={handlePurgeConfirmed}
+              disabled={purging}
+              style={{
+                backgroundColor: '#d9534f',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              {purging ? 'Purging...' : 'Yes, Purge'}
+            </button>
+            <button onClick={() => setShowPurgeConfirm(false)} disabled={purging}>
+              Cancel
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
