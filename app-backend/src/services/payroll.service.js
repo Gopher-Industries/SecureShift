@@ -504,94 +504,25 @@ const buildPayrollGroups = (records, periodType) => {
 const syncPayrollDocuments = async (groups) => {
   if (!groups.length) return [];
 
-  // get the key for each group to search current payroll documents
-  const groupKeys = groups.map((group) => ({
-    guardId: group.guardId,
-    employerId: group.employerId,
-    periodType: group.periodType,
-    periodStart: group.periodStart,
-    periodEnd: group.periodEnd,
-  }));
-
-  // search from database for existing payroll documents
-  const existingRecords = await Payroll.find({
-    $or: groupKeys.map((key) => ({
-      guardId: key.guardId,
-      employerId: key.employerId,
-      periodType: key.periodType,
-      periodStart: key.periodStart,
-      periodEnd: key.periodEnd,
-    })),
-  })
-    .select(
-      "guardId employerId periodType periodStart periodEnd status totalAmount approvedAt processedAt",
-    )
-    .lean();
-
-  // build a SET to store the keys of existing payroll documents
-  const finalisedKeys = new Set();
-  existingRecords.forEach((record) => {
-    if (["APPROVED", "PROCESSED"].includes(record.status)) {
-      const key = `${record.guardId}:${record.periodStart.toISOString()}:${record.periodEnd.toISOString()}`;
-      finalisedKeys.add(key);
-    }
-  });
-
-  // filter out groups that are already finalised (APPROVED/PROCESSED)
-  const groupsToSync = groups.filter((group) => {
-    const key = `${group.guardId}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
-    return !finalisedKeys.has(key);
-  });
-
-  if (groupsToSync.length === 0) {
-    console.log(
-      "All payroll periods are finalised (APPROVED/PROCESSED). No PENDING records to sync.",
-    );
-    return Payroll.find({
-      $or: groups.map((group) => ({
-        guardId: group.guardId,
-        employerId: group.employerId,
-        periodType: group.periodType,
-        periodStart: group.periodStart,
-        periodEnd: group.periodEnd,
-      })),
-    })
-      .populate("guardId", "name")
-      .populate("employerId", "name")
-      .sort({ periodStart: 1, createdAt: 1 });
-  }
-
-  // check for conflicts in derived amounts
   for (const group of groups) {
-    const key = `${group.guardId}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
-    if (finalisedKeys.has(key)) {
-      const existing = existingRecords.find(
-        (record) =>
-          String(record.guardId) === String(group.guardId) &&
-          record.periodStart.toISOString() ===
-            group.periodStart.toISOString() &&
-          record.periodEnd.toISOString() === group.periodEnd.toISOString(),
+    const processed = await Payroll.findOne({
+      guardId: group.guardId,
+      employerId: group.employerId,
+      periodType: group.periodType,
+      periodStart: group.periodStart,
+      periodEnd: group.periodEnd,
+      status: "PROCESSED",
+    });
+    if (processed) {
+      throw createHttpError(
+        409,
+        `Payroll for guard ${group.guardId}, employer ${group.employerId}, period ${group.periodStart} to ${group.periodEnd} (${group.periodType}) has already been processed and cannot be recalculated.`,
       );
-      if (existing) {
-        const amountDiff = Math.abs(existing.totalAmount - group.totalAmount);
-        if (amountDiff > 0.01) {
-          console.warn(
-            `current payroll record has a different amount than the derived amount, ` +
-              `guardId=${group.guardId}, ` +
-              `periodStart=${group.periodStart.toISOString()}, ` +
-              `periodEnd=${group.periodEnd.toISOString()}, ` +
-              `existing total amount=${existing.totalAmount}, ` +
-              `calculated total amount=${group.totalAmount}, ` +
-              `difference=${amountDiff.toFixed(2)}`,
-          );
-          // await AuditLog.create({ action: 'PAYROLL_RECALC_CONFLICT', metadata: {...} });
-        }
-      }
     }
   }
 
   await Payroll.bulkWrite(
-    groupsToSync.map((group) => ({
+    groups.map((group) => ({
       updateOne: {
         filter: {
           guardId: group.guardId,
