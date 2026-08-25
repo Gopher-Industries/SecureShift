@@ -26,9 +26,9 @@ ManualVerification: guardId, jurisdiction, status, assignee, evidence, history.
 
 🔌 API Endpoints
 
-POST /api/verification/start → NSW = API check, others = manual record.
-GET /api/verification/status/:guardId → latest snapshot.
-POST /api/verification/recheck/:guardId → NSW = recheck, others = set in_review.
+POST /api/v1/verification/start → NSW = API check, others = manual record.
+GET /api/v1/verification/status/:guardId → latest snapshot.
+POST /api/v1/verification/recheck/:guardId → NSW = recheck, others = set in_review.
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -53,7 +53,8 @@ Admin checks register, uploads evidence, updates to approved/rejected.
 NSW creds in .env.
 Licence numbers encrypted.
 Only admins can manage manual records.
-
+All verification endpoints require authentication.
+Status and recheck can be accessed by the guard themselves or an admin.
 -------------------------------------------------------------------------------------------------------------------------------------------
 
 🧪 Tests
