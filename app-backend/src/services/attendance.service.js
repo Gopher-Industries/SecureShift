@@ -10,6 +10,17 @@ const createServiceError = (message, statusCode = 400) => {
   return error;
 };
 
+const isDuplicateKeyError = (error) => {
+  return error.code === 11000 || error.code === 11001;
+};
+
+const extractDuplicateFields = (error) => {
+  if (error.keyPattern) {
+    return Object.keys(error.keyPattern).join(", ");
+  }
+  return "unknown fields";
+};
+
 export const calculateDistance = (from, to) => {
   const earthRadiusKm = 6371;
   const fromLatitudeRadians = (from.latitude * Math.PI) / 180;
@@ -136,7 +147,19 @@ export const checkInForShift = async ({
     locationVerified: true,
   });
 
-  await attendance.save();
+  try {
+    await attendance.save();
+  } catch (error) {
+    // MongoDB duplicate error
+    if (isDuplicateKeyError(error)) {
+      const fields = extractDuplicateFields(error);
+      throw createServiceError(
+        `You have already checked in for this shift. Duplicate detected on: ${fields}`,
+        409,
+      );
+    }
+    throw error;
+  }
 
   return attendance;
 };

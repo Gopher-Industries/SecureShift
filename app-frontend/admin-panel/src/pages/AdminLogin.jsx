@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import useAdminAuth from '../hooks/useAdminAuth';
 
 const inp = {
@@ -23,15 +23,27 @@ const btn = {
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAdminAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  // Show the expired-session message once, then clean the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('sessionExpired') === '1') {
+      setSessionExpired(true);
+      navigate('/login', { replace: true });
+    }
+  }, [location.search, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSessionExpired(false);
     setLoading(true);
     try {
       await login(email.trim(), password);
@@ -64,6 +76,19 @@ export default function AdminLogin() {
         }}
       >
         <h2 style={{ marginTop: 0, color: '#274b93' }}>SecureShift Admin</h2>
+        {sessionExpired && (
+          <p
+            role="status"
+            style={{
+              color: '#8a6100',
+              background: '#fff6e0',
+              padding: '8px 10px',
+              borderRadius: 4,
+            }}
+          >
+            Your session has expired. Please log in again.
+          </p>
+        )}
         {error && <p style={{ color: '#c00' }}>{error}</p>}
         <label htmlFor="admin-email">Email</label>
         <input

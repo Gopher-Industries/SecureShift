@@ -23,6 +23,13 @@ jest.mock('expo-secure-store', () => {
   };
 });
 
+// Default mock for expo-local-authentication (tests override per case).
+jest.mock('expo-local-authentication', () => ({
+  hasHardwareAsync: jest.fn(() => Promise.resolve(true)),
+  isEnrolledAsync: jest.fn(() => Promise.resolve(true)),
+  authenticateAsync: jest.fn(() => Promise.resolve({ success: true })),
+}));
+
 // Reset the SecureStore mock between tests so secrets don't leak across cases.
 beforeEach(() => {
   jest.requireMock('expo-secure-store').__reset?.();
