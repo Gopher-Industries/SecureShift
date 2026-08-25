@@ -36,7 +36,7 @@ const router = Router();
  *               jurisdiction: { type: string, example: "NSW" }
  *               licenceNumber: { type: string }
  *               firstName: { type: string }
- *               lastName: { tpye: string }
+ *               lastName: { type: string }
  *               dob: { type: string, format: date }
  *     responses:
  *       200:
