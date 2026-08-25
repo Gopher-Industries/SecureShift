@@ -4,6 +4,7 @@ jest.unstable_mockModule('../src/models/User.js', () => ({
   default: {
     findOne: jest.fn(),
     find: jest.fn(),
+    countDocuments: jest.fn(),
     discriminator: jest.fn(() => ({})),
   },
 }));
@@ -21,7 +22,7 @@ jest.unstable_mockModule('jsonwebtoken', () => ({
   },
 }));
 
-const { adminLogin, getAuditLogs } = await import(
+const { adminLogin, getAuditLogs, getAllUsers } = await import(
   '../src/controllers/admin.controller.js'
 );
 const { default: User } = await import('../src/models/User.js');
@@ -220,5 +221,175 @@ describe('Admin Controller - getAuditLogs', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ logs: [] })
     );
+  });
+});
+describe('Admin Controller - getAllUsers', () => {
+  let req, res;
+
+  const mockUserFind = (users) => {
+    const chain = {
+      select: jest.fn().mockReturnThis(),
+      sort: jest.fn().mockReturnThis(),
+      skip: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockResolvedValue(users),
+    };
+
+    User.find.mockReturnValue(chain);
+    return chain;
+  };
+
+  beforeEach(() => {
+    req = {
+      query: {},
+      user: {
+        id: 'admin-user-id',
+      },
+      audit: {
+        log: jest.fn(),
+      },
+    };
+
+    res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+
+    jest.clearAllMocks();
+  });
+
+  it('should return users with default pagination metadata', async () => {
+    const chain = mockUserFind([
+      { _id: '1', name: 'Alice', email: 'alice@example.com', role: 'guard' },
+    ]);
+
+    User.countDocuments.mockResolvedValue(1);
+
+    await getAllUsers(req, res);
+
+    expect(User.find).toHaveBeenCalledWith({
+      isDeleted: { $ne: true },
+    });
+
+    expect(chain.sort).toHaveBeenCalledWith({
+      name: 1,
+      email: 1,
+      _id: 1,
+    });
+
+    expect(chain.skip).toHaveBeenCalledWith(0);
+    expect(chain.limit).toHaveBeenCalledWith(20);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      total: 1,
+      users: expect.any(Array),
+    });
+  });
+
+  it('should cap limit at 50', async () => {
+    req.query = { page: '2', limit: '100' };
+
+    const chain = mockUserFind([]);
+    User.countDocuments.mockResolvedValue(75);
+
+    await getAllUsers(req, res);
+
+    expect(chain.skip).toHaveBeenCalledWith(50);
+    expect(chain.limit).toHaveBeenCalledWith(50);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: 2,
+        limit: 50,
+        total: 75,
+      })
+    );
+  });
+
+  it('should search by name or email', async () => {
+    req.query = { q: 'alice' };
+
+    mockUserFind([]);
+    User.countDocuments.mockResolvedValue(0);
+
+    await getAllUsers(req, res);
+
+    expect(User.find).toHaveBeenCalledWith({
+      isDeleted: { $ne: true },
+      $or: [
+        { name: { $regex: 'alice', $options: 'i' } },
+        { email: { $regex: 'alice', $options: 'i' } },
+      ],
+    });
+  });
+
+  it('should filter by role', async () => {
+    req.query = { role: 'guard' };
+
+    mockUserFind([]);
+    User.countDocuments.mockResolvedValue(0);
+
+    await getAllUsers(req, res);
+
+    expect(User.find).toHaveBeenCalledWith({
+      isDeleted: { $ne: true },
+      role: 'guard',
+    });
+  });
+
+  it('should combine search and role filtering', async () => {
+    req.query = {
+      q: 'security',
+      role: 'employer',
+    };
+
+    mockUserFind([]);
+    User.countDocuments.mockResolvedValue(0);
+
+    await getAllUsers(req, res);
+
+    expect(User.find).toHaveBeenCalledWith({
+      isDeleted: { $ne: true },
+      role: 'employer',
+      $or: [
+        { name: { $regex: 'security', $options: 'i' } },
+        { email: { $regex: 'security', $options: 'i' } },
+      ],
+    });
+  });
+
+  it('should reject an invalid page', async () => {
+    req.query = { page: '0' };
+
+    await getAllUsers(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'page must be a positive integer',
+    });
+  });
+
+  it('should reject an invalid limit', async () => {
+    req.query = { limit: 'abc' };
+
+    await getAllUsers(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'limit must be a positive integer',
+    });
+  });
+
+  it('should reject an invalid role filter', async () => {
+    req.query = { role: 'superuser' };
+
+    await getAllUsers(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Invalid role filter',
+    });
   });
 });

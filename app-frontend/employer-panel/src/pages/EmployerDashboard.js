@@ -199,7 +199,13 @@ export default function EmployerDashboard() {
           throw new Error(data.message || "Failed to load shifts.");
         }
 
-        const rawShifts = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+	const rawShifts = Array.isArray(data?.items)
+          ? data.items
+          : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data)
+              ? data
+              : [];
 
         const normalizedShifts = rawShifts.map((shift, idx) => {
           const rawStatus = shift.status;

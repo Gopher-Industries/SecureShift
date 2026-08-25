@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import http from '../lib/http';
 import translations from "../i18n/translations";
 import RefreshButton from '../components/RefreshButton';
+import { useNotification } from '../components/NotificationContext';
 
 // ─── STYLES (defined first) ───
 const getStatusTagStyle = (status) => ({
@@ -71,9 +72,6 @@ const inputStyle = { width: '100%', padding: '12px 14px', borderRadius: '10px', 
 const detailActions = { marginTop: '20px', display: 'flex', gap: '12px', justifyContent: 'flex-end' };
 const primaryButton = { backgroundColor: '#274b93', color: 'white', border: 'none', borderRadius: '20px', padding: '12px 24px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' };
 const secondaryButton = { backgroundColor: 'white', color: '#d14343', border: '1px solid #d14343', borderRadius: '20px', padding: '12px 20px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' };
-const feedbackStyle = { marginTop: '8px', marginBottom: '8px', padding: '10px 12px', borderRadius: '10px', fontSize: '13px' };
-const feedbackSuccessStyle = { ...feedbackStyle, backgroundColor: '#edf7ed', color: '#1b5e20', border: '1px solid #c8e6c9' };
-const feedbackErrorStyle = { ...feedbackStyle, backgroundColor: '#ffebee', color: '#c62828', border: '1px solid #ffcdd2' };
 const inlineError = { color: '#d14343', fontSize: '12px', marginTop: '2px' };
 const tabBarStyle = { display: 'flex', gap: '4px', borderBottom: '2px solid #f3f4f6', marginBottom: '8px' };
 const tabStyle = { padding: '10px 20px', background: 'none', border: 'none', fontSize: '14px', fontWeight: 500, color: '#9ca3af', cursor: 'pointer', borderBottomWidth: '2px', borderBottomStyle: 'solid', borderBottomColor: 'transparent', marginBottom: '-2px', display: 'flex', alignItems: 'center', gap: '6px' };
@@ -671,6 +669,7 @@ const EquipmentPanel = ({
 
 // ─── MAIN COMPONENT ───
 const ManageShift = ({ language }) => {
+  const { showNotification } = useNotification();
   const t = translations[language || "en"] || translations.en;
   const navigate = useNavigate();
   const [shifts, setShifts] = useState([]);
@@ -684,7 +683,6 @@ const ManageShift = ({ language }) => {
   const [detailForm, setDetailForm] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.DETAILS);
@@ -910,11 +908,10 @@ const ManageShift = ({ language }) => {
     try {
       await http.delete(`/shifts/${shiftId}`);
       setShifts((prev) => prev.filter((s) => s.id !== shiftId));
-      setFeedback('Shift deleted successfully');
-      setTimeout(() => setFeedback(''), 3000);
+      showNotification('success', 'Shift deleted successfully.');
     } catch (err) {
       const msg = err?.response?.data?.message || 'Failed to delete shift';
-      setFeedback(msg);
+      showNotification('error', msg);
       console.error('Delete error:', err);
     }
   };
@@ -942,7 +939,6 @@ const ManageShift = ({ language }) => {
       status: shift.status || Filter.Open,
     });
     setIsEditing(false);
-    setFeedback('');
     setActiveTab(
       shift.status === Filter.Open || shift.status === Filter.Pending ? TABS.APPLICANTS : TABS.DETAILS
     );
@@ -961,7 +957,6 @@ const ManageShift = ({ language }) => {
     setDetailForm(null);
     setIsEditing(false);
     setSaving(false);
-    setFeedback('');
     setApplicantAction({});
     setEquipmentList([]);
     setEqAuditLog([]);
@@ -989,10 +984,9 @@ const ManageShift = ({ language }) => {
 
   const handleSaveShift = async () => {
     if (!selectedShift || !detailForm) return;
-    if (selectedShift.status === Filter.Completed) { setFeedback('Completed shifts cannot be edited.'); return; }
+    if (selectedShift.status === Filter.Completed) { showNotification('warning', 'Completed shifts cannot be edited.'); return; }
     if (!validateDetailForm()) return;
     setSaving(true);
-    setFeedback('');
     try {
       const cleanedLocation = {
         street: detailForm.street?.trim() || undefined,
@@ -1034,11 +1028,10 @@ const ManageShift = ({ language }) => {
         status: updatedWithUiStatus.status || Filter.Open,
       });
       setIsEditing(false);
-      setFeedback('Saved successfully');
-      setTimeout(() => setFeedback(''), 3000);
+      showNotification('success', 'Shift saved successfully.');
     } catch (err) {
       const message = err?.response?.data?.message || 'Failed to update shift';
-      setFeedback(message);
+      showNotification('error', message);
       if (optimisticSnapshot) { setShifts(optimisticSnapshot.shifts); setSelectedShift(optimisticSnapshot.selectedShift); }
     } finally {
       setSaving(false);
@@ -1056,9 +1049,9 @@ const ManageShift = ({ language }) => {
       setShifts((prev) => prev.map((s) => (s.id === updatedShift.id ? updatedShift : s)));
       setSelectedShift(updatedShift);
       setApplicantAction((prev) => ({ ...prev, [guardId]: 'approved' }));
-      setFeedback('Guard approved. Shift is now In Progress.');
+      showNotification('success', 'Guard approved. Shift is now In Progress.');
     } catch (err) {
-      setFeedback(err?.response?.data?.message || 'Failed to approve guard');
+      showNotification('error', err?.response?.data?.message || 'Failed to approve guard');
       setApplicantAction((prev) => ({ ...prev, [guardId]: undefined }));
     }
   };
@@ -1073,7 +1066,7 @@ const ManageShift = ({ language }) => {
       setSelectedShift(updatedShift);
       setApplicantAction((prev) => { const n = { ...prev }; delete n[guardId]; return n; });
     } catch (err) {
-      setFeedback(err?.response?.data?.message || 'Failed to reject guard');
+      showNotification('error', err?.response?.data?.message || 'Failed to reject guard');
       setApplicantAction((prev) => ({ ...prev, [guardId]: undefined }));
     }
   };
@@ -1226,12 +1219,6 @@ const ManageShift = ({ language }) => {
               )}
             </div>
 
-            {feedback && (
-              <div style={feedback === 'Saved successfully' || feedback.includes('approved') ? feedbackSuccessStyle : feedbackErrorStyle}>
-                {feedback}
-              </div>
-            )}
-
             {/* ── Details tab ── */}
             {activeTab === TABS.DETAILS && (
               <>
@@ -1289,7 +1276,7 @@ const ManageShift = ({ language }) => {
                 </div>
                 <div style={detailActions}>
                   {!isEditing ? (
-                    <button style={primaryButton} onClick={() => { setFeedback(''); setIsEditing(true); }}>Edit Shift</button>
+                    <button style={primaryButton} onClick={() => { setIsEditing(true); }}>Edit Shift</button>
                   ) : (
                     <>
                       <button style={primaryButton} onClick={handleSaveShift} disabled={saving}>{saving ? 'Saving...' : 'Save changes'}</button>

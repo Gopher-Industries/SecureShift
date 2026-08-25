@@ -40,7 +40,22 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
+    const allowedPublicRoles = ["employer"];
+
+    if (!role) {
+      return res.status(400).json({
+        message: "Role is required.",
+      });
+    }
+
+    if (!allowedPublicRoles.includes(role)) {
+      return res.status(400).json({
+        message: `Role '${role}' is not permitted for public registration.`,
+      });
+    }
+
     let newUser;
+
     if (role === "employer") {
       if (!ABN) {
         return res
@@ -57,9 +72,6 @@ export const register = async (req, res) => {
         address,
         ABN,
       });
-    } else {
-      // default Admin or other roles
-      newUser = new User({ name, email, password, role, phone, address });
     }
 
     await newUser.save();
@@ -76,6 +88,7 @@ export const register = async (req, res) => {
 /**
  * @desc Register a new Guard with a required license image
  * @route POST /api/v1/auth/register/guard
+
  * @access Public
  * @body  multipart/form-data with field "license" (image), plus JSON fields
  *        name, email, password, phone?, address?

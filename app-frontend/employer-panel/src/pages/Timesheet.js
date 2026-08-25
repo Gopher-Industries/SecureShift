@@ -113,7 +113,11 @@ export default function Timesheet({ language }) {
     }
     try {
       const { data } = await http.get("/shifts/myshifts");
-      const list = Array.isArray(data) ? data : [];
+      const list = Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(data)
+          ? data
+          : [];
       const assignedShifts = list.filter((s) => s.acceptedBy);
       const attendanceLists = await Promise.all(
         assignedShifts.map((s) =>
@@ -353,4 +357,3 @@ const sortSelectStyle = {
   color: "#666",
   cursor: "pointer",
 };
-

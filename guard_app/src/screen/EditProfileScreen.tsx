@@ -181,7 +181,12 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+          <TouchableOpacity
+            onPress={handleCancel}
+            style={styles.headerButton}
+            accessible={true}
+            accessibilityLabel={t('editProfile.cancel')}
+          >
             <Ionicons name="close" size={24} color={colors.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('editProfile.title')}</Text>
@@ -200,7 +205,11 @@ export default function EditProfileScreen({ navigation, route }: EditProfileScre
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('editProfile.changeImage')}</Text>
             <View style={styles.avatarContainer}>
-              <TouchableOpacity onPress={handleImagePicker}>
+              <TouchableOpacity
+                onPress={handleImagePicker}
+                accessible={true}
+                accessibilityLabel={t('editProfile.uploadNew')}
+              >
                 {profileImage ? (
                   <Image source={{ uri: profileImage }} style={styles.avatar} />
                 ) : (

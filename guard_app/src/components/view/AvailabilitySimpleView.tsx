@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import AddAvailabilityModal from '../modal/AddAvailabilityModal';
+
 import type { AppColors } from '../../theme/colors';
 
 type Props = {
@@ -53,6 +54,8 @@ export default function AvailabilitySimpleView({
           const selected = days.includes(day);
           return (
             <TouchableOpacity
+              accessible={true}
+              accessibilityLabel={getLocalizedDay(day)}
               key={day}
               style={[styles.dayChip, selected && styles.dayChipSelected]}
               onPress={() => toggleDay(day)}

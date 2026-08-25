@@ -15,7 +15,9 @@ import {
   View,
 } from 'react-native';
 
+import EmptyState from '../components/EmptyState';
 import ErrorMessageBox from '../components/ErrorMessageBox';
+import LoadingState from '../components/LoadingState';
 import http from '../lib/http';
 import { useAppTheme } from '../theme';
 
@@ -196,9 +198,9 @@ export default function IncidentReportScreen() {
         {/* Incident List */}
         <Text style={s.title}>{t('incidentReport.title')}</Text>
         {loadingList ? (
-          <ActivityIndicator color={colors.primary} style={s.loader} />
+          <LoadingState rows={2} />
         ) : incidents.length === 0 ? (
-          <Text style={s.emptyText}>{t('incidentReport.noReports')}</Text>
+          <EmptyState icon="document-text-outline" title={t('incidentReport.noReports')} />
         ) : (
           incidents.map((item) => (
             <View key={item._id} style={s.incidentCard}>
@@ -291,7 +293,7 @@ export default function IncidentReportScreen() {
             <Text style={s.modalTitle}>Select Shift</Text>
             <ScrollView>
               {shifts.length === 0 ? (
-                <Text style={s.emptyText}>No assigned shifts found.</Text>
+                <EmptyState icon="calendar-outline" title="No assigned shifts found." />
               ) : (
                 shifts.map((shift) => (
                   <TouchableOpacity
@@ -334,14 +336,6 @@ const getStyles = (colors: AppColors) =>
     },
     contentContainer: {
       paddingBottom: 32,
-    },
-    loader: {
-      marginVertical: 12,
-    },
-    emptyText: {
-      color: colors.muted,
-      fontSize: 13,
-      marginBottom: 8,
     },
     incidentCard: {
       backgroundColor: colors.card,
