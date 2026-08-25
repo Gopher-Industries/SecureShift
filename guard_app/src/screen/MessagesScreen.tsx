@@ -11,7 +11,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 
@@ -24,10 +23,12 @@ import {
   type MessageDto,
   type MessageUser,
 } from '../api/messages';
+import EmptyState from '../components/EmptyState';
 import ConversationItemComponent, {
   type ConversationItemData,
 } from '../components/list/ConversationItem';
 import MessageItem, { type MessageItemData } from '../components/list/MessageItem';
+import LoadingState from '../components/LoadingState';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
@@ -498,18 +499,13 @@ export default function MessagesScreen() {
               contentContainerStyle={[styles.chat, conversations.length === 0 && styles.chatEmpty]}
               ListEmptyComponent={
                 loading ? (
-                  <View style={styles.placeholder}>
-                    <ActivityIndicator color={colors.primary} />
-                    <Text style={styles.placeholderTitle}>Loading conversations…</Text>
-                  </View>
+                  <LoadingState rows={2} />
                 ) : (
-                  <View style={styles.placeholder}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={36} color={colors.muted} />
-                    <Text style={styles.placeholderTitle}>No conversations yet</Text>
-                    <Text style={styles.placeholderText}>
-                      Start a new chat from a shift or by selecting a contact.
-                    </Text>
-                  </View>
+                  <EmptyState
+                    icon="chatbubble-ellipses-outline"
+                    title="No conversations yet"
+                    message="Start a new chat from a shift or by selecting a contact."
+                  />
                 )
               }
             />
@@ -531,18 +527,13 @@ export default function MessagesScreen() {
             contentContainerStyle={[styles.chat, contextMessages.length === 0 && styles.chatEmpty]}
             ListEmptyComponent={
               loading ? (
-                <View style={styles.placeholder}>
-                  <ActivityIndicator color={colors.primary} />
-                  <Text style={styles.placeholderTitle}>Loading messages…</Text>
-                </View>
+                <LoadingState rows={2} />
               ) : (
-                <View style={styles.placeholder}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={36} color={colors.muted} />
-                  <Text style={styles.placeholderTitle}>No messages yet</Text>
-                  <Text style={styles.placeholderText}>
-                    Start the conversation to coordinate shifts or share updates.
-                  </Text>
-                </View>
+                <EmptyState
+                  icon="chatbubble-ellipses-outline"
+                  title="No messages yet"
+                  message="Start the conversation to coordinate shifts or share updates."
+                />
               )
             }
           />
@@ -610,8 +601,8 @@ const getStyles = (colors: AppColors) =>
       padding: 2,
     },
     contextChip: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
       borderRadius: 14,
     },
     contextChipActive: { backgroundColor: colors.white },
@@ -631,9 +622,6 @@ const getStyles = (colors: AppColors) =>
 
     chat: { padding: 12 },
     chatEmpty: { flexGrow: 1, justifyContent: 'center' },
-    placeholder: { alignItems: 'center', paddingHorizontal: 24 },
-    placeholderTitle: { marginTop: 8, fontSize: 16, fontWeight: '700', color: colors.text },
-    placeholderText: { marginTop: 4, textAlign: 'center', color: colors.muted },
 
     conversationListWrap: { flex: 1 },
     sectionTitle: {

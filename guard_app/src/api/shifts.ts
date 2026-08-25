@@ -30,6 +30,9 @@ export type ShiftDto = {
 
   applicants?: { _id: string; name?: string; email?: string }[];
   acceptedBy?: { _id: string; name?: string; email?: string };
+
+  ratedByGuard?: boolean;
+  guardRating?: number;
 };
 
 type ListResponse =
@@ -39,6 +42,11 @@ type ListResponse =
   | { shifts?: ShiftDto[] };
 
 type ApplyResponse = {
+  message?: string;
+  shift?: ShiftDto;
+};
+
+type RateResponse = {
   message?: string;
   shift?: ShiftDto;
 };
@@ -76,5 +84,11 @@ export async function myShifts(status?: 'past') {
 // PUT /api/v1/shifts/:id/apply
 export async function applyToShift(id: string) {
   const { data } = await http.put<ApplyResponse>(`/shifts/${id}/apply`);
+  return data;
+}
+
+// PATCH /api/v1/shifts/:id/rate
+export async function rateShift(id: string, rating: number) {
+  const { data } = await http.patch<RateResponse>(`/shifts/${id}/rate`, { rating });
   return data;
 }

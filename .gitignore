@@ -4,6 +4,8 @@ dist
 *.log
 docker-compose.override.yml
 /app-backend/node_modules
+.env.local
+.env.integration
 *.json
 *.xml
 *.json

@@ -1,14 +1,10 @@
 // config/multer.js
 import multer from "multer";
 import fs from "fs";
-import path from "path";
-// import { fileURLToPath } from "url";
+import { uploadsDir } from "./uploadsDir.js";
 
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
-// ensure uploads dir exists
-const uploadsDir = path.join(process.cwd(), "uploads");
+// ensure uploads dir exists. The path lives in its own module so retrieval
+// resolves files against the same directory uploads are written to.
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // where & how to store files
@@ -45,19 +41,56 @@ const allowedMimeTypes = [
   "audio/mp4",
 ];
 
+// Rejections carry a 400 so handleUploadError can tell a bad request apart
+// from a genuine server fault.
+export const rejectUpload = (message) => {
+  const err = new Error(message);
+  err.status = 400;
+  return err;
+};
+
 const fileFilter = (_req, file, cb) => {
   const ok = allowedMimeTypes.includes(file.mimetype);
 
   cb(
     ok
       ? null
-      : new Error("Only images, videos, audio, and PDF files are allowed"),
+      : rejectUpload("Only images, videos, audio, and PDF files are allowed"),
     ok,
   );
 };
 
+// Single source of truth for the upload size cap. Exported so every upload
+// route enforces the same limit instead of each one setting its own.
+export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB
+
 export const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+  limits: { fileSize: MAX_UPLOAD_BYTES },
 });
+
+/**
+ * Turn upload rejections into 400s.
+ *
+ * Multer surfaces an oversized file as a MulterError, and a rejected file type
+ * as whatever the fileFilter passed back. Without this they reach the global
+ * error handler and are reported as 500, which reads as a server fault when the
+ * request was the problem. Mount it immediately after the multer middleware on
+ * any route that accepts uploads.
+ */
+export const handleUploadError = (err, _req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? `File is too large. Maximum upload size is ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB.`
+        : err.message;
+    return res.status(400).json({ error: message });
+  }
+
+  if (err?.status === 400) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  return next(err);
+};

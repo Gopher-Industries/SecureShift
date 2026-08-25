@@ -53,7 +53,12 @@
     "requiredFields": "请填写所有必填项",
     "tryAgain": "重试",
     "invalidName": "名字只能包含字母、空格、连字符（-）和撇号（'）。",
-    "weakPassword": "密码至少需要 6 个字符，且需包含大写、小写字母、数字和特殊字符。"
+    "weakPassword": "密码至少需要 6 个字符，且需包含大写、小写字母、数字和特殊字符。",
+    "crashTitle": "出错了",
+    "crashMessage": "此页面出现问题，你可以重试。"
+  },
+  "net": {
+    "offline": "没有网络连接"
   },
   "home": {
     "welcome": "欢迎回来，{{name}}！",
@@ -100,7 +105,9 @@
     "markRead": "全部标为已读"
   },
   "profile": {
+    "yourProfilePic": "你的个人资料图片",
     "edit": "编辑",
+    "editProfile": "编辑个人资料",
     "perfSummary": "表现摘要",
     "totalShifts": "总排班数",
     "rating": "评分",
@@ -146,6 +153,7 @@
     "selectRequestType": "选择请求类型",
     "reasonHint": "抱歉我生病了...",
     "requestedTime": "请求时间",
+    "filterRequests": "筛选移位请求",
     "swapGuard": "请求警卫",
     "guardHint": "约翰·史密斯...",
     "swapShift": "替补班次",
@@ -156,6 +164,13 @@
     "leaveEnd": "离境端",
     "notFound": "未找到排班请求",
     "requestError": "加载请求失败。",
+    "rateShift": "为此班次评分",
+    "submitRating": "提交评分",
+    "submittingRating": "提交中...",
+    "alreadyRated": "您已经为此班次评过分",
+    "selectRating": "请先选择星级评分",
+    "ratingFailed": "无法保存您的评分",
+    "starLabel": "{{count}} 星评分",
     "alerts": {
       "missingDateHead": "缺失日期",
       "missingDateMsg": "输入你想把班次移到哪个日期.",
@@ -332,6 +347,7 @@
     "notifBody": "您已被分配到医院综合楼班次。"
   },
   "payroll": {
+    "payroll": "工资单",
     "period": "期间:",
     "guardID": "保安ID:",
     "site": "地点:",
@@ -392,5 +408,13 @@
     "submitSuccess": "事件报告提交成功",
     "submitFailed": "提交事件报告失败",
     "cancel": "取消"
+  },
+  "appLock": {
+    "prompt": "解锁 SecureShift",
+    "lockedTitle": "SecureShift 已锁定",
+    "lockedMessage": "请验证身份以继续。",
+    "unlock": "解锁",
+    "settingsLabel": "应用锁（Face ID / PIN）",
+    "unavailable": "不可用"
   }
 }

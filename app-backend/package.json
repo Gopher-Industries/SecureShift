@@ -13,6 +13,7 @@
     "lint": "eslint \"src/**/*.js\"",
     "lint:fix": "eslint \"src/**/*.js\" --fix",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
+    "test:ci": "npm test -- --runTestsByPath tests/env.config.test.js tests/seed.safety.test.js src/tests/services/fatigue.service.test.js",
     "test:watch": "jest --watch",
     "seed": "node -r dotenv/config src/scripts/seed/index.js",
     "seed:reset": "node -r dotenv/config src/scripts/seed/index.js --reset",

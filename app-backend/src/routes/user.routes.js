@@ -256,6 +256,7 @@ router.get(
   auth,
   loadUser,
   authorizeRoles(ROLES.ADMIN, ROLES.EMPLOYER),
+  authorizePermissions("user:read"),
   getAllGuards,
 );
 

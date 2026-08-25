@@ -240,6 +240,119 @@ describe("Shift Controller API Tests", () => {
     expect(Array.isArray(res.body.items)).toBe(true);
   });
 
+  /* ---------------- MY SHIFTS PAGINATION & FILTERING ---------------- */
+
+  test("Employer fetches myshifts with pagination metadata", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts?page=1&limit=20")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body.items)).toBe(true);
+    expect(res.body.page).toBe(1);
+    expect(res.body.limit).toBe(20);
+    expect(typeof res.body.total).toBe("number");
+  });
+
+  test("myshifts uses default pagination values", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.page).toBe(1);
+    expect(res.body.limit).toBe(20);
+    expect(Array.isArray(res.body.items)).toBe(true);
+  });
+
+  test("myshifts filters by supported status", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts?status=open")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(200);
+    expect(
+      res.body.items.every((shift) => shift.status === "open"),
+    ).toBe(true);
+  });
+
+  test("myshifts supports legacy past status filter", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts?status=past")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(200);
+    expect(
+      res.body.items.every((shift) => shift.status === "completed"),
+    ).toBe(true);
+  });
+
+  test("myshifts rejects invalid page", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts?page=0")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("page must be a positive integer");
+  });
+
+  test("myshifts rejects invalid limit", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts?limit=abc")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("limit must be a positive integer");
+  });
+
+  test("myshifts rejects unsupported status", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts?status=invalid")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid status filter");
+  });
+
+  test("Guard myshifts preserves role-based access", async () => {
+    const res = await request(app)
+      .get("/api/v1/shifts/myshifts")
+      .set("Authorization", guardToken)
+      .set("x-user-id", guard._id.toString())
+      .set("x-user-role", "guard");
+
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body.items)).toBe(true);
+
+    res.body.items.forEach((shift) => {
+      const applicantIds = (shift.applicants || []).map((applicant) =>
+        String(applicant._id),
+      );
+      const acceptedId = shift.acceptedBy?._id
+        ? String(shift.acceptedBy._id)
+        : null;
+
+      expect(
+        applicantIds.includes(guard._id.toString()) ||
+          acceptedId === guard._id.toString(),
+      ).toBe(true);
+    });
+  });
+
   /* ---------------- SHIFT HISTORY ---------------- */
   test("Guard fetch shift history", async () => {
     const res = await request(app)
@@ -287,4 +400,71 @@ describe("Shift Controller API Tests", () => {
 
     expect(res.statusCode).toBe(403);
   });
+  /* ---------------- DUPLICATE SHIFT (BE-048) ---------------- */
+
+  test("Employer can duplicate their own shift", async () => {
+    const newDate = "2026-12-15";
+
+    const res = await request(app)
+      .post(`/api/v1/shifts/${shiftId}/duplicate`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({ date: newDate });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.message).toBe("Shift duplicated successfully");
+    expect(res.body.shift).toHaveProperty("_id");
+    expect(res.body.shift.status).toBe("draft");
+    expect(res.body.shift.createdBy.toString()).toBe(
+      employer._id.toString(),
+    );
+    expect(new Date(res.body.shift.date).toISOString()).toContain(newDate);
+  });
+
+  test("Duplicate shift requires a new date", async () => {
+    const res = await request(app)
+      .post(`/api/v1/shifts/${shiftId}/duplicate`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({});
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("A new shift date is required");
+  });
+
+  test("Employer cannot duplicate another employer's shift", async () => {
+    const res = await request(app)
+      .post(`/api/v1/shifts/${shiftId}/duplicate`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", new mongoose.Types.ObjectId().toString())
+      .set("x-user-role", "employer")
+      .send({ date: "2026-12-16" });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body.message).toBe(
+      "You can only duplicate your own shifts",
+    );
+  });
+
+  test("Duplicate shift resets lifecycle data", async () => {
+    const res = await request(app)
+      .post(`/api/v1/shifts/${shiftId}/duplicate`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({ date: "2026-12-17" });
+
+    expect(res.statusCode).toBe(201);
+
+    const duplicatedShift = res.body.shift;
+
+    expect(duplicatedShift.status).toBe("draft");
+    expect(duplicatedShift.applicants).toEqual([]);
+    expect(duplicatedShift.guardIds).toEqual([]);
+    expect(duplicatedShift.ratedByGuard).toBe(false);
+    expect(duplicatedShift.ratedByEmployer).toBe(false);
+  });
+
 });
