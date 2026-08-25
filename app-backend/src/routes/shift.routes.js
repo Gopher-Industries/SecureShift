@@ -279,7 +279,7 @@ router
 
 /**
  * @swagger
- * /api/v1/shifts/fatigue
+ * /api/v1/shifts/fatigue:
  *   get:
  *     summary: Get fatigue metrics (Employer only)
  *     description: |
