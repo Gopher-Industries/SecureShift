@@ -126,7 +126,7 @@ Use Markdown.
       stream: false,
 
       options: {
-        temperature: 0.1,
+        temperature: 0,
         num_predict: 300,
       },
     });
