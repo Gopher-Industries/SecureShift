@@ -105,11 +105,19 @@ export default function Timesheet({ language }) {
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       try {
         const { data } = await http.get("/shifts/myshifts");
-        const list = Array.isArray(data) ? data : [];
+
+        const list = Array.isArray(data?.items)
+          ? data.items
+          : Array.isArray(data)
+            ? data
+            : [];
+
         const assignedShifts = list.filter((s) => s.acceptedBy);
+
         const attendanceLists = await Promise.all(
           assignedShifts.map((s) =>
             http
@@ -118,10 +126,12 @@ export default function Timesheet({ language }) {
               .catch(() => ({ records: [] }))
           )
         );
+
         if (cancelled) return;
         setRows(buildRows(assignedShifts, attendanceLists));
       } catch (err) {
         if (cancelled) return;
+
         setError(
           err?.response?.data?.message ||
             err.message ||
@@ -131,7 +141,10 @@ export default function Timesheet({ language }) {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const summary = useMemo(() => {
@@ -339,4 +352,5 @@ const sortSelectStyle = {
   color: "#666",
   cursor: "pointer",
 };
+
 

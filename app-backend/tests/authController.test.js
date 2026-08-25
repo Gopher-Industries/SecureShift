@@ -11,7 +11,11 @@ import jwt from "jsonwebtoken";
 import { sendOTP } from "../src/utils/sendEmail.js";
 
 jest.mock("../src/models/User.js");
-jest.mock("../src/models/Employer.js");
+jest.mock("../src/models/Employer.js", () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
 jest.mock("../src/utils/sendEmail.js");
 jest.mock("jsonwebtoken");
 
@@ -36,27 +40,65 @@ describe("Auth Controller Tests", () => {
 
   // ---------------- REGISTER ----------------
   describe("register", () => {
-    it("should register a normal user successfully", async () => {
+    it("should register an employer successfully", async () => {
       req.body = {
         name: "Test User",
-        email: "user@example.test",
+        email: "employer@example.test",
         password: "123456",
-        role: "admin",
+        role: "employer",
+        ABN: "12345678901",
       };
 
       User.findOne.mockResolvedValue(null);
 
       const saveMock = jest.fn().mockResolvedValue(true);
 
-      User.mockImplementation(() => ({
+      Employer.mockImplementation(() => ({
         save: saveMock,
       }));
 
       await register(req, res);
 
+
       expect(res.status).toHaveBeenCalledWith(201);
       expect(req.audit.log).toHaveBeenCalled();
     });
+
+
+    it.each(["admin", "super_admin", "branch_admin", "unknown_role"])(
+      "should reject public registration for role: %s",
+      async (role) => {
+        req.body = {
+          name: "Test User",
+          email: `${role}@example.test`,
+          password: "123456",
+          role,
+        };
+
+        await register(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith({
+          message: `Role '${role}' is not permitted for public registration.`,
+        });
+      },
+    );
+
+    it("should reject registration when role is missing", async () => {
+      req.body = {
+        name: "Test User",
+        email: "missing-role@example.test",
+        password: "123456",
+      };
+
+      await register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Role is required.",
+      });
+    });
+
 
     it("should return 400 if email exists", async () => {
       req.body = {

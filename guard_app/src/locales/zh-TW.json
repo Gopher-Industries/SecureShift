@@ -53,7 +53,12 @@
     "requiredFields": "請填寫所有必填欄位",
     "tryAgain": "重試",
     "invalidName": "名字只能包含字母、空格、連字號（-）和撇號（'）。",
-    "weakPassword": "密碼至少需要 6 個字元，且需包含大寫、小寫字母、數字和特殊字元。"
+    "weakPassword": "密碼至少需要 6 個字元，且需包含大寫、小寫字母、數字和特殊字元。",
+    "crashTitle": "出錯了",
+    "crashMessage": "此頁面發生問題，你可以重試。"
+  },
+  "net": {
+    "offline": "沒有網路連線"
   },
   "home": {
     "welcome": "歡迎回來，{{name}}！",
@@ -100,7 +105,9 @@
     "markRead": "全部標為已讀"
   },
   "profile": {
+    "yourProfilePic": "你的個人資料圖片",
     "edit": "編輯",
+    "editProfile": "編輯個人資料",
     "perfSummary": "表現摘要",
     "totalShifts": "總排班數",
     "rating": "評分",
@@ -143,6 +150,7 @@
     "reason": "原因",
     "swap": "換班",
     "leave": "請假",
+    "filterRequests": "過濾換班請求",
     "selectRequestType": "選擇請求類型",
     "reasonHint": "抱歉我生病了...",
     "requestedTime": "請求時間",
@@ -156,6 +164,13 @@
     "leaveEnd": "離開終點",
     "notFound": "未找到排班請求",
     "requestError": "載入請求失敗。",
+    "rateShift": "為此班次評分",
+    "submitRating": "送出評分",
+    "submittingRating": "送出中...",
+    "alreadyRated": "您已經為此班次評過分",
+    "selectRating": "請先選擇星級評分",
+    "ratingFailed": "無法儲存您的評分",
+    "starLabel": "{{count}} 星評分",
     "alerts": {
       "missingDateHead": "缺失的日期",
       "missingDateMsg": "輸入你想把班次移到哪個日期.",
@@ -332,6 +347,7 @@
     "notifBody": "您已被分配到醫院綜合大樓班次。"
   },
   "payroll": {
+    "payroll": "薪資單",
     "period": "期間:",
     "guardID": "保安ID:",
     "site": "地點:",
@@ -392,5 +408,13 @@
     "submitSuccess": "事件報告提交成功",
     "submitFailed": "提交事件報告失敗",
     "cancel": "取消"
+  },
+  "appLock": {
+    "prompt": "解鎖 SecureShift",
+    "lockedTitle": "SecureShift 已鎖定",
+    "lockedMessage": "請驗證身分以繼續。",
+    "unlock": "解鎖",
+    "settingsLabel": "應用程式鎖（Face ID / PIN）",
+    "unavailable": "無法使用"
   }
 }

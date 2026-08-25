@@ -4,18 +4,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AxiosError } from 'axios';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 
 import { myShifts, type ShiftDto } from '../api/shifts';
 import { getAllMyTimesheets, type Timesheet } from '../api/timesheets';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
 import { useAppTheme } from '../theme';
 import { fmtShiftLabel, formatHours, formatTimesheetDateTime, sumHours } from '../utils/timesheet';
 
@@ -141,12 +135,7 @@ export default function TimesheetsScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={s.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={s.loadingText}>{t('timesheet.loading')}</Text>
-      </View>
-    );
+    return <LoadingState />;
   }
 
   if (error) {
@@ -170,7 +159,7 @@ export default function TimesheetsScreen() {
         contentContainerStyle={s.listContainer}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={renderSummary()}
-        ListEmptyComponent={<Text style={s.empty}>{t('timesheet.empty')}</Text>}
+        ListEmptyComponent={<EmptyState title={t('timesheet.empty')} />}
       />
     </View>
   );
@@ -189,17 +178,6 @@ const getStyles = (colors: AppColors) =>
       alignItems: 'center',
       padding: 24,
       backgroundColor: colors.bg,
-    },
-
-    loadingText: {
-      marginTop: 10,
-      color: colors.muted,
-    },
-
-    empty: {
-      textAlign: 'center',
-      marginTop: 30,
-      color: colors.muted,
     },
 
     errorTitle: {
