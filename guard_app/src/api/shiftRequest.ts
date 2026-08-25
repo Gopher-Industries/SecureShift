@@ -26,6 +26,23 @@ export interface CreateShiftRequestPayload {
   reason: string;
 }
 
+export interface SwapOptionsResponse {
+  id: string;
+  title: string;
+  date: Date;
+  startTime: string;
+  endTime: string;
+  location: {
+    street: string;
+  };
+  description: string;
+  acceptedBy: {
+    id: string;
+    name: string;
+  };
+  payRate: number;
+}
+
 type ListResponse =
   | ShiftRequestDto[]
   | { items?: ShiftRequestDto[] }
@@ -57,4 +74,10 @@ export async function listShiftRequests(page = 1, limit = 20) {
 export async function createShiftRequest(payload: CreateShiftRequestPayload) {
   const { data } = await http.post<ShiftRequestDto>('shift-requests', payload);
   return data;
+}
+
+//GET api/v1/shift-requests/swap-options/:id
+export async function getSwapableShifts(shiftID: string) {
+  const { data } = await http.get(`shift-requests/swap-options/${shiftID}`);
+  return data.data;
 }

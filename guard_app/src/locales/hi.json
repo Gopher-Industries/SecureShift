@@ -167,6 +167,8 @@
     "selectTime": "समय चुनें",
     "notFound": "कोई शिफ्ट अनुरोध नहीं मिला",
     "requestError": "अनुरोध लोड करने में विफल।",
+    "assignedGuard": "नियुक्त गार्ड:",
+    "swapOptionsError": "स्वैप ऑप्शन लोड करने में विफल",
     "rateShift": "इस शिफ्ट को रेटिंग दें",
     "submitRating": "रेटिंग भेजें",
     "submittingRating": "भेजा जा रहा है...",
@@ -175,10 +177,14 @@
     "ratingFailed": "आपकी रेटिंग सहेजी नहीं जा सकी",
     "starLabel": "{{count}} स्टार रेटिंग",
     "alerts": {
+      "missingReasonHead": "कारण गायब",
+      "missingReasonMsg": "शिफ्ट रिक्वेस्ट का कारण डालें.",
       "missingDateHead": "लापता तिथि",
       "missingDateMsg": "वह तारीख डालें, जिस पर आप अपनी शिफ्ट ले जाना चाहते हैं.",
       "invalidDateHead": "अमान्य दिनांक",
       "invalidDateMsg": "चयनित दिनांक अमान्य है",
+      "selectShiftHead": "शिफ्ट चुनें",
+      "selectShiftMsg": "कोई  शिफ्ट नहीं चुना गया",
       "requestCreated": "अनुरोध बनाया गया",
       "requestFailed": "अनुरोध विफल रहा",
       "successMessage": "आपका अनुरोध आपके नियोक्ता को भेज दिया गया है"
