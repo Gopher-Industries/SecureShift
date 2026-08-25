@@ -229,7 +229,7 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
                   </View>
                   {error || loading || swapOptions.length === 0 ? (
                     <TouchableOpacity style={s.dropdown}>
-                      <Text style={s.dropdownTextPlaceholder}>{t('shifts.swapOptionsError')}</Text>
+                      <Text style={s.dropdownTextError}>{t('shifts.swapOptionsError')}</Text>
                     </TouchableOpacity>
                   ) : (
                     <View>
@@ -494,6 +494,10 @@ const getStyles = (colors: AppColors) =>
     dropdownTextPlaceholder: {
       fontSize: 15,
       color: colors.muted,
+    },
+    dropdownTextError: {
+      fontSize: 15,
+      color: colors.status.rejected,
     },
     dropdownTextSelected: {
       fontSize: 15,
