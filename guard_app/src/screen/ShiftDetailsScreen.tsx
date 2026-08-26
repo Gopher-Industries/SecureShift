@@ -244,13 +244,6 @@ export default function ShiftDetailsScreen() {
       };
     }
 
-    if (shiftEnd && now > shiftEnd) {
-      return {
-        title: 'Check-out unavailable',
-        message: 'You cannot check out after the shift has ended.',
-      };
-    }
-
     const shiftCoords = getShiftCoordinates(shift);
 
     if (shiftCoords) {
