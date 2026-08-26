@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import useAdminAuth from '../hooks/useAdminAuth';
-import logo from '../logo.png';
 
 export default function AdminNavbar({ onMenuClick }) {
   const navigate = useNavigate();
@@ -46,7 +45,7 @@ export default function AdminNavbar({ onMenuClick }) {
         }}
       >
         <img
-          src={logo}
+          src="/logo192.png"
           alt="SecureShift Logo"
           style={{
             width: '52px',
@@ -73,7 +72,9 @@ export default function AdminNavbar({ onMenuClick }) {
           marginLeft: 'auto',
         }}
       >
-        <span style={{ color: '#fff' }}>Signed in as {role || 'admin'}</span>
+        <span style={{ color: '#fff' }}>
+          Signed in as {role || 'admin'}
+        </span>
 
         <button
           onClick={onLogout}
