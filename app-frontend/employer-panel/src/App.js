@@ -19,6 +19,8 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import PageTitleHandler from './components/PageTitleHandler';
 import ProtectedRoute from './routes/ProtectedRoute';
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
+import KeyboardShortcutModal from './components/KeyboardShortcutModal';
 
 import Timesheet from './pages/Timesheet';
 import DailyMonitoring from './pages/DailyMonitoring';
@@ -28,6 +30,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
+import { NotificationProvider } from './components/NotificationContext';
 
 import i18n from './i18n';
 
@@ -71,6 +74,7 @@ function ProtectedLayout({ children, language, setLanguage, theme, setTheme }) {
 
 function AppRoutes({ language, setLanguage, theme, setTheme }) {
   const navigate = useNavigate();
+  const { isHelpModalOpen, closeHelpModal } = useKeyboardShortcuts(navigate);
 
   useEffect(() => {
     attach401Handler(() => navigate('/login'));
@@ -90,7 +94,7 @@ function AppRoutes({ language, setLanguage, theme, setTheme }) {
   return (
     <>
       <PageTitleHandler />
-
+      <KeyboardShortcutModal isOpen={isHelpModalOpen} onClose={closeHelpModal} />
       <Routes>
         {/* PUBLIC ROUTES */}
 
@@ -185,7 +189,14 @@ function App() {
 
   return (
     <Router>
-      <AppRoutes language={language} setLanguage={setLanguage} theme={theme} setTheme={setTheme} />
+      <NotificationProvider>
+        <AppRoutes
+          language={language}
+          setLanguage={setLanguage}
+          theme={theme}
+          setTheme={setTheme}
+        />
+      </NotificationProvider>
     </Router>
   );
 }

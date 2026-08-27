@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react';
 import http from '../lib/http';
 import './ExpressionOfInterest.css';
+import { useNotification } from '../components/NotificationContext';
 
 // Expression of Interest form component
 export default function ExpressionOfInterest() {
+  const { showNotification } = useNotification();
   // Form state to hold all input values
   const [form, setForm] = useState({
     companyName: '',
@@ -46,7 +48,7 @@ export default function ExpressionOfInterest() {
     if (!f) return;
     const err = validateFile(f);
     if (err) {
-      alert(err); // show error to user
+      showNotification('error', err); // show error to user
       e.target.value = ''; // clear file input
       setFile(null);
       return;
@@ -67,15 +69,15 @@ export default function ExpressionOfInterest() {
       !form.phone ||
       !form.description
     ) {
-      alert('Please fill in all fields.');
+      showNotification('warning', 'Please fill in all fields.');
       return;
     }
     if (!file) {
-      alert('Please upload your document.');
+      showNotification('warning', 'Please upload your document.');
       return;
     }
     if (!form.confirmAccurate) {
-      alert('Please confirm that the information provided is accurate.');
+      showNotification('warning', 'Please confirm that the information provided is accurate.');
       return;
     }
 
@@ -93,7 +95,7 @@ export default function ExpressionOfInterest() {
       });
 
       // Success
-      alert('EOI submitted successfully!');
+      showNotification('success', 'EOI submitted successfully!');
       console.log('Server response:', data);
 
       // Reset form fields
@@ -111,7 +113,7 @@ export default function ExpressionOfInterest() {
     } catch (err) {
       // Error handling
       console.error(err);
-      alert(err.message || 'Error submitting EOI.');
+      showNotification('error', err.message || 'Error submitting EOI.');
     }
   };
 

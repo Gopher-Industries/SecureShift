@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ManageShiftDetails.css';
+import { useNotification } from '../components/NotificationContext';
 
 const ManageShiftDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
   const [shift, setShift] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,7 @@ const ManageShiftDetails = () => {
         if (!res.ok) throw new Error(await res.text());
 
         const data = await res.json();
+        console.log('shift:', JSON.stringify(data, null, 2));
         setShift(data);
       } catch (err) {
         console.error(err);
@@ -99,7 +102,7 @@ const ManageShiftDetails = () => {
       navigate('/manage-shift');
     } catch (err) {
       console.error(err);
-      alert('Failed to approve applicant');
+      showNotification('error', 'Failed to approve applicant');
     }
   };
 
@@ -107,51 +110,50 @@ const ManageShiftDetails = () => {
   // Send chat message
   // ======================
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+  if (!newMessage.trim()) return;
 
-    const guardId =
-      shift?.acceptedBy?._id ||
-      shift?.acceptedBy ||
-      shift?.assignedGuard?._id ||
-      shift?.assignedGuard;
+  const guardId = shift?.acceptedBy?._id 
+    || shift?.acceptedBy 
+    || shift?.assignedGuard?._id 
+    || shift?.assignedGuard;
 
-    if (!guardId || guardId === 'null') {
-      alert('No guard assigned to this shift yet.');
-      return;
-    }
+  if (!guardId || guardId === 'null') {
+    showNotification('warning', 'No guard assigned to this shift yet.');
+    return;
+  }
 
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/v1/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          receiverId: guardId,
-          content: newMessage,
-        }),
-      });
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        receiverId: guardId,
+        content: newMessage,
+      }),
+    });
 
-      if (!res.ok) throw new Error('Failed to send message');
+    if (!res.ok) throw new Error('Failed to send message');
 
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        {
-          _id: data.data?.messageId,
-          content: data.data?.content || newMessage,
-          senderName: 'You',
-          timestamp: data.data?.timestamp || new Date().toISOString(),
-        },
-      ]);
-      setNewMessage('');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to send message');
-    }
-  };
+    const data = await res.json();
+    setMessages((prev) => [
+      ...prev,
+      {
+        _id: data.data?.messageId,
+        content: data.data?.content || newMessage,
+        senderName: 'You',
+        timestamp: data.data?.timestamp || new Date().toISOString(),
+      },
+    ]);
+    setNewMessage('');
+  } catch (err) {
+    console.error(err);
+    showNotification('error', 'Failed to send message');
+  }
+};
 
   if (loading) return <p>Loading shift…</p>;
   if (error) return <p className="msd-error">{error}</p>;

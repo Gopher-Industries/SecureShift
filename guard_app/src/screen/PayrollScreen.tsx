@@ -1,15 +1,6 @@
 import { AxiosError } from 'axios';
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
   exportPayrollCsv,
@@ -18,6 +9,8 @@ import {
   PayrollPeriodType,
   PayrollResponse,
 } from '../api/payroll';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
@@ -227,12 +220,7 @@ export default function PayrollScreen() {
         </View>
       </View>
 
-      {loading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.subText}>Loading payroll summary...</Text>
-        </View>
-      ) : null}
+      {loading ? <LoadingState rows={2} /> : null}
 
       {payroll ? (
         <View style={styles.card}>
@@ -252,7 +240,7 @@ export default function PayrollScreen() {
           </Text>
         </View>
       ) : (
-        <Text style={styles.empty}>No payroll summary generated yet.</Text>
+        <EmptyState title="No payroll summary generated yet." />
       )}
     </ScrollView>
   );
@@ -360,19 +348,9 @@ const getStyles = (colors: AppColors) =>
       color: colors.primary,
       fontWeight: '900',
     },
-    loadingBox: {
-      alignItems: 'center',
-      marginVertical: 16,
-    },
     summaryText: {
       color: colors.text,
       fontWeight: '700',
       marginBottom: 8,
-    },
-    empty: {
-      color: colors.muted,
-      fontWeight: '700',
-      textAlign: 'center',
-      marginTop: 12,
     },
   });

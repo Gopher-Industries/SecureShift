@@ -21,6 +21,8 @@ import {
   Modal,
 } from 'react-native';
 
+import { useAppLock } from '../context/AppLockProvider';
+import { authenticate } from '../lib/appLock';
 import { LocalStorage } from '../lib/localStorage';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
@@ -96,6 +98,17 @@ export default function SettingsScreen() {
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [langModalVisible, setLangModalVisible] = useState(false);
+  const appLock = useAppLock();
+
+  const handleToggleAppLock = async (value: boolean) => {
+    // Require a successful auth before enabling, so a user can't lock
+    // themselves out with a biometric they can't pass.
+    if (value) {
+      const ok = await authenticate(t('appLock.prompt'));
+      if (!ok) return;
+    }
+    await appLock.setEnabled(value);
+  };
 
   useEffect(() => {
     const loadNotificationPreference = async () => {
@@ -254,6 +267,23 @@ export default function SettingsScreen() {
                 thumbColor={Platform.OS === 'android' ? colors.white : undefined}
                 trackColor={{ false: colors.border, true: colors.primary }}
               />
+            }
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="lock-closed-outline" size={18} color={colors.primary} />}
+            label={t('appLock.settingsLabel')}
+            right={
+              appLock.supported ? (
+                <Switch
+                  value={appLock.enabled}
+                  onValueChange={(value) => void handleToggleAppLock(value)}
+                  thumbColor={Platform.OS === 'android' ? colors.white : undefined}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                />
+              ) : (
+                <Text style={styles.meta}>{t('appLock.unavailable')}</Text>
+              )
             }
             colors={colors}
           />

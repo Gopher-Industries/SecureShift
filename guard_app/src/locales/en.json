@@ -53,7 +53,12 @@
     "requiredFields": "Please fill all required fields",
     "tryAgain": "Try again",
     "invalidName": "Name can only contain letters, spaces, hyphens (-), and apostrophes (').",
-    "weakPassword": "Password needs 6+ chars with uppercase, lowercase, number, and special character."
+    "weakPassword": "Password needs 6+ chars with uppercase, lowercase, number, and special character.",
+    "crashTitle": "Something went wrong",
+    "crashMessage": "The app had a problem on this screen. You can try again."
+  },
+  "net": {
+    "offline": "No internet connection"
   },
   "home": {
     "welcome": "Welcome back, {{name}}!",
@@ -159,6 +164,13 @@
     "leaveEnd": "Leave End",
     "notFound": "No shift requests found",
     "requestError": "Failed to load requests.",
+    "rateShift": "Rate this shift",
+    "submitRating": "Submit Rating",
+    "submittingRating": "Submitting...",
+    "alreadyRated": "You already rated this shift",
+    "selectRating": "Please pick a star rating first",
+    "ratingFailed": "Could not save your rating",
+    "starLabel": "{{count}} star rating",
     "alerts": {
       "missingDateHead": "Missing Date",
       "missingDateMsg": "Enter the date you want your shift moved to.",
@@ -395,5 +407,13 @@
     "submitSuccess": "Incident report submitted successfully",
     "submitFailed": "Failed to submit incident report",
     "cancel": "Cancel"
+  },
+  "appLock": {
+    "prompt": "Unlock SecureShift",
+    "lockedTitle": "SecureShift is locked",
+    "lockedMessage": "Verify it's you to continue.",
+    "unlock": "Unlock",
+    "settingsLabel": "App lock (Face ID / PIN)",
+    "unavailable": "Unavailable"
   }
 }

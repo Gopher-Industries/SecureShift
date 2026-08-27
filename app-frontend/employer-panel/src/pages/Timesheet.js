@@ -100,11 +100,13 @@ export default function Timesheet({ language }) {
 
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
       try {
         const { data } = await http.get('/shifts/myshifts');
         const list = Array.isArray(data) ? data : [];
         const assignedShifts = list.filter((s) => s.acceptedBy);
+
         const attendanceLists = await Promise.all(
           assignedShifts.map((s) =>
             http
@@ -113,6 +115,7 @@ export default function Timesheet({ language }) {
               .catch(() => ({ records: [] }))
           )
         );
+
         if (cancelled) return;
         setRows(buildRows(assignedShifts, attendanceLists));
       } catch (err) {
@@ -122,6 +125,7 @@ export default function Timesheet({ language }) {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };

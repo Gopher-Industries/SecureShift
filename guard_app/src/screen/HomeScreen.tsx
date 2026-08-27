@@ -20,6 +20,8 @@ import {
 
 import { fetchGuardScore, GuardScore } from '../api/guardScore';
 import { getUserProfile } from '../api/profile';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
 import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
@@ -128,6 +130,7 @@ export default function HomeScreen() {
   const [todayShifts, setTodayShifts] = useState<Shift[]>([]);
   const [upcomingShifts, setUpcomingShifts] = useState<Shift[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [guardScore, setGuardScore] = useState<GuardScore | null>(null);
 
   useLayoutEffect(() => {
@@ -221,6 +224,8 @@ export default function HomeScreen() {
       setUpcomingShifts(upcoming);
     } catch (err) {
       console.error('Failed to load home data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -235,6 +240,15 @@ export default function HomeScreen() {
     await load();
     setRefreshing(false);
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <LoadingState rows={4} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -308,7 +322,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               ))
             ) : (
-              <Text style={styles.emptyText}>{t('home.noShiftsToday')}</Text>
+              <EmptyState icon="calendar-outline" title={t('home.noShiftsToday')} />
             )}
           </View>
 
@@ -342,7 +356,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               ))
             ) : (
-              <Text style={styles.emptyText}>{t('home.noUpcoming')}</Text>
+              <EmptyState icon="time-outline" title={t('home.noUpcoming')} />
             )}
           </View>
           <View style={styles.spacer} />
@@ -484,11 +498,6 @@ const getStyles = (colors: AppColors) =>
       paddingLeft: 10,
     },
 
-    emptyText: {
-      color: colors.muted,
-      fontSize: 14,
-      marginTop: 6,
-    },
     viewAll: {
       fontSize: 15,
       color: colors.link,

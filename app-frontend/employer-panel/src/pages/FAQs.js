@@ -3,59 +3,7 @@ import './FAQs.css';
 import FAQItem from '../components/FAQItem';
 import FAQContactForm from '../components/FAQContactForm';
 import PageTitleHandler from '../components/PageTitleHandler';
-
-const mockFaqData = [
-  {
-    question: 'How do employers create and manage shifts?',
-    answer:
-      'Employers can create, review, edit, and manage shifts through the SecureShift Employer Panel. Shift details may include the date, time, location, required role, pay rate, and number of guards needed.',
-  },
-  {
-    question: 'How can employers assign guards to shifts?',
-    answer:
-      'Employers can review available guards and assign suitable team members to shifts through the shift management area. Assignment options may depend on availability, role requirements, and existing schedules.',
-  },
-  {
-    question: 'How are guard attendance and timesheets recorded?',
-    answer:
-      'Attendance information is recorded through guard clock-in and clock-out activity. Employers can review timesheets, total worked hours, attendance status, and other shift-related records from the Employer Panel.',
-  },
-  {
-    question: 'What happens if a guard is late or absent?',
-    answer:
-      'Late or absent attendance may be reflected in the Timesheet page using status indicators. Employers can review attendance records and follow up with the relevant guard where necessary.',
-  },
-  {
-    question: 'How can users report a workplace incident?',
-    answer:
-      'Guards and employers can submit workplace incident reports through SecureShift. Submitted reports are available for review and follow-up within the Employer Dashboard.',
-  },
-  {
-    question: 'How does payroll information work in SecureShift?',
-    answer:
-      'Payroll information is generated using approved timesheet records. Employers can review work hours before payroll is processed.',
-  },
-  {
-    question: 'How do notifications work?',
-    answer:
-      'SecureShift sends notifications for important updates such as shift assignments, attendance changes, and other system events.',
-  },
-  {
-    question: 'How can employers update their company profile?',
-    answer:
-      'Company information can be managed through the Employer Profile section, where employers can update business details and account information.',
-  },
-  {
-    question: 'How is account information kept secure?',
-    answer:
-      'SecureShift uses authentication and secure session management to help protect user accounts. Users should always keep their login credentials confidential.',
-  },
-  {
-    question: 'Who should users contact if they need further help?',
-    answer:
-      'If additional assistance is required, users should contact the SecureShift support team or their organisation administrator.',
-  },
-];
+import api from '../api/api';
 
 function FAQs() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,24 +19,14 @@ function FAQs() {
         setIsLoading(true);
         setError(null);
 
-        // Simulate API call delay
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        const response = await api.get("/faqs");
 
         if (!isMounted) return;
 
-        // Note: To test different data scenarios, you can uncomment one of the following lines:
-
-        // Scenario 1: API Error
-        // throw new Error("Failed to load FAQs. Please try again later.");
-
-        // Scenario 2: Empty Data
-        // setFaqs([]); return;
-
-        // Scenario 3: Success with Data (Default)
-        setFaqs(mockFaqData);
+        setFaqs(response.data || []);
       } catch (err) {
         if (isMounted) {
-          setError(err.message || 'An unexpected error occurred.');
+          setError(err.response?.data?.message || err.message || "An unexpected error occurred.");
         }
       } finally {
         if (isMounted) {

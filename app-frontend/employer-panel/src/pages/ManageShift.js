@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import http from '../lib/http';
 import translations from '../i18n/translations';
+import { useNotification } from '../components/NotificationContext';
 import './ManageShift.css';
 
 // ─── Dynamic status tag colors (kept as JS since they depend on data) ───
@@ -31,6 +32,1102 @@ const getStatusTagColors = (status) => ({
               ? '#F3E8FF'
               : '#F5F5F5',
 });
+
+// ─── STYLES (defined first) ───
+const getStatusTagStyle = (status) => ({
+  padding: '4px 12px',
+  borderRadius: '16px',
+  fontSize: '12px',
+  fontWeight: '600',
+  display: 'inline-block',
+  color:
+    status === 'Completed'
+      ? '#2E7D32'
+      : status === 'In Progress'
+        ? '#7B1FA2'
+        : status === 'Pending'
+          ? '#F57C00'
+          : status === 'Open'
+            ? '#1565C0'
+            : status === 'Draft'
+              ? '#6B4C8C'
+              : '#757575',
+  backgroundColor:
+    status === 'Completed'
+      ? '#EAFAE7'
+      : status === 'In Progress'
+        ? '#F6EFFF'
+        : status === 'Pending'
+          ? '#FBFAE2'
+          : status === 'Open'
+            ? '#E3F2FD'
+            : status === 'Draft'
+              ? '#F3E8FF'
+              : '#F5F5F5',
+});
+
+const containerStyle = {
+  padding: '40px',
+  minHeight: '100vh',
+  maxWidth: '1200px',
+  margin: '0 auto'
+};
+const headerStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '24px'
+};
+const titleStyle = {
+  fontSize: '28px',
+  fontWeight: '700',
+  color: '#1a1a1a',
+  margin: '0'
+};
+const addButtonStyle = {
+  backgroundColor: '#274b93',
+  color: 'white',
+  border: 'none',
+  borderRadius: '12px',
+  padding: '10px 16px',
+  fontSize: '14px',
+  fontWeight: '600',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  boxShadow: '0 2px 4px rgba(39, 75, 147, 0.2)'
+};
+const summaryGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+  gap: '16px',
+  marginBottom: '24px'
+};
+const summaryCardStyle = {
+  borderRadius: '12px',
+  padding: '20px 30px',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center'
+};
+const summaryLabelStyle = {
+  margin: '0 0 8px 0',
+  fontSize: '16px',
+  color: '#1E1E1E',
+  fontWeight: '400'
+};
+const summaryNumberStyle = {
+  margin: '0',
+  fontSize: '24px',
+  fontWeight: '700',
+  color: '#1E1E1E'
+};
+const bigIconStyle = { width: '24px', height: '24px' };
+const smallIconStyle = { width: '20px', height: '20px' };
+const filterSectionStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '24px',
+  flexWrap: 'wrap',
+  gap: '16px'
+};
+const filterGroupStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px'
+};
+const sortGroupStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px'
+};
+const filterLabelStyle = {
+  fontSize: '14px',
+  fontWeight: '400',
+  color: '#1E1E1E'
+};
+const filterButtonsStyle = {
+  display: 'flex',
+  gap: '8px'
+};
+const filterButtonStyle = {
+  backgroundColor: 'white',
+  border: '1px solid #e0e0e0',
+  borderRadius: '12px',
+  padding: '8px 16px',
+  fontSize: '14px',
+  color: '#666',
+  cursor: 'pointer',
+  fontWeight: '500'
+};
+const activeFilterButtonStyle = {
+  ...filterButtonStyle,
+  backgroundColor: '#274b93',
+  color: 'white',
+  border: '1px solid #274b93'
+};
+const sortButtonStyle = {
+  backgroundColor: 'white',
+  border: '1px solid #e0e0e0',
+  borderRadius: '12px',
+  padding: '8px 16px',
+  fontSize: '14px',
+  color: '#666',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px'
+};
+const gridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+  gap: '20px',
+  marginBottom: '32px'
+};
+const cardStyle = {
+  backgroundColor: 'white',
+  borderRadius: '12px',
+  padding: '20px',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
+  gap: '20px'
+};
+const cardHeaderStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'flex-start',
+  marginTop: '12px'
+};
+const cardTitleStyle = {
+  margin: '0 0 4px 0',
+  fontSize: '18px',
+  fontWeight: '600',
+  color: '#1E1E1E'
+};
+const priceStyle = {
+  fontSize: '16px',
+  fontWeight: '600',
+  color: '#2E7D32'
+};
+const cardDetailsStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px'
+};
+const detailRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px'
+};
+const detailTextStyle = {
+  fontSize: '14px',
+  color: '#1E1E1E',
+  fontWeight: '400'
+};
+const cardActionsRowStyle = {
+  display: 'flex',
+  gap: '8px',
+  marginTop: '8px',
+  alignItems: 'center'
+};
+const viewDetailsButtonStyle = {
+  flex: 1,
+  backgroundColor: '#274b93',
+  color: 'white',
+  border: 'none',
+  borderRadius: '12px',
+  padding: '12px',
+  fontSize: '14px',
+  fontWeight: '600',
+  cursor: 'pointer'
+};
+const editButtonStyle = {
+  width: '44px',
+  height: '44px',
+  backgroundColor: '#EFF4FF',
+  border: '1px solid #c7d2fe',
+  borderRadius: '12px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#4F46E5',
+  fontSize: '18px',
+  flexShrink: 0,
+  transition: 'background 0.2s'
+};
+const deleteButtonStyle = {
+  width: '44px',
+  height: '44px',
+  backgroundColor: '#fee2e2',
+  border: '1px solid #fecaca',
+  borderRadius: '12px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#dc2626',
+  fontSize: '18px',
+  flexShrink: 0,
+  transition: 'background 0.2s'
+};
+const chatIconButtonStyle = {
+  width: '44px',
+  height: '44px',
+  backgroundColor: '#f3f4f6',
+  border: '1px solid #e5e7eb',
+  borderRadius: '12px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#374151',
+  flexShrink: 0
+};
+const applicantBadgeStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  fontSize: '12px',
+  color: '#274b93',
+  fontWeight: 500,
+  background: '#EFF4FF',
+  borderRadius: '8px',
+  padding: '4px 10px'
+};
+const applicantDotStyle = {
+  width: '6px',
+  height: '6px',
+  borderRadius: '50%',
+  background: '#274b93',
+  display: 'inline-block'
+};
+const paginationStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: '8px'
+};
+const paginationButtonStyle = {
+  width: '32px',
+  height: '32px',
+  backgroundColor: 'white',
+  border: 'none',
+  borderRadius: '16px',
+  fontSize: '14px',
+  fontWeight: '500',
+  color: '#1E1E1E',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+};
+const activePaginationButtonStyle = {
+  ...paginationButtonStyle,
+  backgroundColor: '#274b93',
+  color: 'white',
+  fontWeight: '600'
+};
+const disabledPaginationButtonStyle = {
+  ...paginationButtonStyle,
+  cursor: 'not-allowed'
+};
+const modalOverlayStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1000
+};
+const modalContentStyle = {
+  backgroundColor: 'white',
+  borderRadius: '12px',
+  padding: '0',
+  maxWidth: '400px',
+  width: '90%',
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
+};
+const modalHeaderStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '20px 24px',
+  borderBottom: '1px solid #e0e0e0'
+};
+const modalTitleStyle = {
+  margin: 0,
+  fontSize: '18px',
+  fontWeight: '600',
+  color: '#1E1E1E'
+};
+const closeButtonStyle = {
+  backgroundColor: 'transparent',
+  border: 'none',
+  fontSize: '24px',
+  color: '#666',
+  cursor: 'pointer',
+  padding: '0',
+  width: '24px',
+  height: '24px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+};
+const modalBodyStyle = { padding: '16px 0' };
+const sortOptionStyle = {
+  width: '100%',
+  backgroundColor: 'transparent',
+  border: 'none',
+  padding: '12px 24px',
+  fontSize: '16px',
+  color: '#1E1E1E',
+  cursor: 'pointer',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  textAlign: 'left'
+};
+const activeSortOptionStyle = {
+  ...sortOptionStyle,
+  backgroundColor: '#EFF4FF',
+  color: '#274b93',
+  fontWeight: '600'
+};
+const checkmarkStyle = {
+  color: '#274b93',
+  fontWeight: 'bold'
+};
+const detailModalOverlay = {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(0,0,0,0.45)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1100,
+  padding: '20px'
+};
+const detailModalContent = {
+  background: '#fff',
+  borderRadius: '14px',
+  width: 'min(960px, 100%)',
+  maxHeight: '90vh',
+  overflowY: 'auto',
+  padding: '28px 32px 32px',
+  boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+  fontFamily: 'Poppins, sans-serif'
+};
+const detailModalHeader = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: '16px',
+  alignItems: 'flex-start',
+  marginBottom: '12px'
+};
+const detailModalOverline = {
+  margin: 0,
+  color: '#566074',
+  fontSize: '12px',
+  letterSpacing: '0.4px',
+  fontWeight: 600
+};
+const detailModalTitle = {
+  margin: '4px 0',
+  fontSize: '22px',
+  fontWeight: 700,
+  color: '#1d1f2e'
+};
+const detailModalSubtitle = {
+  margin: 0,
+  color: '#6b7280',
+  fontSize: '14px'
+};
+const modalCloseButton = {
+  background: '#f3f4f6',
+  border: '1px solid #e5e7eb',
+  borderRadius: '10px',
+  width: '36px',
+  height: '36px',
+  fontSize: '22px',
+  cursor: 'pointer',
+  color: '#374151',
+  flexShrink: 0
+};
+const detailGrid = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: '16px',
+  marginTop: '16px'
+};
+const detailField = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px'
+};
+const detailLabel = {
+  fontSize: '13px',
+  color: '#374151',
+  fontWeight: 600
+};
+const inputStyle = {
+  width: '100%',
+  padding: '12px 14px',
+  borderRadius: '10px',
+  border: '1px solid #d1d5db',
+  background: '#f3f4f6',
+  fontSize: '14px',
+  color: '#111827',
+  outline: 'none',
+  boxSizing: 'border-box'
+};
+const detailActions = {
+  marginTop: '20px',
+  display: 'flex',
+  gap: '12px',
+  justifyContent: 'flex-end'
+};
+const primaryButton = {
+  backgroundColor: '#274b93',
+  color: 'white',
+  border: 'none',
+  borderRadius: '20px',
+  padding: '12px 24px',
+  fontSize: '14px',
+  fontWeight: 600,
+  cursor: 'pointer'
+};
+const secondaryButton = {
+  backgroundColor: 'white',
+  color: '#d14343',
+  border: '1px solid #d14343',
+  borderRadius: '20px',
+  padding: '12px 20px',
+  fontSize: '14px',
+  fontWeight: 600,
+  cursor: 'pointer'
+};
+const inlineError = {
+  color: '#d14343',
+  fontSize: '12px',
+  marginTop: '2px'
+};
+const tabBarStyle = {
+  display: 'flex',
+  gap: '4px',
+  borderBottom: '2px solid #f3f4f6',
+  marginBottom: '8px'
+};
+const tabStyle = {
+  padding: '10px 20px',
+  background: 'none',
+  border: 'none',
+  fontSize: '14px',
+  fontWeight: 500,
+  color: '#9ca3af',
+  cursor: 'pointer',
+  borderBottomWidth: '2px',
+  borderBottomStyle: 'solid',
+  borderBottomColor: 'transparent',
+  marginBottom: '-2px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px'
+};
+const activeTabStyle = {
+  ...tabStyle,
+  color: '#274b93',
+  borderBottomColor: '#274b93',
+  fontWeight: 700
+};
+const tabBadgeStyle = {
+  backgroundColor: '#274b93',
+  color: 'white',
+  borderRadius: '10px',
+  padding: '1px 7px',
+  fontSize: '11px',
+  fontWeight: 700
+};
+const applicantsPanelStyle = { marginTop: '8px' };
+const applicantsListStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px',
+  marginTop: '12px'
+};
+const applicantCardStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '14px',
+  padding: '14px 16px',
+  borderRadius: '12px',
+  border: '1px solid #e5e7eb',
+  background: '#fff'
+};
+const approvedCardStyle = {
+  borderColor: '#bbf7d0',
+  background: '#f0fdf4'
+};
+const avatarStyle = {
+  width: '40px',
+  height: '40px',
+  borderRadius: '50%',
+  background: 'linear-gradient(135deg, #274b93, #4a72d4)',
+  color: 'white',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 700,
+  fontSize: '16px',
+  flexShrink: 0
+};
+const applicantNameStyle = {
+  margin: '0 0 2px',
+  fontSize: '14px',
+  fontWeight: 600,
+  color: '#111827'
+};
+const applicantEmailStyle = {
+  margin: 0,
+  fontSize: '12px',
+  color: '#6b7280'
+};
+const licenseBadgeStyle = {
+  display: 'inline-block',
+  marginTop: '4px',
+  padding: '2px 8px',
+  borderRadius: '8px',
+  background: '#EFF4FF',
+  color: '#274b93',
+  fontSize: '11px',
+  fontWeight: 600
+};
+const applicantActionsStyle = {
+  display: 'flex',
+  gap: '8px',
+  flexShrink: 0
+};
+const approveButtonStyle = {
+  padding: '7px 16px',
+  borderRadius: '20px',
+  border: 'none',
+  background: '#274b93',
+  color: 'white',
+  fontSize: '13px',
+  fontWeight: 600,
+  cursor: 'pointer'
+};
+const rejectButtonStyle = {
+  padding: '7px 14px',
+  borderRadius: '20px',
+  border: '1px solid #d14343',
+  background: 'white',
+  color: '#d14343',
+  fontSize: '13px',
+  fontWeight: 600,
+  cursor: 'pointer'
+};
+const approvedPillStyle = {
+  padding: '6px 14px',
+  borderRadius: '20px',
+  background: '#dcfce7',
+  color: '#16a34a',
+  fontSize: '13px',
+  fontWeight: 600
+};
+const rejectedPillStyle = {
+  padding: '6px 14px',
+  borderRadius: '20px',
+  background: '#fee2e2',
+  color: '#dc2626',
+  fontSize: '13px',
+  fontWeight: 600
+};
+const emptyApplicantsStyle = {
+  textAlign: 'center',
+  padding: '40px 20px',
+  color: '#9ca3af'
+};
+const emptyIconStyle = {
+  fontSize: '40px',
+  marginBottom: '8px'
+};
+
+// ─── Equipment component styles ───
+const eqPhaseBadgeStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  fontSize: '12px',
+  fontWeight: 600,
+  padding: '4px 12px',
+  borderRadius: '20px'
+};
+const eqTabBarStyle = {
+  display: 'flex',
+  gap: '0',
+  border: '1px solid #e5e7eb',
+  borderRadius: '10px',
+  overflow: 'hidden',
+  marginBottom: '16px'
+};
+const eqSubTabStyle = {
+  flex: 1,
+  padding: '9px 12px',
+  background: '#f9fafb',
+  color: '#6b7280',
+  border: 'none',
+  borderRight: '1px solid #e5e7eb',
+  fontSize: '13px',
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'Poppins, sans-serif',
+  transition: 'all .12s'
+};
+const eqActiveSubTabStyle = {
+  ...eqSubTabStyle,
+  background: '#fff',
+  color: '#274b93',
+  fontWeight: 700
+};
+const eqAddRowStyle = {
+  display: 'flex',
+  gap: '8px',
+  alignItems: 'center',
+  marginBottom: '12px'
+};
+const eqInputStyle = {
+  padding: '10px 14px',
+  borderRadius: '10px',
+  border: '1px solid #d1d5db',
+  background: '#f9fafb',
+  fontSize: '14px',
+  color: '#111827',
+  outline: 'none',
+  fontFamily: 'Poppins, sans-serif',
+  boxSizing: 'border-box'
+};
+const eqSelectStyle = {
+  padding: '10px 12px',
+  borderRadius: '10px',
+  border: '1px solid #d1d5db',
+  background: '#f9fafb',
+  fontSize: '13px',
+  color: '#374151',
+  outline: 'none',
+  fontFamily: 'Poppins, sans-serif'
+};
+const eqPrimaryBtnStyle = {
+  backgroundColor: '#274b93',
+  color: 'white',
+  border: 'none',
+  borderRadius: '10px',
+  padding: '10px 18px',
+  fontSize: '13px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  fontFamily: 'Poppins, sans-serif'
+};
+const eqEmptyStyle = {
+  textAlign: 'center',
+  padding: '36px 20px',
+  border: '1px dashed #e5e7eb',
+  borderRadius: '12px',
+  color: '#9ca3af'
+};
+const eqEmptyIconStyle = {
+  fontSize: '36px',
+  marginBottom: '8px'
+};
+const eqListStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px'
+};
+const eqItemStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  padding: '12px 16px',
+  borderRadius: '12px',
+  border: '1px solid #e5e7eb',
+  background: '#fff'
+};
+const eqAssessedItemStyle = {
+  borderColor: '#bfdbfe',
+  background: '#f0f7ff'
+};
+const eqIdxStyle = {
+  fontSize: '11px',
+  color: '#9ca3af',
+  fontWeight: 500,
+  minWidth: '16px',
+  textAlign: 'right'
+};
+const eqCatDotStyle = {
+  width: '8px',
+  height: '8px',
+  borderRadius: '50%',
+  flexShrink: 0,
+  display: 'inline-block'
+};
+const eqItemNameStyle = {
+  margin: '0 0 3px',
+  fontSize: '14px',
+  fontWeight: 600,
+  color: '#111827'
+};
+const eqItemMetaStyle = {
+  margin: 0,
+  fontSize: '12px',
+  color: '#6b7280',
+  display: 'flex',
+  gap: '10px',
+  alignItems: 'center',
+  flexWrap: 'wrap'
+};
+const eqCatChipStyle = {
+  display: 'inline-block',
+  padding: '1px 8px',
+  borderRadius: '8px',
+  border: '1px solid',
+  fontSize: '11px',
+  fontWeight: 600
+};
+const eqCondChipStyle = {
+  display: 'inline-block',
+  padding: '3px 10px',
+  borderRadius: '20px',
+  border: '1px solid',
+  fontSize: '12px',
+  fontWeight: 600,
+  flexShrink: 0
+};
+const eqRemoveBtnStyle = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  padding: '4px 6px',
+  color: '#9ca3af',
+  fontSize: '18px',
+  lineHeight: 1,
+  borderRadius: '6px',
+  flexShrink: 0
+};
+const eqCondInactiveBtnStyle = {
+  padding: '6px 13px',
+  borderRadius: '20px',
+  border: '1px solid #d1d5db',
+  background: 'white',
+  color: '#6b7280',
+  fontSize: '12px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontFamily: 'Poppins, sans-serif'
+};
+const eqCondActiveBtnStyle = (cond) => ({
+  ...eqCondInactiveBtnStyle,
+  background: cond.activeBg,
+  color: cond.activeColor,
+  borderColor: cond.activeBorder,
+  cursor: 'pointer'
+});
+const eqNoteInputStyle = {
+  width: '100%',
+  marginTop: '8px',
+  padding: '7px 12px',
+  borderRadius: '8px',
+  border: '1px solid #d1d5db',
+  background: '#f9fafb',
+  fontSize: '12px',
+  color: '#374151',
+  outline: 'none',
+  fontFamily: 'Poppins, sans-serif',
+  boxSizing: 'border-box'
+};
+const eqSummaryGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, 1fr)',
+  gap: '8px',
+  marginBottom: '4px'
+};
+const eqStatCardStyle = {
+  background: '#f9fafb',
+  borderRadius: '10px',
+  padding: '10px 14px',
+  textAlign: 'center',
+  border: '1px solid #f3f4f6'
+};
+const eqStatNumStyle = {
+  fontSize: '22px',
+  fontWeight: 700,
+  lineHeight: 1,
+  margin: '0 0 4px'
+};
+const eqStatLabelStyle = {
+  fontSize: '11px',
+  color: '#6b7280',
+  margin: 0
+};
+const eqProgressBarStyle = {
+  height: '7px',
+  borderRadius: '4px',
+  overflow: 'hidden',
+  display: 'flex',
+  background: '#f3f4f6'
+};
+const eqProgressSegStyle = {
+  height: '100%',
+  transition: 'width .3s ease'
+};
+const eqAlertStyle = {
+  padding: '10px 14px',
+  borderRadius: '10px',
+  border: '1px solid',
+  fontSize: '13px',
+  lineHeight: 1.5
+};
+const eqSectionLabelStyle = {
+  fontSize: '11px',
+  fontWeight: 600,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: '#9ca3af',
+  margin: '0 0 8px'
+};
+const eqAuditItemStyle = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '10px',
+  padding: '7px 0',
+  borderBottom: '1px solid #f3f4f6'
+};
+
+// ─── Chat modal styles ───
+const chatModalOverlay = {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(0,0,0,0.5)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1200,
+  padding: '20px'
+};
+const chatModalContainer = {
+  background: '#fff',
+  borderRadius: '16px',
+  width: '100%',
+  maxWidth: '420px',
+  maxHeight: '90vh',
+  display: 'flex',
+  flexDirection: 'column',
+  boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+  overflow: 'hidden'
+};
+const chatModalHeaderStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '18px 20px 14px',
+  background: '#1a2f6e'
+};
+const chatModalHeaderLeft = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px'
+};
+const chatLogoStyle = {
+  width: '32px',
+  height: '32px',
+  borderRadius: '8px',
+  background: 'rgba(255,255,255,0.15)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+};
+const chatModalOverlineStyle = {
+  margin: 0,
+  fontSize: '10px',
+  color: 'rgba(255,255,255,0.6)',
+  fontWeight: 600,
+  letterSpacing: '0.8px'
+};
+const chatModalTitleStyle = {
+  margin: 0,
+  fontSize: '16px',
+  fontWeight: 700,
+  color: 'white'
+};
+const chatCloseButtonStyle = {
+  background: 'rgba(255,255,255,0.15)',
+  border: 'none',
+  color: 'white',
+  width: '30px',
+  height: '30px',
+  borderRadius: '8px',
+  fontSize: '20px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+};
+const chatShiftInfoRowStyle = {
+  display: 'flex',
+  gap: '6px',
+  padding: '10px 20px 14px',
+  flexWrap: 'wrap',
+  background: '#1a2f6e'
+};
+const chatPillStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px',
+  background: 'rgba(255,255,255,0.15)',
+  borderRadius: '20px',
+  padding: '4px 10px',
+  fontSize: '11px',
+  color: 'rgba(255,255,255,0.9)',
+  fontWeight: 500
+};
+const chatPillDotStyle = {
+  width: '6px',
+  height: '6px',
+  borderRadius: '50%',
+  background: '#4ade80',
+  flexShrink: 0
+};
+const chatGuardNameStyle = {
+  padding: '10px 20px',
+  fontSize: '12px',
+  color: '#6b7280',
+  borderBottom: '1px solid #f3f4f6',
+  background: '#fff'
+};
+const chatMessagesAreaStyle = {
+  flex: 1,
+  overflowY: 'auto',
+  padding: '16px 20px',
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: '240px',
+  maxHeight: '340px',
+  background: '#fff'
+};
+const chatEmptyStyle = {
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center',
+  padding: '40px 20px'
+};
+const chatSenderNameStyle = {
+  fontSize: '11px',
+  color: '#9ca3af',
+  marginBottom: '4px',
+  paddingLeft: '2px'
+};
+const chatBubbleOtherStyle = {
+  background: '#f3f4f6',
+  borderRadius: '12px 12px 12px 2px',
+  padding: '10px 14px',
+  fontSize: '13px',
+  color: '#111827',
+  maxWidth: '80%',
+  wordBreak: 'break-word'
+};
+const chatBubbleOwnStyle = {
+  background: '#1a2f6e',
+  borderRadius: '12px 12px 2px 12px',
+  padding: '10px 14px',
+  fontSize: '13px',
+  color: 'white',
+  maxWidth: '80%',
+  wordBreak: 'break-word'
+};
+const chatTimestampStyle = {
+  fontSize: '10px',
+  color: '#9ca3af',
+  marginTop: '3px',
+  paddingLeft: '2px'
+};
+const chatInputAreaStyle = {
+  padding: '12px 16px 14px',
+  borderTop: '1px solid #f3f4f6',
+  background: '#fff'
+};
+const chatInputRowStyle = {
+  display: 'flex',
+  gap: '8px',
+  alignItems: 'center',
+  background: '#f3f4f6',
+  borderRadius: '12px',
+  padding: '6px 6px 6px 14px'
+};
+const chatInputStyle = {
+  flex: 1,
+  background: 'none',
+  border: 'none',
+  outline: 'none',
+  fontSize: '13px',
+  color: '#111827'
+};
+const chatSendButtonStyle = {
+  width: '34px',
+  height: '34px',
+  borderRadius: '8px',
+  border: 'none',
+  background: '#1a2f6e',
+  color: 'white',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0
+};
+const chatFooterNoteStyle = {
+  margin: '8px 0 0',
+  fontSize: '11px',
+  color: '#9ca3af',
+  textAlign: 'center'
+};
+
+// ─── AI Card styles ───
+const aiCardStyle = {
+  marginTop: '10px',
+  padding: '10px',
+  borderRadius: '10px',
+  background: '#f8fafc',
+  border: '1px solid #e2e8f0'
+};
+const aiTitleStyle = {
+  margin: '0 0 6px',
+  fontSize: '12px',
+  fontWeight: '700',
+  color: '#274b93'
+};
+const aiScoreStyle = {
+  fontSize: '13px',
+  fontWeight: '600',
+  marginBottom: '6px',
+  color: '#111827'
+};
+const aiReasonStyle = {
+  fontSize: '12px',
+  color: '#4b5563',
+  marginBottom: '2px'
+};
 
 // ─── Map backend status to filter display ───
 const statusDisplayMap = {
@@ -838,7 +1935,8 @@ const EquipmentPanel = ({
 
 // ─── MAIN COMPONENT ───
 const ManageShift = ({ language }) => {
-  const t = translations[language || 'en'] || translations.en;
+  const { showNotification } = useNotification();
+  const t = translations[language || "en"] || translations.en;
   const navigate = useNavigate();
 
   const [shifts, setShifts] = useState([]);
@@ -852,7 +1950,6 @@ const ManageShift = ({ language }) => {
   const [detailForm, setDetailForm] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [optimisticSnapshot, setOptimisticSnapshot] = useState(null);
   const [activeTab, setActiveTab] = useState(TABS.DETAILS);
@@ -1126,11 +2223,10 @@ const ManageShift = ({ language }) => {
     try {
       await http.delete(`/shifts/${shiftId}`);
       setShifts((prev) => prev.filter((s) => s.id !== shiftId));
-      setFeedback('Shift deleted successfully');
-      setTimeout(() => setFeedback(''), 3000);
+      showNotification('success', 'Shift deleted successfully.');
     } catch (err) {
       const msg = err?.response?.data?.message || 'Failed to delete shift';
-      setFeedback(msg);
+      showNotification('error', msg);
       console.error('Delete error:', err);
     }
   };
@@ -1158,7 +2254,6 @@ const ManageShift = ({ language }) => {
       status: shift.status || Filter.Open,
     });
     setIsEditing(false);
-    setFeedback('');
     setActiveTab(
       shift.status === Filter.Open || shift.status === Filter.Pending
         ? TABS.APPLICANTS
@@ -1179,7 +2274,6 @@ const ManageShift = ({ language }) => {
     setDetailForm(null);
     setIsEditing(false);
     setSaving(false);
-    setFeedback('');
     setApplicantAction({});
     setEquipmentList([]);
     setEqAuditLog([]);
@@ -1206,17 +2300,17 @@ const ManageShift = ({ language }) => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSaveShift = async () => {
-    if (!selectedShift || !detailForm) return;
-    if (selectedShift.status === Filter.Completed) {
-      setFeedback('Completed shifts cannot be edited.');
-      return;
-    }
-    if (!validateDetailForm()) return;
+const handleSaveShift = async () => {
+  if (!selectedShift || !detailForm) return;
 
-    setSaving(true);
-    setFeedback('');
+  if (selectedShift.status === Filter.Completed) {
+    setFeedback('Completed shifts cannot be edited.');
+    return;
+  }
 
+  if (!validateDetailForm()) return;
+
+  setSaving(true);
     try {
       const cleanedLocation = {
         street: detailForm.street?.trim() || undefined,
@@ -1266,11 +2360,12 @@ const ManageShift = ({ language }) => {
         status: updatedWithUiStatus.status || Filter.Open,
       });
       setIsEditing(false);
-      setFeedback('Saved successfully');
-      setTimeout(() => setFeedback(''), 3000);
+      showNotification('success', 'Shift saved successfully.');
     } catch (err) {
       const message = err?.response?.data?.message || 'Failed to update shift';
-      setFeedback(message);
+
+      showNotification('error', message);
+
       if (optimisticSnapshot) {
         setShifts(optimisticSnapshot.shifts);
         setSelectedShift(optimisticSnapshot.selectedShift);
@@ -1297,9 +2392,9 @@ const ManageShift = ({ language }) => {
       setShifts((prev) => prev.map((s) => (s.id === updatedShift.id ? updatedShift : s)));
       setSelectedShift(updatedShift);
       setApplicantAction((prev) => ({ ...prev, [guardId]: 'approved' }));
-      setFeedback('Guard approved. Shift is now In Progress.');
+      showNotification('success', 'Guard approved. Shift is now In Progress.');
     } catch (err) {
-      setFeedback(err?.response?.data?.message || 'Failed to approve guard');
+      showNotification('error', err?.response?.data?.message || 'Failed to approve guard');
       setApplicantAction((prev) => ({ ...prev, [guardId]: undefined }));
     }
   };
@@ -1322,7 +2417,7 @@ const ManageShift = ({ language }) => {
         return n;
       });
     } catch (err) {
-      setFeedback(err?.response?.data?.message || 'Failed to reject guard');
+      showNotification('error', err?.response?.data?.message || 'Failed to reject guard');
       setApplicantAction((prev) => ({ ...prev, [guardId]: undefined }));
     }
   };

@@ -5,6 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import http from '../lib/http';
 import './CreateShift.css';
+import { useNotification } from '../components/NotificationContext';
 
 const toDateTime = (date, time) => {
   if (!date || !time) return null;
@@ -235,6 +236,7 @@ const buildShiftPayload = (values, sites, status) => {
 };
 
 const CreateShift = ({ isModal = false, onClose }) => {
+  const { showNotification } = useNotification();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editShiftId = searchParams.get('edit');
@@ -566,6 +568,12 @@ const CreateShift = ({ isModal = false, onClose }) => {
         await http.post('/shifts', payload);
       }
       setPreviewData(null);
+      showNotification(
+        'success',
+        editShiftId
+          ? 'Shift updated successfully.'
+          : 'Shift created successfully.'
+      );
       navigate('/manage-shift');
     } catch (err) {
       const message =
@@ -585,10 +593,17 @@ const CreateShift = ({ isModal = false, onClose }) => {
       } else {
         await http.post('/shifts', payload);
       }
+      showNotification(
+        'success',
+        editShiftId
+          ? 'Draft updated successfully.'
+          : 'Draft created successfully.'
+      );
       navigate('/manage-shift');
     } catch (err) {
       const message = err?.response?.data?.message || err.message || 'Unable to save draft';
       setBlockingIssues([message]);
+      showNotification('error', message);
     } finally {
       setSavingDraft(false);
     }
