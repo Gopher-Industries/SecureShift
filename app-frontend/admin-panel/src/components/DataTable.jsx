@@ -1,7 +1,9 @@
+import colors from '../theme/colors';
+
 export default function DataTable({ columns = [], rows = [], empty = 'No records found' }) {
-  if (!rows.length) return <p style={{ color: '#777' }}>{empty}</p>;
+  if (!rows.length) return <p style={{ color: colors.muted }}>{empty}</p>;
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', background: colors.card }}>
       <thead>
         <tr>
           {columns.map((c) => (
@@ -10,8 +12,8 @@ export default function DataTable({ columns = [], rows = [], empty = 'No records
               style={{
                 textAlign: 'left',
                 padding: '10px 12px',
-                borderBottom: '2px solid #e5e7eb',
-                background: '#f3f4f6',
+                borderBottom: `2px solid ${colors.border}`,
+                background: colors.tableHead,
               }}
             >
               {c.header}
@@ -23,7 +25,10 @@ export default function DataTable({ columns = [], rows = [], empty = 'No records
         {rows.map((r, i) => (
           <tr key={r._id || i}>
             {columns.map((c) => (
-              <td key={c.key} style={{ padding: '10px 12px', borderBottom: '1px solid #eef0f3' }}>
+              <td
+                key={c.key}
+                style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}
+              >
                 {c.render ? c.render(r) : r[c.key]}
               </td>
             ))}

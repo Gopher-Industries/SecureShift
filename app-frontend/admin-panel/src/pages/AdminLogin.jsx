@@ -1,16 +1,9 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import useAdminAuth from '../hooks/useAdminAuth';
+import FormField from '../components/FormField';
+import { required, isEmail, composeValidators, validateForm, isValid } from '../utils/validation';
 
-const inp = {
-  display: 'block',
-  width: '100%',
-  padding: '8px 10px',
-  margin: '6px 0 14px',
-  border: '1px solid #ccc',
-  borderRadius: 4,
-  boxSizing: 'border-box',
-};
 const btn = {
   width: '100%',
   padding: 10,
@@ -21,17 +14,43 @@ const btn = {
   cursor: 'pointer',
 };
 
+// Field-level validation rules — kept close to the form so it's obvious
+// what "valid" means here. Reuse required()/isEmail()/composeValidators()
+// from utils/validation.js for other forms (branch, user, SMTP, etc.).
+const rules = {
+  email: composeValidators(required('Email is required'), isEmail()),
+  password: required('Password is required'),
+};
+
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAdminAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  // Show the expired-session message once, then clean the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('sessionExpired') === '1') {
+      setSessionExpired(true);
+      navigate('/login', { replace: true });
+    }
+  }, [location.search, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const errors = validateForm({ email, password }, rules);
+    setFieldErrors(errors);
+    if (!isValid(errors)) return; // block submit on invalid input
+
+    setSessionExpired(false);
     setLoading(true);
     try {
       await login(email.trim(), password);
@@ -55,6 +74,7 @@ export default function AdminLogin() {
     >
       <form
         onSubmit={onSubmit}
+        noValidate
         style={{
           background: '#fff',
           padding: 32,
@@ -64,27 +84,42 @@ export default function AdminLogin() {
         }}
       >
         <h2 style={{ marginTop: 0, color: '#274b93' }}>SecureShift Admin</h2>
+        {sessionExpired && (
+          <p
+            role="status"
+            style={{
+              color: '#8a6100',
+              background: '#fff6e0',
+              padding: '8px 10px',
+              borderRadius: 4,
+            }}
+          >
+            Your session has expired. Please log in again.
+          </p>
+        )}
         {error && <p style={{ color: '#c00' }}>{error}</p>}
-        <label htmlFor="admin-email">Email</label>
-        <input
+
+        <FormField
           id="admin-email"
+          label="Email"
+          type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          type="email"
+          error={fieldErrors.email}
           required
-          style={inp}
         />
-        <label htmlFor="admin-password">Password</label>
-        <input
+        <FormField
           id="admin-password"
+          label="Password"
+          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          type="password"
+          error={fieldErrors.password}
           required
-          style={inp}
         />
+
         <button disabled={loading} style={{ ...btn, opacity: loading ? 0.7 : 1 }}>
-          {loading ? 'Signing in\u2026' : 'Sign in'}
+          {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
     </div>

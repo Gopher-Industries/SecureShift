@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useNotification } from '../components/NotificationContext';
 
 const ManageShiftDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
   const [shift, setShift] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -99,7 +101,7 @@ const ManageShiftDetails = () => {
       navigate('/manage-shift');
     } catch (err) {
       console.error(err);
-      alert('Failed to approve applicant');
+      showNotification('error', 'Failed to approve applicant');
     }
   };
 
@@ -115,7 +117,7 @@ const ManageShiftDetails = () => {
     || shift?.assignedGuard;
 
   if (!guardId || guardId === 'null') {
-    alert('No guard assigned to this shift yet.');
+    showNotification('warning', 'No guard assigned to this shift yet.');
     return;
   }
 
@@ -148,7 +150,7 @@ const ManageShiftDetails = () => {
     setNewMessage('');
   } catch (err) {
     console.error(err);
-    alert('Failed to send message');
+    showNotification('error', 'Failed to send message');
   }
 };
 const data = await res.json();

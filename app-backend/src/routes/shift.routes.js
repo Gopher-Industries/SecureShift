@@ -12,6 +12,7 @@ import {
   updateShift,
   getShiftById,
   deleteShift,
+  duplicateShift,
 } from "../controllers/shift.controller.js";
 
 const router = express.Router();
@@ -201,6 +202,63 @@ router
  * Allows employers (owners) or admins to update editable fields.
  */
 router.route("/myshifts").get(protect, getMyShifts);
+
+/**
+ * @swagger
+ * /api/v1/shifts/{id}/duplicate:
+ *   post:
+ *     summary: Duplicate an employer's own shift
+ *     description: |
+ *       Creates a new draft shift using reusable details from an existing
+ *       shift. The employer must own the source shift and must provide
+ *       a new shift date. Applicants, assignments, ratings and lifecycle
+ *       state are reset.
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Source shift ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - date
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2026-12-15"
+ *                 description: New date for the duplicated shift
+ *     responses:
+ *       201:
+ *         description: Shift duplicated successfully as a draft
+ *       400:
+ *         description: Invalid shift ID, missing date, or invalid date
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Employer does not own the source shift
+ *       404:
+ *         description: Source shift not found
+ */
+router.post(
+  "/:id/duplicate",
+  protect,
+  authorizeRole("employer"),
+  duplicateShift,
+);
+
+router
+  .route("/history")
+  .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
 
 router
   .route("/:id")
@@ -420,26 +478,52 @@ router
  *   get:
  *     summary: Get shifts for the logged-in user
  *     description: |
- *       Guard → applied/assigned/past
- *       Employer → created
- *       Admin → all
- *       Use `?status=past` to return only completed shifts.
+ *       Returns shifts scoped to the authenticated user's role.
+ *
+ *       Guard -> shifts where the guard has applied or been accepted.
+ *       Employer -> shifts created by the employer.
+ *       Admin -> all shifts.
+ *
+ *       Supports pagination and optional status filtering.
+ *       The legacy `status=past` filter is retained and maps to `completed`.
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         required: false
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 20
+ *         required: false
+ *         description: Number of results per page
+ *       - in: query
  *         name: status
  *         schema:
  *           type: string
- *           enum: [past]
+ *           enum: [draft, open, applied, assigned, completed, past]
  *         required: false
- *         description: Filter completed shifts
+ *         description: Filter shifts by status. `past` maps to `completed`.
  *     responses:
- *       200: { description: List of shifts }
- *       401: { description: Unauthorized }
+ *       200:
+ *         description: Paginated list of shifts
+ *       400:
+ *         description: Invalid page, limit, or status filter
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
-
 /**
  * @swagger
  * /api/v1/shifts/{id}/rate:
@@ -504,8 +588,5 @@ router
  *       401: { description: Unauthorized }
  *       403: { description: Forbidden }
  */
-router
-  .route("/history")
-  .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
 
 export default router;
