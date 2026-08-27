@@ -211,7 +211,8 @@ function GuardProfiles({ language }) {
     boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
     textAlign: 'center',
     fontFamily: 'Poppins, sans-serif',
-    flex: '0 0 calc(25% - 1rem)',
+    flex: '1 1 260px',
+    maxWidth: '280px',
     boxSizing: 'border-box',
   };
   const guardImageStyle = {
