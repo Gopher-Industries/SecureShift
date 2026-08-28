@@ -4,11 +4,11 @@ export const getDashboardStats = async (req, res) => {
   try {
     const employerId = req.user._id;
 
-    const [total, assigned, completed, cancelled] = await Promise.all([
+    const [total, assigned, completed, open] = await Promise.all([
       Shift.countDocuments({ createdBy: employerId }),
       Shift.countDocuments({ createdBy: employerId, status: "assigned" }),
       Shift.countDocuments({ createdBy: employerId, status: "completed" }),
-      Shift.countDocuments({ createdBy: employerId, status: "cancelled" }),
+      Shift.countDocuments({ createdBy: employerId, status: "open" }),
     ]);
 
     const recentShifts = await Shift.find({ createdBy: employerId })
@@ -32,7 +32,7 @@ export const getDashboardStats = async (req, res) => {
         total,
         assigned,
         completed,
-        cancelled,
+        open,
       },
       recentShifts,
       reviews: reviewSummary[0] || { averageRating: 0, totalRated: 0 },

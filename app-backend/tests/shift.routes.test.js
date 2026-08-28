@@ -7,6 +7,7 @@ jest.unstable_mockModule("../src/models/Shift.js", () => ({
   default: {
     find: jest.fn(),
     findById: jest.fn(),
+    countDocuments: jest.fn(),
   },
 }));
 
@@ -38,6 +39,8 @@ const authHeaders = (role, id) => ({
 const queryChain = (value) => {
   const chain = {
     sort: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     populate: jest.fn().mockReturnThis(),
     then: (resolve, reject) => Promise.resolve(value).then(resolve, reject),
   };
@@ -60,14 +63,15 @@ describe("Shift route ordering", () => {
     const guardId = new mongoose.Types.ObjectId().toString();
     const myShifts = [{ _id: new mongoose.Types.ObjectId(), title: "My shift" }];
     Shift.find.mockReturnValue(queryChain(myShifts));
+    Shift.countDocuments.mockResolvedValue(myShifts.length);
 
     const res = await request(createApp())
       .get("/api/v1/shifts/myshifts")
       .set(authHeaders("guard", guardId));
 
     expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body[0].title).toBe("My shift");
+    expect(Array.isArray(res.body.items)).toBe(true);
+    expect(res.body.items[0].title).toBe("My shift");
     expect(res.body.message).not.toBe("Invalid id");
     expect(Shift.findById).not.toHaveBeenCalled();
     expect(Shift.find).toHaveBeenCalled();
