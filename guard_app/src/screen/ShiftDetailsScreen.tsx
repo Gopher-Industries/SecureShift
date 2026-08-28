@@ -73,6 +73,22 @@ function parseTimeToDate(baseDateValue: string | Date, timeValue?: string) {
   return baseDate;
 }
 
+function getShiftWindow(shiftDate: string | Date, startTime?: string, endTime?: string) {
+  const start = parseTimeToDate(shiftDate, startTime);
+  const end = parseTimeToDate(shiftDate, endTime);
+
+  if (!start || !end) {
+    return { start, end };
+  }
+
+  // Handle overnight shifts, e.g. 22:00 - 06:00
+  if (end <= start) {
+    end.setDate(end.getDate() + 1);
+  }
+
+  return { start, end };
+}
+
 function toRadians(value: number) {
   return (value * Math.PI) / 180;
 }
@@ -177,11 +193,23 @@ export default function ShiftDetailsScreen() {
       };
     }
 
-    const shiftStart = parseTimeToDate(shift.date, shift.startTime);
+    const { start: shiftStart, end: shiftEnd } = getShiftWindow(
+      shift.date,
+      shift.startTime,
+      shift.endTime,
+    );
+
     if (shiftStart && now < shiftStart) {
       return {
         title: 'Check-in unavailable',
         message: 'You cannot check in before the shift start time.',
+      };
+    }
+
+    if (shiftEnd && now > shiftEnd) {
+      return {
+        title: 'Check-in unavailable',
+        message: 'You cannot check in after the shift has ended.',
       };
     }
 
@@ -202,6 +230,20 @@ export default function ShiftDetailsScreen() {
   };
 
   const validateCheckOutRules = (loc: Coordinates) => {
+    const now = new Date();
+    const { start: shiftStart, end: shiftEnd } = getShiftWindow(
+      shift.date,
+      shift.startTime,
+      shift.endTime,
+    );
+
+    if (shiftStart && now < shiftStart) {
+      return {
+        title: 'Check-out unavailable',
+        message: 'You cannot check out before the shift start time.',
+      };
+    }
+
     const shiftCoords = getShiftCoordinates(shift);
 
     if (shiftCoords) {
