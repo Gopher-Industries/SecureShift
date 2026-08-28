@@ -1,3 +1,4 @@
+import Button from '../components/Button';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getUsers, deleteUser } from '../service/adminAPI';
@@ -9,23 +10,6 @@ import colors from '../theme/colors';
 
 // First working admin data view — end-to-end integration with GET /admin/users.
 const ui = {
-  btn: {
-    border: 'none',
-    borderRadius: 8,
-    padding: '7px 14px',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  btnCancel: {
-    background: colors.white,
-    color: colors.primary,
-    border: `1px solid ${colors.primary}`,
-  },
-  btnDanger: {
-    background: colors.danger,
-    color: colors.white,
-  },
   toolbar: {
     display: 'flex',
     gap: 12,
@@ -103,15 +87,9 @@ export default function Users() {
       key: 'deletebtn',
       header: '',
       render: (r) => (
-        <button
-          style={{
-            ...ui.btn,
-            ...ui.btnDanger,
-          }}
-          onClick={() => setDel(r)}
-        >
+        <Button variant="danger" onClick={() => setDel(r)}>
           Delete
-        </button>
+        </Button>
       ),
     },
   ];
@@ -163,30 +141,17 @@ export default function Users() {
         </p>
         <p style={{ margin: '4px 0' }}>Role: {del?.role}</p>
         <p>Are you sure you want to delete this user?</p>
-        <button
-          style={{
-            ...ui.btn,
-            ...ui.btnDanger,
-            marginRight: 8,
-            opacity: deleting ? 0.5 : 1,
-            cursor: deleting ? 'not-allowed' : 'pointer',
-          }}
+        <Button
+          variant="danger"
           onClick={handleDelete}
           disabled={deleting}
+          style={{ marginRight: 8 }}
         >
           {deleting ? 'Deleting…' : 'Delete'}
-        </button>
-        <button
-          style={{
-            ...ui.btn,
-            ...ui.btnCancel,
-            opacity: deleting ? 0.5 : 1,
-            cursor: deleting ? 'not-allowed' : 'pointer',
-          }}
-          onClick={() => setDel(null)}
-        >
+        </Button>
+        <Button variant="secondary" onClick={() => setDel(null)} disabled={deleting}>
           Cancel
-        </button>
+        </Button>
       </Modal>
     </div>
   );
