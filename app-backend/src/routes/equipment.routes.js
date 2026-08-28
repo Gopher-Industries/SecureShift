@@ -142,7 +142,7 @@ router.patch("/:id/report", auth, equipmentController.reportEquipment);
  * /api/v1/equipment/guard/{guardId}:
  *   get:
  *     summary: Get all equipment assigned to a guard
- *     description: Retrieve a list of all equipment currently assigned to a specific guard.
+ *     description: Retrieve a list of all equipment currently assigned to a specific guard. Guards may only view their own equipment. Admins may view any guard's equipment.
  *     tags: [Equipment]
  *     security:
  *       - bearerAuth: []
@@ -161,6 +161,8 @@ router.patch("/:id/report", auth, equipmentController.reportEquipment);
  *         description: Invalid guard ID
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
 router.get("/guard/:guardId", auth, equipmentController.getEquipmentByGuard);
 

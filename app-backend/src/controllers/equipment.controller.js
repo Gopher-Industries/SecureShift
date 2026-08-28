@@ -182,6 +182,16 @@ export const getEquipmentByGuard = async (req, res) => {
       });
     }
 
+    const requesterId = requester.id || requester._id;
+    if (
+      requester.role === "guard" &&
+      String(requesterId) !== String(guardId)
+    ) {
+      return res.status(403).json({
+        message: "Forbidden: cannot access another guard's equipment.",
+      });
+    }
+
     const equipment = await Equipment.find({
       assignedTo: guardId,
     }).populate("assignedTo", "name email role");
