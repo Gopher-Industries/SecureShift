@@ -3,14 +3,18 @@ import express from "express";
 import mongoose from "mongoose";
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
-import shiftRoutes from "../src/routes/shift.routes.js";
-import Shift from "../src/models/Shift.js";
+jest.unstable_mockModule("../src/models/Shift.js", () => ({
+  default: {
+    find: jest.fn(),
+    findById: jest.fn(),
+  },
+}));
 
-jest.mock("../src/models/Shift.js");
-jest.mock("../src/models/Branch.js");
+jest.unstable_mockModule("../src/models/Branch.js", () => ({
+  default: {},
+}));
 
-jest.mock("../src/middleware/auth.js", () => ({
-  __esModule: true,
+jest.unstable_mockModule("../src/middleware/auth.js", () => ({
   default: (req, res, next) => {
     req.user = {
       _id: req.headers["x-user-id"] || "test-user-id",
@@ -20,6 +24,9 @@ jest.mock("../src/middleware/auth.js", () => ({
     next();
   },
 }));
+
+const { default: shiftRoutes } = await import("../src/routes/shift.routes.js");
+const { default: Shift } = await import("../src/models/Shift.js");
 
 jest.setTimeout(30000);
 
