@@ -33,16 +33,13 @@ export default function FAQContactForm() {
   };
 
   return (
-    <section
-      className="faq-contact-section"
-      aria-labelledby="faq-contact-heading"
-    >
+    <section className="faq-contact-section" aria-labelledby="faq-contact-heading">
       <div className="faq-contact-header">
         <h2 id="faq-contact-heading">Send Us a Message</h2>
 
         <p>
-          Have a question that is not answered above? Complete the form below.
-          Backend submission will be connected in a future integration task.
+          Have a question that is not answered above? Complete the form below. Backend submission
+          will be connected in a future integration task.
         </p>
       </div>
 
@@ -109,9 +106,7 @@ export default function FAQContactForm() {
               Submit Message
             </button>
 
-            <span className="faq-integration-label">
-              Frontend preview only
-            </span>
+            <span className="faq-integration-label">Frontend preview only</span>
           </div>
 
           {notice && (

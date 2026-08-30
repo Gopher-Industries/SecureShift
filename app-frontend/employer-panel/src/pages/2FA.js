@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import http from '../lib/http';
+import './TwoFA.css';
 
 export default function TwoFA() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function TwoFA() {
   const email = location.state?.email;
 
   if (!email) {
-    return <p style={{ color: 'red' }}>Error: No email found. Please log in again.</p>;
+    return <p className="tfa-error">Error: No email found. Please log in again.</p>;
   }
 
   const handleVerify = async (e) => {
@@ -39,10 +40,10 @@ export default function TwoFA() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '0 auto', padding: 20 }}>
-      <h2>Enter OTP</h2>
-      <p>
-        We sent a 6-digit code to <b>{email}</b>
+    <div className="tfa-container">
+      <h2 className="tfa-heading">Enter OTP</h2>
+      <p className="tfa-subtext">
+        We sent a 6-digit code to <b className="tfa-email">{email}</b>
       </p>
 
       <form onSubmit={handleVerify}>
@@ -52,10 +53,10 @@ export default function TwoFA() {
           value={otp}
           onChange={(e) => setOtp(e.target.value)}
           required
-          style={{ width: '100%', marginBottom: 10, padding: 8 }}
+          className="tfa-input"
         />
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" style={{ padding: 10, width: '100%' }} disabled={loading}>
+        {error && <p className="tfa-error">{error}</p>}
+        <button type="submit" className="tfa-submit-button" disabled={loading}>
           {loading ? 'Verifying...' : 'Verify OTP'}
         </button>
       </form>

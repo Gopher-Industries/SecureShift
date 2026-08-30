@@ -1,3 +1,7 @@
+/* =========================
+   FAQ Contact Section
+   ========================= */
+
 .faq-contact-section {
   margin-top: 52px;
 }
@@ -8,7 +12,7 @@
 
 .faq-contact-header h2 {
   margin: 0 0 10px;
-  color: #072261;
+  color: var(--text-primary);
   font-size: 28px;
   line-height: 1.3;
 }
@@ -16,18 +20,31 @@
 .faq-contact-header p {
   max-width: 720px;
   margin: 0;
-  color: #596273;
+  color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.7;
 }
 
+/* =========================
+   Contact Card
+   ========================= */
+
 .faq-contact-card {
   padding: 28px;
-  border: 1px solid #d7e1f1;
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background-color: #f8faff;
+  background-color: var(--surface);
   box-sizing: border-box;
+  box-shadow: 0 2px 8px var(--shadow);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
+
+/* =========================
+   Contact Form
+   ========================= */
 
 .faq-contact-form {
   display: flex;
@@ -48,7 +65,7 @@
 }
 
 .faq-form-group label {
-  color: #172033;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -57,18 +74,20 @@
 .faq-form-group textarea {
   width: 100%;
   padding: 13px 14px;
-  border: 1px solid #ccd6e5;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background-color: #ffffff;
-  color: #172033;
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 15px;
   line-height: 1.5;
   box-sizing: border-box;
+  outline: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
-    background-color 0.2s ease;
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .faq-form-group textarea {
@@ -78,20 +97,23 @@
 
 .faq-form-group input::placeholder,
 .faq-form-group textarea::placeholder {
-  color: #8a93a3;
+  color: var(--text-secondary);
 }
 
 .faq-form-group input:hover,
 .faq-form-group textarea:hover {
-  border-color: #8ea8d3;
+  border-color: var(--primary-light);
 }
 
 .faq-form-group input:focus,
 .faq-form-group textarea:focus {
-  border-color: #274b93;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(39, 75, 147, 0.15);
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(52, 91, 168, 0.15);
 }
+
+/* =========================
+   Form Actions
+   ========================= */
 
 .faq-contact-actions {
   display: flex;
@@ -105,7 +127,7 @@
   padding: 12px 24px;
   border: none;
   border-radius: 24px;
-  background-color: #17489f;
+  background-color: var(--primary);
   color: #ffffff;
   font-family: inherit;
   font-size: 14px;
@@ -118,8 +140,8 @@
 }
 
 .faq-submit-btn:hover {
-  background-color: #0f397f;
-  box-shadow: 0 5px 14px rgba(23, 72, 159, 0.24);
+  background-color: var(--primary-light);
+  box-shadow: 0 5px 14px var(--shadow);
   transform: translateY(-1px);
 }
 
@@ -128,24 +150,40 @@
 }
 
 .faq-submit-btn:focus-visible {
-  outline: 3px solid rgba(39, 75, 147, 0.35);
+  outline: 3px solid rgba(52, 91, 168, 0.35);
   outline-offset: 3px;
 }
 
+/* =========================
+   Integration Label
+   ========================= */
+
 .faq-integration-label {
-  color: #687386;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
+/* =========================
+   Form Notice
+   ========================= */
+
 .faq-form-notice {
   padding: 13px 15px;
-  border: 1px solid #b8cae8;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background-color: #edf4ff;
-  color: #123b78;
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
   font-size: 14px;
   line-height: 1.5;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
+
+/* =========================
+   Responsive
+   ========================= */
 
 @media (max-width: 768px) {
   .faq-contact-section {

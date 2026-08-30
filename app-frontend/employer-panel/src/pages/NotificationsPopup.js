@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NotificationIcon from '../components/NotificationIcon.svg';
 import http from '../lib/http';
-import translations from "../i18n/translations";
+import translations from '../i18n/translations';
+import './NotificationsPopup.css';
 
 const POLL_INTERVAL_MS = 15_000;
 
 export default function NotificationsPopup({ language }) {
-  const t = translations[language || "en"] || translations.en;
+  const t = translations[language || 'en'] || translations.en;
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
@@ -46,19 +47,21 @@ export default function NotificationsPopup({ language }) {
   const pollShifts = async () => {
     try {
       const res = await http.get('/shifts?withApplicantsOnly=true');
-      const shifts = (res.data.items || []).filter(s =>
+      const shifts = (res.data.items || []).filter((s) =>
         ['open', 'applied', 'assigned'].includes(s.status)
       );
 
       for (const shift of shifts) {
         const applicants = shift.applicants || [];
         const seen = seenApplicants.current[shift._id] || [];
-        const newOnes = applicants.filter(a => !seen.includes(String(a._id)));
+        const newOnes = applicants.filter((a) => !seen.includes(String(a._id)));
 
         for (const applicant of newOnes) {
           try {
             const date = new Date(shift.date).toLocaleDateString('en-AU', {
-              weekday: 'short', day: 'numeric', month: 'short',
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
             });
             await http.post('/notifications', {
               userId: shift.createdBy._id || shift.createdBy,
@@ -73,7 +76,7 @@ export default function NotificationsPopup({ language }) {
         }
 
         // Update seen list regardless of whether the POST succeeded
-        seenApplicants.current[shift._id] = applicants.map(a => String(a._id));
+        seenApplicants.current[shift._id] = applicants.map((a) => String(a._id));
       }
 
       await loadNotifications();
@@ -108,8 +111,8 @@ export default function NotificationsPopup({ language }) {
     if (!n.isRead) {
       try {
         await http.patch(`/notifications/${n._id}/read`);
-        setNotifications(prev =>
-          prev.map(item => item._id === n._id ? { ...item, isRead: true } : item)
+        setNotifications((prev) =>
+          prev.map((item) => (item._id === n._id ? { ...item, isRead: true } : item))
         );
       } catch (err) {
         console.error('Failed to mark as read:', err);
@@ -119,73 +122,34 @@ export default function NotificationsPopup({ language }) {
     setOpen(false);
   };
 
-  const unread = notifications.filter(n => !n.isRead);
+  const unread = notifications.filter((n) => !n.isRead);
 
   return (
-    <div ref={popupRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-      <div onClick={() => setOpen(prev => !prev)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-        <img src={NotificationIcon} alt="Notifications" style={{ height: '42px' }} />
+    <div ref={popupRef} className="np-container">
+      <div onClick={() => setOpen((prev) => !prev)} className="np-trigger">
+        <img src={NotificationIcon} alt="Notifications" className="np-icon" />
         {unread.length > 0 && (
-          <div style={{
-            position: 'absolute',
-            top: '-4px',
-            right: '-4px',
-            backgroundColor: 'red',
-            color: 'white',
-            borderRadius: '50%',
-            width: '18px',
-            height: '18px',
-            fontSize: '11px',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            {unread.length > 99 ? '99+' : unread.length}
-          </div>
+          <div className="np-badge">{unread.length > 99 ? '99+' : unread.length}</div>
         )}
       </div>
 
       {open && (
-        <div style={{
-          position: 'absolute',
-          top: '55px',
-          right: '0px',
-          backgroundColor: 'white',
-          borderRadius: '10px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-          width: '320px',
-          maxHeight: '400px',
-          overflowY: 'auto',
-          zIndex: 1000,
-          color: '#333',
-        }}>
-          <div style={{ padding: '14px 16px', fontWeight: '700', fontSize: '16px', borderBottom: '1px solid #e0e0e0' }}>
-          {t.notifications}
-          </div>
+        <div className="np-popup">
+          <div className="np-header">{t.notifications}</div>
 
           {unread.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#888', fontSize: '14px' }}>
-              No new notifications
-            </div>
+            <div className="np-empty">No new notifications</div>
           ) : (
-            unread.map(n => (
-              <div
-                key={n._id}
-                onClick={() => handleNotificationClick(n)}
-                style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid #f0f0f0',
-                  backgroundColor: '#eef2ff',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s',
-                }}
-              >
-                <div style={{ fontWeight: '600', fontSize: '14px', marginBottom: '4px' }}>{n.title}</div>
-                <div style={{ fontSize: '13px', color: '#555' }}>{n.message}</div>
-                <div style={{ fontSize: '12px', color: '#aaa', marginTop: '4px' }}>
+            unread.map((n) => (
+              <div key={n._id} onClick={() => handleNotificationClick(n)} className="np-item">
+                <div className="np-item-title">{n.title}</div>
+                <div className="np-item-message">{n.message}</div>
+                <div className="np-item-date">
                   {new Date(n.createdAt).toLocaleDateString('en-AU', {
-                    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
                   })}
                 </div>
               </div>

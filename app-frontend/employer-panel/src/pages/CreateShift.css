@@ -1,25 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-:root {
-  --ink: #0f172a;
-  --panel: #0b1531;
-  --muted: #7c8aa1;
-  --line: rgba(255, 255, 255, 0.1);
-  --accent: #4f8bff;
-  --accent-strong: #7df3e1;
-  --error: #ff6b6b;
-  --success: #7ed957;
-}
-
 .cs-shell {
   min-height: calc(100vh - 120px);
-  background:
-    radial-gradient(circle at 10% 20%, rgba(127, 255, 212, 0.08), transparent 30%),
-    radial-gradient(circle at 70% 10%, rgba(79, 139, 255, 0.12), transparent 35%),
-    linear-gradient(135deg, #050915 0%, #0c1736 50%, #0a1026 100%);
-  color: #f4f6fb;
+  background: var(--background);
+  color: var(--text-primary);
   padding: 32px clamp(16px, 4vw, 48px) 48px;
   font-family: 'Space Grotesk', 'Manrope', 'Segoe UI', sans-serif;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .cs-topbar {
@@ -39,7 +28,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-secondary);
   margin: 0 0 4px;
 }
 
@@ -47,11 +36,12 @@
   margin: 0;
   font-size: clamp(26px, 4vw, 34px);
   font-weight: 700;
+  color: var(--text-primary);
 }
 
 .cs-subtitle {
   margin: 6px 0 0;
-  color: var(--muted);
+  color: var(--text-secondary);
   max-width: 620px;
 }
 
@@ -62,11 +52,15 @@
 }
 
 .cs-card {
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-  border: 1px solid var(--line);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 20px;
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 20px 80px var(--shadow);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .cs-card--form {
@@ -88,41 +82,51 @@
 
 .cs-field label {
   font-weight: 600;
-  color: #e8edfb;
+  color: var(--text-primary);
 }
 
 .cs-field input,
 .cs-field select,
 .cs-field textarea {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--line);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 14px;
-  color: #f8fbff;
+  color: var(--text-primary);
   font-size: 14px;
   outline: none;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.cs-field input::placeholder,
+.cs-field textarea::placeholder {
+  color: var(--text-secondary);
 }
 
 .cs-field select option {
-  color: #000000;
-  background: #ffffff;
+  color: var(--text-primary);
+  background: var(--surface);
 }
 
 .cs-field input:focus,
 .cs-field select:focus,
 .cs-field textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(79, 139, 255, 0.2);
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(52, 91, 168, 0.2);
 }
 
 .cs-field__error {
-  color: var(--error);
+  color: var(--danger);
   font-size: 13px;
 }
 
 .cs-hint {
   margin: 0;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -133,13 +137,16 @@
 }
 
 .cs-inline-card {
-  border: 1px dashed var(--line);
+  border: 1px dashed var(--border);
   padding: 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-secondary);
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .cs-inline-actions {
@@ -173,9 +180,14 @@
   gap: 6px;
   padding: 10px 14px;
   border-radius: 40px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--line);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
   cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .cs-pill input {
@@ -183,8 +195,9 @@
 }
 
 .cs-pill.is-active {
-  border-color: var(--accent);
-  background: rgba(79, 139, 255, 0.12);
+  border-color: var(--primary-light);
+  background: rgba(52, 91, 168, 0.15);
+  color: var(--text-primary);
 }
 
 .cs-taglist {
@@ -196,17 +209,22 @@
 .cs-tag {
   position: relative;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-secondary);
+  color: var(--text-primary);
   display: flex;
   flex-direction: column;
   gap: 4px;
   cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .cs-tag small {
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 .cs-tag input {
@@ -215,8 +233,8 @@
 }
 
 .cs-tag.is-active {
-  border-color: var(--accent-strong);
-  box-shadow: 0 10px 30px rgba(79, 139, 255, 0.15);
+  border-color: var(--primary-light);
+  box-shadow: 0 10px 30px var(--shadow);
 }
 
 .cs-actions {
@@ -229,18 +247,31 @@
 .cs-ghost,
 .cs-primary {
   border-radius: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   padding: 11px 16px;
   font-weight: 600;
   cursor: pointer;
-  color: #f8fbff;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.cs-ghost:hover {
+  background: var(--background);
+  border-color: var(--primary-light);
 }
 
 .cs-primary {
-  background: linear-gradient(120deg, var(--accent), #6ae2ff);
-  color: #041024;
+  background: var(--primary);
+  color: #ffffff;
   border: none;
+}
+
+.cs-primary:hover {
+  background: var(--primary-light);
 }
 
 .cs-primary:disabled {
@@ -262,14 +293,15 @@
 
 .cs-side-title {
   margin: 6px 0 0;
+  color: var(--text-primary);
 }
 
 .cs-map {
   height: 320px;
   border-radius: 14px;
   overflow: hidden;
-  background: #0c1225;
-  border: 1px solid var(--line);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
   position: relative;
 }
 
@@ -278,7 +310,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -292,31 +324,32 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #d8e2f6;
-  border-bottom: 1px solid var(--line);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
   padding: 8px 0;
 }
 
 .cs-chip {
-  background: rgba(79, 139, 255, 0.12);
-  color: #cfe2ff;
+  background: rgba(52, 91, 168, 0.15);
+  color: var(--primary-light);
   padding: 6px 12px;
   border-radius: 40px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
 }
 
 .cs-banner {
   border-radius: 14px;
   padding: 12px 16px;
   margin-bottom: 14px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  background: var(--surface-secondary);
+  color: var(--text-primary);
 }
 
 .cs-banner--error {
-  border-color: rgba(255, 107, 107, 0.4);
-  background: rgba(255, 107, 107, 0.08);
-  color: #ffd4d4;
+  border-color: rgba(220, 38, 38, 0.4);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--danger);
 }
 
 .cs-modal {
@@ -332,11 +365,12 @@
 
 .cs-modal__dialog {
   width: min(920px, 100%);
-  background: #0c1327;
-  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 25px 100px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 25px 100px var(--shadow);
 }
 
 .cs-modal__head {
@@ -355,14 +389,14 @@
 .cs-label {
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 12px;
   margin: 0;
 }
 
 .cs-subtle {
   margin: 6px 0 0;
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 .cs-modal__actions {
@@ -377,10 +411,11 @@
 
 .cs-side-row strong {
   font-size: 15px;
+  color: var(--text-primary);
 }
 
 .cs-side-row span {
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 
 .cs-actions button,
@@ -394,6 +429,7 @@
 
 .cs-preview-grid h4 {
   margin: 4px 0 0;
+  color: var(--text-primary);
 }
 
 .cs-subtle + .cs-subtle {

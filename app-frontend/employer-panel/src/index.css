@@ -1,10 +1,64 @@
+:root {
+  --background: #f5f7fb;
+  --surface: #ffffff;
+  --surface-secondary: #f8fafc;
+
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+
+  --border: #e5e7eb;
+
+  --primary: #072261;
+  --primary-light: #274b93;
+
+  --danger: #dc2626;
+
+  --shadow: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='dark'] {
+  --background: #111827;
+  --surface: #1f2937;
+  --surface-secondary: #273449;
+
+  --text-primary: #f9fafb;
+  --text-secondary: #cbd5e1;
+
+  --border: #374151;
+
+  --primary: #0b2f7a;
+  --primary-light: #345ba8;
+
+  --danger: #f87171;
+
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
 body {
   margin: 0;
+
   font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
-    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  background-color: var(--background);
+  color: var(--text-primary);
+
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 code {

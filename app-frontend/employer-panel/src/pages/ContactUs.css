@@ -1,7 +1,11 @@
 .contact-page {
   min-height: calc(100vh - 80px);
   padding: 32px 36px 40px;
-  background: #ffffff;
+  background: var(--background);
+  color: var(--text-primary);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .contact-header {
@@ -13,7 +17,7 @@
   position: relative;
   display: inline-block;
   margin: 0 0 8px;
-  color: #162447;
+  color: var(--text-primary);
   font-size: 22px;
   font-weight: 700;
 }
@@ -27,8 +31,8 @@
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    var(--ss-blue-800, #072261),
-    var(--ss-blue-700, #124f70)
+    var(--primary),
+    var(--primary-light)
   );
   content: '';
   animation: ss-line-grow 0.6s ease 0.3s both;
@@ -36,7 +40,7 @@
 
 .contact-header p {
   margin: 10px 0 0;
-  color: var(--ss-muted, #667085);
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -49,11 +53,15 @@
 
 .contact-info,
 .contact-form-section {
-  border: 1px solid #edf1f6;
+  border: 1px solid var(--border);
   border-radius: var(--ss-radius-xl, 22px);
-  background: var(--ss-panel, #f5f7fb);
+  background: var(--surface-secondary);
   padding: 24px;
   animation: ss-fade-up 0.5s ease both;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .contact-info {
@@ -64,10 +72,14 @@
   animation-delay: 0.2s;
 }
 
+/* =========================
+   Contact Information
+   ========================= */
+
 .contact-info h2,
 .contact-form-section h2 {
   margin: 0 0 18px;
-  color: #162447;
+  color: var(--text-primary);
   font-size: 18px;
   font-weight: 700;
 }
@@ -77,32 +89,33 @@
   align-items: flex-start;
   gap: 14px;
   margin-bottom: 14px;
-  border: 1px solid var(--ss-border, #d8dbe2);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 16px;
-  box-shadow: var(--shadow-soft, 0 3px 8px rgba(20, 31, 71, 0.08));
+  box-shadow: 0 3px 8px var(--shadow);
   transition:
     border-color 0.25s ease,
     box-shadow 0.25s ease,
-    transform 0.25s ease;
+    transform 0.25s ease,
+    background-color 0.3s ease;
 }
 
 .info-item:hover {
-  border-color: var(--ss-blue-700, #124f70);
-  box-shadow: 0 10px 24px -12px rgba(22, 36, 71, 0.25);
+  border-color: var(--primary-light);
+  box-shadow: 0 10px 24px -12px var(--shadow);
   transform: translateY(-3px);
 }
 
 .info-item:hover .contact-icon {
-  background: var(--ss-blue-800, #072261);
+  background: var(--primary);
   color: #ffffff;
   transform: scale(1.08) rotate(-4deg);
 }
 
 .info-item-body h3 {
   margin: 0 0 4px;
-  color: #18284f;
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 700;
 }
@@ -110,13 +123,13 @@
 .info-item-body p,
 .info-item-body a {
   margin: 0;
-  color: #5f6c84;
+  color: var(--text-secondary);
   font-size: 13px;
   text-decoration: none;
 }
 
 .info-item-body a:hover {
-  color: var(--ss-blue-700, #124f70);
+  color: var(--primary-light);
   text-decoration: underline;
 }
 
@@ -128,8 +141,8 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #edf3ff;
-  color: var(--ss-blue-800, #072261);
+  background: var(--surface-secondary);
+  color: var(--primary);
   transition:
     background 0.25s ease,
     color 0.25s ease,
@@ -143,60 +156,195 @@
 
 .contact-response-note {
   margin-top: 18px;
-  border-left: 3px solid var(--ss-blue-700, #124f70);
+  border-left: 3px solid var(--primary-light);
   border-radius: 8px;
-  background: #edf3ff;
+  background: var(--surface-secondary);
   padding: 14px 16px;
 }
 
 .contact-response-note h3 {
   margin: 0 0 4px;
-  color: #162447;
+  color: var(--text-primary);
   font-size: 13px;
 }
 
 .contact-response-note p {
   margin: 0;
-  color: #5f6c84;
+  color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.5;
 }
 
-@keyframes ss-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
+/* =========================
+   Contact Form
+   ========================= */
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.contact-form-section {
+  background: var(--surface-secondary);
+  color: var(--text-primary);
 }
 
-@keyframes ss-line-grow {
-  from {
-    width: 0;
-  }
-
-  to {
-    width: 42px;
-  }
+/* Main form container */
+.contact-form-section form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: transparent;
+  color: var(--text-primary);
 }
+
+/* Any wrappers around individual form fields */
+.contact-form-section form > div,
+.contact-form-section .form-group,
+.contact-form-section .form-field,
+.contact-form-section .form-control {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+/* Labels */
+.contact-form-section label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Input fields */
+.contact-form-section input,
+.contact-form-section textarea,
+.contact-form-section select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Textarea */
+.contact-form-section textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+/* Placeholder */
+.contact-form-section input::placeholder,
+.contact-form-section textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+/* Focus state */
+.contact-form-section input:focus,
+.contact-form-section textarea:focus,
+.contact-form-section select:focus {
+  border-color: var(--primary-light);
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 3px rgba(52, 91, 168, 0.15);
+}
+
+/* Select */
+.contact-form-section select {
+  cursor: pointer;
+}
+
+.contact-form-section select option {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+/* =========================
+   Form Button
+   ========================= */
+
+.contact-form-section button {
+  border: none;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #ffffff;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.contact-form-section button:hover {
+  background: var(--primary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px var(--shadow);
+}
+
+.contact-form-section button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================
+   Error / Validation Text
+   ========================= */
+
+.contact-form-section .error,
+.contact-form-section .error-message,
+.contact-form-section .form-error {
+  color: var(--danger);
+  font-size: 12px;
+}
+
+/* =========================
+   Autofill Fix
+   ========================= */
+
+/*
+   Browsers can force autofilled inputs to have a white
+   background. These rules keep them consistent with dark mode.
+*/
+
+.contact-form-section input:-webkit-autofill,
+.contact-form-section input:-webkit-autofill:hover,
+.contact-form-section input:-webkit-autofill:focus,
+.contact-form-section textarea:-webkit-autofill,
+.contact-form-section textarea:-webkit-autofill:hover,
+.contact-form-section textarea:-webkit-autofill:focus,
+.contact-form-section select:-webkit-autofill,
+.contact-form-section select:-webkit-autofill:hover,
+.contact-form-section select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* =========================
+   Responsive
+   ========================= */
 
 @media (max-width: 900px) {
-  .contact-page {
-    padding: 24px 20px;
-  }
-
   .contact-content {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .contact-page {
-    padding: 20px 14px 30px;
+    padding: 24px 18px 32px;
   }
 
   .contact-info,

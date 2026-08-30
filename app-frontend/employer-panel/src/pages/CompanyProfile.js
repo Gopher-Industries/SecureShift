@@ -8,11 +8,12 @@ import AppIcon from '../images/app_icon.png';
 import ABC_COMPANY_ICON from '../images/ABC_company_icon.png';
 import ImageUpload from '../input/ImageUpload';
 import ChipsGroup from '../input/ChipsGroup';
-import translations from "../i18n/translations";
+import translations from '../i18n/translations';
+import './CompanyProfile.css';
 
 export default function CompanyProfile({ language }) {
   const [enableEdit, setEnableEdit] = useState(false);
-  const t = translations[language || "en"] || translations.en;
+  const t = translations[language || 'en'] || translations.en;
 
   // Yup validation schema
   const validationSchema = Yup.object().shape({
@@ -79,34 +80,26 @@ export default function CompanyProfile({ language }) {
   ];
 
   return (
-    <div style={{ padding: '20px' }}>
-<PageHeader companyName={t.companyNameTitle} title={t.companyProfile} />
+    <div className="cp-container">
+      <PageHeader companyName={t.companyNameTitle} title={t.companyProfile} />
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div
-          style={{
-            display: 'flex',
-            gap: '50px',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            marginTop: '20px',
-          }}
-        >
+        <div className="cp-form-columns">
           {/* LEFT SIDE */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div className="cp-column">
             {formField
               .filter((field) => field.slot === 'left')
               .map((field, index) => (
-                <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ width: '150px', fontWeight: 'bold' }}>{field.label}:</div>
-                  <div style={{ flex: 1 }}>
+                <div key={index} className="cp-field-row">
+                  <div className="cp-field-label">{field.label}:</div>
+                  <div className="cp-field-content">
                     <TextInput
                       {...register(field.name)}
                       disabled={!enableEdit}
                       multiline={field.multiline}
                     />
                     {errors[field.name] && (
-                      <p style={{ color: 'red', fontSize: '12px' }}>{errors[field.name].message}</p>
+                      <p className="cp-field-error">{errors[field.name].message}</p>
                     )}
                   </div>
                 </div>
@@ -114,13 +107,13 @@ export default function CompanyProfile({ language }) {
           </div>
 
           {/* RIGHT SIDE */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div className="cp-column">
             {formField
               .filter((field) => field.slot === 'right')
               .map((field, index) => (
-                <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'start' }}>
-                  <div style={{ width: '150px', fontWeight: 'bold' }}>{field.label}:</div>
-                  <div style={{ flex: 1 }}>
+                <div key={index} className="cp-field-row cp-field-row--start">
+                  <div className="cp-field-label">{field.label}:</div>
+                  <div className="cp-field-content">
                     {field.name === 'state' ? (
                       <ChipsGroup
                         value={watch('state') || []}
@@ -154,7 +147,7 @@ export default function CompanyProfile({ language }) {
                     )}
 
                     {errors[field.name] && (
-                      <p style={{ color: 'red', fontSize: '12px' }}>{errors[field.name].message}</p>
+                      <p className="cp-field-error">{errors[field.name].message}</p>
                     )}
                   </div>
                 </div>
@@ -174,33 +167,14 @@ export default function CompanyProfile({ language }) {
 }
 
 function PageHeader({ companyName, title }) {
-  const headerStyles = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  };
-
-  const companyNameStyles = {
-    fontSize: '38px',
-    fontWeight: 'bold',
-  };
-
-  const titleStyles = {
-    marginTop: '16px',
-    fontSize: '24px',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: '50px',
-  };
-
   return (
     <>
-      <div style={headerStyles}>
-        <img src={AppIcon} alt="app_icon" style={{ width: '80px' }} />
-        <div style={companyNameStyles}>{companyName}</div>
-        <img src={ABC_COMPANY_ICON} alt="abc_company_icon" style={{ width: '80px' }} />
+      <div className="cp-header">
+        <img src={AppIcon} alt="app_icon" className="cp-app-icon" />
+        <div className="cp-company-name">{companyName}</div>
+        <img src={ABC_COMPANY_ICON} alt="abc_company_icon" className="cp-app-icon" />
       </div>
-      <div style={titleStyles}>{title}</div>
+      <div className="cp-title">{title}</div>
     </>
   );
 }
@@ -211,35 +185,15 @@ function ButtonGroup({
   manageRatingsOnClick,
   enableEdit,
 }) {
-  const buttonGroupStyles = {
-    marginTop: '30px',
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '100px',
-    cursor: 'pointer',
-  };
-
-  const buttonStyle = {
-    minWidth: '120px',
-    textAlign: 'center',
-    borderRadius: '110px',
-    backgroundColor: '#284B93',
-    color: 'white',
-    fontWeight: 'bold',
-    padding: '50px',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s',
-  };
-
   return (
-    <div style={buttonGroupStyles}>
-      <div onClick={editProfileOnClick} style={buttonStyle}>
+    <div className="cp-button-group">
+      <div onClick={editProfileOnClick} className="cp-button">
         {enableEdit ? 'Finish Editing' : 'Edit Profile'}
       </div>
-      <div onClick={manageListingsOnClick} style={buttonStyle}>
+      <div onClick={manageListingsOnClick} className="cp-button">
         Manage Listings
       </div>
-      <div onClick={manageRatingsOnClick} style={buttonStyle}>
+      <div onClick={manageRatingsOnClick} className="cp-button">
         Manage Ratings
       </div>
     </div>

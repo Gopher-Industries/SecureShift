@@ -1,28 +1,43 @@
-import React, { useState, useEffect } from "react";
-import "./Payroll.css";
-import http from "../lib/http";
-import translations from "../i18n/translations";
+import React, { useState, useEffect } from 'react';
+import './Payroll.css';
+import http from '../lib/http';
+import translations from '../i18n/translations';
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const GUARDS_PER_PAGE = 3;
 
 function initials(name) {
-  return name.split(" ").map((p) => p[0]).join("").toUpperCase();
+  return name
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase();
 }
 
 function formatCurrency(amount) {
-  return "$" + (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return '$' + (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 // converts an ISO date string to DD-MM-YYYY for display
 function formatDate(dateStr) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" })
-    .replace(/\//g, "-");
+  return d
+    .toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    .replace(/\//g, '-');
 }
 
 // builds the first and last day of a given month as ISO date strings
@@ -30,36 +45,36 @@ function getMonthRange(year, month) {
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0);
   return {
-    startDate: start.toISOString().split("T")[0],
-    endDate: end.toISOString().split("T")[0],
+    startDate: start.toISOString().split('T')[0],
+    endDate: end.toISOString().split('T')[0],
   };
 }
 
 export default function Payroll({ language }) {
-  const t = translations[language || "en"] || translations.en;
+  const t = translations[language || 'en'] || translations.en;
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear] = useState(now.getFullYear());
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchPayroll = async () => {
       setLoading(true);
-      setError("");
+      setError('');
       setRecords([]);
       try {
         const { startDate, endDate } = getMonthRange(selectedYear, selectedMonth);
-        const res = await http.get("/payroll", {
-          params: { startDate, endDate, periodType: "monthly" },
+        const res = await http.get('/payroll', {
+          params: { startDate, endDate, periodType: 'monthly' },
         });
         setRecords(res.data.records || []);
       } catch (err) {
-        console.error("Failed to load payroll:", err);
-        setError("Failed to load payroll data. Please try again.");
+        console.error('Failed to load payroll:', err);
+        setError('Failed to load payroll data. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -80,7 +95,7 @@ export default function Payroll({ language }) {
 
   // filter by search term against guard name
   const filtered = records.filter((r) =>
-    (r.guardName || "").toLowerCase().includes(searchTerm.toLowerCase())
+    (r.guardName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / GUARDS_PER_PAGE));
@@ -93,11 +108,15 @@ export default function Payroll({ language }) {
   const getPageNumbers = () => {
     if (totalPages <= 6) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const pages = [1];
-    if (currentPage > 3) pages.push("...");
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+    if (currentPage > 3) pages.push('...');
+    for (
+      let i = Math.max(2, currentPage - 1);
+      i <= Math.min(totalPages - 1, currentPage + 1);
+      i++
+    ) {
       pages.push(i);
     }
-    if (currentPage < totalPages - 2) pages.push("...");
+    if (currentPage < totalPages - 2) pages.push('...');
     pages.push(totalPages);
     return pages;
   };
@@ -105,7 +124,6 @@ export default function Payroll({ language }) {
   return (
     <div className="payroll-page">
       <div className="payroll-container">
-
         {/* Page header - title + month picker */}
         <div className="payroll-header-row">
           <h1 className="payroll-title">{t.payroll}</h1>
@@ -117,7 +135,9 @@ export default function Payroll({ language }) {
               onChange={handleMonthChange}
             >
               {MONTHS.map((m, i) => (
-                <option key={i} value={i}>{m}</option>
+                <option key={i} value={i}>
+                  {m}
+                </option>
               ))}
             </select>
           </div>
@@ -147,18 +167,18 @@ export default function Payroll({ language }) {
           <div className="payroll-table-wrapper">
             <table className="payroll-table">
               <colgroup>
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "13%" }} />
-                <col style={{ width: "25%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "13%" }} />
-                <col style={{ width: "17%" }} />
+                <col style={{ width: '22%' }} />
+                <col style={{ width: '13%' }} />
+                <col style={{ width: '25%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '13%' }} />
+                <col style={{ width: '17%' }} />
               </colgroup>
 
               {paginated.map((record) => {
                 // only show entries where the guard actually worked
                 const entries = (record.entries || []).filter(
-                  (e) => e.attendanceStatus === "present" || e.actualHours > 0
+                  (e) => e.attendanceStatus === 'present' || e.actualHours > 0
                 );
                 if (entries.length === 0) return null;
 
@@ -179,23 +199,29 @@ export default function Payroll({ language }) {
                         <tr key={idx} className="payroll-shift-row">
                           <td>
                             <div className="guard-cell">
-                              <div className="guard-avatar">{initials(record.guardName || "?")}</div>
+                              <div className="guard-avatar">
+                                {initials(record.guardName || '?')}
+                              </div>
                               <span>{record.guardName}</span>
                             </div>
                           </td>
                           <td>{formatDate(entry.shiftDate)}</td>
-                          <td>{entry.location || "—"}</td>
+                          <td>{entry.location || '—'}</td>
                           <td>{entry.actualHours ?? entry.scheduledHours}</td>
                           <td>${entry.payRate}/hr</td>
                           <td>{formatCurrency(entry.totalPay)}</td>
                         </tr>
                       ))}
                       <tr className="payroll-total-row">
-                        <td colSpan={5} className="payroll-total-label">TOTAL</td>
+                        <td colSpan={5} className="payroll-total-label">
+                          TOTAL
+                        </td>
                         <td className="payroll-total-amount">{formatCurrency(record.grossPay)}</td>
                       </tr>
                       {/* visual gap between guard blocks */}
-                      <tr className="payroll-spacer"><td colSpan={6}></td></tr>
+                      <tr className="payroll-spacer">
+                        <td colSpan={6}></td>
+                      </tr>
                     </tbody>
                   </React.Fragment>
                 );
@@ -204,7 +230,7 @@ export default function Payroll({ language }) {
           </div>
         )}
 
-        <div className="pagination" style={{ marginTop: "24px", justifyContent: "center" }}>
+        <div className="pagination" style={{ marginTop: '24px', justifyContent: 'center' }}>
           <button
             className="page-btn"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -213,12 +239,14 @@ export default function Payroll({ language }) {
             ‹
           </button>
           {getPageNumbers().map((p, i) =>
-            p === "..." ? (
-              <span key={i} className="page-ellipsis">…</span>
+            p === '...' ? (
+              <span key={i} className="page-ellipsis">
+                …
+              </span>
             ) : (
               <button
                 key={i}
-                className={`page-btn ${p === currentPage ? "active-page" : ""}`}
+                className={`page-btn ${p === currentPage ? 'active-page' : ''}`}
                 onClick={() => setCurrentPage(p)}
               >
                 {p}
@@ -233,7 +261,6 @@ export default function Payroll({ language }) {
             ›
           </button>
         </div>
-
       </div>
     </div>
   );

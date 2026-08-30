@@ -1,0 +1,96 @@
+/* =========================
+   Notifications Popup
+   ========================= */
+
+.np-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.np-trigger {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.np-icon {
+  height: 42px;
+}
+
+.np-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: #dc2626;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.np-popup {
+  position: absolute;
+  top: 55px;
+  right: 0px;
+  background-color: var(--surface);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px var(--shadow);
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.np-header {
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.np-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.np-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--background);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.np-item:hover {
+  background-color: var(--surface);
+}
+
+.np-item-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.np-item-message {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.np-item-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  margin-top: 4px;
+}

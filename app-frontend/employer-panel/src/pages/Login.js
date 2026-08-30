@@ -4,8 +4,7 @@ import logo from '../logo.png';
 import './Login.css';
 import http from '../lib/http';
 
-const ADMIN_LOGIN_URL =
-  process.env.REACT_APP_ADMIN_LOGIN_URL || 'http://localhost:3001/login';
+const ADMIN_LOGIN_URL = process.env.REACT_APP_ADMIN_LOGIN_URL || 'http://localhost:3001/login';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -131,32 +130,19 @@ export default function Login() {
               />
             </div>
 
-            {error && !otpMode && (
-              <div className="errorMessage">{error}</div>
-            )}
+            {error && !otpMode && <div className="errorMessage">{error}</div>}
 
-            {loginLoading && (
-              <div className="loadingMessage">Sending OTP...</div>
-            )}
+            {loginLoading && <div className="loadingMessage">Sending OTP...</div>}
 
-            <button
-              type="submit"
-              className="loginButton"
-              disabled={loginLoading || verifyLoading}
-            >
+            <button type="submit" className="loginButton" disabled={loginLoading || verifyLoading}>
               {loginLoading ? 'Please wait...' : 'Log In'}
             </button>
 
-            {otpMode && otpNotice && (
-              <div className="otpNotice">{otpNotice}</div>
-            )}
+            {otpMode && otpNotice && <div className="otpNotice">{otpNotice}</div>}
           </form>
 
           {otpMode && (
-            <form
-              onSubmit={handleVerifyOtp}
-              className="loginForm otpForm"
-            >
+            <form onSubmit={handleVerifyOtp} className="loginForm otpForm">
               <div className="inputGroup">
                 <label className="inputLabel" htmlFor="login-otp">
                   Enter OTP
@@ -168,26 +154,16 @@ export default function Login() {
                   inputMode="numeric"
                   placeholder="Enter 6-digit OTP"
                   value={otp}
-                  onChange={(e) =>
-                    setOtp(
-                      e.target.value.replace(/\D/g, '').slice(0, 6)
-                    )
-                  }
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   required
                   className="formInput"
                   disabled={loginLoading || verifyLoading}
                 />
               </div>
 
-              {error && (
-                <div className="errorMessage">{error}</div>
-              )}
+              {error && <div className="errorMessage">{error}</div>}
 
-              {verifyLoading && (
-                <div className="loadingMessage">
-                  Verifying OTP...
-                </div>
-              )}
+              {verifyLoading && <div className="loadingMessage">Verifying OTP...</div>}
 
               <button
                 type="submit"
@@ -201,9 +177,7 @@ export default function Login() {
 
           {/* AP-014: Admin authentication remains separate from Employer authentication. */}
           <div className="adminSignInSection">
-            <span className="adminSignInPrompt">
-              SecureShift administrator?
-            </span>
+            <span className="adminSignInPrompt">SecureShift administrator?</span>
 
             <a
               href={ADMIN_LOGIN_URL}
@@ -215,12 +189,8 @@ export default function Login() {
           </div>
 
           <div className="partnerLink">
-            <a
-              href="/expression-of-interest"
-              className="partnerText"
-            >
-              Want to partner with us? Submit an expression of
-              interest!
+            <a href="/expression-of-interest" className="partnerText">
+              Want to partner with us? Submit an expression of interest!
             </a>
           </div>
         </div>
@@ -229,11 +199,7 @@ export default function Login() {
       {/* Right side - Logo/Brand */}
       <div className="brandSection">
         <div className="logoContainer">
-          <img
-            src={logo}
-            alt="Secure Shift Logo"
-            className="logoImage"
-          />
+          <img src={logo} alt="Secure Shift Logo" className="logoImage" />
         </div>
       </div>
     </div>

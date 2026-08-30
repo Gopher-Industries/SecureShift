@@ -1,15 +1,20 @@
 /* ============================================================
-   FAQ PAGE — matches dashboard background (#f4f6fb)
+   FAQ PAGE
    ============================================================ */
 
 .faq-page {
-  background-color: #f4f6fb;
+  background: var(--background);
+  color: var(--text-primary);
   min-height: 100vh;
   padding: 32px 20px 60px;
   box-sizing: border-box;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* ---- centred content column ---- */
+
 .faq-container {
   width: 100%;
   max-width: 1100px;
@@ -28,9 +33,10 @@
   display: inline-block;
   margin-bottom: 10px;
   padding: 4px 12px;
-  background-color: #e8edf8;
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  color: #274b93;
+  color: var(--primary-light);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -39,7 +45,7 @@
 
 .faq-header h1 {
   margin: 0 0 14px;
-  color: #072261;
+  color: var(--text-primary);
   font-size: 30px;
   font-weight: 700;
   line-height: 1.25;
@@ -48,7 +54,7 @@
 .faq-description {
   margin: 0;
   max-width: 680px;
-  color: #4a5568;
+  color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.75;
 }
@@ -67,7 +73,7 @@
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #8a93a3;
+  color: var(--text-secondary);
   font-size: 16px;
   pointer-events: none;
   line-height: 1;
@@ -76,30 +82,33 @@
 .faq-search-input {
   width: 100%;
   padding: 12px 14px 12px 42px;
-  border: 1.5px solid #d0d9e8;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
-  background-color: #ffffff;
-  color: #172033;
+  background-color: var(--surface);
+  color: var(--text-primary);
   font-family: inherit;
   font-size: 15px;
   box-sizing: border-box;
+  outline: none;
   transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
 .faq-search-input::placeholder {
-  color: #9aa3b0;
+  color: var(--text-secondary);
 }
 
 .faq-search-input:hover {
-  border-color: #8ea8d3;
+  border-color: var(--primary-light);
 }
 
 .faq-search-input:focus {
-  border-color: #274b93;
+  border-color: var(--primary-light);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(39, 75, 147, 0.14);
+  box-shadow: 0 0 0 3px rgba(52, 91, 168, 0.14);
 }
 
 /* ============================================================
@@ -109,19 +118,19 @@
 .faq-divider {
   margin: 0 0 28px;
   border: none;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border);
 }
 
 .faq-section-heading {
   margin-bottom: 8px;
-  color: #072261;
+  color: var(--text-primary);
   font-size: 20px;
   font-weight: 700;
 }
 
 .faq-subtitle {
   margin: 0 0 20px;
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -137,14 +146,19 @@
 }
 
 /* ---- no-results state ---- */
+
 .faq-no-results {
   padding: 40px 24px;
   text-align: center;
-  background-color: #ffffff;
-  border: 1px dashed #c9d5e8;
+  background-color: var(--surface);
+  border: 1px dashed var(--border);
   border-radius: 12px;
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 15px;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .faq-no-results-icon {
@@ -162,7 +176,7 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
-  color: #718096;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -173,7 +187,7 @@
   min-width: 24px;
   height: 22px;
   padding: 0 8px;
-  background-color: #274b93;
+  background-color: var(--primary);
   border-radius: 20px;
   color: #ffffff;
   font-size: 12px;
@@ -181,19 +195,257 @@
 }
 
 /* ============================================================
-   CONTENT GRID (Side-by-side layout)
+   CONTENT GRID
    ============================================================ */
 
 .faq-content-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr; /* Questions take slightly more space than the form */
+  grid-template-columns: 1.4fr 1fr;
   gap: 48px;
   align-items: start;
 }
 
-/* Reset the top margin of the contact form when it's inside the grid */
+/* Reset the top margin of the contact form when it's
+   inside the grid */
+
 .faq-form-column .faq-contact-section {
   margin-top: 0;
+}
+
+/* ============================================================
+   FAQ CONTACT SECTION
+   ============================================================ */
+
+.faq-contact-section {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  color: var(--text-primary);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.faq-contact-section h2,
+.faq-contact-section h3 {
+  color: var(--text-primary);
+}
+
+.faq-contact-section p {
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   FAQ QUESTIONS / ACCORDION
+   ============================================================ */
+
+.faq-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.2s ease;
+}
+
+.faq-item:hover {
+  border-color: var(--primary-light);
+}
+
+.faq-question {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: none;
+  width: 100%;
+  padding: 16px 18px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.faq-question:hover {
+  background: var(--surface-secondary);
+}
+
+.faq-answer {
+  background: var(--surface);
+  color: var(--text-secondary);
+  padding: 0 18px 16px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.faq-answer p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   FORM INPUTS
+   ============================================================ */
+
+.faq-contact-section input,
+.faq-contact-section textarea,
+.faq-contact-section select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.faq-contact-section input::placeholder,
+.faq-contact-section textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+.faq-contact-section input:focus,
+.faq-contact-section textarea:focus,
+.faq-contact-section select:focus {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(52, 91, 168, 0.15);
+}
+
+.faq-contact-section select option {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.faq-contact-section label {
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   STATUS MESSAGES
+   ============================================================ */
+
+.faq-status-message {
+  padding: 40px 24px;
+  text-align: center;
+  background-color: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* ============================================================
+   ERROR MESSAGE
+   ============================================================ */
+
+.faq-error {
+  border-color: rgba(220, 38, 38, 0.4);
+  background-color: rgba(220, 38, 38, 0.08);
+  color: var(--danger);
+}
+
+.faq-error p,
+.faq-error span,
+.faq-error strong {
+  color: var(--danger);
+}
+
+.faq-status-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+/* ============================================================
+   SPINNER
+   ============================================================ */
+
+.faq-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary-light);
+  border-radius: 50%;
+  animation: faq-spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes faq-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   RETRY BUTTON
+   ============================================================ */
+
+.faq-retry-btn {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background-color: var(--danger);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.faq-retry-btn:hover {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   GENERAL BUTTONS
+   ============================================================ */
+
+.faq-contact-section button {
+  font-family: inherit;
+}
+
+.faq-contact-section button:not(.faq-question):not(.faq-retry-btn) {
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.faq-contact-section button:not(.faq-question):not(.faq-retry-btn):hover {
+  background: var(--primary-light);
+  transform: translateY(-1px);
 }
 
 /* ============================================================
@@ -205,7 +457,7 @@
     grid-template-columns: 1fr;
     gap: 40px;
   }
-  
+
   .faq-form-column .faq-contact-section {
     margin-top: 20px;
   }
@@ -233,63 +485,60 @@
   .faq-header h1 {
     font-size: 22px;
   }
+
+  .faq-content-grid {
+    gap: 28px;
+  }
+
+  .faq-contact-section {
+    padding: 18px;
+  }
 }
 
 /* ============================================================
-   STATUS MESSAGES (Loading, Error, Empty)
+   DARK MODE OVERRIDES
    ============================================================ */
 
-.faq-status-message {
-  padding: 40px 24px;
-  text-align: center;
-  background-color: #ffffff;
-  border: 1px dashed #c9d5e8;
-  border-radius: 12px;
-  color: #718096;
-  font-size: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+/* These make sure any remaining hard-coded light colours
+   don't leave bright sections in dark mode. */
+
+[data-theme='dark'] .faq-page {
+  background: var(--background);
 }
 
-.faq-error {
-  border-color: #feb2b2;
-  background-color: #fff5f5;
-  color: #c53030;
+[data-theme='dark'] .faq-tag {
+  background: rgba(52, 91, 168, 0.18);
+  border-color: var(--border);
+  color: #9db8f0;
 }
 
-.faq-status-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
+[data-theme='dark'] .faq-contact-section,
+[data-theme='dark'] .faq-item,
+[data-theme='dark'] .faq-question,
+[data-theme='dark'] .faq-answer,
+[data-theme='dark'] .faq-search-input,
+[data-theme='dark'] .faq-no-results,
+[data-theme='dark'] .faq-status-message {
+  background-color: var(--surface);
 }
 
-.faq-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #274b93;
-  border-radius: 50%;
-  animation: faq-spin 1s linear infinite;
-  margin-bottom: 16px;
+[data-theme='dark'] .faq-contact-section {
+  background-color: var(--surface-secondary);
 }
 
-@keyframes faq-spin {
-  to { transform: rotate(360deg); }
+[data-theme='dark'] .faq-search-input {
+  background-color: var(--surface-secondary);
 }
 
-.faq-retry-btn {
-  margin-top: 16px;
-  padding: 8px 16px;
-  background-color: #c53030;
-  color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
+[data-theme='dark'] .faq-question:hover {
+  background-color: var(--surface-secondary);
 }
 
-.faq-retry-btn:hover {
-  background-color: #9b2c2c;
+[data-theme='dark'] .faq-error {
+  background-color: rgba(220, 38, 38, 0.12);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+[data-theme='dark'] .faq-retry-btn:hover {
+  background-color: #ef4444;
 }
