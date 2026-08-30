@@ -10,6 +10,7 @@ import Shifts from '../pages/Shifts';
 import AuditLogs from '../pages/AuditLogs';
 import Messages from '../pages/Messages';
 import SMTPSettings from '../pages/SMTPSettings';
+import GeneralSettings from '../pages/GeneralSettings';
 
 export default function AppRoutes() {
   return (
@@ -31,6 +32,7 @@ export default function AppRoutes() {
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/smtp-settings" element={<SMTPSettings />} />
+        <Route path="/settings" element={<GeneralSettings />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

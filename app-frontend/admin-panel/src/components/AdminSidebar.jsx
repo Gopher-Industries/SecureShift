@@ -8,6 +8,7 @@ const items = [
   ['/audit-logs', 'Audit Logs'],
   ['/messages', 'Messages'],
   ['/smtp-settings', 'SMTP Settings'],
+  ['/settings', 'General Settings'],
 ];
 
 export default function AdminSidebar() {
