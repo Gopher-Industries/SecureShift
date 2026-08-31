@@ -32,3 +32,14 @@ export const updateSmtpSettings = (body) =>
   http.put('/admin/smtp-settings', body).then((r) => r.data);
 export const testSmtpSettings = (body) =>
   http.post('/admin/smtp-settings/test', body).then((r) => r.data);
+
+// Interim AP-033 create flow.
+// The current backend /auth/register endpoint supports Employer creation only.
+// Admin creation must wait for the dedicated POST /admin/users endpoint.
+export const createEmployer = (body) =>
+  http
+    .post('/auth/register', {
+      ...body,
+      role: 'employer',
+    })
+    .then((r) => r.data);
