@@ -78,6 +78,13 @@
   border: 1px solid #fecaca;
 }
 
+.sessionExpiredMessage {
+  color: #8a6100;
+  background: #fff6e0;
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+
 .loginButton {
   width: 35%;
   min-width: 120px;

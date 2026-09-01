@@ -71,19 +71,10 @@ export default function AdminLogin() {
 
           <form onSubmit={onSubmit} noValidate className="loginForm">
             {sessionExpired && (
-              <p
-                role="status"
-                style={{
-                  color: '#8a6100',
-                  background: '#fff6e0',
-                  padding: '8px 10px',
-                  borderRadius: 4,
-                }}
-              >
+              <p role="status" className="sessionExpiredMessage">
                 Your session has expired. Please log in again.
               </p>
             )}
-
             <div className="inputGroup">
               <FormField
                 id="admin-email"
