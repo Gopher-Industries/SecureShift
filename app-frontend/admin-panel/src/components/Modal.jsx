@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 export default function Modal({ open, title, children, onClose }) {
+  const titleId = useId();
   const modalRef = useRef(null);
   const prevFocusRef = useRef(null);
 
@@ -82,7 +83,7 @@ export default function Modal({ open, title, children, onClose }) {
         ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={titleId}
         tabIndex="-1"
         style={{
           background: '#fff',
@@ -91,7 +92,7 @@ export default function Modal({ open, title, children, onClose }) {
           minWidth: 360,
         }}
       >
-        <h3 id="modal-title" style={{ marginTop: 0 }}>
+        <h3 id={titleId} style={{ marginTop: 0 }}>
           {title}
         </h3>
         {children}
