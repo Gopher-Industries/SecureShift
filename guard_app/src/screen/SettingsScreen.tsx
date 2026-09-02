@@ -24,6 +24,7 @@ import {
 import { useAppLock } from '../context/AppLockProvider';
 import { authenticate } from '../lib/appLock';
 import { LocalStorage } from '../lib/localStorage';
+import { captureTestError, isSentryEnabled } from '../lib/sentry';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
@@ -98,7 +99,14 @@ export default function SettingsScreen() {
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [langModalVisible, setLangModalVisible] = useState(false);
+  const [forceCrash, setForceCrash] = useState(false);
   const appLock = useAppLock();
+
+  // Renders throw synchronously, so this surfaces to the root ErrorBoundary
+  // (see App.tsx) the same way a real uncaught crash would.
+  if (forceCrash) {
+    throw new Error('SecureShift Guard App — forced test crash (Settings > Beta)');
+  }
 
   const handleToggleAppLock = async (value: boolean) => {
     // Require a successful auth before enabling, so a user can't lock
@@ -322,6 +330,29 @@ export default function SettingsScreen() {
             onPress={async () => {
               await showLocalNotification(t('homeExtras.notifTitle'), t('homeExtras.notifBody'));
             }}
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="bug-outline" size={18} color={colors.primary} />}
+            label="Send test error to Sentry"
+            right={
+              <Text style={styles.meta}>{isSentryEnabled ? 'configured' : 'not configured'}</Text>
+            }
+            onPress={() => {
+              captureTestError();
+              Alert.alert(
+                'Sentry',
+                isSentryEnabled
+                  ? 'Test error sent. Check the Sentry dashboard for this release.'
+                  : 'EXPO_PUBLIC_SENTRY_DSN is not set, so nothing was sent (this is expected in local dev).',
+              );
+            }}
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="skull-outline" size={18} color={colors.status.rejected} />}
+            label="Force a test crash"
+            onPress={() => setForceCrash(true)}
             colors={colors}
           />
         </View>

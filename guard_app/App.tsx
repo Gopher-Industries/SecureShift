@@ -17,9 +17,13 @@ import {
   registerPushTokenIfNeeded,
   subscribeToPushTokenChanges,
 } from './src/lib/pushNotifications';
+import { initSentry, Sentry } from './src/lib/sentry';
 import AppNavigator, { RootStackParamList } from './src/navigation/AppNavigator';
 import { ThemeProvider, useAppTheme } from './src/theme';
 import { setUpNotifications } from './src/utils/notificationHelpers';
+
+// Must run before anything else so crashes during startup are captured too.
+initSentry();
 
 //allows navigation outside of components (e.g., from API handlers)
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -79,7 +83,7 @@ function AppContent() {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <ThemeProvider>
       <ErrorBoundary>
@@ -90,6 +94,10 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
+// Sentry.wrap adds native crash/ANR correlation and root-level touch
+// breadcrumbs; a no-op when Sentry hasn't been initialized (no DSN set).
+export default Sentry.wrap(App);
 
 const styles = StyleSheet.create({
   root: {

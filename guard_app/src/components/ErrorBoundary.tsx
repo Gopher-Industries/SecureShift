@@ -3,6 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { captureReactError } from '../lib/sentry';
 import { useAppTheme } from '../theme';
 
 import type { AppColors } from '../theme/colors';
@@ -42,6 +43,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     // we only replace the screen, the real error still goes to the logs
     console.error('Caught by ErrorBoundary:', error, info.componentStack);
+    captureReactError(error, info.componentStack ?? undefined);
   }
 
   handleRetry = () => {
