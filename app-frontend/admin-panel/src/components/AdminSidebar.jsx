@@ -147,11 +147,28 @@ const SMTPIcon = ({ size = 24, color = 'currentColor' }) => (
   </svg>
 );
 
+const RolesIcon = ({ size = 24, color = 'currentColor' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+);
+
 const items = [
   ['/dashboard', 'Dashboard', DashboardIcon],
   ['/users', 'Users', UsersIcon],
   ['/guard-verification', 'Guard Verification', GuardIcon],
   ['/shifts', 'Shifts', ShiftIcon],
+  ['/roles', 'Roles & Permissions', RolesIcon],
   ['/audit-logs', 'Audit Logs', AuditIcon],
   ['/messages', 'Messages', ChatIcon],
   ['/smtp-settings', 'SMTP Settings', SMTPIcon],

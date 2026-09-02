@@ -7,6 +7,7 @@ import Users from '../pages/Users';
 import UserDetails from '../pages/UserDetails';
 import GuardVerification from '../pages/GuardVerification';
 import Shifts from '../pages/Shifts';
+import Roles from '../pages/Roles';
 import AuditLogs from '../pages/AuditLogs';
 import Messages from '../pages/Messages';
 import SMTPSettings from '../pages/SMTPSettings';
@@ -36,6 +37,8 @@ export default function AppRoutes() {
         <Route path="/guard-verification" element={<GuardVerification />} />
 
         <Route path="/shifts" element={<Shifts />} />
+
+        <Route path="/roles" element={<Roles />} />
 
         <Route path="/audit-logs" element={<AuditLogs />} />
 
