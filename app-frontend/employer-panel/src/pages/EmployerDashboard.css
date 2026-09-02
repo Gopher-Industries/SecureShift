@@ -436,6 +436,8 @@ body {
   flex-wrap: wrap;
 }
 
+/* ---------------- INCIDENT REPORTS ---------------- */
+
 .ss-incident-toolbar {
   display: grid;
   grid-template-columns: 2fr repeat(3, minmax(130px, 1fr)) auto;
@@ -490,7 +492,15 @@ body {
 .ss-incident-row {
   position: relative;
   display: grid;
-  grid-template-columns: 4px 34px 1fr 1.4fr 0.9fr 1fr 1.2fr auto;
+  grid-template-columns:
+    4px
+    34px
+    1fr
+    1.4fr
+    0.9fr
+    1fr
+    1.2fr
+    auto;
   gap: 14px;
   align-items: center;
   background: #fff;
@@ -549,6 +559,15 @@ body {
   flex-wrap: wrap;
 }
 
+/* New FE018 action group */
+
+.ss-incident-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .ss-review-btn {
   border: none;
   background: #18284f;
@@ -558,6 +577,61 @@ body {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.ss-review-btn:hover {
+  background: var(--ss-blue-700);
+  transform: translateY(-1px);
+}
+
+/* FE018 PDF Download Button */
+
+.ss-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid var(--ss-blue-800);
+  background: #ffffff;
+  color: var(--ss-blue-800);
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.ss-download-btn:hover {
+  background: var(--ss-blue-800);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(15, 58, 138, 0.18);
+}
+
+.ss-download-btn:active,
+.ss-review-btn:active {
+  transform: translateY(0);
+}
+
+.ss-download-btn:focus-visible,
+.ss-review-btn:focus-visible {
+  outline: 3px solid rgba(15, 58, 138, 0.2);
+  outline-offset: 2px;
+}
+
+.ss-download-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .ss-ico {
@@ -579,6 +653,8 @@ body {
 .ss-empty-state--error {
   color: var(--ss-red);
 }
+
+/* ---------------- REVIEWS ---------------- */
 
 .ss-reviews__track {
   display: grid;
@@ -666,6 +742,8 @@ body {
   cursor: pointer;
 }
 
+/* ---------------- INCIDENT MODAL ---------------- */
+
 .create-shift-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -690,6 +768,7 @@ body {
     transform: translateY(20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -758,6 +837,7 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .actions .primary {
@@ -780,6 +860,34 @@ body {
   cursor: pointer;
 }
 
+/* FE018 modal PDF button */
+
+.pdf-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #ffffff;
+  color: var(--ss-blue-800);
+  border: 1px solid var(--ss-blue-800);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.pdf-modal-btn:hover {
+  background: var(--ss-blue-800);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+
 @media (max-width: 1200px) {
   .ss-table__head,
   .ss-table__row {
@@ -787,7 +895,14 @@ body {
   }
 
   .ss-incident-row {
-    grid-template-columns: 4px 34px 1fr 1fr 0.9fr 1fr auto;
+    grid-template-columns:
+      4px
+      34px
+      1fr
+      1fr
+      0.9fr
+      1fr
+      auto;
   }
 
   .ss-incident-shift {
@@ -828,7 +943,7 @@ body {
   .ss-incident-id,
   .ss-incident-date,
   .ss-incident-badges,
-  .ss-review-btn {
+  .ss-incident-actions {
     grid-column: 3;
   }
 
@@ -841,5 +956,24 @@ body {
   .ss-incident-toolbar,
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ss-incident-actions {
+    width: 100%;
+  }
+
+  .ss-download-btn,
+  .ss-review-btn {
+    flex: 1;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions .primary,
+  .actions .secondary,
+  .pdf-modal-btn {
+    width: 100%;
   }
 }
