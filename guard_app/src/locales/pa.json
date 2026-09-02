@@ -326,7 +326,16 @@
     "submitting": "ਜਮ੍ਹਾਂ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ...",
     "submitSuccess": "ਘਟਨਾ ਰਿਪੋਰਟ ਸਫਲਤਾਪੂਰਵਕ ਜਮ੍ਹਾਂ ਕੀਤੀ ਗਈ",
     "submitFailed": "ਘਟਨਾ ਰਿਪੋਰਟ ਜਮ੍ਹਾਂ ਕਰਨ ਵਿੱਚ ਅਸਫਲ",
-    "cancel": "ਰੱਦ ਕਰੋ"
+    "cancel": "ਰੱਦ ਕਰੋ",
+    "attachments": "ਅਟੈਚਮੈਂਟ (ਚੋਣਵੇਂ)",
+    "addMedia": "ਫੋਟੋ / ਵੀਡੀਓ ਜੋੜੋ",
+    "addFile": "ਫਾਈਲ ਜੋੜੋ",
+    "attachmentHint": "ਤੁਸੀਂ 25MB ਤੱਕ ਦੀਆਂ ਫੋਟੋ, ਵੀਡੀਓ, ਆਡੀਓ ਜਾਂ PDF ਜੋੜ ਸਕਦੇ ਹੋ।",
+    "remove": "ਹਟਾਓ",
+    "fileNotAdded": "ਫਾਈਲ ਨਹੀਂ ਜੋੜੀ ਗਈ",
+    "typeNotAllowed": "ਇਹ ਫਾਈਲ ਕਿਸਮ ਮਨਜ਼ੂਰ ਨਹੀਂ ਹੈ",
+    "fileTooBig": "ਇਹ ਫਾਈਲ 25MB ਤੋਂ ਵੱਡੀ ਹੈ",
+    "attachmentCount": "{{count}} ਅਟੈਚਮੈਂਟ"
   },
   "appLock": {
     "prompt": "SecureShift ਅਨਲਾਕ ਕਰੋ",
