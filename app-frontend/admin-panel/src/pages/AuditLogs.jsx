@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import http from '../lib/http';
 import Modal from '../components/Modal';
 
@@ -70,6 +71,22 @@ export default function AuditLogs() {
     }
   };
 
+  const handleExportExcel = () => {
+    const data = logs.map((log) => ({
+      Timestamp: new Date(log.timestamp).toLocaleString(),
+      User: log.user?.name || log.user || '—',
+      Action: log.action,
+      Role: log.user?.role || '—',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Audit Logs');
+
+    XLSX.writeFile(workbook, 'audit-logs.xlsx');
+  };
+
   const handlePurgeConfirmed = async () => {
     setPurging(true);
     setPurgeMessage(null);
@@ -91,26 +108,6 @@ export default function AuditLogs() {
     }
   };
 
-  const inputStyle = {
-    padding: '9px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '7px',
-    backgroundColor: '#ffffff',
-    color: '#333',
-    outline: 'none',
-    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-  };
-
-  const handleFocus = (e) => {
-    e.currentTarget.style.borderColor = '#6366f1';
-    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.12)';
-  };
-
-  const handleBlur = (e) => {
-    e.currentTarget.style.borderColor = '#d1d5db';
-    e.currentTarget.style.boxShadow = 'none';
-  };
-
   return (
     <div>
       <h1>Audit Logs</h1>
@@ -121,44 +118,22 @@ export default function AuditLogs() {
           display: 'flex',
           gap: '10px',
           flexWrap: 'wrap',
-          alignItems: 'center',
           marginBottom: '16px',
-          padding: '16px',
-          borderRadius: '10px',
-          backgroundColor: '#ffffff',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
         }}
       >
         <input
           placeholder="User ID"
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          style={{ ...inputStyle, minWidth: '150px' }}
         />
 
         <input
           placeholder="Action (e.g. LOGIN_SUCCESS)"
           value={action}
           onChange={(e) => setAction(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          style={{ ...inputStyle, minWidth: '210px' }}
         />
 
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          style={{
-            ...inputStyle,
-            minWidth: '130px',
-            cursor: 'pointer',
-          }}
-        >
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">All Roles</option>
           <option value="guard">Guard</option>
           <option value="employer">Employer</option>
@@ -169,72 +144,19 @@ export default function AuditLogs() {
           type="date"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          style={{
-            ...inputStyle,
-            cursor: 'pointer',
-          }}
         />
 
         <input
           type="date"
           value={to}
           onChange={(e) => setTo(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          style={{
-            ...inputStyle,
-            cursor: 'pointer',
-          }}
         />
 
-        <button
-          onClick={handleApplyFilters}
-          style={{
-            padding: '9px 16px',
-            border: 'none',
-            borderRadius: '7px',
-            backgroundColor: '#4f46e5',
-            color: '#ffffff',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#4338ca';
-            e.currentTarget.style.boxShadow =
-              '0 4px 10px rgba(79, 70, 229, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#4f46e5';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          Apply Filters
-        </button>
+        <button onClick={handleApplyFilters}>Apply Filters</button>
 
-        <button
-          onClick={handleClearFilters}
-          style={{
-            padding: '9px 16px',
-            border: '1px solid #d1d5db',
-            borderRadius: '7px',
-            backgroundColor: '#ffffff',
-            color: '#374151',
-            fontWeight: '500',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f3f4f6';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#ffffff';
-          }}
-        >
-          Clear
-        </button>
+        <button onClick={handleClearFilters}>Clear</button>
+
+        <button onClick={handleExportExcel}>Export Excel</button>
       </div>
 
       {/* Purge section */}
@@ -391,8 +313,7 @@ export default function AuditLogs() {
           </p>
 
           <p>
-            <strong>User:</strong>{' '}
-            {selectedLog.user?.name || '—'} (
+            <strong>User:</strong> {selectedLog.user?.name || '—'} (
             {selectedLog.user?.email || 'N/A'})
           </p>
 
