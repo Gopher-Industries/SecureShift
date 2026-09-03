@@ -1,5 +1,5 @@
 import http from '../lib/http';
-import mockDashboardMetrics from '../data/mockDashboardMetrics'
+import mockDashboardMetrics from '../data/mockDashboardMetrics';
 
 // ---- Admin API inventory (all under /api/v1/admin) ----
 // Auth
