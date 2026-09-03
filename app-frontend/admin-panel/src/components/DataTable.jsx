@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import colors from '../theme/colors';
 import Pagination from './Pagination';
+import colors from '../theme/colors';
 
 /**
  * Internal pagination:
