@@ -399,8 +399,6 @@ export default function Messages() {
     },
   ];
 
-  const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / PAGE_SIZE));
-
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
     searchInputRef,
@@ -601,42 +599,18 @@ export default function Messages() {
         <p style={{ color: '#c00' }}>{error}</p>
       ) : (
         <>
-          <DataTable columns={columns} rows={messages} empty="No messages found" />
-
-          {pagination.total > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: 12,
-                color: '#555',
-                fontSize: 14,
-              }}
-            >
-              <span>
-                Page {pagination.page} of {totalPages} ({pagination.total} total)
-              </span>
-
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                >
-                  Prev
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={!pagination.hasNext}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <DataTable
+            columns={columns}
+            rows={messages}
+            empty="No messages found"
+            pageSize={PAGE_SIZE}
+            pagination={{
+              type: 'external',
+              page: page,
+              totalItems: pagination.total,
+              onPageChange: setPage,
+            }}
+          />
         </>
       )}
 
