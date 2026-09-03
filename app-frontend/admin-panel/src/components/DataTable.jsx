@@ -17,12 +17,13 @@ import Pagination from './Pagination';
  * External pagination:
  * Pass the rows returned for the current page and provide a pagination object.
  * The parent is responsible for fetching the correct page when onPageChange is called.
+ * Sorting will only effect the page that is showing.
  *
  * Usage:
  * <DataTable
  *   columns={columns}
  *   rows={users}
- *   pageSize: 20
+ *   pageSize: {20}
  *   pagination={{
  *     type: 'external',
  *     page: page,
