@@ -37,3 +37,14 @@ export const testSmtpSettings = (body) =>
 // Dashboard trend metrics
 // Currently mock for now, real endpoint TODO
 export const getDashboardMetrics = (/* params */) => Promise.resolve(mockDashboardMetrics);
+
+// Interim AP-033 create flow.
+// The current backend /auth/register endpoint supports Employer creation only.
+// Admin creation must wait for the dedicated POST /admin/users endpoint.
+export const createEmployer = (body) =>
+  http
+    .post('/auth/register', {
+      ...body,
+      role: 'employer',
+    })
+    .then((r) => r.data);

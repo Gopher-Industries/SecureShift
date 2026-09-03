@@ -406,7 +406,16 @@
     "submitting": "સબમિટ થઈ રહ્યું છે...",
     "submitSuccess": "ઘટના અહેવાલ સફળતાપૂર્વક સબમિટ થયો",
     "submitFailed": "ઘટના અહેવાલ સબમિટ કરવામાં નિષ્ફળતા",
-    "cancel": "રદ કરો"
+    "cancel": "રદ કરો",
+    "attachments": "જોડાણો (વિકલ્પ)",
+    "addMedia": "ફોટો / વિડિયો ઉમેરો",
+    "addFile": "ફાઇલ ઉમેરો",
+    "attachmentHint": "તમે 25MB સુધીના ફોટા, વિડિયો, ઑડિયો કે PDF જોડી શકો છો.",
+    "remove": "દૂર કરો",
+    "fileNotAdded": "ફાઇલ ઉમેરાયી નથી",
+    "typeNotAllowed": "આ ફાઇલ પ્રકારને મંજૂરી નથી",
+    "fileTooBig": "આ ફાઇલ 25MB થી મોટી છે",
+    "attachmentCount": "{{count}} જોડાણ"
   },
   "appLock": {
     "prompt": "SecureShift અનલૉક કરો",
