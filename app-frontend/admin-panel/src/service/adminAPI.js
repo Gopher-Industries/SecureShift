@@ -1,4 +1,5 @@
 import http from '../lib/http';
+import mockDashboardMetrics from '../data/mockDashboardMetrics'
 
 // ---- Admin API inventory (all under /api/v1/admin) ----
 // Auth
@@ -32,3 +33,7 @@ export const updateSmtpSettings = (body) =>
   http.put('/admin/smtp-settings', body).then((r) => r.data);
 export const testSmtpSettings = (body) =>
   http.post('/admin/smtp-settings/test', body).then((r) => r.data);
+
+// Dashboard trend metrics
+// Currently mock for now, real endpoint TODO
+export const getDashboardMetrics = (/* params */) => Promise.resolve(mockDashboardMetrics);
