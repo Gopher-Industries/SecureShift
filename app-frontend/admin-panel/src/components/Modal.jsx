@@ -20,6 +20,16 @@ export default function Modal({ open, title, children, onClose }) {
       modalRef.current.focus();
     }
 
+    return () => {
+      if (prevFocusRef.current) {
+        prevFocusRef.current.focus();
+      }
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
     const handleKeyDown = (ev) => {
       if (ev.key === 'Escape') {
         onClose();
@@ -53,10 +63,6 @@ export default function Modal({ open, title, children, onClose }) {
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-
-      if (prevFocusRef.current) {
-        prevFocusRef.current.focus();
-      }
     };
   }, [open, onClose]);
 
