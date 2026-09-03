@@ -313,8 +313,8 @@ export default function AdminDashboard() {
           <div>
             <h2 id="dashboard-trends-heading">Trends</h2>
             <p style={{ color: colors.muted, fontSize: 14 }}>
-              Weekly activity across the platform (mock data — will switch to live metrics once
-              the backend endpoint is available).
+              Weekly activity across the platform (mock data — will switch to live metrics once the
+              backend endpoint is available).
             </p>
           </div>
         </div>
