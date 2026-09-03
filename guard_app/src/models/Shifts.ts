@@ -40,6 +40,7 @@ export type AllShift = {
   date: string;
   time: string;
   status?: 'Available' | 'Pending' | 'Confirmed';
+  detailedInstructions?: string;
   attendance?: {
     checkInTime?: string;
     checkOutTime?: string;
