@@ -8,6 +8,7 @@ import {
   markAsRead,
   markAllAsRead,
   getUnreadCount,
+  deleteNotification,
 } from "../controllers/notification.controller.js";
 
 const router = express.Router();
@@ -152,5 +153,34 @@ router.get("/:id", auth, loadUser, getNotificationById);
  *       - bearerAuth: []
  */
 router.patch("/:id/read", auth, loadUser, markAsRead);
+
+/**
+ * @swagger
+ * /api/v1/notifications/{id}:
+ *   delete:
+ *     summary: Delete a notification (owner only)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The notification ID
+ *     responses:
+ *       200:
+ *         description: Notification deleted successfully
+ *       400:
+ *         description: Invalid notification ID
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Notification not found
+ *       500:
+ *         description: Server error
+ */
+router.delete("/:id", auth, loadUser, deleteNotification);
 
 export default router;
