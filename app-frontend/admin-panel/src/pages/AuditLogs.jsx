@@ -1,3 +1,4 @@
+import RetentionPolicy from '../components/RetentionPolicy';
 import { useEffect, useState } from 'react';
 import http from '../lib/http';
 import Modal from '../components/Modal';
@@ -92,7 +93,7 @@ export default function AuditLogs() {
   return (
     <div>
       <h1>Audit Logs</h1>
-
+      <RetentionPolicy />
       {/* Filters */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
         <input placeholder="User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />

@@ -44,11 +44,45 @@ function TaskRoute() {
 }
 
 function ProtectedLayout({ children, language, setLanguage }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <ProtectedRoute>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+        }}
+      >
         <Header language={language} setLanguage={setLanguage} />
-        <main style={{ flex: 1, paddingBottom: '20px' }}>{children}</main>
+
+        <div
+          style={{
+            display: 'flex',
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() =>
+              setSidebarCollapsed((previous) => !previous)
+            }
+          />
+
+          <main
+            style={{
+              flex: 1,
+              minWidth: 0,
+              paddingBottom: '20px',
+              transition: 'width 0.25s ease',
+            }}
+          >
+            {children}
+          </main>
+        </div>
+
         <Footer language={language} />
          <AIChatWidget />
       </div>

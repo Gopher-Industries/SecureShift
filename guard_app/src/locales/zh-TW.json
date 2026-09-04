@@ -407,7 +407,16 @@
     "submitting": "提交中...",
     "submitSuccess": "事件報告提交成功",
     "submitFailed": "提交事件報告失敗",
-    "cancel": "取消"
+    "cancel": "取消",
+    "attachments": "附件（選填）",
+    "addMedia": "新增照片 / 影片",
+    "addFile": "新增檔案",
+    "attachmentHint": "可以新增照片、影片、音訊或 PDF，最大 25MB。",
+    "remove": "移除",
+    "fileNotAdded": "檔案未新增",
+    "typeNotAllowed": "不支援這種檔案類型",
+    "fileTooBig": "此檔案超過 25MB",
+    "attachmentCount": "{{count}} 個附件"
   },
   "appLock": {
     "prompt": "解鎖 SecureShift",
