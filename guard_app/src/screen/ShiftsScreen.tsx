@@ -454,8 +454,10 @@ function AppliedTab({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedShift, setSelectedShift] = useState<AppliedShift | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (pg: number) => {
     try {
       setLoading(true);
       const me = await getMe();
@@ -464,19 +466,40 @@ function AppliedTab({ navigation }: Props) {
         setRows([]);
         return;
       }
-      const [mine, attendanceRecords] = await Promise.all([myShifts(), getUserAttendance(myUid)]);
+      const [mine, attendanceRecords] = await Promise.all([
+        myShifts({ page: pg }),
+        getUserAttendance(myUid),
+      ]);
 
-      setRows(mapMineShifts(mine, myUid, attendanceRecords));
+      setPage(mine.page);
+      setPages(Math.ceil(mine.total / mine.limit));
+      setRows(mapMineShifts(mine.items, myUid, attendanceRecords));
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
+  useFocusEffect(useCallback(() => void fetchData(1), [fetchData]));
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
+    await fetchData(1);
+    setRefreshing(false);
+  };
+
+  const nextPage = async () => {
+    setRefreshing(true);
+    if (page < pages) {
+      fetchData(page + 1);
+    }
+    setRefreshing(false);
+  };
+
+  const prevPage = async () => {
+    setRefreshing(true);
+    if (page > 1) {
+      fetchData(page - 1);
+    }
     setRefreshing(false);
   };
 
@@ -524,6 +547,22 @@ function AppliedTab({ navigation }: Props) {
         />
       )}
 
+      {pages > 1 && (
+        <View style={s.pageButtonsView}>
+          {page > 1 && (
+            <TouchableOpacity style={s.pageButton} onPress={prevPage}>
+              <Text style={s.pageButtonText}>&lt;</Text>
+            </TouchableOpacity>
+          )}
+
+          {page < pages && (
+            <TouchableOpacity style={s.pageButton} onPress={nextPage}>
+              <Text style={s.pageButtonText}>&gt;</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       <ShiftDetailsModal
         shift={selectedShift}
         visible={selectedShift !== null}
@@ -545,30 +584,49 @@ function CompletedTab({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedShift, setSelectedShift] = useState<CompletedShift | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [compPage, setCompPage] = useState(1);
+  const [compPages, setCompPages] = useState(1);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (pg: number) => {
     try {
       setLoading(true);
-
       const me = await getMe();
       const myUid = me?._id ?? me?.id;
 
       const [resp, attendanceRecords] = await Promise.all([
-        myShifts('past'),
+        myShifts({ page: pg, status: 'past' }),
         myUid ? getUserAttendance(myUid) : Promise.resolve([]),
       ]);
 
-      setRows(mapCompleted(resp, attendanceRecords));
+      setCompPage(resp.page);
+      setCompPages(Math.ceil(resp.total / resp.limit));
+      setRows(mapCompleted(resp.items, attendanceRecords));
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
+  useFocusEffect(useCallback(() => void fetchData(compPage), [fetchData]));
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchData();
+    await fetchData(compPage);
+    setRefreshing(false);
+  };
+
+  const nextPage = async () => {
+    setRefreshing(true);
+    if (compPage < compPages) {
+      fetchData(compPage + 1);
+    }
+    setRefreshing(false);
+  };
+
+  const prevPage = async () => {
+    setRefreshing(true);
+    if (compPage > 1) {
+      fetchData(compPage - 1);
+    }
     setRefreshing(false);
   };
 
@@ -632,6 +690,22 @@ function CompletedTab({ navigation }: Props) {
             <EmptyState icon="checkmark-done-outline" title={t('shifts.noCompleted')} />
           }
         />
+      )}
+
+      {compPages > 1 && (
+        <View style={s.pageButtonsView}>
+          {compPage > 1 && (
+            <TouchableOpacity style={s.pageButton} onPress={prevPage}>
+              <Text style={s.pageButtonText}>&lt;</Text>
+            </TouchableOpacity>
+          )}
+
+          {compPage < compPages && (
+            <TouchableOpacity style={s.pageButton} onPress={nextPage}>
+              <Text style={s.pageButtonText}>&gt;</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
 
       <ShiftDetailsModal
@@ -791,5 +865,25 @@ const getStyles = (colors: AppColors) =>
     retryButtonText: {
       color: colors.white,
       fontWeight: '700',
+    },
+
+    pageButtonsView: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    pageButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 6,
+      marginVertical: 4,
+      marginHorizontal: 4,
+    },
+    pageButtonText: {
+      color: colors.white,
+      fontSize: 12,
+      fontWeight: 'bold',
+      marginVertical: 9,
+      marginHorizontal: 12,
+      alignSelf: 'center',
     },
   });
