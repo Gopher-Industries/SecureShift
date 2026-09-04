@@ -1,6 +1,7 @@
 import express from "express";
 import * as equipmentController from "../controllers/equipment.controller.js";
 import auth from "../middleware/auth.js";
+import { allowRoles } from "../middleware/role.js";
 
 const router = express.Router();
 
@@ -164,6 +165,11 @@ router.patch("/:id/report", auth, equipmentController.reportEquipment);
  *       403:
  *         description: Forbidden
  */
-router.get("/guard/:guardId", auth, equipmentController.getEquipmentByGuard);
+router.get(
+  "/guard/:guardId",
+  auth,
+  allowRoles("guard", "admin"),
+  equipmentController.getEquipmentByGuard,
+);
 
 export default router;
