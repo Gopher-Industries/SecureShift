@@ -1,3 +1,4 @@
+import Announcements from '../pages/Announcements';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import AdminLayout from '../layouts/AdminLayout';
@@ -45,6 +46,7 @@ export default function AppRoutes() {
         <Route path="/messages" element={<Messages />} />
 
         <Route path="/smtp-settings" element={<SMTPSettings />} />
+        <Route path="/announcements" element={<Announcements />} />
       </Route>
 
       <Route path="/access-denied" element={<AccessDenied />} />

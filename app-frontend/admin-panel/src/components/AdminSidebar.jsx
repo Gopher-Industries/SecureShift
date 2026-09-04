@@ -172,6 +172,7 @@ const items = [
   ['/audit-logs', 'Audit Logs', AuditIcon],
   ['/messages', 'Messages', ChatIcon],
   ['/smtp-settings', 'SMTP Settings', SMTPIcon],
+  ['/announcements', 'Announcements', ChatIcon],
 ];
 
 export default function AdminSidebar({ isOpen, onClose }) {
