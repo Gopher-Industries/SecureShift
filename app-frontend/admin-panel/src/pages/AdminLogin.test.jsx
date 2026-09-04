@@ -41,7 +41,7 @@ describe('AdminLogin', () => {
 
       await userEvent.type(screen.getByLabelText(/email/i), 'admin.local@secureshift.test');
       await userEvent.type(screen.getByLabelText(/password/i), 'SecureShift1!');
-      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /log in/i }));
 
       await waitFor(() =>
         expect(mockLogin).toHaveBeenCalledWith('admin.local@secureshift.test', 'SecureShift1!')
@@ -65,7 +65,7 @@ describe('AdminLogin', () => {
 
       await userEvent.type(screen.getByLabelText(/email/i), 'wrong@example.com');
       await userEvent.type(screen.getByLabelText(/password/i), 'wrongpass');
-      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /log in/i }));
 
       expect(await screen.findByText('Invalid credentials')).toBeInTheDocument();
       expect(mockNavigate).not.toHaveBeenCalled();
@@ -89,9 +89,9 @@ describe('AdminLogin', () => {
 
       await userEvent.type(screen.getByLabelText(/email/i), 'admin.local@secureshift.test');
       await userEvent.type(screen.getByLabelText(/password/i), 'SecureShift1!');
-      await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+      await userEvent.click(screen.getByRole('button', { name: /log in/i }));
 
-      expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /logging in/i })).toBeDisabled();
 
       resolveLogin({ token: 'abc', role: 'admin' });
       await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
@@ -148,5 +148,24 @@ describe('AdminLogin', () => {
       });
       expect(screen.getByTestId('location')).not.toHaveTextContent('sessionExpired');
     });
+  });
+
+  it('shows inline validation errors and blocks submit for invalid input', async () => {
+    const mockLogin = jest.fn();
+    useAdminAuth.mockReturnValue({ login: mockLogin });
+
+    render(
+      <MemoryRouter>
+        <AdminLogin />
+      </MemoryRouter>
+    );
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'abc');
+    await userEvent.click(screen.getByRole('button', { name: /log in/i }));
+
+    expect(await screen.findByText('Enter a valid email address')).toBeInTheDocument();
+    expect(screen.getByText('Password is required')).toBeInTheDocument();
+    expect(mockLogin).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

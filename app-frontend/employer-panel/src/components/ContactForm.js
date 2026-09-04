@@ -4,16 +4,21 @@ import './ContactForm.css';
 const EMPTY_FORM = {
   name: '',
   email: '',
+  phone: '',
+  subject: '',
   message: '',
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[0-9+\s\-()]{6,20}$/;
 
-function validateForm(values) {
+function validateForm(values, options = {}) {
   const errors = {};
-  const name = values.name.trim();
-  const email = values.email.trim();
-  const message = values.message.trim();
+  const name = values.name ? values.name.trim() : '';
+  const email = values.email ? values.email.trim() : '';
+  const phone = values.phone ? values.phone.trim() : '';
+  const subject = values.subject ? values.subject.trim() : '';
+  const message = values.message ? values.message.trim() : '';
 
   if (!name) {
     errors.name = 'Name is required.';
@@ -25,6 +30,18 @@ function validateForm(values) {
     errors.email = 'Email is required.';
   } else if (!EMAIL_PATTERN.test(email)) {
     errors.email = 'Enter a valid email address.';
+  }
+
+  if (options.showPhone && phone) {
+    if (!PHONE_PATTERN.test(phone)) {
+      errors.phone = 'Enter a valid phone number.';
+    }
+  }
+
+  if (options.showSubject) {
+    if (!subject) {
+      errors.subject = 'Subject is required.';
+    }
   }
 
   if (!message) {
@@ -41,6 +58,8 @@ function ContactForm({
   submitButtonText = 'Send Message',
   initialValues = EMPTY_FORM,
   resetOnSuccess = true,
+  showSubject = true,
+  showPhone = true,
 }) {
   const [values, setValues] = useState({
     ...EMPTY_FORM,
@@ -52,7 +71,7 @@ function ContactForm({
   const [submissionStatus, setSubmissionStatus] = useState(null);
 
   const validateSingleField = (fieldName, nextValues) => {
-    const validationErrors = validateForm(nextValues);
+    const validationErrors = validateForm(nextValues, { showSubject, showPhone });
 
     setErrors((currentErrors) => ({
       ...currentErrors,
@@ -89,13 +108,25 @@ function ContactForm({
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const validationErrors = validateForm(values);
+    if (isSubmitting) {
+      return;
+    }
 
-    setTouched({
+    const validationErrors = validateForm(values, { showSubject, showPhone });
+
+    const nextTouched = {
       name: true,
       email: true,
       message: true,
-    });
+    };
+    if (showPhone) {
+      nextTouched.phone = true;
+    }
+    if (showSubject) {
+      nextTouched.subject = true;
+    }
+
+    setTouched(nextTouched);
     setErrors(validationErrors);
     setSubmissionStatus(null);
 
@@ -108,17 +139,26 @@ function ContactForm({
       email: values.email.trim(),
       message: values.message.trim(),
     };
+    if (showPhone && values.phone) {
+      submittedValues.phone = values.phone.trim();
+    }
+    if (showSubject && values.subject) {
+      submittedValues.subject = values.subject.trim();
+    }
 
     try {
       setIsSubmitting(true);
 
       if (onSubmit) {
         await onSubmit(submittedValues);
+      } else {
+        // Simulated submission preview fallback (1-second delay)
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 
       setSubmissionStatus({
         type: 'success',
-        message: 'Your message has been submitted successfully.',
+        message: 'Thank you! Your message has been submitted successfully. This is a frontend preview only. No backend Contact Us service is currently connected, so your message has not been sent. It will be connected once the backend API is implemented.',
       });
 
       if (resetOnSuccess) {
@@ -157,6 +197,7 @@ function ContactForm({
           value={values.name}
           onChange={handleChange}
           onBlur={handleBlur}
+          disabled={isSubmitting}
           placeholder="Enter your full name"
           autoComplete="name"
           maxLength={100}
@@ -187,6 +228,7 @@ function ContactForm({
           value={values.email}
           onChange={handleChange}
           onBlur={handleBlur}
+          disabled={isSubmitting}
           placeholder="Enter your email address"
           autoComplete="email"
           maxLength={254}
@@ -205,6 +247,73 @@ function ContactForm({
         )}
       </div>
 
+      {showPhone && (
+        <div className="contact-form__group">
+          <label htmlFor="contact-phone">
+            Phone Number
+          </label>
+
+          <input
+            id="contact-phone"
+            name="phone"
+            type="tel"
+            value={values.phone}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            disabled={isSubmitting}
+            placeholder="Enter your phone number (optional)"
+            autoComplete="tel"
+            maxLength={20}
+            aria-invalid={Boolean(errors.phone)}
+            aria-describedby={errors.phone ? 'contact-phone-error' : undefined}
+          />
+
+          {errors.phone && (
+            <p
+              id="contact-phone-error"
+              className="contact-form__error"
+              role="alert"
+            >
+              {errors.phone}
+            </p>
+          )}
+        </div>
+      )}
+
+      {showSubject && (
+        <div className="contact-form__group">
+          <label htmlFor="contact-subject">
+            Subject <span aria-hidden="true">*</span>
+          </label>
+
+          <input
+            id="contact-subject"
+            name="subject"
+            type="text"
+            value={values.subject}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            disabled={isSubmitting}
+            placeholder="Enter the subject"
+            maxLength={150}
+            aria-invalid={Boolean(errors.subject)}
+            aria-describedby={
+              errors.subject ? 'contact-subject-error' : undefined
+            }
+          />
+
+          {errors.subject && (
+            <p
+              id="contact-subject-error"
+              className="contact-form__error"
+              role="alert"
+            >
+              {errors.subject}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="contact-form__group">
         <div className="contact-form__label-row">
           <label htmlFor="contact-message">
@@ -222,6 +331,7 @@ function ContactForm({
           value={values.message}
           onChange={handleChange}
           onBlur={handleBlur}
+          disabled={isSubmitting}
           placeholder="How can we help you?"
           rows={6}
           maxLength={1000}
@@ -256,7 +366,14 @@ function ContactForm({
         type="submit"
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Sending...' : submitButtonText}
+        {isSubmitting ? (
+          <>
+            <span className="contact-form__spinner" aria-hidden="true" />
+            Sending...
+          </>
+        ) : (
+          submitButtonText
+        )}
       </button>
 
       <p className="contact-form__required-note">

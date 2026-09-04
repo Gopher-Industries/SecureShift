@@ -3,13 +3,21 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { checkIn, checkOut, getUserAttendance } from '../api/attendance';
 import ErrorMessageBox from '../components/ErrorMessageBox';
 import LocationVerificationModal from '../components/modal/LocationVerificationModal';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
 import { LocalStorage } from '../lib/localStorage';
+import { getHandoverNotesForSite, HandoverNote, saveHandoverNote } from '../lib/handoverNotesStore';
 import { useAppTheme } from '../theme';
 import { formatDate } from '../utils/date';
 import { formatAttendanceTime } from '../components/functions/formatAttendanceTime';
@@ -73,6 +81,22 @@ function parseTimeToDate(baseDateValue: string | Date, timeValue?: string) {
   return baseDate;
 }
 
+function getShiftWindow(shiftDate: string | Date, startTime?: string, endTime?: string) {
+  const start = parseTimeToDate(shiftDate, startTime);
+  const end = parseTimeToDate(shiftDate, endTime);
+
+  if (!start || !end) {
+    return { start, end };
+  }
+
+  // Handle overnight shifts, e.g. 22:00 - 06:00
+  if (end <= start) {
+    end.setDate(end.getDate() + 1);
+  }
+
+  return { start, end };
+}
+
 function toRadians(value: number) {
   return (value * Math.PI) / 180;
 }
@@ -116,6 +140,28 @@ export default function ShiftDetailsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [actionType, setActionType] = useState<'check-in' | 'check-out'>('check-in');
   const [errorState, setErrorState] = useState<ErrorState>(null);
+  const [handoverText, setHandoverText] = useState('');
+  const [handoverNotes, setHandoverNotes] = useState<HandoverNote[]>([]);
+  const [savingHandover, setSavingHandover] = useState(false);
+
+  const siteKey = [
+    shift.location?.street,
+    shift.location?.suburb,
+    shift.location?.state,
+    shift.location?.postcode,
+  ]
+    .filter(Boolean)
+    .join('|');
+  useEffect(() => {
+    if (!siteKey) {
+      setHandoverNotes([]);
+      return;
+    }
+
+    getHandoverNotesForSite(siteKey)
+      .then(setHandoverNotes)
+      .catch(() => setHandoverNotes([]));
+  }, [siteKey]);
 
   useEffect(() => {
     (async () => {
@@ -177,11 +223,23 @@ export default function ShiftDetailsScreen() {
       };
     }
 
-    const shiftStart = parseTimeToDate(shift.date, shift.startTime);
+    const { start: shiftStart, end: shiftEnd } = getShiftWindow(
+      shift.date,
+      shift.startTime,
+      shift.endTime,
+    );
+
     if (shiftStart && now < shiftStart) {
       return {
         title: 'Check-in unavailable',
         message: 'You cannot check in before the shift start time.',
+      };
+    }
+
+    if (shiftEnd && now > shiftEnd) {
+      return {
+        title: 'Check-in unavailable',
+        message: 'You cannot check in after the shift has ended.',
       };
     }
 
@@ -202,6 +260,20 @@ export default function ShiftDetailsScreen() {
   };
 
   const validateCheckOutRules = (loc: Coordinates) => {
+    const now = new Date();
+    const { start: shiftStart, end: shiftEnd } = getShiftWindow(
+      shift.date,
+      shift.startTime,
+      shift.endTime,
+    );
+
+    if (shiftStart && now < shiftStart) {
+      return {
+        title: 'Check-out unavailable',
+        message: 'You cannot check out before the shift start time.',
+      };
+    }
+
     const shiftCoords = getShiftCoordinates(shift);
 
     if (shiftCoords) {
@@ -217,6 +289,45 @@ export default function ShiftDetailsScreen() {
     }
 
     return null;
+  };
+
+  const handleSaveHandoverNote = async () => {
+    const trimmedText = handoverText.trim();
+
+    if (!trimmedText) {
+      Alert.alert('Handover Note', 'Please enter a note before saving.');
+      return;
+    }
+
+    if (!siteKey) {
+      Alert.alert('Handover Note', 'Shift site information is unavailable.');
+      return;
+    }
+
+    try {
+      setSavingHandover(true);
+
+      const note: HandoverNote = {
+        id: `${shift._id}-${Date.now()}`,
+        shiftId: shift._id,
+        siteKey,
+        text: trimmedText,
+        author: shift.acceptedBy?.name ?? 'Guard',
+        createdAt: new Date().toISOString(),
+      };
+
+      await saveHandoverNote(note);
+
+      const updatedNotes = await getHandoverNotesForSite(siteKey);
+      setHandoverNotes(updatedNotes);
+      setHandoverText('');
+
+      Alert.alert('Success', 'Handover note saved.');
+    } catch {
+      Alert.alert('Error', 'Failed to save handover note.');
+    } finally {
+      setSavingHandover(false);
+    }
   };
 
   const handleVerificationSuccess = async (loc: {
@@ -489,6 +600,53 @@ export default function ShiftDetailsScreen() {
             </TouchableOpacity>
           ) : null}
 
+          {hasCheckedIn && !hasCheckedOut ? (
+            <View style={s.handoverSection}>
+              <Text style={s.handoverTitle}>Handover Note</Text>
+
+              <TextInput
+                value={handoverText}
+                onChangeText={setHandoverText}
+                placeholder="Add a short note for the next guard..."
+                placeholderTextColor={colors.muted}
+                multiline
+                maxLength={300}
+                style={[
+                  s.handoverInput,
+                  {
+                    color: colors.text,
+                    borderColor: colors.border,
+                    backgroundColor: colors.card,
+                  },
+                ]}
+              />
+
+              <TouchableOpacity
+                style={[s.btn, { backgroundColor: colors.primary }]}
+                onPress={handleSaveHandoverNote}
+                disabled={savingHandover}
+              >
+                <Text style={s.btnText}>{savingHandover ? 'Saving...' : 'Save Handover Note'}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
+          {handoverNotes.length > 0 ? (
+            <View style={s.handoverSection}>
+              <Text style={s.handoverTitle}>Recent Handover Notes</Text>
+
+              {handoverNotes.map((note) => (
+                <View key={note.id} style={s.handoverNote}>
+                  <Text style={s.handoverNoteText}>{note.text}</Text>
+
+                  <Text style={s.handoverNoteMeta}>
+                    {note.author} • {new Date(note.createdAt).toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
           {shift.status === 'completed' ? (
             <View style={s.completedBox}>
               <Text style={s.completedText}>Shift Completed ✅</Text>
@@ -669,6 +827,49 @@ const getStyles = (colors: AppColors) =>
     },
     emptyHistory: {
       fontSize: 14,
+      color: colors.muted,
+    },
+    handoverSection: {
+      marginTop: 16,
+      padding: 16,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+
+    handoverTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 10,
+    },
+
+    handoverInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      minHeight: 90,
+      color: colors.text,
+      textAlignVertical: 'top',
+      marginBottom: 10,
+    },
+
+    handoverNote: {
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+
+    handoverNoteText: {
+      fontSize: 14,
+      color: colors.text,
+      marginBottom: 4,
+    },
+
+    handoverNoteMeta: {
+      fontSize: 12,
       color: colors.muted,
     },
   });

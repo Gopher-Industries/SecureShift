@@ -1,10 +1,12 @@
-/* eslint-env jest */
 /* global describe, it, expect, beforeAll, afterAll, beforeEach, afterEach */
 
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import Notification from "../models/Notification.js";
-import { createNotification } from "../controllers/notification.controller.js";
+import {
+  createNotification,
+  deleteNotification,
+} from "../controllers/notification.controller.js";
 
 let mongoServer;
 
@@ -242,10 +244,120 @@ describe("notification.controller - createNotification", () => {
 
       // Assert - Using custom mock assertions
       expect(res.statusCalls).toHaveLength(1);
+      expect(res.jsonCalls[0][0]).toEqual({
+        message: "userId, type, and message are required",
+      });
+    });
+  });
+
+  describe("notification.controller - deleteNotification", () => {
+    it("should successfully delete user's own notification", async () => {
+      // Arrange
+      const user = createTestUser();
+      const notification = await Notification.create({
+        userId: user._id,
+        type: "SHIFT_APPROVED",
+        title: "New Shift",
+        message: "You have been assigned a shift",
+        createdBy: user._id,
+      });
+
+      const req = {
+        user: { _id: user._id },
+        params: { id: notification._id.toString() },
+      };
+      const res = mockResponse();
+
+      // Act
+      await deleteNotification(req, res);
+
+      // Assert
+      expect(res.jsonCalls).toHaveLength(1);
+      expect(res.jsonCalls[0][0]).toEqual({
+        message: "Notification deleted successfully",
+      });
+
+      const deleted = await Notification.findById(notification._id);
+      expect(deleted).toBeNull();
+    });
+
+    it("should return 404 and not delete if notification belongs to another user", async () => {
+      // Arrange
+      const ownerUser = createTestUser();
+      const otherUser = createTestUser();
+      const notification = await Notification.create({
+        userId: ownerUser._id,
+        type: "DOCUMENT_EXPIRING",
+        title: "Alert",
+        message: "Security notification",
+        createdBy: ownerUser._id,
+      });
+
+      const req = {
+        user: { _id: otherUser._id },
+        params: { id: notification._id.toString() },
+      };
+      const res = mockResponse();
+
+      // Act
+      await deleteNotification(req, res);
+
+      // Assert
+      expect(res.statusCalls).toHaveLength(1);
+      expect(res.statusCalls[0][0]).toBe(404);
+      expect(res.jsonCalls).toHaveLength(1);
+      expect(res.jsonCalls[0][0]).toEqual({
+        message: "Notification not found",
+      });
+
+      // Verify the notification was NOT deleted
+      const stillExists = await Notification.findById(notification._id);
+      expect(stillExists).not.toBeNull();
+      expect(stillExists._id.toString()).toBe(notification._id.toString());
+    });
+
+    it("should return 404 when notification does not exist", async () => {
+      // Arrange
+      const user = createTestUser();
+      const nonExistentId = new mongoose.Types.ObjectId().toString();
+
+      const req = {
+        user: { _id: user._id },
+        params: { id: nonExistentId },
+      };
+      const res = mockResponse();
+
+      // Act
+      await deleteNotification(req, res);
+
+      // Assert
+      expect(res.statusCalls).toHaveLength(1);
+      expect(res.statusCalls[0][0]).toBe(404);
+      expect(res.jsonCalls).toHaveLength(1);
+      expect(res.jsonCalls[0][0]).toEqual({
+        message: "Notification not found",
+      });
+    });
+
+    it("should return 400 when invalid notification ID format is provided", async () => {
+      // Arrange
+      const user = createTestUser();
+
+      const req = {
+        user: { _id: user._id },
+        params: { id: "invalid-id-123" },
+      };
+      const res = mockResponse();
+
+      // Act
+      await deleteNotification(req, res);
+
+      // Assert
+      expect(res.statusCalls).toHaveLength(1);
       expect(res.statusCalls[0][0]).toBe(400);
       expect(res.jsonCalls).toHaveLength(1);
       expect(res.jsonCalls[0][0]).toEqual({
-        message: "userId, type, and message are required",
+        message: "Invalid notification ID",
       });
     });
   });

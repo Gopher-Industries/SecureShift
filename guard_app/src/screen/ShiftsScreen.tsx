@@ -36,7 +36,7 @@ type Props = {
   navigation: any;
 };
 
-function mapMineShifts(
+export function mapMineShifts(
   shifts: ShiftDto[],
   myUid: string,
   attendanceRecords: Attendance[] = [],
@@ -79,7 +79,10 @@ function mapMineShifts(
     });
 }
 
-function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []): CompletedShift[] {
+export function mapCompleted(
+  shifts: ShiftDto[],
+  attendanceRecords: Attendance[] = [],
+): CompletedShift[] {
   return shifts
     .filter((s) => s.status === 'completed')
     .map((s) => {
@@ -107,7 +110,7 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []):
     });
 }
 
-function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
+export function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
   return shifts
     .filter((s) => s.status !== 'completed')
     .map((s) => {

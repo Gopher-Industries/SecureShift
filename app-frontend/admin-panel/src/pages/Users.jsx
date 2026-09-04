@@ -1,6 +1,9 @@
+import Button from '../components/Button';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getUsers, deleteUser } from '../service/adminAPI';
+import { getUsers, deleteUser, createEmployer } from '../service/adminAPI';
+import UserFormModal from '../components/UserFormModal';
+import { useToast } from '../components/Toast';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
@@ -9,23 +12,6 @@ import colors from '../theme/colors';
 
 // First working admin data view — end-to-end integration with GET /admin/users.
 const ui = {
-  btn: {
-    border: 'none',
-    borderRadius: 8,
-    padding: '7px 14px',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  btnCancel: {
-    background: colors.white,
-    color: colors.primary,
-    border: `1px solid ${colors.primary}`,
-  },
-  btnDanger: {
-    background: colors.danger,
-    color: colors.white,
-  },
   toolbar: {
     display: 'flex',
     gap: 12,
@@ -46,6 +32,12 @@ const ui = {
 };
 
 export default function Users() {
+  const { showToast } = useToast();
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  const [creating, setCreating] = useState(false);
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,12 +49,15 @@ export default function Users() {
 
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         setLoading(true);
         setError('');
+
         const data = await getUsers();
         const list = Array.isArray(data) ? data : data.users || data.data || [];
+
         if (mounted) setUsers(list);
       } catch (err) {
         if (mounted) setError(err?.response?.data?.message || 'Failed to load users');
@@ -70,6 +65,7 @@ export default function Users() {
         if (mounted) setLoading(false);
       }
     })();
+
     return () => {
       mounted = false;
     };
@@ -78,7 +74,9 @@ export default function Users() {
   const filtered = users.filter((u) => {
     const matchesQuery =
       !query || `${u.name} ${u.email}`.toLowerCase().includes(query.toLowerCase());
+
     const matchesRole = !roleFilter || u.role === roleFilter;
+
     return matchesQuery && matchesRole;
   });
 
@@ -92,26 +90,38 @@ export default function Users() {
         </Link>
       ),
     },
-    { key: 'email', header: 'Email' },
-    { key: 'role', header: 'Role' },
+    {
+      key: 'email',
+      header: 'Email',
+    },
+    {
+      key: 'role',
+      header: 'Role',
+    },
     {
       key: 'createdAt',
       header: 'Joined',
-      render: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '\u2014'),
+      render: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '—'),
     },
     {
-      key: 'deletebtn',
-      header: '',
+      key: 'actions',
+      header: 'Actions',
       render: (r) => (
-        <button
+        <div
           style={{
-            ...ui.btn,
-            ...ui.btnDanger,
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
           }}
-          onClick={() => setDel(r)}
         >
-          Delete
-        </button>
+          <Button variant="secondary" onClick={() => setEditUser(r)}>
+            Edit
+          </Button>
+
+          <Button variant="danger" onClick={() => setDel(r)}>
+            Delete
+          </Button>
+        </div>
       ),
     },
   ];
@@ -119,7 +129,9 @@ export default function Users() {
   const handleDelete = async () => {
     try {
       setDeleting(true);
+
       await deleteUser(del._id);
+
       setDel(null);
       setRefreshFlag((prev) => !prev);
     } catch (e) {
@@ -130,11 +142,51 @@ export default function Users() {
     }
   };
 
+  const handleCreate = async (form) => {
+    try {
+      setCreating(true);
+
+      const addressEntries = Object.entries(form.address)
+        .map(([key, value]) => [key, value.trim()])
+        .filter(([, value]) => value);
+
+      const address = Object.fromEntries(addressEntries);
+
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        ABN: form.ABN.trim(),
+      };
+
+      if (form.phone.trim()) {
+        payload.phone = form.phone.trim();
+      }
+
+      if (Object.keys(address).length) {
+        payload.address = address;
+      }
+
+      await createEmployer(payload);
+
+      showToast('Employer created successfully.', 'success');
+
+      setAddOpen(false);
+      setRefreshFlag((previous) => !previous);
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Failed to create user.', 'error');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div>
       <h1>Users</h1>
+
       <div style={{ ...ui.toolbar }}>
         <SearchFilter value={query} onChange={setQuery} placeholder="Search by name or email…" />
+
         <select
           style={ui.select}
           value={roleFilter}
@@ -145,11 +197,22 @@ export default function Users() {
           <option value="employer">Employer</option>
           <option value="guard">Guard</option>
         </select>
+
+        <Button type="button" onClick={() => setAddOpen(true)} style={{ marginBottom: 16 }}>
+          Add User
+        </Button>
       </div>
+
       {loading ? (
         <LoadingComponent />
       ) : error ? (
-        <p style={{ color: colors.danger }}>{error}</p>
+        <p
+          style={{
+            color: colors.danger,
+          }}
+        >
+          {error}
+        </p>
       ) : (
         <DataTable
           columns={columns}
@@ -157,36 +220,56 @@ export default function Users() {
           empty={query || roleFilter ? 'No users match your search or filter' : 'No users found'}
         />
       )}
+
+      <UserFormModal
+        open={addOpen}
+        mode="create"
+        submitting={creating}
+        onClose={() => setAddOpen(false)}
+        onSubmit={handleCreate}
+      />
+
+      <UserFormModal
+        open={Boolean(editUser)}
+        mode="edit"
+        initialUser={editUser}
+        onClose={() => setEditUser(null)}
+        onSubmit={() => {}}
+      />
+
       <Modal open={del} title="Confirm Delete" onClose={() => setDel(null)}>
-        <p style={{ margin: '4px 0' }}>
+        <p
+          style={{
+            margin: '4px 0',
+          }}
+        >
           <strong>{del?.name}</strong> — {del?.email}
         </p>
-        <p style={{ margin: '4px 0' }}>Role: {del?.role}</p>
-        <p>Are you sure you want to delete this user?</p>
-        <button
+
+        <p
           style={{
-            ...ui.btn,
-            ...ui.btnDanger,
-            marginRight: 8,
-            opacity: deleting ? 0.5 : 1,
-            cursor: deleting ? 'not-allowed' : 'pointer',
+            margin: '4px 0',
           }}
+        >
+          Role: {del?.role}
+        </p>
+
+        <p>Are you sure you want to delete this user?</p>
+
+        <Button
+          variant="danger"
           onClick={handleDelete}
           disabled={deleting}
+          style={{
+            marginRight: 8,
+          }}
         >
           {deleting ? 'Deleting…' : 'Delete'}
-        </button>
-        <button
-          style={{
-            ...ui.btn,
-            ...ui.btnCancel,
-            opacity: deleting ? 0.5 : 1,
-            cursor: deleting ? 'not-allowed' : 'pointer',
-          }}
-          onClick={() => setDel(null)}
-        >
+        </Button>
+
+        <Button variant="secondary" onClick={() => setDel(null)} disabled={deleting}>
           Cancel
-        </button>
+        </Button>
       </Modal>
     </div>
   );
