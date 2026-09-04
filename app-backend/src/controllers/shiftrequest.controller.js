@@ -63,17 +63,17 @@ export const getShiftRequestById = async (req, res) => {
 };
 
 export const getSwapOptions = async (req, res) => {
-  try{
+  try {
     const result = await getShiftSwapOptions({
-      user: req.user, 
-      originalShiftID: req.params.id
+      user: req.user,
+      originalShiftID: req.params.id,
     });
 
     return res.json({
       success: true,
-      data: result
+      data: result,
     });
-  } catch (error){
+  } catch (error) {
     return handleError(res, error);
   }
 };

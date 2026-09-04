@@ -103,8 +103,8 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
         const res = await createShiftRequest({
           type: REQUEST_TYPES[requestType].id,
           targetGuardId: swapOptions[swapChoice].acceptedBy.id,
-          originalShiftId: swapOptions[swapChoice].id,
-          replacementShiftId: null,
+          originalShiftId: shift.id,
+          replacementShiftId: swapOptions[swapChoice].id,
           leaveStartDate: leaveStart,
           leaveEndDate: leaveEnd,
           reason,
@@ -113,9 +113,9 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
       } else if (REQUEST_TYPES[requestType].id === 'LEAVE') {
         const res = await createShiftRequest({
           type: REQUEST_TYPES[requestType].id,
-          targetGuardId: swapOptions[swapChoice].acceptedBy.id,
+          targetGuardId: null,
           originalShiftId: shift.id,
-          replacementShiftId: swapOptions[swapChoice].id,
+          replacementShiftId: null,
           leaveStartDate: leaveStart,
           leaveEndDate: leaveEnd,
           reason,

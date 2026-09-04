@@ -312,15 +312,9 @@ export const getShiftRequestForUser = async ({ user, requestId }) => {
   return request;
 };
 
-export const getShiftSwapOptions = async ({
-  user,
-  originalShiftID
-}) => {
-  if (!["guard"].includes(user.role)){ 
-    throw new ServiceError(
-      403,
-      "Only guards can get shift swap options",
-    );
+export const getShiftSwapOptions = async ({ user, originalShiftID }) => {
+  if (!["guard"].includes(user.role)) {
+    throw new ServiceError(403, "Only guards can get shift swap options");
   }
 
   assertObjectId(originalShiftID);
@@ -328,14 +322,14 @@ export const getShiftSwapOptions = async ({
   const request = await Shift.find({
     acceptedBy: { $ne: user.id },
     date: { $gte: Date.now() },
-    status: "assigned"
+    status: "assigned",
   })
-  .sort({ date: 1 })
-  .populate("acceptedBy", "name")
-  .populate("createdBy", "name");
+    .sort({ date: 1 })
+    .populate("acceptedBy", "name")
+    .populate("createdBy", "name");
 
   return request;
-}
+};
 
 export const reviewShiftRequest = async ({
   user,

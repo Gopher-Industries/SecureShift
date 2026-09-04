@@ -486,10 +486,7 @@ router
  *         description: Shift was not found.
  */
 router
-  .route('/swap-options/:id')
-  .get(
-    protect, 
-    authorizeRoles("guard"),
-    getSwapOptions);
+  .route("/swap-options/:id")
+  .get(protect, authorizeRoles("guard"), getSwapOptions);
 
 export default router;
