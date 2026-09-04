@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import http from '../lib/http';
 import translations from "../i18n/translations";
+import RefreshButton from '../components/RefreshButton';
 import { useNotification } from '../components/NotificationContext';
 
 // ─── STYLES (defined first) ───
@@ -706,22 +707,31 @@ const ManageShift = ({ language }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const chatEndRef = useRef(null);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  const fetchShifts = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    try {
+      const { data } = await http.get('/shifts');
+      let apiShifts;
+      if (Array.isArray(data)) apiShifts = data;
+      else if (Array.isArray(data.shifts)) apiShifts = data.shifts;
+      else if (data.items && Array.isArray(data.items)) apiShifts = data.items;
+      else apiShifts = [];
+      setShifts(apiShifts.map(normalizeShift));
+      setLastRefreshed(new Date());
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Error fetching shifts.');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchShifts = async () => {
-      try {
-        const { data } = await http.get('/shifts');
-        let apiShifts;
-        if (Array.isArray(data)) apiShifts = data;
-        else if (Array.isArray(data.shifts)) apiShifts = data.shifts;
-        else if (data.items && Array.isArray(data.items)) apiShifts = data.items;
-        else apiShifts = [];
-        setShifts(apiShifts.map(normalizeShift));
-      } catch (err) {
-        setError(err?.response?.data?.message || 'Error fetching shifts.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchShifts();
   }, []);
 
@@ -1068,9 +1078,16 @@ const ManageShift = ({ language }) => {
     <div style={containerStyle}>
       <div style={headerStyle}>
         <h1 style={titleStyle}>{t.manageShifts}</h1>
-        <button style={addButtonStyle} onClick={() => navigate('/create-shift')}>
-          <img src={'/ic-add.svg'} alt="Add" style={bigIconStyle} /> Add New Shift
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <RefreshButton
+            onRefresh={() => fetchShifts(true)}
+            isRefreshing={isRefreshing}
+            lastRefreshed={lastRefreshed}
+          />
+          <button style={addButtonStyle} onClick={() => navigate('/create-shift')}>
+            <img src={'/ic-add.svg'} alt="Add" style={bigIconStyle} /> Add New Shift
+          </button>
+        </div>
       </div>
       <div style={summaryGridStyle}>
         <SummaryCard label="Total shifts" number={totalShifts} icon="/ic-task.svg" bg="#EFF4FF" />

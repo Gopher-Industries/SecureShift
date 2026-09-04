@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./EmployerDashboard.css";
+import RefreshButton from "../components/RefreshButton";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -16,15 +17,43 @@ const IconCalendar = (props) => (
       stroke="currentColor"
       strokeWidth="2"
     />
-    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" />
-    <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" />
-    <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" />
+    <line
+      x1="3"
+      y1="10"
+      x2="21"
+      y2="10"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <line
+      x1="8"
+      y1="2"
+      x2="8"
+      y2="6"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
+    <line
+      x1="16"
+      y1="2"
+      x2="16"
+      y2="6"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
   </svg>
 );
 
 const IconClock = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
+    <circle
+      cx="12"
+      cy="12"
+      r="9"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    />
     <line
       x1="12"
       y1="6"
@@ -71,30 +100,78 @@ const IconPlus = (props) => (
 
 const IconGrid = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" />
-    <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" />
-    <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" />
-    <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" />
+    <rect
+      x="3"
+      y="3"
+      width="7"
+      height="7"
+      rx="1"
+      fill="currentColor"
+    />
+    <rect
+      x="14"
+      y="3"
+      width="7"
+      height="7"
+      rx="1"
+      fill="currentColor"
+    />
+    <rect
+      x="3"
+      y="14"
+      width="7"
+      height="7"
+      rx="1"
+      fill="currentColor"
+    />
+    <rect
+      x="14"
+      y="14"
+      width="7"
+      height="7"
+      rx="1"
+      fill="currentColor"
+    />
   </svg>
 );
 
 const IconList = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
     <rect x="3" y="4" width="18" height="3" rx="1" fill="currentColor" />
-    <rect x="3" y="10.5" width="18" height="3" rx="1" fill="currentColor" />
-    <rect x="3" y="17" width="18" height="3" rx="1" fill="currentColor" />
+    <rect
+      x="3"
+      y="10.5"
+      width="18"
+      height="3"
+      rx="1"
+      fill="currentColor"
+    />
+    <rect
+      x="3"
+      y="17"
+      width="18"
+      height="3"
+      rx="1"
+      fill="currentColor"
+    />
   </svg>
 );
 
 const IconUser = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
     <circle cx="12" cy="8" r="4" fill="currentColor" />
-    <path d="M4 20c0-4.4183 3.5817-8 8-8s8 3.5817 8 8" fill="currentColor" />
+    <path
+      d="M4 20c0-4.4183 3.5817-8 8-8s8 3.5817 8 8"
+      fill="currentColor"
+    />
   </svg>
 );
 
 const Star = ({ filled }) => (
-  <svg viewBox="0 0 24 24" className={`star ${filled ? 'filled' : ''}`}>
+  <svg
+    viewBox="0 0 24 24"
+    className={`star ${filled ? "filled" : ""}`}
+  >
     <path d="M12 2l3.09 6.28 6.93 1-5 4.86L18.18 22 12 18.56 5.82 22l1.16-7.86-5-4.86 6.93-1L12 2z" />
   </svg>
 );
@@ -107,141 +184,479 @@ const severityRank = {
 
 const formatLocation = (location) => {
   if (!location) return "No location";
-  if (typeof location === "string") return location;
-  return [location.street, location.suburb, location.state, location.postcode]
+
+  if (typeof location === "string") {
+    return location;
+  }
+
+  return [
+    location.street,
+    location.suburb,
+    location.state,
+    location.postcode,
+  ]
     .filter(Boolean)
-    .join(', ');
+    .join(", ");
 };
 
 const formatShiftDate = (value) => {
   if (!value) return "--";
-  if (typeof value !== "string") return String(value);
-  if (/^\d{2}-\d{2}-\d{4}$/.test(value)) return value;
+
+  if (typeof value !== "string") {
+    return String(value);
+  }
+
+  if (/^\d{2}-\d{2}-\d{4}$/.test(value)) {
+    return value;
+  }
+
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString('en-GB');
+
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : parsed.toLocaleDateString("en-GB");
 };
 
 const parseIncidentDateTime = (incident) => {
-  const [day, month, year] = incident.date.split('-').map(Number);
+  const [day, month, year] = incident.date.split("-").map(Number);
+
   const baseDate = new Date(year, month - 1, day);
-  const timeMatch = incident.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-  if (!timeMatch) return baseDate.getTime();
+
+  const timeMatch = incident.time.match(
+    /(\d{1,2}):(\d{2})\s*(AM|PM)/i
+  );
+
+  if (!timeMatch) {
+    return baseDate.getTime();
+  }
+
   let hours = Number(timeMatch[1]);
   const minutes = Number(timeMatch[2]);
   const meridian = timeMatch[3].toUpperCase();
-  if (meridian === "PM" && hours < 12) hours += 12;
-  if (meridian === "AM" && hours === 12) hours = 0;
+
+  if (meridian === "PM" && hours < 12) {
+    hours += 12;
+  }
+
+  if (meridian === "AM" && hours === 12) {
+    hours = 0;
+  }
+
   baseDate.setHours(hours, minutes, 0, 0);
+
   return baseDate.getTime();
 };
 
 const getShiftStatusCategory = (shift) => {
   const text = String(shift?.status?.text || "").toLowerCase();
   const tone = String(shift?.status?.tone || "").toLowerCase();
-  if (tone.includes("pending") || text.includes("pending")) return "Pending";
-  if (tone.includes("completed") || text.includes("completed")) return "Completed";
+
   if (
-    tone.includes('confirmed') ||
-    tone.includes('open') ||
-    text.includes('confirmed') ||
-    text.includes('open')
+    tone.includes("pending") ||
+    text.includes("pending")
   ) {
-    return 'Open';
+    return "Pending";
   }
+
+  if (
+    tone.includes("completed") ||
+    text.includes("completed")
+  ) {
+    return "Completed";
+  }
+
+  if (
+    tone.includes("confirmed") ||
+    tone.includes("open") ||
+    text.includes("confirmed") ||
+    text.includes("open")
+  ) {
+    return "Open";
+  }
+
   return "All";
 };
 
 export default function EmployerDashboard() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [view, setView] = useState("list");
+
   const reviewScroller = useRef(null);
   const navigate = useNavigate();
 
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
   const [fatigueError, setFatigueError] = useState(null);
   const [fatigueLoading, setFatigueLoading] = useState(true);
-
-  const [statusTab, setStatusTab] = useState('All');
-  const [priorityFilter, setPriorityFilter] = useState('All');
-  const [currentPage, setCurrentPage] = useState(1);
   const [fatigueDashboard, setFatigueDashboard] = useState(null);
 
+  const [statusTab, setStatusTab] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [selectedIncident, setSelectedIncident] = useState(null);
-  const [incidentDraft, setIncidentDraft] = useState({ severity: 'Medium', comments: '' });
-  const [incidentQuery, setIncidentQuery] = useState('');
-  const [incidentStatusFilter, setIncidentStatusFilter] = useState('All');
-  const [incidentSeverityFilter, setIncidentSeverityFilter] = useState('All');
-  const [incidentSort, setIncidentSort] = useState('Newest');
+
+  const [incidentDraft, setIncidentDraft] = useState({
+    severity: "Medium",
+    comments: "",
+  });
+
+  const [incidentQuery, setIncidentQuery] = useState("");
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState("All");
+  const [incidentSeverityFilter, setIncidentSeverityFilter] =
+    useState("All");
+  const [incidentSort, setIncidentSort] = useState("Newest");
+
   const [expandedGuard, setExpandedGuard] = useState(null);
 
   const [incidents, setIncidents] = useState([
     {
-      id: 'INC-9921',
-      guard: 'John Doe',
-      shift: 'Crowd Control - Marvel',
-      date: '09-08-2025',
-      time: '10:45 PM',
-      status: 'Pending',
-      severity: 'High',
+      id: "INC-9921",
+      guard: "John Doe",
+      shift: "Crowd Control - Marvel",
+      date: "09-08-2025",
+      time: "10:45 PM",
+      status: "Pending",
+      severity: "High",
       description:
-        'A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.',
+        "A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.",
       photos: [
-        'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80',
+        "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80",
       ],
-      comments: '',
+      comments: "",
     },
     {
-      id: 'INC-9920',
-      guard: 'Leah Carter',
-      shift: 'Gate Check - MCG',
-      date: '08-08-2025',
-      time: '08:15 PM',
-      status: 'Resolved',
-      severity: 'Medium',
+      id: "INC-9920",
+      guard: "Leah Carter",
+      shift: "Gate Check - MCG",
+      date: "08-08-2025",
+      time: "08:15 PM",
+      status: "Resolved",
+      severity: "Medium",
       description:
-        'A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.',
+        "A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.",
       photos: [],
-      comments: 'Resolved on site, no further action required.',
+      comments: "Resolved on site, no further action required.",
     },
     {
-      id: 'INC-9919',
-      guard: 'Aiden Ross',
-      shift: 'Shopping Centre Security - Chadstone',
-      date: '07-08-2025',
-      time: '03:05 PM',
-      status: 'Pending',
-      severity: 'Low',
+      id: "INC-9919",
+      guard: "Aiden Ross",
+      shift: "Shopping Centre Security - Chadstone",
+      date: "07-08-2025",
+      time: "03:05 PM",
+      status: "Pending",
+      severity: "Low",
       description:
-        'Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.',
+        "Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.",
       photos: [
-        'https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80',
+        "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80",
       ],
-      comments: '',
+      comments: "",
     },
   ]);
 
-  useEffect(() => {
-    const fetchFatigue = async () => {
-      try {
-        const token = localStorage.getItem('token');
+  /*
+   * ---------------------------------------------------------
+   * FETCH SHIFTS
+   * ---------------------------------------------------------
+   * This combines the refresh-button feature with the existing
+   * main branch shift loading logic.
+   */
+  const fetchShifts = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+      setError(null);
+    }
 
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/fatigue`, {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to load shifts."
+        );
+      }
+
+      const rawShifts = Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
+
+      const normalizedShifts = rawShifts.map((shift, idx) => {
+        const guardName =
+          shift.guardName ||
+          (typeof shift.guard === "string"
+            ? shift.guard
+            : null) ||
+          shift.guard?.name ||
+          shift.guard?.fullName ||
+          shift.acceptedBy?.name ||
+          shift.acceptedBy?.fullName ||
+          (typeof shift.acceptedBy === "string"
+            ? shift.acceptedBy
+            : null) ||
+          shift.assignedGuard?.name ||
+          shift.assignedGuard?.fullName ||
+          (typeof shift.assignedGuard === "string"
+            ? shift.assignedGuard
+            : null) ||
+          shift.user?.name ||
+          shift.user?.fullName ||
+          null;
+
+        const startTime =
+          shift.startTime || shift.start || null;
+
+        const endTime =
+          shift.endTime || shift.end || null;
+
+        const rawDate =
+          shift.date || shift.shiftDate || null;
+
+        const rawStatus = shift.status;
+
+        const normalizedStatus =
+          typeof rawStatus === "object" &&
+          rawStatus !== null
+            ? {
+                text: rawStatus.text || "Pending",
+                tone: rawStatus.tone || "pending",
+              }
+            : {
+                text: rawStatus || "Pending",
+                tone: String(rawStatus || "pending")
+                  .toLowerCase()
+                  .includes("confirm")
+                  ? "confirmed"
+                  : String(rawStatus || "pending")
+                        .toLowerCase()
+                        .includes("complete")
+                    ? "completed"
+                    : String(rawStatus || "pending")
+                          .toLowerCase()
+                          .includes("reject")
+                      ? "rejected"
+                      : "pending",
+              };
+
+        return {
+          id: shift._id || shift.id || idx,
+
+          title:
+            shift.title ||
+            shift.role ||
+            "Shift 1",
+
+          location: formatLocation(
+            shift.location || shift.venue
+          ),
+
+          date: formatShiftDate(
+            shift.date || shift.shiftDate
+          ),
+
+          rawDate,
+
+          time:
+            shift.startTime && shift.endTime
+              ? `${shift.startTime} - ${shift.endTime}`
+              : shift.time || "--",
+
+          startTime,
+          endTime,
+
+          status: normalizedStatus,
+
+          payRate:
+            shift.payRate ??
+            shift.rate ??
+            shift.hourlyRate ??
+            0,
+
+          priority:
+            shift.priority ||
+            (idx % 3 === 0
+              ? "High"
+              : idx % 3 === 1
+                ? "Medium"
+                : "Low"),
+
+          guardName,
+
+          guard: shift.guard || null,
+          acceptedBy: shift.acceptedBy || null,
+          assignedGuard: shift.assignedGuard || null,
+        };
+      });
+
+      setShifts(normalizedShifts);
+      setLastRefreshed(new Date());
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Failed to load shifts.");
+
+      /*
+       * Existing fallback data is preserved.
+       */
+      setShifts([
+        {
+          id: 1,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 2,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 3,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 4,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 5,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 6,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 21, 2026",
+          time: "13:00 - 21:00",
+          status: {
+            text: "Pending",
+            tone: "pending",
+          },
+          payRate: 25,
+          priority: "Medium",
+        },
+        {
+          id: 7,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 22, 2026",
+          time: "09:00 - 17:00",
+          status: {
+            text: "Completed",
+            tone: "completed",
+          },
+          payRate: 24,
+          priority: "Low",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  /*
+   * Initial shift loading.
+   */
+  useEffect(() => {
+    fetchShifts();
+  }, []);
+
+  /*
+   * ---------------------------------------------------------
+   * FATIGUE DASHBOARD
+   * ---------------------------------------------------------
+   */
+  useEffect(() => {
+    const fetchFatigue = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+          `${process.env.REACT_APP_API_BASE_URL}/shifts/fatigue`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || `Failed to load fatigue data`);
+          throw new Error(
+            data.message || "Failed to load fatigue data"
+          );
         }
 
         setFatigueDashboard(data.dashboard);
+        setFatigueError(null);
       } catch (err) {
-        setFatigueError(err.message || 'Failed to load fatigue dashboard.');
+        setFatigueError(
+          err.message ||
+            "Failed to load fatigue dashboard."
+        );
       } finally {
         setFatigueLoading(false);
       }
@@ -250,229 +665,90 @@ export default function EmployerDashboard() {
     fetchFatigue();
   }, []);
 
-  useEffect(() => {
-    const fetchShifts = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to load shifts.');
-        }
-
-	const rawShifts = Array.isArray(data?.items)
-          ? data.items
-          : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data)
-              ? data
-              : [];
-
-        const normalizedShifts = rawShifts.map((shift, idx) => {
-          const guardName =
-            shift.guardName ||
-            (typeof shift.guard === 'string' ? shift.guard : null) ||
-            shift.guard?.name ||
-            shift.guard?.fullName ||
-            shift.acceptedBy?.name ||
-            shift.acceptedBy?.fullName ||
-            (typeof shift.acceptedBy === 'string' ? shift.acceptedBy : null) ||
-            shift.assignedGuard?.name ||
-            shift.assignedGuard?.fullName ||
-            (typeof shift.assignedGuard === 'string' ? shift.assignedGuard : null) ||
-            shift.user?.name ||
-            shift.user?.fullName ||
-            null;
-          const startTime = shift.startTime || shift.start || null;
-          const endTime = shift.endTime || shift.end || null;
-          const rawDate = shift.date || shift.shiftDate || null;
-          const rawStatus = shift.status;
-          const normalizedStatus =
-            typeof rawStatus === 'object' && rawStatus !== null
-              ? {
-                  text: rawStatus.text || 'Pending',
-                  tone: rawStatus.tone || 'pending',
-                }
-              : {
-                  text: rawStatus || 'Pending',
-                  tone: String(rawStatus || 'pending')
-                    .toLowerCase()
-                    .includes('confirm')
-                    ? 'confirmed'
-                    : String(rawStatus || 'pending')
-                          .toLowerCase()
-                          .includes('complete')
-                      ? 'completed'
-                      : String(rawStatus || 'pending')
-                            .toLowerCase()
-                            .includes('reject')
-                        ? 'rejected'
-                        : 'pending',
-                };
-
-          return {
-            id: shift._id || shift.id || idx,
-            title: shift.title || shift.role || 'Shift 1',
-            location: formatLocation(shift.location || shift.venue),
-            date: formatShiftDate(shift.date || shift.shiftDate),
-            rawDate,
-            time:
-              shift.startTime && shift.endTime
-                ? `${shift.startTime} - ${shift.endTime}`
-                : shift.time || '--',
-            startTime,
-            endTime,
-            status: normalizedStatus,
-            payRate: shift.payRate ?? shift.rate ?? shift.hourlyRate ?? 0,
-            priority: shift.priority || (idx % 3 === 0 ? 'High' : idx % 3 === 1 ? 'Medium' : 'Low'),
-            guardName,
-            guard: shift.guard || null,
-            acceptedBy: shift.acceptedBy || null,
-            assignedGuard: shift.assignedGuard || null,
-          };
-        });
-
-        setShifts(normalizedShifts);
-      } catch (err) {
-        setError(err.message || "Failed to load shifts.");
-        setShifts([
-          {
-            id: 1,
-            title: 'Shift 1',
-            location: '740 Bourke St, Docklands VIC',
-            date: 'Mar 20, 2026',
-            time: '15:04 - 02:04',
-            status: { text: 'Open', tone: 'confirmed' },
-            payRate: 23,
-            priority: 'High',
-          },
-          {
-            id: 2,
-            title: 'Shift 1',
-            location: '740 Bourke St, Docklands VIC',
-            date: 'Mar 20, 2026',
-            time: '15:04 - 02:04',
-            status: { text: 'Open', tone: 'confirmed' },
-            payRate: 23,
-            priority: 'High',
-          },
-          {
-            id: 3,
-            title: 'Shift 1',
-            location: '740 Bourke St, Docklands VIC',
-            date: 'Mar 20, 2026',
-            time: '15:04 - 02:04',
-            status: { text: 'Open', tone: 'confirmed' },
-            payRate: 23,
-            priority: 'High',
-          },
-          {
-            id: 4,
-            title: 'Shift 1',
-            location: '740 Bourke St, Docklands VIC',
-            date: 'Mar 20, 2026',
-            time: '15:04 - 02:04',
-            status: { text: 'Open', tone: 'confirmed' },
-            payRate: 23,
-            priority: 'High',
-          },
-          {
-            id: 5,
-            title: 'Shift 1',
-            location: '740 Bourke St, Docklands VIC',
-            date: 'Mar 20, 2026',
-            time: '15:04 - 02:04',
-            status: { text: 'Open', tone: 'confirmed' },
-            payRate: 23,
-            priority: 'High',
-          },
-          {
-            id: 6,
-            title: 'Shift 1',
-            location: '740 Bourke St, Docklands VIC',
-            date: 'Mar 21, 2026',
-            time: '13:00 - 21:00',
-            status: { text: 'Pending', tone: 'pending' },
-            payRate: 25,
-            priority: 'Medium',
-          },
-          {
-            id: 7,
-            title: 'Shift 1',
-            location: '740 Bourke St, Docklands VIC',
-            date: 'Mar 22, 2026',
-            time: '09:00 - 17:00',
-            status: { text: 'Completed', tone: 'completed' },
-            payRate: 24,
-            priority: 'Low',
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchShifts();
-  }, []);
-
+  /*
+   * Close expanded fatigue guard modal with Escape.
+   */
   useEffect(() => {
     if (!expandedGuard) return;
 
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setExpandedGuard(null);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
   }, [expandedGuard]);
 
+  /*
+   * ---------------------------------------------------------
+   * REVIEWS
+   * ---------------------------------------------------------
+   */
   const reviews = useMemo(
     () => [
       {
-        name: 'Marcus Johnson',
-        role: 'Downtown Plaza',
+        name: "Marcus Johnson",
+        role: "Downtown Plaza",
         stars: 5,
-        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
-        date: 'May 4, 2025',
+        text:
+          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
+        date: "May 4, 2025",
       },
       {
-        name: 'Marcus Johnson',
-        role: 'Downtown Plaza',
+        name: "Marcus Johnson",
+        role: "Downtown Plaza",
         stars: 5,
-        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
-        date: 'May 4, 2025',
+        text:
+          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
+        date: "May 4, 2025",
       },
       {
-        name: 'Marcus Johnson',
-        role: 'Downtown Plaza',
+        name: "Marcus Johnson",
+        role: "Downtown Plaza",
         stars: 5,
-        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
-        date: 'May 4, 2025',
+        text:
+          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
+        date: "May 4, 2025",
       },
     ],
     []
   );
 
+  /*
+   * ---------------------------------------------------------
+   * SHIFT FILTERING / PAGINATION
+   * ---------------------------------------------------------
+   */
   const filteredShifts = useMemo(() => {
     return shifts.filter((shift) => {
       const matchesStatus =
-        statusTab === 'All' ? true : getShiftStatusCategory(shift) === statusTab;
+        statusTab === "All"
+          ? true
+          : getShiftStatusCategory(shift) === statusTab;
+
       const matchesPriority =
-        priorityFilter === "All" ? true : String(shift.priority) === priorityFilter;
+        priorityFilter === "All"
+          ? true
+          : String(shift.priority) === priorityFilter;
+
       return matchesStatus && matchesPriority;
     });
   }, [priorityFilter, shifts, statusTab]);
 
   const pageSize = 5;
-  const totalPages = Math.max(1, Math.ceil(filteredShifts.length / pageSize));
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredShifts.length / pageSize)
+  );
 
   useEffect(() => {
     setCurrentPage(1);
@@ -485,247 +761,464 @@ export default function EmployerDashboard() {
   }, [currentPage, totalPages]);
 
   const paginatedShifts = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredShifts.slice(start, start + pageSize);
+    const start =
+      (currentPage - 1) * pageSize;
+
+    return filteredShifts.slice(
+      start,
+      start + pageSize
+    );
   }, [currentPage, filteredShifts]);
 
-  const showingStart = filteredShifts.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const showingEnd = Math.min(currentPage * pageSize, filteredShifts.length);
+  const showingStart =
+    filteredShifts.length === 0
+      ? 0
+      : (currentPage - 1) * pageSize + 1;
+
+  const showingEnd = Math.min(
+    currentPage * pageSize,
+    filteredShifts.length
+  );
 
   const tabCounts = useMemo(() => {
     return {
       All: shifts.length,
-      Pending: shifts.filter((s) => getShiftStatusCategory(s) === 'Pending').length,
-      Open: shifts.filter((s) => getShiftStatusCategory(s) === 'Open').length,
-      Completed: shifts.filter((s) => getShiftStatusCategory(s) === 'Completed').length,
+
+      Pending: shifts.filter(
+        (s) =>
+          getShiftStatusCategory(s) === "Pending"
+      ).length,
+
+      Open: shifts.filter(
+        (s) =>
+          getShiftStatusCategory(s) === "Open"
+      ).length,
+
+      Completed: shifts.filter(
+        (s) =>
+          getShiftStatusCategory(s) === "Completed"
+      ).length,
     };
   }, [shifts]);
 
+  /*
+   * ---------------------------------------------------------
+   * INCIDENT FILTERING
+   * ---------------------------------------------------------
+   */
   const filteredIncidents = useMemo(() => {
-    const normalizedQuery = incidentQuery.trim().toLowerCase();
+    const normalizedQuery =
+      incidentQuery.trim().toLowerCase();
 
     return incidents
       .filter((incident) => {
         const matchesQuery =
           normalizedQuery.length === 0 ||
-          incident.id.toLowerCase().includes(normalizedQuery) ||
-          incident.guard.toLowerCase().includes(normalizedQuery) ||
-          incident.shift.toLowerCase().includes(normalizedQuery) ||
-          incident.description.toLowerCase().includes(normalizedQuery);
+          incident.id
+            .toLowerCase()
+            .includes(normalizedQuery) ||
+          incident.guard
+            .toLowerCase()
+            .includes(normalizedQuery) ||
+          incident.shift
+            .toLowerCase()
+            .includes(normalizedQuery) ||
+          incident.description
+            .toLowerCase()
+            .includes(normalizedQuery);
 
         const matchesStatus =
-          incidentStatusFilter === 'All' || incident.status === incidentStatusFilter;
+          incidentStatusFilter === "All" ||
+          incident.status === incidentStatusFilter;
 
         const matchesSeverity =
-          incidentSeverityFilter === 'All' || incident.severity === incidentSeverityFilter;
+          incidentSeverityFilter === "All" ||
+          incident.severity === incidentSeverityFilter;
 
-        return matchesQuery && matchesStatus && matchesSeverity;
+        return (
+          matchesQuery &&
+          matchesStatus &&
+          matchesSeverity
+        );
       })
       .sort((a, b) => {
-        if (incidentSort === 'Newest') {
-          return parseIncidentDateTime(b) - parseIncidentDateTime(a);
+        if (incidentSort === "Newest") {
+          return (
+            parseIncidentDateTime(b) -
+            parseIncidentDateTime(a)
+          );
         }
-        if (incidentSort === 'Oldest') {
-          return parseIncidentDateTime(a) - parseIncidentDateTime(b);
+
+        if (incidentSort === "Oldest") {
+          return (
+            parseIncidentDateTime(a) -
+            parseIncidentDateTime(b)
+          );
         }
-        if (incidentSort === 'Severity') {
-          return (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0);
+
+        if (incidentSort === "Severity") {
+          return (
+            (severityRank[b.severity] || 0) -
+            (severityRank[a.severity] || 0)
+          );
         }
+
         return 0;
       });
-  }, [incidents, incidentQuery, incidentSeverityFilter, incidentSort, incidentStatusFilter]);
+  }, [
+    incidents,
+    incidentQuery,
+    incidentSeverityFilter,
+    incidentSort,
+    incidentStatusFilter,
+  ]);
 
   const incidentSummary = useMemo(() => {
     return incidents.reduce(
       (acc, incident) => {
         acc.total += 1;
-        if (incident.status === 'Pending') acc.pending += 1;
-        if (incident.status === 'Resolved') acc.resolved += 1;
+
+        if (incident.status === "Pending") {
+          acc.pending += 1;
+        }
+
+        if (incident.status === "Resolved") {
+          acc.resolved += 1;
+        }
+
         return acc;
       },
-      { total: 0, pending: 0, resolved: 0 }
+      {
+        total: 0,
+        pending: 0,
+        resolved: 0,
+      }
     );
   }, [incidents]);
 
-  const updateIncident = (id, newStatus, newSeverity, newComments) => {
+  /*
+   * ---------------------------------------------------------
+   * INCIDENT ACTIONS
+   * ---------------------------------------------------------
+   */
+  const updateIncident = (
+    id,
+    newStatus,
+    newSeverity,
+    newComments
+  ) => {
     setIncidents((prev) =>
       prev.map((inc) =>
         inc.id === id
-          ? { ...inc, status: newStatus, severity: newSeverity, comments: newComments }
+          ? {
+              ...inc,
+              status: newStatus,
+              severity: newSeverity,
+              comments: newComments,
+            }
           : inc
       )
     );
+
     setSelectedIncident(null);
   };
 
   const openIncidentModal = (incident) => {
     setSelectedIncident(incident);
+
     setIncidentDraft({
       severity: incident.severity,
-      comments: incident.comments || '',
+      comments: incident.comments || "",
     });
   };
 
   const scrollByAmount = (ref, amt) => {
     if (!ref.current) return;
-    ref.current.scrollBy({ left: amt, behavior: 'smooth' });
+
+    ref.current.scrollBy({
+      left: amt,
+      behavior: "smooth",
+    });
   };
 
-  const fatiguedGuardList = (fatigueDashboard?.guards ?? []).filter((guard) => {
+  /*
+   * ---------------------------------------------------------
+   * FATIGUE DATA
+   * ---------------------------------------------------------
+   */
+  const fatiguedGuardList = (
+    fatigueDashboard?.guards ?? []
+  ).filter((guard) => {
     return guard.isFatigued === true;
   });
-  // Helper function to get translated status
+
+  /*
+   * ---------------------------------------------------------
+   * TRANSLATIONS
+   * ---------------------------------------------------------
+   */
   const getTranslatedStatus = (status) => {
-    if (!status) return '';
+    if (!status) return "";
+
     const statusMap = {
-      'pending': t('pending'),
-      'open': t('open'),
-      'completed': t('completed'),
-      'resolved': t('resolved'),
-      'high': t('high'),
-      'medium': t('medium'),
-      'low': t('low'),
-      'all': t('all'),
-      'pending approval': t('pendingApproval'),
-      'confirmed': t('open'),
-      'rejected': t('reject'),
+      pending: t("pending"),
+      open: t("open"),
+      completed: t("completed"),
+      resolved: t("resolved"),
+      high: t("high"),
+      medium: t("medium"),
+      low: t("low"),
+      all: t("all"),
+      "pending approval": t("pendingApproval"),
+      confirmed: t("open"),
+      rejected: t("reject"),
     };
-    return statusMap[status?.toLowerCase()] || status;
+
+    return (
+      statusMap[status?.toLowerCase()] ||
+      status
+    );
   };
 
-  // Helper function to get translated priority
   const getTranslatedPriority = (priority) => {
-    if (!priority) return '';
+    if (!priority) return "";
+
     const priorityMap = {
-      'high': t('high'),
-      'medium': t('medium'),
-      'low': t('low'),
+      high: t("high"),
+      medium: t("medium"),
+      low: t("low"),
     };
-    return priorityMap[priority?.toLowerCase()] || priority;
+
+    return (
+      priorityMap[priority?.toLowerCase()] ||
+      priority
+    );
   };
 
-  // Helper function to get translated status for tabs
   const getTranslatedTabLabel = (tab) => {
     const tabMap = {
-      'All': t('all'),
-      'Pending': t('pending'),
-      'Open': t('open'),
-      'Completed': t('completed'),
+      All: t("all"),
+      Pending: t("pending"),
+      Open: t("open"),
+      Completed: t("completed"),
     };
+
     return tabMap[tab] || tab;
   };
 
-  // Helper function to get translated filter labels
   const getTranslatedFilterLabel = (filter) => {
     const filterMap = {
-      'All': t('all'),
-      'High': t('high'),
-      'Medium': t('medium'),
-      'Low': t('low'),
+      All: t("all"),
+      High: t("high"),
+      Medium: t("medium"),
+      Low: t("low"),
     };
+
     return filterMap[filter] || filter;
   };
 
   return (
     <div className="ss-page">
       <main className="ss-main">
+
+        {/* =====================================================
+            OVERVIEW
+        ====================================================== */}
         <div className="ss-overview-head">
           <div>
-            <h2 className="ss-h1">{t('overview')}</h2>
+            <h2 className="ss-h1">
+              {t("overview")}
+            </h2>
+
             <p className="ss-overview-subtitle">
-              {t('shiftsCount', { count: shifts.length })}
+              {t("shiftsCount", {
+                count: shifts.length,
+              })}
             </p>
           </div>
 
-          <button
-            className="ss-primary ss-primary--wide"
-            onClick={() => navigate('/create-shift')}
-            type="button"
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
           >
-            <IconPlus className="ss-plus" /> {t('createShift')}
-          </button>
+            <RefreshButton
+              onRefresh={() => fetchShifts(true)}
+              isRefreshing={isRefreshing}
+              lastRefreshed={lastRefreshed}
+            />
+
+            <button
+              className="ss-primary ss-primary--wide"
+              onClick={() =>
+                navigate("/create-shift")
+              }
+              type="button"
+            >
+              <IconPlus className="ss-plus" />
+              {t("createShift")}
+            </button>
+          </div>
         </div>
 
+        {/* =====================================================
+            SHIFTS DASHBOARD
+        ====================================================== */}
         <div className="ss-dashboard-card">
           <div className="ss-topbar">
             <div className="ss-tabs">
-              {['All', 'Pending', 'Open', 'Completed'].map((tab) => (
+              {[
+                "All",
+                "Pending",
+                "Open",
+                "Completed",
+              ].map((tab) => (
                 <button
                   key={tab}
                   type="button"
-                  className={`ss-tab ${statusTab === tab ? 'is-active' : ''}`}
-                  onClick={() => setStatusTab(tab)}
+                  className={`ss-tab ${
+                    statusTab === tab
+                      ? "is-active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setStatusTab(tab)
+                  }
                 >
                   {getTranslatedTabLabel(tab)}
-                  <span className="ss-tab__count">{tabCounts[tab]}</span>
+
+                  <span className="ss-tab__count">
+                    {tabCounts[tab]}
+                  </span>
                 </button>
               ))}
             </div>
 
             <div className="ss-viewtoggle">
               <button
-                className={`ss-viewtoggle__btn ${view === 'list' ? 'is-active' : ''}`}
-                onClick={() => setView('list')}
+                className={`ss-viewtoggle__btn ${
+                  view === "list"
+                    ? "is-active"
+                    : ""
+                }`}
+                onClick={() =>
+                  setView("list")
+                }
                 type="button"
-                aria-label={t('listView')}
+                aria-label={t("listView")}
               >
                 <IconList />
               </button>
+
               <button
-                className={`ss-viewtoggle__btn ${view === 'grid' ? 'is-active' : ''}`}
-                onClick={() => setView('grid')}
+                className={`ss-viewtoggle__btn ${
+                  view === "grid"
+                    ? "is-active"
+                    : ""
+                }`}
+                onClick={() =>
+                  setView("grid")
+                }
                 type="button"
-                aria-label={t('gridView')}
+                aria-label={t("gridView")}
               >
                 <IconGrid />
               </button>
             </div>
           </div>
 
+          {/* Priority filter */}
           <div className="ss-filterbar">
-            <span className="ss-filterbar__label">{t('priority')}</span>
-            {["All", "High", "Medium", "Low"].map((chip) => (
+            <span className="ss-filterbar__label">
+              {t("priority")}
+            </span>
+
+            {[
+              "All",
+              "High",
+              "Medium",
+              "Low",
+            ].map((chip) => (
               <button
                 key={chip}
                 type="button"
-                className={`ss-chip-btn ${priorityFilter === chip ? 'is-active' : ''}`}
-                onClick={() => setPriorityFilter(chip)}
+                className={`ss-chip-btn ${
+                  priorityFilter === chip
+                    ? "is-active"
+                    : ""
+                }`}
+                onClick={() =>
+                  setPriorityFilter(chip)
+                }
               >
-                {getTranslatedFilterLabel(chip)}
+                {getTranslatedFilterLabel(
+                  chip
+                )}
               </button>
             ))}
           </div>
 
-          {view === 'list' ? (
+          {/* =================================================
+              LIST VIEW
+          ================================================== */}
+          {view === "list" ? (
             <div className="ss-table">
               <div className="ss-table__head">
-                <div>{t('shift')}</div>
-                <div>{t('priority')}</div>
-                <div>{t('dateTime')}</div>
-                <div>{t('pay')}</div>
-                <div>{t('status')}</div>
+                <div>{t("shift")}</div>
+                <div>{t("priority")}</div>
+                <div>{t("dateTime")}</div>
+                <div>{t("pay")}</div>
+                <div>{t("status")}</div>
               </div>
 
-              {loading && <div className="ss-empty-state">{t('loadingShifts')}</div>}
-              {error && <div className="ss-empty-state ss-empty-state--error">{error}</div>}
-              {!loading && !error && filteredShifts.length === 0 && (
-                <div className="ss-empty-state">{t('noShifts')}</div>
+              {loading && (
+                <div className="ss-empty-state">
+                  {t("loadingShifts")}
+                </div>
+              )}
+
+              {error && (
+                <div className="ss-empty-state ss-empty-state--error">
+                  {error}
+                </div>
               )}
 
               {!loading &&
                 !error &&
+                filteredShifts.length === 0 && (
+                  <div className="ss-empty-state">
+                    {t("noShifts")}
+                  </div>
+                )}
+
+              {!loading &&
+                !error &&
                 paginatedShifts.map((shift) => (
-                  <div className="ss-table__row" key={shift.id}>
+                  <div
+                    className="ss-table__row"
+                    key={shift.id}
+                  >
                     <div className="ss-shift-col">
-                      <div className="ss-shift-title">{shift.title}</div>
-                      <div className="ss-shift-location">{shift.location}</div>
+                      <div className="ss-shift-title">
+                        {shift.title}
+                      </div>
+
+                      <div className="ss-shift-location">
+                        {shift.location}
+                      </div>
                     </div>
 
                     <div>
                       <span
-                        className={`ss-badge ss-badge--priority-${String(shift.priority).toLowerCase()}`}
+                        className={`ss-badge ss-badge--priority-${String(
+                          shift.priority
+                        ).toLowerCase()}`}
                       >
-                        {getTranslatedPriority(shift.priority)}
+                        {getTranslatedPriority(
+                          shift.priority
+                        )}
                       </span>
                     </div>
 
@@ -734,53 +1227,87 @@ export default function EmployerDashboard() {
                         <IconCalendar className="ss-ico" />
                         {shift.date}
                       </div>
+
                       <div className="ss-datetime-line">
                         <IconClock className="ss-ico" />
                         {shift.time}
                       </div>
                     </div>
 
-                    <div className="ss-pay-col">${shift.payRate}{t('perHour')}</div>
+                    <div className="ss-pay-col">
+                      ${shift.payRate}
+                      {t("perHour")}
+                    </div>
 
                     <div>
                       <span
-                        className={`ss-badge ss-badge--status-${String(shift.status.tone).toLowerCase()}`}
+                        className={`ss-badge ss-badge--status-${String(
+                          shift.status.tone
+                        ).toLowerCase()}`}
                       >
-                        {getTranslatedStatus(shift.status.text)}
+                        {getTranslatedStatus(
+                          shift.status.text
+                        )}
                       </span>
                     </div>
                   </div>
                 ))}
             </div>
           ) : (
+            /* =================================================
+               GRID VIEW
+            ================================================== */
             <div className="ss-shifts ss-shifts--grid ss-grid-view">
               {paginatedShifts.map((shift) => (
-                <div className="ss-card" key={shift.id}>
+                <div
+                  className="ss-card"
+                  key={shift.id}
+                >
                   <div className="ss-card__head">
-                    <div className="ss-role">{shift.title}</div>
-                    <div className="ss-rate">${shift.payRate} p/h</div>
+                    <div className="ss-role">
+                      {shift.title}
+                    </div>
+
+                    <div className="ss-rate">
+                      ${shift.payRate} p/h
+                    </div>
                   </div>
-                  <div className="ss-meta">{shift.location}</div>
+
+                  <div className="ss-meta">
+                    {shift.location}
+                  </div>
+
                   <div className="ss-when">
                     <span className="ss-when__item">
                       <IconCalendar className="ss-ico" />
                       {shift.date}
                     </span>
+
                     <span className="ss-when__item">
                       <IconClock className="ss-ico" />
                       {shift.time}
                     </span>
                   </div>
+
                   <div className="ss-grid-foot">
                     <span
-                      className={`ss-badge ss-badge--priority-${String(shift.priority).toLowerCase()}`}
+                      className={`ss-badge ss-badge--priority-${String(
+                        shift.priority
+                      ).toLowerCase()}`}
                     >
-                      {getTranslatedPriority(shift.priority)}
+                      {getTranslatedPriority(
+                        shift.priority
+                      )}
                     </span>
+
                     <span
-                      className={`ss-badge ss-badge--status-${String(shift.status.tone).toLowerCase()}`}
+                      className={`ss-badge ss-badge--status-${String(
+                        shift.status.tone
+                      ).toLowerCase()}`}
                     >
-                      {getTranslatedStatus(shift.status.text)}
+                      {getTranslatedStatus(
+                        shift.status.text
+                      )}
                     </span>
                   </div>
                 </div>
@@ -788,12 +1315,13 @@ export default function EmployerDashboard() {
             </div>
           )}
 
+          {/* Pagination */}
           <div className="ss-pagination">
             <div className="ss-pagination__meta">
-              {t('showing', { 
-                start: showingStart, 
-                end: showingEnd, 
-                total: filteredShifts.length 
+              {t("showing", {
+                start: showingStart,
+                end: showingEnd,
+                total: filteredShifts.length,
               })}
             </div>
 
@@ -802,18 +1330,31 @@ export default function EmployerDashboard() {
                 type="button"
                 className="ss-page-btn"
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                aria-label={t('previous')}
+                onClick={() =>
+                  setCurrentPage((prev) =>
+                    Math.max(1, prev - 1)
+                  )
+                }
+                aria-label={t("previous")}
               >
                 ‹
               </button>
 
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+              {Array.from(
+                { length: totalPages },
+                (_, index) => index + 1
+              ).map((page) => (
                 <button
                   key={page}
                   type="button"
-                  className={`ss-page-btn ${currentPage === page ? 'is-active' : ''}`}
-                  onClick={() => setCurrentPage(page)}
+                  className={`ss-page-btn ${
+                    currentPage === page
+                      ? "is-active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setCurrentPage(page)
+                  }
                 >
                   {page}
                 </button>
@@ -822,9 +1363,18 @@ export default function EmployerDashboard() {
               <button
                 type="button"
                 className="ss-page-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                aria-label={t('next')}
+                disabled={
+                  currentPage === totalPages
+                }
+                onClick={() =>
+                  setCurrentPage((prev) =>
+                    Math.min(
+                      totalPages,
+                      prev + 1
+                    )
+                  )
+                }
+                aria-label={t("next")}
               >
                 ›
               </button>
@@ -832,215 +1382,414 @@ export default function EmployerDashboard() {
           </div>
         </div>
 
+        {/* =====================================================
+            FATIGUE MONITORING
+        ====================================================== */}
         <div className="ss-section-head">
-          <h2 className="ss-section-title">Shift Fatigue Monitoring</h2>
-          <p className="ss-section-subtitle">Fatigue signals from recent shifts</p>
+          <h2 className="ss-section-title">
+            Shift Fatigue Monitoring
+          </h2>
+
+          <p className="ss-section-subtitle">
+            Fatigue signals from recent shifts
+          </p>
         </div>
 
         <div className="ss-dashboard-card">
-          {fatigueLoading && <div className="ss-fatigue__loading">Loading fatigue data...</div>}
-          {fatigueError && <div className="ss-fatigue__error">{fatigueError}</div>}
-          {!fatigueLoading && !fatigueError && (
-            <div className="ss-fatigue">
-              <div className="ss-fatigue__summary">
-                <div className="ss-fatigue__title">Risk Signals</div>
-                <div className="ss-fatigue__stats">
-                  <div className="ss-fatigue__stat">
-                    <div className="ss-fatigue__stat-value">
-                      {fatigueDashboard?.summary?.guardsMonitored ?? '--'}
-                    </div>
-                    <div className="ss-fatigue__stat-label">Guards Monitored</div>
-                  </div>
-                  <div className="ss-fatigue__stat">
-                    <div className="ss-fatigue__stat-value">
-                      {fatigueDashboard?.summary?.fatiguedGuards ?? '--'}
-                    </div>
-                    <div className="ss-fatigue__stat-label">Fatigued Guards</div>
-                  </div>
-                  <div className="ss-fatigue__stat">
-                    <div className="ss-fatigue__stat-value">
-                      {fatigueDashboard?.summary?.averageFatigueScore ?? '--'}%
-                    </div>
-                    <div className="ss-fatigue__stat-label">Avg Fatigue Score</div>
-                  </div>
-                </div>
-              </div>
-              <div className="ss-fatigue__list">
-                <div className="ss-fatigue__title">Fatigued Guards</div>
-                {fatigueDashboard.summary.guardsMonitored === 0 ? (
-                  <div className="ss-fatigue__empty">No guards are currently being monitored.</div>
-                ) : fatiguedGuardList.length === 0 ? (
-                  <div className="ss-fatigue__empty">No fatigue risks detected yet.</div>
-                ) : (
-                  <div className="ss-fatigue__rows">
-                    {fatiguedGuardList.map((guard) => {
-                      const isExpanded = expandedGuard?.guardId === guard.guardId;
-
-                      const guardShifts = shifts.filter((shift) => {
-                        return shift.acceptedBy?._id === guard.guardId;
-                      });
-
-                      const guardName = guardShifts[0]?.guardName ?? guard.guardId;
-
-                      return (
-                        <div
-                          className={`ss-fatigue__row ${isExpanded ? 'is-expanded' : ''}`}
-                          key={guard.guardId}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() =>
-                            setExpandedGuard(
-                              isExpanded
-                                ? null
-                                : {
-                                    ...guard,
-                                    guardName: guardName,
-                                    shifts: guardShifts,
-                                  }
-                            )
-                          }
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              setExpandedGuard(
-                                isExpanded
-                                  ? null
-                                  : {
-                                      ...guard,
-                                      guardName: guardName,
-                                      shifts: guardShifts,
-                                    }
-                              );
-                            }
-                          }}
-                        >
-                          <div className="ss-fatigue__guard">
-                            <div className="ss-fatigue__guard-name">{guardName}</div>
-                            <div className="ss-fatigue__guard-sub">
-                              Fatigue Score {guard.fatigueScore}%
-                            </div>
-                          </div>
-                          <div className="ss-fatigue__metric">
-                            <span className="ss-fatigue__metric-value">
-                              {guard.metrics.shiftsThisWeek}
-                            </span>
-                            <span className="ss-fatigue__metric-label">Shifts This Week</span>
-                          </div>
-                          <div className="ss-fatigue__metric">
-                            <span className="ss-fatigue__metric-value">
-                              {guard.metrics.hoursThisDay}
-                            </span>
-                            <span className="ss-fatigue__metric-label">Hours Today</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+          {fatigueLoading && (
+            <div className="ss-fatigue__loading">
+              Loading fatigue data...
             </div>
           )}
+
+          {fatigueError && (
+            <div className="ss-fatigue__error">
+              {fatigueError}
+            </div>
+          )}
+
+          {!fatigueLoading &&
+            !fatigueError && (
+              <div className="ss-fatigue">
+                <div className="ss-fatigue__summary">
+                  <div className="ss-fatigue__title">
+                    Risk Signals
+                  </div>
+
+                  <div className="ss-fatigue__stats">
+                    <div className="ss-fatigue__stat">
+                      <div className="ss-fatigue__stat-value">
+                        {fatigueDashboard
+                          ?.summary
+                          ?.guardsMonitored ??
+                          "--"}
+                      </div>
+
+                      <div className="ss-fatigue__stat-label">
+                        Guards Monitored
+                      </div>
+                    </div>
+
+                    <div className="ss-fatigue__stat">
+                      <div className="ss-fatigue__stat-value">
+                        {fatigueDashboard
+                          ?.summary
+                          ?.fatiguedGuards ??
+                          "--"}
+                      </div>
+
+                      <div className="ss-fatigue__stat-label">
+                        Fatigued Guards
+                      </div>
+                    </div>
+
+                    <div className="ss-fatigue__stat">
+                      <div className="ss-fatigue__stat-value">
+                        {fatigueDashboard
+                          ?.summary
+                          ?.averageFatigueScore ??
+                          "--"}
+                        %
+                      </div>
+
+                      <div className="ss-fatigue__stat-label">
+                        Avg Fatigue Score
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="ss-fatigue__list">
+                  <div className="ss-fatigue__title">
+                    Fatigued Guards
+                  </div>
+
+                  {fatigueDashboard?.summary
+                    ?.guardsMonitored === 0 ? (
+                    <div className="ss-fatigue__empty">
+                      No guards are currently
+                      being monitored.
+                    </div>
+                  ) : fatiguedGuardList.length ===
+                    0 ? (
+                    <div className="ss-fatigue__empty">
+                      No fatigue risks detected
+                      yet.
+                    </div>
+                  ) : (
+                    <div className="ss-fatigue__rows">
+                      {fatiguedGuardList.map(
+                        (guard) => {
+                          const isExpanded =
+                            expandedGuard?.guardId ===
+                            guard.guardId;
+
+                          const guardShifts =
+                            shifts.filter(
+                              (shift) =>
+                                shift.acceptedBy?._id ===
+                                guard.guardId
+                            );
+
+                          const guardName =
+                            guardShifts[0]
+                              ?.guardName ??
+                            guard.guardId;
+
+                          return (
+                            <div
+                              className={`ss-fatigue__row ${
+                                isExpanded
+                                  ? "is-expanded"
+                                  : ""
+                              }`}
+                              key={guard.guardId}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() =>
+                                setExpandedGuard(
+                                  isExpanded
+                                    ? null
+                                    : {
+                                        ...guard,
+                                        guardName,
+                                        shifts:
+                                          guardShifts,
+                                      }
+                                )
+                              }
+                              onKeyDown={(event) => {
+                                if (
+                                  event.key ===
+                                    "Enter" ||
+                                  event.key === " "
+                                ) {
+                                  event.preventDefault();
+
+                                  setExpandedGuard(
+                                    isExpanded
+                                      ? null
+                                      : {
+                                          ...guard,
+                                          guardName,
+                                          shifts:
+                                            guardShifts,
+                                        }
+                                  );
+                                }
+                              }}
+                            >
+                              <div className="ss-fatigue__guard">
+                                <div className="ss-fatigue__guard-name">
+                                  {guardName}
+                                </div>
+
+                                <div className="ss-fatigue__guard-sub">
+                                  Fatigue Score{" "}
+                                  {
+                                    guard.fatigueScore
+                                  }
+                                  %
+                                </div>
+                              </div>
+
+                              <div className="ss-fatigue__metric">
+                                <span className="ss-fatigue__metric-value">
+                                  {
+                                    guard.metrics
+                                      .shiftsThisWeek
+                                  }
+                                </span>
+
+                                <span className="ss-fatigue__metric-label">
+                                  Shifts This Week
+                                </span>
+                              </div>
+
+                              <div className="ss-fatigue__metric">
+                                <span className="ss-fatigue__metric-value">
+                                  {
+                                    guard.metrics
+                                      .hoursThisDay
+                                  }
+                                </span>
+
+                                <span className="ss-fatigue__metric-label">
+                                  Hours Today
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
         </div>
 
+        {/* =====================================================
+            FATIGUE MODAL
+        ====================================================== */}
         {expandedGuard && (
           <div
             className="ss-fatigue__modal-backdrop"
             role="dialog"
             aria-modal="true"
-            onClick={() => setExpandedGuard(null)}
+            onClick={() =>
+              setExpandedGuard(null)
+            }
           >
-            <div className="ss-fatigue__modal" onClick={(event) => event.stopPropagation()}>
+            <div
+              className="ss-fatigue__modal"
+              onClick={(event) =>
+                event.stopPropagation()
+              }
+            >
               <div className="ss-fatigue__modal-header">
                 <div>
-                  <div className="ss-fatigue__modal-title">{expandedGuard.guardName}</div>
+                  <div className="ss-fatigue__modal-title">
+                    {expandedGuard.guardName}
+                  </div>
+
                   <div className="ss-fatigue__guard-sub">
-                    Fatigue Score {expandedGuard.fatigueScore}%
+                    Fatigue Score{" "}
+                    {expandedGuard.fatigueScore}%
                   </div>
                 </div>
+
                 <button
                   className="ss-fatigue__modal-close"
-                  onClick={() => setExpandedGuard(null)}
+                  onClick={() =>
+                    setExpandedGuard(null)
+                  }
                   aria-label="Close fatigue details"
                 >
                   ×
                 </button>
               </div>
+
               <div className="ss-fatigue__modal-metrics">
-                <div className="ss-fatigue__modal-metrics-title">Current Workload</div>
-                <div className="ss-fatigue__modal-metrics-item">
-                  <span>{expandedGuard.metrics.shiftsThisWeek} </span>
-                  <span>Shifts This Week</span>
+                <div className="ss-fatigue__modal-metrics-title">
+                  Current Workload
                 </div>
+
                 <div className="ss-fatigue__modal-metrics-item">
-                  <span>{expandedGuard.metrics.hoursThisWeek} </span>
-                  <span>Hours This Week</span>
+                  <span>
+                    {
+                      expandedGuard.metrics
+                        .shiftsThisWeek
+                    }{" "}
+                  </span>
+
+                  <span>
+                    Shifts This Week
+                  </span>
                 </div>
+
                 <div className="ss-fatigue__modal-metrics-item">
-                  <span>{expandedGuard.metrics.hoursThisDay} </span>
-                  <span>Hours Today</span>
+                  <span>
+                    {
+                      expandedGuard.metrics
+                        .hoursThisWeek
+                    }{" "}
+                  </span>
+
+                  <span>
+                    Hours This Week
+                  </span>
+                </div>
+
+                <div className="ss-fatigue__modal-metrics-item">
+                  <span>
+                    {
+                      expandedGuard.metrics
+                        .hoursThisDay
+                    }{" "}
+                  </span>
+
+                  <span>
+                    Hours Today
+                  </span>
                 </div>
               </div>
+
               <div className="ss-fatigue__warnings">
-                <div className="ss-fatigue__warnings-title">Warnings</div>
-                {expandedGuard.warnings.length === 0 ? (
+                <div className="ss-fatigue__warnings-title">
+                  Warnings
+                </div>
+
+                {expandedGuard.warnings.length ===
+                0 ? (
                   <div className="ss-fatigue__warnings-indicator">
-                    <span>There are currently no fatigue warnings</span>
+                    <span>
+                      There are currently no
+                      fatigue warnings
+                    </span>
                   </div>
                 ) : (
-                  expandedGuard.warnings.map((warning, index) => {
-                    return (
-                      <div key={index} className="ss-fatigue__warnings-indicator">
+                  expandedGuard.warnings.map(
+                    (warning, index) => (
+                      <div
+                        key={index}
+                        className="ss-fatigue__warnings-indicator"
+                      >
                         {warning}
                       </div>
-                    );
-                  })
+                    )
+                  )
                 )}
               </div>
+
               <div className="ss-fatigue__detail">
-                <div className="ss-fatigue__detail-subtitle">Guard Shift Details</div>
-                {expandedGuard.shifts.map((shiftItem, index) => {
-                  const locationText =
-                    typeof shiftItem.location === 'string'
-                      ? shiftItem.location
-                      : shiftItem.location
-                        ? [
-                            shiftItem.location.street,
-                            shiftItem.location.suburb,
-                            shiftItem.location.state,
-                          ]
-                            .filter(Boolean)
-                            .join(', ')
-                        : 'No location';
+                <div className="ss-fatigue__detail-subtitle">
+                  Guard Shift Details
+                </div>
 
-                  const dateText = shiftItem.date
-                    ? new Date(`${shiftItem.rawDate}`).toLocaleDateString('en-GB')
-                    : '--';
+                {expandedGuard.shifts.map(
+                  (shiftItem, index) => {
+                    const locationText =
+                      typeof shiftItem.location ===
+                      "string"
+                        ? shiftItem.location
+                        : shiftItem.location
+                          ? [
+                              shiftItem.location
+                                .street,
+                              shiftItem.location
+                                .suburb,
+                              shiftItem.location
+                                .state,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")
+                          : "No location";
 
-                  return (
-                    <div className="ss-fatigue__detail-row" key={index}>
-                      <div className="ss-fatigue__detail-title">{shiftItem.title}</div>
-                      <div className="ss-fatigue__detail-meta">
-                        <span>{dateText}</span>
-                        <span>
-                          {shiftItem.startTime} - {shiftItem.endTime}
-                        </span>
-                        <span>{locationText}</span>
-                        <span>Status: {shiftItem.status.text}</span>
+                    const dateText =
+                      shiftItem.date
+                        ? new Date(
+                            `${shiftItem.rawDate}`
+                          ).toLocaleDateString(
+                            "en-GB"
+                          )
+                        : "--";
+
+                    return (
+                      <div
+                        className="ss-fatigue__detail-row"
+                        key={index}
+                      >
+                        <div className="ss-fatigue__detail-title">
+                          {shiftItem.title}
+                        </div>
+
+                        <div className="ss-fatigue__detail-meta">
+                          <span>
+                            {dateText}
+                          </span>
+
+                          <span>
+                            {shiftItem.startTime}{" "}
+                            -{" "}
+                            {shiftItem.endTime}
+                          </span>
+
+                          <span>
+                            {locationText}
+                          </span>
+
+                          <span>
+                            Status:{" "}
+                            {
+                              shiftItem.status
+                                .text
+                            }
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  }
+                )}
               </div>
             </div>
           </div>
         )}
 
+        {/* =====================================================
+            INCIDENT REPORTS
+        ====================================================== */}
         <div className="ss-section-head">
-          <h2 className="ss-section-title">Incident Reports</h2>
+          <h2 className="ss-section-title">
+            Incident Reports
+          </h2>
+
           <p className="ss-section-subtitle">
-            {t('pendingIncidents', { 
-              count: incidentSummary.pending, 
-              total: incidentSummary.total 
+            {t("pendingIncidents", {
+              count:
+                incidentSummary.pending,
+              total:
+                incidentSummary.total,
             })}
           </p>
         </div>
@@ -1049,78 +1798,149 @@ export default function EmployerDashboard() {
           <div className="ss-incident-toolbar">
             <input
               className="ss-incident-search"
-              placeholder={t('searchIncident')}
+              placeholder={t("searchIncident")}
               value={incidentQuery}
-              onChange={(e) => setIncidentQuery(e.target.value)}
+              onChange={(e) =>
+                setIncidentQuery(e.target.value)
+              }
             />
-            <select 
-              value={incidentStatusFilter} 
-              onChange={(e) => setIncidentStatusFilter(e.target.value)}
+
+            <select
+              value={incidentStatusFilter}
+              onChange={(e) =>
+                setIncidentStatusFilter(
+                  e.target.value
+                )
+              }
             >
-              <option value="All">{t('allStatuses')}</option>
-              <option value="Pending">{t('pending')}</option>
-              <option value="Resolved">{t('resolved')}</option>
+              <option value="All">
+                {t("allStatuses")}
+              </option>
+
+              <option value="Pending">
+                {t("pending")}
+              </option>
+
+              <option value="Resolved">
+                {t("resolved")}
+              </option>
             </select>
-            <select 
-              value={incidentSeverityFilter} 
-              onChange={(e) => setIncidentSeverityFilter(e.target.value)}
+
+            <select
+              value={incidentSeverityFilter}
+              onChange={(e) =>
+                setIncidentSeverityFilter(
+                  e.target.value
+                )
+              }
             >
-              <option value="All">{t('allSeverities')}</option>
-              <option value="High">{t('high')}</option>
-              <option value="Medium">{t('medium')}</option>
-              <option value="Low">{t('low')}</option>
+              <option value="All">
+                {t("allSeverities")}
+              </option>
+
+              <option value="High">
+                {t("high")}
+              </option>
+
+              <option value="Medium">
+                {t("medium")}
+              </option>
+
+              <option value="Low">
+                {t("low")}
+              </option>
             </select>
-            <select 
-              value={incidentSort} 
-              onChange={(e) => setIncidentSort(e.target.value)}
+
+            <select
+              value={incidentSort}
+              onChange={(e) =>
+                setIncidentSort(e.target.value)
+              }
             >
-              <option value="Newest">{t('sortNewest')}</option>
-              <option value="Oldest">{t('sortOldest')}</option>
-              <option value="Severity">{t('sortSeverity')}</option>
+              <option value="Newest">
+                {t("sortNewest")}
+              </option>
+
+              <option value="Oldest">
+                {t("sortOldest")}
+              </option>
+
+              <option value="Severity">
+                {t("sortSeverity")}
+              </option>
             </select>
+
             <button
               className="ss-reset-btn"
               type="button"
               onClick={() => {
-                setIncidentQuery('');
-                setIncidentStatusFilter('All');
-                setIncidentSeverityFilter('All');
-                setIncidentSort('Newest');
+                setIncidentQuery("");
+                setIncidentStatusFilter("All");
+                setIncidentSeverityFilter("All");
+                setIncidentSort("Newest");
               }}
             >
-              {t('reset')}
+              {t("reset")}
             </button>
           </div>
 
           <div className="ss-incident-summary">
-            <span>{incidentSummary.total} {t('total')}</span>
-            <span>{incidentSummary.pending} {t('pending')}</span>
-            <span>{incidentSummary.resolved} {t('resolved')}</span>
-            <span>{filteredIncidents.length} {t('showingResults')}</span>
+            <span>
+              {incidentSummary.total}{" "}
+              {t("total")}
+            </span>
+
+            <span>
+              {incidentSummary.pending}{" "}
+              {t("pending")}
+            </span>
+
+            <span>
+              {incidentSummary.resolved}{" "}
+              {t("resolved")}
+            </span>
+
+            <span>
+              {filteredIncidents.length}{" "}
+              {t("showingResults")}
+            </span>
           </div>
 
           <div className="ss-incident-list">
             {filteredIncidents.length === 0 && (
-              <div className="ss-empty-state">{t('noIncidents')}</div>
+              <div className="ss-empty-state">
+                {t("noIncidents")}
+              </div>
             )}
 
             {filteredIncidents.map((inc) => (
-              <div className="ss-incident-row" key={inc.id}>
+              <div
+                className="ss-incident-row"
+                key={inc.id}
+              >
                 <div className="ss-incident-row__line" />
+
                 <div className="ss-incident-avatar">
                   {inc.guard
-                    .split(' ')
+                    .split(" ")
                     .map((name) => name[0])
-                    .join('')
+                    .join("")
                     .slice(0, 2)}
                 </div>
 
                 <div className="ss-incident-person">
-                  <div className="ss-incident-name">{inc.guard}</div>
+                  <div className="ss-incident-name">
+                    {inc.guard}
+                  </div>
                 </div>
 
-                <div className="ss-incident-shift">{inc.shift}</div>
-                <div className="ss-incident-id">{inc.id}</div>
+                <div className="ss-incident-shift">
+                  {inc.shift}
+                </div>
+
+                <div className="ss-incident-id">
+                  {inc.id}
+                </div>
 
                 <div className="ss-incident-date">
                   <IconCalendar className="ss-ico" />
@@ -1128,44 +1948,74 @@ export default function EmployerDashboard() {
                 </div>
 
                 <div className="ss-incident-badges">
-                  <span className={`ss-badge ss-badge--priority-${inc.severity.toLowerCase()}`}>
-                    {getTranslatedPriority(inc.severity)}
-                  </span>
                   <span
-                    className={`ss-badge ss-badge--status-${inc.status === 'Resolved' ? 'completed' : 'pending'}`}
+                    className={`ss-badge ss-badge--priority-${inc.severity.toLowerCase()}`}
                   >
-                    {getTranslatedStatus(inc.status)}
+                    {getTranslatedPriority(
+                      inc.severity
+                    )}
+                  </span>
+
+                  <span
+                    className={`ss-badge ss-badge--status-${
+                      inc.status === "Resolved"
+                        ? "completed"
+                        : "pending"
+                    }`}
+                  >
+                    {getTranslatedStatus(
+                      inc.status
+                    )}
                   </span>
                 </div>
 
                 <button
                   className="ss-review-btn"
                   type="button"
-                  onClick={() => openIncidentModal(inc)}
+                  onClick={() =>
+                    openIncidentModal(inc)
+                  }
                 >
-                  {t('review')}
+                  {t("review")}
                 </button>
               </div>
             ))}
           </div>
         </div>
 
+        {/* =====================================================
+            REVIEWS
+        ====================================================== */}
         <div className="ss-section-head ss-section-head--reviews">
-          <h2 className="ss-section-title">{t('recentReviews')}</h2>
+          <h2 className="ss-section-title">
+            {t("recentReviews")}
+          </h2>
+
           <div className="ss-review-arrows">
-            <button 
-              className="ss-mini-arrow" 
-              onClick={() => scrollByAmount(reviewScroller, -300)} 
+            <button
+              className="ss-mini-arrow"
+              onClick={() =>
+                scrollByAmount(
+                  reviewScroller,
+                  -300
+                )
+              }
               type="button"
-              aria-label={t('previous')}
+              aria-label={t("previous")}
             >
               ‹
             </button>
-            <button 
-              className="ss-mini-arrow" 
-              onClick={() => scrollByAmount(reviewScroller, 300)} 
+
+            <button
+              className="ss-mini-arrow"
+              onClick={() =>
+                scrollByAmount(
+                  reviewScroller,
+                  300
+                )
+              }
               type="button"
-              aria-label={t('next')}
+              aria-label={t("next")}
             >
               ›
             </button>
@@ -1173,140 +2023,308 @@ export default function EmployerDashboard() {
         </div>
 
         <div className="ss-dashboard-card ss-dashboard-card--reviews">
-          <div ref={reviewScroller} className="ss-reviews__track">
+          <div
+            ref={reviewScroller}
+            className="ss-reviews__track"
+          >
             {reviews.map((r, i) => (
-              <div key={i} className="ss-reviewcard">
+              <div
+                key={i}
+                className="ss-reviewcard"
+              >
                 <div className="ss-reviewcard__top">
                   <div className="ss-avatar ss-avatar--lg">
                     <IconUser />
                   </div>
+
                   <div>
-                    <div className="ss-review__name">{r.name}</div>
-                    <div className="ss-review__role">{r.role}</div>
+                    <div className="ss-review__name">
+                      {r.name}
+                    </div>
+
+                    <div className="ss-review__role">
+                      {r.role}
+                    </div>
                   </div>
                 </div>
 
                 <div className="ss-review__stars">
-                  {[0, 1, 2, 3, 4].map((k) => (
-                    <Star key={k} filled={k < r.stars} />
-                  ))}
+                  {[0, 1, 2, 3, 4].map(
+                    (k) => (
+                      <Star
+                        key={k}
+                        filled={k < r.stars}
+                      />
+                    )
+                  )}
                 </div>
 
-                <p className="ss-review__text">“{r.text}”</p>
-                <div className="ss-review__date">{r.date}</div>
+                <p className="ss-review__text">
+                  “{r.text}”
+                </p>
+
+                <div className="ss-review__date">
+                  {r.date}
+                </div>
               </div>
             ))}
           </div>
         </div>
       </main>
 
+      {/* =======================================================
+          INCIDENT DETAILS MODAL
+      ======================================================== */}
       {selectedIncident && (
-        <div className="create-shift-modal-backdrop" onClick={() => setSelectedIncident(null)}>
+        <div
+          className="create-shift-modal-backdrop"
+          onClick={() =>
+            setSelectedIncident(null)
+          }
+        >
           <div
             className="create-shift-card"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '700px' }}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+            style={{ maxWidth: "700px" }}
           >
             <div className="create-shift-header">
               <div>
                 <h1>
-                  {t('incidentDetails')} (<span className="ss-incident-id">{selectedIncident.id}</span>)
+                  {t("incidentDetails")} (
+                  <span className="ss-incident-id">
+                    {selectedIncident.id}
+                  </span>
+                  )
                 </h1>
-                <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>
-                  {t('recordedOn', { date: selectedIncident.date, time: selectedIncident.time })}
+
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "14px",
+                    color: "#666",
+                  }}
+                >
+                  {t("recordedOn", {
+                    date:
+                      selectedIncident.date,
+                    time:
+                      selectedIncident.time,
+                  })}
                 </p>
               </div>
+
               <span
                 className={`ss-badge ss-badge--status-${
-                  selectedIncident.status === 'Resolved' ? 'completed' : 'pending'
+                  selectedIncident.status ===
+                  "Resolved"
+                    ? "completed"
+                    : "pending"
                 }`}
               >
-                {getTranslatedStatus(selectedIncident.status)}
+                {getTranslatedStatus(
+                  selectedIncident.status
+                )}
               </span>
             </div>
 
-            <div className="form-grid" style={{ marginBottom: '20px' }}>
+            <div
+              className="form-grid"
+              style={{
+                marginBottom: "20px",
+              }}
+            >
               <div className="form-group">
-                <label>{t('reportedBy')}</label>
-                <div className="ss-input-static" style={{ padding: "10px", borderRadius: "4px" }}>
+                <label>
+                  {t("reportedBy")}
+                </label>
+
+                <div
+                  className="ss-input-static"
+                  style={{
+                    padding: "10px",
+                    borderRadius: "4px",
+                  }}
+                >
                   {selectedIncident.guard}
                 </div>
               </div>
+
               <div className="form-group">
-                <label>{t('assignSeverity')}</label>
+                <label>
+                  {t("assignSeverity")}
+                </label>
+
                 <select
-                  value={incidentDraft.severity}
-                  onChange={(e) =>
-                    setIncidentDraft((prev) => ({ ...prev, severity: e.target.value }))
+                  value={
+                    incidentDraft.severity
                   }
-                  style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  onChange={(e) =>
+                    setIncidentDraft(
+                      (prev) => ({
+                        ...prev,
+                        severity:
+                          e.target.value,
+                      })
+                    )
+                  }
+                  style={{
+                    padding: "10px",
+                    border:
+                      "1px solid #ddd",
+                    borderRadius: "4px",
+                  }}
                 >
-                  <option value="Low">{t('low')}</option>
-                  <option value="Medium">{t('medium')}</option>
-                  <option value="High">{t('high')}</option>
+                  <option value="Low">
+                    {t("low")}
+                  </option>
+
+                  <option value="Medium">
+                    {t("medium")}
+                  </option>
+
+                  <option value="High">
+                    {t("high")}
+                  </option>
                 </select>
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: "20px" }}>
-              <label>{t('guardsDescription')}</label>
-              <div className="ss-incident-description">{selectedIncident.description}</div>
+            <div
+              className="form-group"
+              style={{
+                marginBottom: "20px",
+              }}
+            >
+              <label>
+                {t("guardsDescription")}
+              </label>
+
+              <div className="ss-incident-description">
+                {selectedIncident.description}
+              </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: "20px" }}>
-              <label>{t('evidencePhotos')}</label>
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                {(selectedIncident.photos || []).map((url, idx) => (
-                  <img key={idx} src={url} alt={t('evidencePhotos')} className="ss-evidence-img" />
+            <div
+              className="form-group"
+              style={{
+                marginBottom: "20px",
+              }}
+            >
+              <label>
+                {t("evidencePhotos")}
+              </label>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  flexWrap: "wrap",
+                }}
+              >
+                {(
+                  selectedIncident.photos ||
+                  []
+                ).map((url, idx) => (
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={t(
+                      "evidencePhotos"
+                    )}
+                    className="ss-evidence-img"
+                  />
                 ))}
-                {(!selectedIncident.photos || selectedIncident.photos.length === 0) && (
-                  <p style={{ margin: 0, color: "#666" }}>{t('noPhotos')}</p>
+
+                {(!selectedIncident.photos ||
+                  selectedIncident.photos
+                    .length === 0) && (
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "#666",
+                    }}
+                  >
+                    {t("noPhotos")}
+                  </p>
                 )}
               </div>
             </div>
 
             <div className="form-group">
-              <label>{t('employerComments')}</label>
+              <label>
+                {t("employerComments")}
+              </label>
+
               <textarea
-                placeholder={t('addNotes')}
-                value={incidentDraft.comments}
-                onChange={(e) =>
-                  setIncidentDraft((prev) => ({ ...prev, comments: e.target.value }))
+                placeholder={t("addNotes")}
+                value={
+                  incidentDraft.comments
                 }
-                style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px' }}
+                onChange={(e) =>
+                  setIncidentDraft(
+                    (prev) => ({
+                      ...prev,
+                      comments:
+                        e.target.value,
+                    })
+                  )
+                }
+                style={{
+                  border:
+                    "1px solid #ddd",
+                  borderRadius: "4px",
+                  padding: "10px",
+                }}
                 rows={4}
               />
             </div>
 
-            <div className="actions" style={{ marginTop: '30px' }}>
+            <div
+              className="actions"
+              style={{
+                marginTop: "30px",
+              }}
+            >
               <button
                 className="primary"
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    'Resolved',
+                    "Resolved",
                     incidentDraft.severity,
                     incidentDraft.comments
                   )
                 }
               >
-                {t('markResolved')}
+                {t("markResolved")}
               </button>
+
               <button
                 className="secondary"
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    'Pending',
+                    "Pending",
                     incidentDraft.severity,
                     incidentDraft.comments
                   )
                 }
               >
-                {t('savePending')}
+                {t("savePending")}
               </button>
-              <button className="secondary" style={{ color: "#666" }} onClick={() => setSelectedIncident(null)}>
-                {t('close')}
+
+              <button
+                className="secondary"
+                style={{
+                  color: "#666",
+                }}
+                onClick={() =>
+                  setSelectedIncident(null)
+                }
+              >
+                {t("close")}
               </button>
             </div>
           </div>
