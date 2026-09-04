@@ -193,7 +193,7 @@ describe("Payroll Status Protection", () => {
   });
 
   // Test 2: APPROVED records are NOT recalculated on query
-  test("APPROVED records are recalculated on query (amount changes)", async () => {
+  test("APPROVED records are NOT recalculated on query (amount unchanged)", async () => {
     const shiftDate = new Date(baseDate);
     shiftDate.setDate(shiftDate.getDate() + 2);
     await createCompletedShiftWithAttendance(shiftDate);
@@ -213,11 +213,11 @@ describe("Payroll Status Protection", () => {
 
     expect(result.payroll.length).toBe(1);
     // Amount should remain 304
-    expect(result.payroll[0].totalAmount).not.toBeCloseTo(304, 2);
+    expect(result.payroll[0].totalAmount).toBeCloseTo(304, 2);
   });
 
   // Test 3: PROCESSED records are NOT recalculated on query
-  test("PROCESSED records throw 409 on recalculation attempt", async () => {
+  test("PROCESSED records are NOT recalculated on query (amount unchanged)", async () => {
     const shiftDate = new Date(baseDate);
     shiftDate.setDate(shiftDate.getDate() + 3);
     await createCompletedShiftWithAttendance(shiftDate);
@@ -226,24 +226,22 @@ describe("Payroll Status Protection", () => {
     // Change payRate
     await Shift.updateOne({ acceptedBy: guard._id }, { $set: { payRate: 45 } });
 
-    // Expect getPayrollRecords to throw 409
-    await expect(
-      getPayrollRecords(
-        {
-          startDate: shiftDate.toISOString().slice(0, 10),
-          endDate: shiftDate.toISOString().slice(0, 10),
-          periodType: "weekly",
-        },
-        { _id: employer._id, role: "employer" },
-      ),
-    ).rejects.toMatchObject({
-      statusCode: 409,
-      message: expect.stringContaining("already been processed"),
-    });
+    const result = await getPayrollRecords(
+      {
+        startDate: shiftDate.toISOString().slice(0, 10),
+        endDate: shiftDate.toISOString().slice(0, 10),
+        periodType: "weekly",
+      },
+      { _id: employer._id, role: "employer" },
+    );
+
+    expect(result.payroll.length).toBe(1);
+    // Amount should remain 304 (unchanged)
+    expect(result.payroll[0].totalAmount).toBeCloseTo(304, 2);
   });
 
   // Test 4: Mixed status query
-  test("Mixed status (PENDING + APPROVED): both change", async () => {
+  test("Mixed status: only PENDING changes, APPROVED remains unchanged", async () => {
     // Three shifts, each at least a week apart to fall into different payroll periods
     const date1 = new Date(baseDate);
     date1.setDate(date1.getDate() + 4);
@@ -290,7 +288,7 @@ describe("Payroll Status Protection", () => {
 
     // Both should have changed (not 304)
     expect(pending.totalAmount).not.toBeCloseTo(304, 2);
-    expect(approved.totalAmount).not.toBeCloseTo(304, 2);
+    expect(approved.totalAmount).toBeCloseTo(304, 2);
   });
 
   // Test 5: CSV export does not trigger writes

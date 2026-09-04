@@ -504,25 +504,85 @@ const buildPayrollGroups = (records, periodType) => {
 const syncPayrollDocuments = async (groups) => {
   if (!groups.length) return [];
 
+  const groupKeys = groups.map((group) => ({
+    guardId: group.guardId,
+    employerId: group.employerId,
+    periodType: group.periodType,
+    periodStart: group.periodStart,
+    periodEnd: group.periodEnd,
+  }));
+
+  const existingRecords = await Payroll.find({
+    $or: groupKeys.map((key) => ({
+      guardId: key.guardId,
+      employerId: key.employerId,
+      periodType: key.periodType,
+      periodStart: key.periodStart,
+      periodEnd: key.periodEnd,
+    })),
+  })
+    .select(
+      "guardId employerId periodType periodStart periodEnd status totalAmount",
+    )
+    .lean();
+
+  const finalisedKeys = new Set();
+  existingRecords.forEach((record) => {
+    if (["APPROVED", "PROCESSED"].includes(record.status)) {
+      const key = `${record.guardId}:${record.periodStart.toISOString()}:${record.periodEnd.toISOString()}`;
+      finalisedKeys.add(key);
+    }
+  });
+
+  const groupsToSync = groups.filter((group) => {
+    const key = `${group.guardId}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
+    return !finalisedKeys.has(key);
+  });
+
+  if (groupsToSync.length === 0) {
+    return Payroll.find({
+      $or: groups.map((group) => ({
+        guardId: group.guardId,
+        employerId: group.employerId,
+        periodType: group.periodType,
+        periodStart: group.periodStart,
+        periodEnd: group.periodEnd,
+      })),
+    })
+      .populate("guardId", "name")
+      .populate("employerId", "name")
+      .sort({ periodStart: 1, createdAt: 1 });
+  }
+
   for (const group of groups) {
-    const processed = await Payroll.findOne({
-      guardId: group.guardId,
-      employerId: group.employerId,
-      periodType: group.periodType,
-      periodStart: group.periodStart,
-      periodEnd: group.periodEnd,
-      status: "PROCESSED",
-    });
-    if (processed) {
-      throw createHttpError(
-        409,
-        `Payroll for guard ${group.guardId}, employer ${group.employerId}, period ${group.periodStart} to ${group.periodEnd} (${group.periodType}) has already been processed and cannot be recalculated.`,
+    const key = `${group.guardId}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
+    if (finalisedKeys.has(key)) {
+      const existing = existingRecords.find(
+        (record) =>
+          String(record.guardId) === String(group.guardId) &&
+          record.periodStart.toISOString() ===
+            group.periodStart.toISOString() &&
+          record.periodEnd.toISOString() === group.periodEnd.toISOString(),
       );
+      if (existing) {
+        const amountDiff = Math.abs(existing.totalAmount - group.totalAmount);
+        if (amountDiff > 0.01) {
+          console.warn(
+            `⚠️ Finalised payroll record conflicts with recalculated data: ` +
+              `guardId=${group.guardId}, ` +
+              `periodStart=${group.periodStart.toISOString()}, ` +
+              `periodEnd=${group.periodEnd.toISOString()}, ` +
+              `stored total=${existing.totalAmount}, ` +
+              `calculated total=${group.totalAmount}, ` +
+              `difference=${amountDiff.toFixed(2)}`,
+          );
+        }
+      }
     }
   }
 
   await Payroll.bulkWrite(
-    groups.map((group) => ({
+    groupsToSync.map((group) => ({
       updateOne: {
         filter: {
           guardId: group.guardId,
