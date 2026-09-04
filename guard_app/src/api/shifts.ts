@@ -74,11 +74,19 @@ export async function listShifts(page = 1, limit = 20) {
 }
 
 // GET /api/v1/shifts/myshifts (?status=past optional)
-export async function myShifts(status?: 'past') {
-  const { data } = await http.get<ListResponse>('/shifts/myshifts', {
-    params: status ? { status } : undefined,
+export async function myShifts(params: { page: number; status?: 'past' }) {
+  const { data } = await http.get('/shifts/myshifts', {
+    params,
   });
-  return toArray<ShiftDto>(data);
+
+  const items = toArray<ShiftDto>(data);
+
+  return {
+    items,
+    page: data?.page,
+    limit: data?.limit,
+    total: data?.total ?? items.length,
+  };
 }
 
 // PUT /api/v1/shifts/:id/apply
