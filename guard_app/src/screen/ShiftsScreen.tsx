@@ -29,6 +29,8 @@ import { useAppTheme } from '../theme';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
+import ShiftAcknowledgementModal from '../components/modal/ShiftAcknowledgementModal';
+import { saveShiftAcknowledgement } from '../lib/shiftAcknowledgementStore';
 
 const { width } = Dimensions.get('window');
 
@@ -135,6 +137,7 @@ export function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
         date: s.date,
         time: `${s.startTime} - ${s.endTime}`,
         status,
+        detailedInstructions: s.detailedInstructions ?? s.description,
       };
     });
 }
@@ -151,6 +154,7 @@ function AllTab({ navigation }: Props) {
   const [selectedShift, setSelectedShift] = useState<AllShift | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [acknowledgementShift, setAcknowledgementShift] = useState<AllShift | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<'All' | 'Available' | 'Pending' | 'Confirmed'>(
     'All',
@@ -190,11 +194,26 @@ function AllTab({ navigation }: Props) {
     setRefreshing(false);
   };
 
-  const submitApplication = async (shiftId: string) => {
+  const submitApplication = async (shiftId: string, signature?: string) => {
     try {
       setApplyingId(shiftId);
 
       await applyToShift(shiftId);
+      const shift = rows.find((item) => item.id === shiftId);
+
+      if (shift) {
+        await saveShiftAcknowledgement({
+          id: `${shiftId}-${Date.now()}`,
+          shiftId,
+          acknowledged: true,
+          acknowledgedAt: new Date().toISOString(),
+          instructionsSnapshot: shift.detailedInstructions?.trim() ?? '',
+          signature,
+        });
+      }
+
+      setAcknowledgementShift(null);
+      setSelectedShift(null);
 
       Alert.alert('Success', 'Shift applied successfully');
       await fetchData();
@@ -232,27 +251,16 @@ function AllTab({ navigation }: Props) {
   };
 
   const handleApply = (shiftId: string) => {
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Are you sure you want to apply for this shift?');
+    const shift = rows.find((item) => item.id === shiftId);
 
-      if (confirmed) {
-        void submitApplication(shiftId);
-      }
-
+    if (!shift) {
+      Alert.alert('Error', 'Shift details could not be loaded.');
       return;
     }
 
-    Alert.alert('Confirm Application', 'Are you sure you want to apply for this shift?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Apply',
-        onPress: () => void submitApplication(shiftId),
-      },
-    ]);
+    setAcknowledgementShift(shift);
   };
+
   const filtered = rows
     .filter((shift) =>
       `${shift.title} ${shift.company} ${shift.site}`
@@ -438,6 +446,18 @@ function AllTab({ navigation }: Props) {
           }
         }}
         applying={selectedShift ? applyingId === selectedShift.id : false}
+      />
+      <ShiftAcknowledgementModal
+        visible={acknowledgementShift !== null}
+        shift={acknowledgementShift}
+        colors={colors}
+        applying={acknowledgementShift ? applyingId === acknowledgementShift.id : false}
+        onClose={() => setAcknowledgementShift(null)}
+        onConfirm={(signature) => {
+          if (acknowledgementShift) {
+            void submitApplication(acknowledgementShift.id, signature);
+          }
+        }}
       />
     </View>
   );

@@ -18,7 +18,8 @@ export type ShiftDto = {
   };
 
   status?: 'open' | 'applied' | 'assigned' | 'completed';
-
+  detailedInstructions?: string;
+  description?: string;
   payRate?: number;
 
   location?: {
