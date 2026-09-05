@@ -69,7 +69,7 @@ const getUserContext = (user) => {
   return { userId, role };
 };
 
-const getWeekStart = (dateValue) => {
+export const getWeekStart = (dateValue) => {
   const date = new Date(dateValue);
   const day = date.getUTCDay();
   const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1);
@@ -79,7 +79,7 @@ const getWeekStart = (dateValue) => {
   return date;
 };
 
-const getPeriodBoundsForDate = (dateValue, periodType) => {
+export const getPeriodBoundsForDate = (dateValue, periodType) => {
   const date = new Date(dateValue);
   date.setUTCHours(0, 0, 0, 0);
 
@@ -504,8 +504,85 @@ const buildPayrollGroups = (records, periodType) => {
 const syncPayrollDocuments = async (groups) => {
   if (!groups.length) return [];
 
+  const groupKeys = groups.map((group) => ({
+    guardId: group.guardId,
+    employerId: group.employerId,
+    periodType: group.periodType,
+    periodStart: group.periodStart,
+    periodEnd: group.periodEnd,
+  }));
+
+  const existingRecords = await Payroll.find({
+    $or: groupKeys.map((key) => ({
+      guardId: key.guardId,
+      employerId: key.employerId,
+      periodType: key.periodType,
+      periodStart: key.periodStart,
+      periodEnd: key.periodEnd,
+    })),
+  })
+    .select(
+      "guardId employerId periodType periodStart periodEnd status totalAmount",
+    )
+    .lean();
+
+  const finalisedKeys = new Set();
+  existingRecords.forEach((record) => {
+    if (["APPROVED", "PROCESSED"].includes(record.status)) {
+      const key = `${record.guardId}:${record.periodStart.toISOString()}:${record.periodEnd.toISOString()}`;
+      finalisedKeys.add(key);
+    }
+  });
+
+  const groupsToSync = groups.filter((group) => {
+    const key = `${group.guardId}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
+    return !finalisedKeys.has(key);
+  });
+
+  if (groupsToSync.length === 0) {
+    return Payroll.find({
+      $or: groups.map((group) => ({
+        guardId: group.guardId,
+        employerId: group.employerId,
+        periodType: group.periodType,
+        periodStart: group.periodStart,
+        periodEnd: group.periodEnd,
+      })),
+    })
+      .populate("guardId", "name")
+      .populate("employerId", "name")
+      .sort({ periodStart: 1, createdAt: 1 });
+  }
+
+  for (const group of groups) {
+    const key = `${group.guardId}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
+    if (finalisedKeys.has(key)) {
+      const existing = existingRecords.find(
+        (record) =>
+          String(record.guardId) === String(group.guardId) &&
+          record.periodStart.toISOString() ===
+            group.periodStart.toISOString() &&
+          record.periodEnd.toISOString() === group.periodEnd.toISOString(),
+      );
+      if (existing) {
+        const amountDiff = Math.abs(existing.totalAmount - group.totalAmount);
+        if (amountDiff > 0.01) {
+          console.warn(
+            `⚠️ Finalised payroll record conflicts with recalculated data: ` +
+              `guardId=${group.guardId}, ` +
+              `periodStart=${group.periodStart.toISOString()}, ` +
+              `periodEnd=${group.periodEnd.toISOString()}, ` +
+              `stored total=${existing.totalAmount}, ` +
+              `calculated total=${group.totalAmount}, ` +
+              `difference=${amountDiff.toFixed(2)}`,
+          );
+        }
+      }
+    }
+  }
+
   await Payroll.bulkWrite(
-    groups.map((group) => ({
+    groupsToSync.map((group) => ({
       updateOne: {
         filter: {
           guardId: group.guardId,
@@ -664,10 +741,59 @@ export const syncPayrollForShiftIds = async ({ shiftIds, periodType }) => {
   return syncPayrollDocuments(groups);
 };
 
-export const getPayrollRecords = async (query, user) => {
+// add new function to build payroll searching condiction
+const buildPayrollQuery = (query, userContext, range) => {
+  const { userId, role } = userContext;
+  const { guardId } = query;
+
+  const payrollQuery = {
+    periodStart: { $gte: range.start },
+    periodEnd: { $lte: range.end },
+  };
+
+  if (role === "guard") {
+    if (guardId && String(guardId) !== String(userId)) {
+      throw createHttpError(403, "Guards can only access their own payroll");
+    }
+    payrollQuery.guardId = userId;
+  } else if (role === "employer") {
+    payrollQuery.employerId = userId;
+    if (guardId) payrollQuery.guardId = guardId;
+  } else if (role === "admin") {
+    if (guardId) payrollQuery.guardId = guardId;
+  } else {
+    throw createHttpError(403, "Forbidden: unsupported role");
+  }
+
+  return payrollQuery;
+};
+
+export const getPayrollRecords = async (query, user, options = {}) => {
   const userContext = getUserContext(user);
   const range = parseDateRange(query);
   const shiftQuery = buildShiftQuery(query, userContext, range);
+  const { readOnly = false } = options;
+
+  // read only mode
+  if (readOnly) {
+    const payrollQuery = buildPayrollQuery(query, userContext, range);
+    const payrollDocs = await Payroll.find(payrollQuery)
+      .populate("guardId", "name")
+      .populate("employerId", "name")
+      .sort({ periodStart: 1, createdAt: 1 });
+
+    return {
+      filters: {
+        startDate: query.startDate,
+        endDate: query.endDate,
+        periodType: query.periodType,
+        guardId: query.guardId || null,
+        department: query.department || null,
+      },
+      summary: buildSummary(payrollDocs),
+      payroll: payrollDocs.map(serializePayroll),
+    };
+  }
 
   const shifts = await Shift.find(shiftQuery)
     .populate("acceptedBy", "name")
@@ -778,7 +904,7 @@ export const processPayrollRecords = async (payrollIds, user) => {
 };
 
 export const exportPayrollCsv = async (query, user) => {
-  const result = await getPayrollRecords(query, user);
+  const result = await getPayrollRecords(query, user, { readOnly: true });
   const rows = [
     [
       "payrollId",
@@ -831,7 +957,7 @@ export const exportPayrollCsv = async (query, user) => {
 };
 
 export const exportPayrollPdf = async (query, user) => {
-  const result = await getPayrollRecords(query, user);
+  const result = await getPayrollRecords(query, user, { readOnly: true });
   const doc = new PDFDocument({ margin: 40, size: "A4" });
   const buffers = [];
 
