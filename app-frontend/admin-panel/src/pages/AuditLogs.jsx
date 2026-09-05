@@ -18,6 +18,12 @@ export default function AuditLogs() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: null,
+  });
+
   // Purge states
   const [purgeDays, setPurgeDays] = useState('30');
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
@@ -32,8 +38,10 @@ export default function AuditLogs() {
   const fetchLogs = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const params = { page, limit };
+
       if (userId) params.userId = userId;
       if (action) params.action = action;
       if (role) params.role = role;
@@ -41,7 +49,14 @@ export default function AuditLogs() {
       if (to) params.to = to;
 
       const res = await http.get('/admin/audit-logs', { params });
+
       setLogs(res.data.logs || []);
+
+      // Reset sorting when new data is loaded
+      setSortConfig({
+        key: null,
+        direction: null,
+      });
     } catch (err) {
       setError('Failed to load audit logs.');
       console.error(err);
@@ -64,12 +79,73 @@ export default function AuditLogs() {
     setRole('');
     setFrom('');
     setTo('');
+
+    setSortConfig({
+      key: null,
+      direction: null,
+    });
+
     if (page === 1) {
       setTimeout(fetchLogs, 0);
     } else {
       setPage(1);
     }
   };
+
+  const handleSort = (key) => {
+    setSortConfig((current) => {
+      // First double-click on a different column = ascending
+      if (current.key !== key) {
+        return {
+          key,
+          direction: 'asc',
+        };
+      }
+
+      // Second double-click = descending
+      if (current.direction === 'asc') {
+        return {
+          key,
+          direction: 'desc',
+        };
+      }
+
+      // Third double-click = normal/original order
+      return {
+        key: null,
+        direction: null,
+      };
+    });
+  };
+
+  // Sort complete log objects so all columns stay together.
+  const sortedLogs = !sortConfig.key
+    ? logs
+    : [...logs].sort((a, b) => {
+        let valueA;
+        let valueB;
+
+        if (sortConfig.key === 'timestamp') {
+          valueA = new Date(a.timestamp).getTime();
+          valueB = new Date(b.timestamp).getTime();
+        } else if (sortConfig.key === 'user') {
+          valueA = (a.user?.name || a.user || '').toLowerCase();
+          valueB = (b.user?.name || b.user || '').toLowerCase();
+        } else if (sortConfig.key === 'action') {
+          valueA = (a.action || '').toLowerCase();
+          valueB = (b.action || '').toLowerCase();
+        }
+
+        if (valueA < valueB) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+
+        if (valueA > valueB) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+
+        return 0;
+      });
 
   const handleExportExcel = () => {
     const data = logs.map((log) => ({
@@ -90,15 +166,19 @@ export default function AuditLogs() {
   const handlePurgeConfirmed = async () => {
     setPurging(true);
     setPurgeMessage(null);
+
     try {
       const res = await http.delete('/admin/audit-logs/purge', {
         params: { days: purgeDays },
       });
+
       setPurgeMessage(
         `Purged ${res.data.deletedCount} log(s) older than ${purgeDays} days.`,
       );
+
       setShowPurgeConfirm(false);
       setPage(1);
+
       fetchLogs();
     } catch (err) {
       setPurgeMessage('Failed to purge logs.');
@@ -106,6 +186,14 @@ export default function AuditLogs() {
     } finally {
       setPurging(false);
     }
+  };
+
+  const getSortArrow = (key) => {
+    if (sortConfig.key !== key) {
+      return null;
+    }
+
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
 
   return (
@@ -152,11 +240,47 @@ export default function AuditLogs() {
           onChange={(e) => setTo(e.target.value)}
         />
 
-        <button onClick={handleApplyFilters}>Apply Filters</button>
+        <button
+          onClick={handleApplyFilters}
+          style={{
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            padding: '8px 14px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Apply Filters
+        </button>
 
-        <button onClick={handleClearFilters}>Clear</button>
+        <button
+          onClick={handleClearFilters}
+          style={{
+            backgroundColor: '#dc3545',
+            color: 'white',
+            border: 'none',
+            padding: '8px 14px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Clear
+        </button>
 
-        <button onClick={handleExportExcel}>Export Excel</button>
+        <button
+          onClick={handleExportExcel}
+          style={{
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            padding: '8px 14px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Export
+        </button>
       </div>
 
       {/* Purge section */}
@@ -202,6 +326,7 @@ export default function AuditLogs() {
         {purgeMessage && <span>{purgeMessage}</span>}
       </div>
 
+      {/* Audit Logs table */}
       <table
         border="1"
         cellPadding="8"
@@ -214,16 +339,81 @@ export default function AuditLogs() {
       >
         <thead>
           <tr>
-            <th>Timestamp</th>
-            <th>User</th>
-            <th>Action</th>
+            <th
+              onDoubleClick={() => handleSort('timestamp')}
+              style={{
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+              title="Double-click to sort"
+            >
+              Timestamp
+              {getSortArrow('timestamp') && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    marginLeft: '4px',
+                  }}
+                >
+                  {getSortArrow('timestamp')}
+                </span>
+              )}
+            </th>
+
+            <th
+              onDoubleClick={() => handleSort('user')}
+              style={{
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+              title="Double-click to sort"
+            >
+              User
+              {getSortArrow('user') && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    marginLeft: '4px',
+                  }}
+                >
+                  {getSortArrow('user')}
+                </span>
+              )}
+            </th>
+
+            <th
+              onDoubleClick={() => handleSort('action')}
+              style={{
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+              title="Double-click to sort"
+            >
+              Action
+              {getSortArrow('action') && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    marginLeft: '4px',
+                  }}
+                >
+                  {getSortArrow('action')}
+                </span>
+              )}
+            </th>
           </tr>
         </thead>
 
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan="3" style={{ textAlign: 'center', padding: '20px' }}>
+              <td
+                colSpan="3"
+                style={{
+                  textAlign: 'center',
+                  padding: '20px',
+                }}
+              >
                 Loading audit logs…
               </td>
             </tr>
@@ -243,7 +433,7 @@ export default function AuditLogs() {
                 </button>
               </td>
             </tr>
-          ) : logs.length === 0 ? (
+          ) : sortedLogs.length === 0 ? (
             <tr>
               <td
                 colSpan="3"
@@ -257,11 +447,13 @@ export default function AuditLogs() {
               </td>
             </tr>
           ) : (
-            logs.map((log) => (
+            sortedLogs.map((log) => (
               <tr
                 key={log._id}
                 onClick={() => setSelectedLog(log)}
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = '#f0f0f0')
                 }
@@ -278,6 +470,7 @@ export default function AuditLogs() {
         </tbody>
       </table>
 
+      {/* Pagination */}
       <div style={{ marginTop: '12px' }}>
         <button
           onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -313,7 +506,8 @@ export default function AuditLogs() {
           </p>
 
           <p>
-            <strong>User:</strong> {selectedLog.user?.name || '—'} (
+            <strong>User:</strong>{' '}
+            {selectedLog.user?.name || '—'} (
             {selectedLog.user?.email || 'N/A'})
           </p>
 
