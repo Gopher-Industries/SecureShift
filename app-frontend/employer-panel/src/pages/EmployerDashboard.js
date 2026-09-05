@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import "./EmployerDashboard.css";
 import RefreshButton from "../components/RefreshButton";
 
+
 /* --- icons --- */
 const IconCalendar = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -1318,10 +1319,10 @@ export default function EmployerDashboard() {
           {/* Pagination */}
           <div className="ss-pagination">
             <div className="ss-pagination__meta">
-              {t("showing", {
+              {t('showing', {
                 start: showingStart,
                 end: showingEnd,
-                total: filteredShifts.length,
+                total: filteredShifts.length
               })}
             </div>
 
@@ -1785,11 +1786,9 @@ export default function EmployerDashboard() {
           </h2>
 
           <p className="ss-section-subtitle">
-            {t("pendingIncidents", {
-              count:
-                incidentSummary.pending,
-              total:
-                incidentSummary.total,
+            {t('pendingIncidents', {
+              count: incidentSummary.pending,
+              total: incidentSummary.total
             })}
           </p>
         </div>
@@ -1804,14 +1803,9 @@ export default function EmployerDashboard() {
                 setIncidentQuery(e.target.value)
               }
             />
-
             <select
               value={incidentStatusFilter}
-              onChange={(e) =>
-                setIncidentStatusFilter(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setIncidentStatusFilter(e.target.value)}
             >
               <option value="All">
                 {t("allStatuses")}
@@ -1825,14 +1819,9 @@ export default function EmployerDashboard() {
                 {t("resolved")}
               </option>
             </select>
-
             <select
               value={incidentSeverityFilter}
-              onChange={(e) =>
-                setIncidentSeverityFilter(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setIncidentSeverityFilter(e.target.value)}
             >
               <option value="All">
                 {t("allSeverities")}
@@ -1850,12 +1839,9 @@ export default function EmployerDashboard() {
                 {t("low")}
               </option>
             </select>
-
             <select
               value={incidentSort}
-              onChange={(e) =>
-                setIncidentSort(e.target.value)
-              }
+              onChange={(e) => setIncidentSort(e.target.value)}
             >
               <option value="Newest">
                 {t("sortNewest")}
@@ -1994,26 +1980,15 @@ export default function EmployerDashboard() {
           <div className="ss-review-arrows">
             <button
               className="ss-mini-arrow"
-              onClick={() =>
-                scrollByAmount(
-                  reviewScroller,
-                  -300
-                )
-              }
+              onClick={() => scrollByAmount(reviewScroller, -300)}
               type="button"
               aria-label={t("previous")}
             >
               ‹
             </button>
-
             <button
               className="ss-mini-arrow"
-              onClick={() =>
-                scrollByAmount(
-                  reviewScroller,
-                  300
-                )
-              }
+              onClick={() => scrollByAmount(reviewScroller, 300)}
               type="button"
               aria-label={t("next")}
             >
@@ -2328,6 +2303,7 @@ export default function EmployerDashboard() {
               </button>
             </div>
           </div>
+
         </div>
       )}
     </div>

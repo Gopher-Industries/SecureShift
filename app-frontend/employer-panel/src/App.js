@@ -32,10 +32,9 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
-import Sidebar from './components/Sidebar';
-import { NotificationProvider } from './components/NotificationContext';
-
+import AIAssistant from './pages/AIAssistant';
 import i18n from './i18n';
+import AIChatWidget from "./components/AIChatWidget";
 function TaskRoute() {
   return (
     <Routes>
@@ -85,6 +84,7 @@ function ProtectedLayout({ children, language, setLanguage }) {
         </div>
 
         <Footer language={language} />
+         <AIChatWidget />
       </div>
     </ProtectedRoute>
   );
@@ -120,6 +120,8 @@ function AppRoutes({ language, setLanguage }) {
         <Route path="/terms-and-condition" element={<TermsAndConditions />} />
 
         <Route path="/contact-us" element={<ContactUs />} /> 
+        <Route path="/ai-assistant" element={<AIAssistant />}/>
+
         {/* PROTECTED ROUTES */}
         <Route
           path="/employer-dashboard"
