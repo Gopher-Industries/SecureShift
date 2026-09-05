@@ -10,6 +10,8 @@ import { ACTIONS } from "../src/middleware/logger.js";
 
 jest.mock("../src/models/Branch.js");
 
+const VALID_SITE_ID = "507f1f77bcf86cd799439011";
+
 const mockRes = () => {
   const res = {};
   res.status = jest.fn().mockReturnThis();
@@ -118,7 +120,7 @@ describe("Branch Controller", () => {
   // -------------------------
   test("should update site successfully", async () => {
     const mockSite = {
-      _id: "site123",
+      _id: VALID_SITE_ID,
       name: "Old Name",
       code: "A1",
       location: {},
@@ -128,7 +130,7 @@ describe("Branch Controller", () => {
     Branch.findOne.mockResolvedValue(mockSite);
 
     const req = mockReq({
-      params: { id: "site123" },
+      params: { id: VALID_SITE_ID },
       body: {
         name: "New Name",
       },
@@ -147,7 +149,7 @@ describe("Branch Controller", () => {
     Branch.findOne.mockResolvedValue(null);
 
     const req = mockReq({
-      params: { id: "site123" },
+      params: { id: VALID_SITE_ID },
     });
 
     const res = mockRes();
@@ -157,12 +159,26 @@ describe("Branch Controller", () => {
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
+  test("should return 400 when site id is malformed on update", async () => {
+    const req = mockReq({
+      params: { id: "not-an-object-id" },
+      body: { name: "X", code: "Y" },
+    });
+    const res = mockRes();
+
+    await updateSite(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid site ID" });
+    expect(Branch.findOne).not.toHaveBeenCalled();
+  });
+
   // -------------------------
   // DELETE SITE
   // -------------------------
   test("should delete site successfully (soft delete)", async () => {
     const mockSite = {
-      _id: "site123",
+      _id: VALID_SITE_ID,
       isActive: true,
       save: jest.fn().mockResolvedValue(true),
     };
@@ -170,7 +186,7 @@ describe("Branch Controller", () => {
     Branch.findOne.mockResolvedValue(mockSite);
 
     const req = mockReq({
-      params: { id: "site123" },
+      params: { id: VALID_SITE_ID },
     });
 
     const res = mockRes();
@@ -186,7 +202,7 @@ describe("Branch Controller", () => {
     Branch.findOne.mockResolvedValue(null);
 
     const req = mockReq({
-      params: { id: "site123" },
+      params: { id: VALID_SITE_ID },
     });
 
     const res = mockRes();
@@ -194,5 +210,18 @@ describe("Branch Controller", () => {
     await deleteSite(req, res);
 
     expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  test("should return 400 when site id is malformed on delete", async () => {
+    const req = mockReq({
+      params: { id: "not-an-object-id" },
+    });
+    const res = mockRes();
+
+    await deleteSite(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid site ID" });
+    expect(Branch.findOne).not.toHaveBeenCalled();
   });
 });
