@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import http from '../lib/http';
 import translations from "../i18n/translations";
+import RefreshButton from '../components/RefreshButton';
 import { useNotification } from '../components/NotificationContext';
 
 // ─── STYLES (defined first) ───
@@ -22,10 +23,10 @@ const summaryNumberStyle = { margin: '0', fontSize: '24px', fontWeight: '700', c
 const bigIconStyle = { width: '24px', height: '24px' };
 const smallIconStyle = { width: '20px', height: '20px' };
 const filterSectionStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' };
-const filterGroupStyle = { display: 'flex', alignItems: 'center', gap: '12px' };
+const filterGroupStyle = { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' };
 const sortGroupStyle = { display: 'flex', alignItems: 'center', gap: '12px' };
 const filterLabelStyle = { fontSize: '14px', fontWeight: '400', color: '#1E1E1E' };
-const filterButtonsStyle = { display: 'flex', gap: '8px' };
+const filterButtonsStyle = { display: 'flex', gap: '8px', flexWrap: 'wrap' };
 const filterButtonStyle = { backgroundColor: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '8px 16px', fontSize: '14px', color: '#666', cursor: 'pointer', fontWeight: '500' };
 const activeFilterButtonStyle = { ...filterButtonStyle, backgroundColor: '#274b93', color: 'white', border: '1px solid #274b93' };
 const sortButtonStyle = { backgroundColor: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '8px 16px', fontSize: '14px', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' };
@@ -706,22 +707,31 @@ const ManageShift = ({ language }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const chatEndRef = useRef(null);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  const fetchShifts = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    try {
+      const { data } = await http.get('/shifts');
+      let apiShifts;
+      if (Array.isArray(data)) apiShifts = data;
+      else if (Array.isArray(data.shifts)) apiShifts = data.shifts;
+      else if (data.items && Array.isArray(data.items)) apiShifts = data.items;
+      else apiShifts = [];
+      setShifts(apiShifts.map(normalizeShift));
+      setLastRefreshed(new Date());
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Error fetching shifts.');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchShifts = async () => {
-      try {
-        const { data } = await http.get('/shifts');
-        let apiShifts;
-        if (Array.isArray(data)) apiShifts = data;
-        else if (Array.isArray(data.shifts)) apiShifts = data.shifts;
-        else if (data.items && Array.isArray(data.items)) apiShifts = data.items;
-        else apiShifts = [];
-        setShifts(apiShifts.map(normalizeShift));
-      } catch (err) {
-        setError(err?.response?.data?.message || 'Error fetching shifts.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchShifts();
   }, []);
 
@@ -1068,9 +1078,16 @@ const ManageShift = ({ language }) => {
     <div style={containerStyle}>
       <div style={headerStyle}>
         <h1 style={titleStyle}>{t.manageShifts}</h1>
-        <button style={addButtonStyle} onClick={() => navigate('/create-shift')}>
-          <img src={'/ic-add.svg'} alt="Add" style={bigIconStyle} /> Add New Shift
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <RefreshButton
+            onRefresh={() => fetchShifts(true)}
+            isRefreshing={isRefreshing}
+            lastRefreshed={lastRefreshed}
+          />
+          <button style={addButtonStyle} onClick={() => navigate('/create-shift')}>
+            <img src={'/ic-add.svg'} alt="Add" style={bigIconStyle} /> Add New Shift
+          </button>
+        </div>
       </div>
       <div style={summaryGridStyle}>
         <SummaryCard label="Total shifts" number={totalShifts} icon="/ic-task.svg" bg="#EFF4FF" />

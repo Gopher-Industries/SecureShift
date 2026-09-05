@@ -1,3 +1,4 @@
+import RetentionPolicy from '../components/RetentionPolicy';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import http from '../lib/http';
@@ -199,7 +200,7 @@ export default function AuditLogs() {
   return (
     <div>
       <h1>Audit Logs</h1>
-
+      <RetentionPolicy />
       {/* Filters */}
       <div
         style={{
