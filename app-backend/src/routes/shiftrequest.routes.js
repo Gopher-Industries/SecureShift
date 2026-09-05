@@ -5,6 +5,7 @@ import {
   createShiftRequest,
   getShiftRequestById,
   getShiftRequests,
+  getSwapOptions,
   updateShiftRequest,
 } from "../controllers/shiftrequest.controller.js";
 
@@ -454,5 +455,38 @@ router
     getShiftRequestById,
   )
   .patch(protect, authorizeRoles("employer", "admin"), updateShiftRequest);
+
+/**
+ * @swagger
+ * /api/v1/shift-requests/swap-options/{id}:
+ *   get:
+ *     summary: List shifts that can be swapped with specified shift
+ *     description: Guard may request a list of potential options to swap their shift with. Used to get targetGuardID and targetShiftID for swap request creation.
+ *     tags: [Shift Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: "^[a-fA-F0-9]{24}$"
+ *         description: Shift MongoDB ObjectId.
+ *     responses:
+ *       200:
+ *         description: Shift swap options found.
+ *       400:
+ *         description: id is not a valid MongoDB ObjectId.
+ *       401:
+ *         description: Missing, invalid, expired, deleted, or unavailable authenticated user token.
+ *       403:
+ *         description: The caller does not have access to this request's scope.
+ *       404:
+ *         description: Shift was not found.
+ */
+router
+  .route("/swap-options/:id")
+  .get(protect, authorizeRoles("guard"), getSwapOptions);
 
 export default router;
