@@ -82,8 +82,14 @@ export const createNotification = async (req, res) => {
  */
 export const getNotificationById = async (req, res) => {
   try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+    
     const notification = await Notification.findOne({
-      _id: req.params.id,
+      _id: id,
       userId: req.user._id,
     });
 
@@ -103,9 +109,15 @@ export const getNotificationById = async (req, res) => {
  */
 export const markAsRead = async (req, res) => {
   try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+    
     const notification = await Notification.findOneAndUpdate(
       {
-        _id: req.params.id,
+        _id: id,
         userId: req.user._id,
       },
       { isRead: true },
