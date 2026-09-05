@@ -173,9 +173,7 @@ export default function AuditLogs() {
         params: { days: purgeDays },
       });
 
-      setPurgeMessage(
-        `Purged ${res.data.deletedCount} log(s) older than ${purgeDays} days.`,
-      );
+      setPurgeMessage(`Purged ${res.data.deletedCount} log(s) older than ${purgeDays} days.`);
 
       setShowPurgeConfirm(false);
       setPage(1);
@@ -210,11 +208,7 @@ export default function AuditLogs() {
           marginBottom: '16px',
         }}
       >
-        <input
-          placeholder="User ID"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-        />
+        <input placeholder="User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
 
         <input
           placeholder="Action (e.g. LOGIN_SUCCESS)"
@@ -229,17 +223,9 @@ export default function AuditLogs() {
           <option value="admin">Admin</option>
         </select>
 
-        <input
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-        />
+        <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
 
-        <input
-          type="date"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-        />
+        <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
 
         <button
           onClick={handleApplyFilters}
@@ -455,12 +441,8 @@ export default function AuditLogs() {
                 style={{
                   cursor: 'pointer',
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = '#f0f0f0')
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = 'transparent')
-                }
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <td>{new Date(log.timestamp).toLocaleString()}</td>
                 <td>{log.user?.name || log.user || '—'}</td>
@@ -473,33 +455,22 @@ export default function AuditLogs() {
 
       {/* Pagination */}
       <div style={{ marginTop: '12px' }}>
-        <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1 || loading}
-        >
+        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1 || loading}>
           Previous
         </button>
 
         <span style={{ margin: '0 10px' }}>Page {page}</span>
 
-        <button
-          onClick={() => setPage((p) => p + 1)}
-          disabled={logs.length < limit || loading}
-        >
+        <button onClick={() => setPage((p) => p + 1)} disabled={logs.length < limit || loading}>
           Next
         </button>
       </div>
 
       {/* Details Modal */}
       {selectedLog && (
-        <Modal
-          open={true}
-          title="Log Details"
-          onClose={() => setSelectedLog(null)}
-        >
+        <Modal open={true} title="Log Details" onClose={() => setSelectedLog(null)}>
           <p>
-            <strong>Timestamp:</strong>{' '}
-            {new Date(selectedLog.timestamp).toLocaleString()}
+            <strong>Timestamp:</strong> {new Date(selectedLog.timestamp).toLocaleString()}
           </p>
 
           <p>
@@ -507,8 +478,7 @@ export default function AuditLogs() {
           </p>
 
           <p>
-            <strong>User:</strong>{' '}
-            {selectedLog.user?.name || '—'} (
+            <strong>User:</strong> {selectedLog.user?.name || '—'} (
             {selectedLog.user?.email || 'N/A'})
           </p>
 
@@ -541,9 +511,8 @@ export default function AuditLogs() {
           <h2 style={{ color: '#d9534f' }}>⚠️ Confirm Purge</h2>
 
           <p>
-            This will <strong>permanently delete</strong> all audit logs older
-            than <strong>{purgeDays} days</strong>. This action{' '}
-            <strong>cannot be undone</strong>.
+            This will <strong>permanently delete</strong> all audit logs older than{' '}
+            <strong>{purgeDays} days</strong>. This action <strong>cannot be undone</strong>.
           </p>
 
           <p>Are you sure you want to continue?</p>
@@ -570,10 +539,7 @@ export default function AuditLogs() {
               {purging ? 'Purging...' : 'Yes, Purge'}
             </button>
 
-            <button
-              onClick={() => setShowPurgeConfirm(false)}
-              disabled={purging}
-            >
+            <button onClick={() => setShowPurgeConfirm(false)} disabled={purging}>
               Cancel
             </button>
           </div>
