@@ -112,10 +112,7 @@ const AuditIcon = ({ size = 24, color = 'currentColor' }) => (
     strokeWidth="32px"
   >
     <path d="M416 221.25V416a48 48 0 0 1-48 48H144a48 48 0 0 1-48-48V96a48 48 0 0 1 48-48h98.75a32 32 0 0 1 22.62 9.37l141.26 141.26a32 32 0 0 1 9.37 22.62Z" />
-    <path
-      d="M256 56v120a32 32 0 0 0 32 32h120M176 288h160M176 368h160"
-      strokeLinecap="round"
-    />
+    <path d="M256 56v120a32 32 0 0 0 32 32h120M176 288h160M176 368h160" strokeLinecap="round" />
   </svg>
 );
 
@@ -193,9 +190,11 @@ export default function AdminSidebar({ isOpen, onClose }) {
   return (
     <>
       {isOpen && (
-        <div
+        <button
+          type="button"
           onClick={onClose}
           className="admin-sidebar-overlay"
+          aria-label="Close sidebar"
           style={{
             position: 'fixed',
             top: 0,
@@ -203,7 +202,10 @@ export default function AdminSidebar({ isOpen, onClose }) {
             right: 0,
             bottom: 0,
             background: 'rgba(0,0,0,0.5)',
+            border: 'none',
+            padding: 0,
             zIndex: 40,
+            cursor: 'default',
           }}
         />
       )}

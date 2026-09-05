@@ -10,10 +10,7 @@ export default function AdminLayout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div
         style={{
@@ -23,9 +20,7 @@ export default function AdminLayout() {
           minWidth: 0,
         }}
       >
-        <AdminNavbar
-          onMenuClick={() => setSidebarOpen((prev) => !prev)}
-        />
+        <AdminNavbar onMenuClick={() => setSidebarOpen((prev) => !prev)} />
 
         <main
           style={{
