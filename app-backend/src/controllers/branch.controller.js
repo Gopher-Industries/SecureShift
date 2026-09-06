@@ -41,7 +41,13 @@ export const createSite = async (req, res) => {
 
     res.status(201).json(site);
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to create site", error: err.message });
   }
@@ -129,7 +135,13 @@ export const updateSite = async (req, res) => {
 
     res.status(200).json(site);
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to update site", error: err.message });
   }
