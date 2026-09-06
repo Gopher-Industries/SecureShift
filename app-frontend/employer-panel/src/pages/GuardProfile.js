@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import translations from "../i18n/translations";
+import RefreshButton from '../components/RefreshButton';
 
 // ❌ removed local dummy guardData
 
@@ -50,66 +51,62 @@ function GuardProfiles({ language }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // NEW: fetch guards from backend --------------------------------------------
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  const fetchGuards = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/users/guards`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `Request failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : [];
+
+      const normalized = list.map((g, i) => ({
+        id: g._id || g.id || String(i),
+        name: g.name || [g.firstName, g.lastName].filter(Boolean).join(' ') || 'Unknown',
+        skills: Array.isArray(g.skills)
+          ? g.skills
+          : typeof g.skills === 'string'
+            ? g.skills.split(',').map((s) => s.trim())
+            : Array.isArray(g.skillset)
+              ? g.skillset
+              : [],
+        availability: g.availability ?? g.status ?? (g.available ? 'Available' : 'Unavailable'),
+        photo: g.photo?.url || g.photo || g.avatar || g.imageUrl || '/GuardPicPlaceholder.png',
+      }));
+
+      setGuards(normalized);
+      setLastRefreshed(new Date());
+    } catch (e) {
+      setError(e.message || 'Failed to fetch guards');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    // NEW
-    let mounted = true; // NEW
-    (async () => {
-      // NEW
-      try {
-        // NEW
-        setLoading(true); // NEW
-        setError(''); // NEW
-
-        const token = localStorage.getItem('token'); // NEW (if you use JWT)
-        const res = await fetch(`${API_BASE}/users/guards`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // ✅ send token
-          },
-        }); // NEW
-
-        if (!res.ok) {
-          // NEW
-          const text = await res.text().catch(() => ''); // NEW
-          throw new Error(text || `Request failed (${res.status})`); // NEW
-        } // NEW
-
-        const data = await res.json(); // NEW
-
-        // Accept both shapes: array OR {guards:[...]} ----------------- // NEW
-        const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : []; // NEW
-
-        // Normalize fields so UI always has name/skills/availability/photo
-        const normalized = list.map((g, i) => ({
-          // NEW
-          id: g._id || g.id || String(i), // NEW
-          name: g.name || [g.firstName, g.lastName].filter(Boolean).join(' ') || 'Unknown', // NEW
-          skills: Array.isArray(g.skills)
-            ? g.skills
-            : typeof g.skills === 'string'
-              ? g.skills.split(',').map((s) => s.trim())
-              : Array.isArray(g.skillset)
-                ? g.skillset
-                : [], // NEW
-          availability: g.availability ?? g.status ?? (g.available ? 'Available' : 'Unavailable'), // NEW
-          photo: g.photo?.url || g.photo || g.avatar || g.imageUrl || '/GuardPicPlaceholder.png', // NEW
-        })); // NEW
-
-        if (mounted) setGuards(normalized); // NEW
-      } catch (e) {
-        // NEW
-        if (mounted) setError(e.message || 'Failed to fetch guards'); // NEW
-      } finally {
-        // NEW
-        if (mounted) setLoading(false); // NEW
-      } // NEW
-    })(); // NEW
-    return () => {
-      mounted = false;
-    }; // NEW
-  }, []); // NEW
+    fetchGuards();
+  }, []);
 
   const toggleSkill = (skill) =>
     setSelectedSkills((prev) =>
@@ -211,7 +208,8 @@ function GuardProfiles({ language }) {
     boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
     textAlign: 'center',
     fontFamily: 'Poppins, sans-serif',
-    flex: '0 0 calc(25% - 1rem)',
+    flex: '1 1 260px',
+    maxWidth: '280px',
     boxSizing: 'border-box',
   };
   const guardImageStyle = {
@@ -253,7 +251,14 @@ function GuardProfiles({ language }) {
   return (
     <div style={pageStyle}>
       <div style={contentStyle}>
-        <h2 style={{ textAlign: 'center', marginTop: '1rem' }}>{t.guardProfiles}</h2>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '1rem' }}>
+          <h2 style={{ margin: 0 }}>{t.guardProfiles}</h2>
+          <RefreshButton
+            onRefresh={() => fetchGuards(true)}
+            isRefreshing={isRefreshing}
+            lastRefreshed={lastRefreshed}
+          />
+        </div>
         {/* NEW: loading / error / empty states */}
         {loading && <p style={{ textAlign: 'center' }}>Loading guards…</p>} {/* NEW */}
         {!loading && error /* NEW */ && (
