@@ -102,11 +102,11 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
       if (REQUEST_TYPES[requestType].id === 'SWAP') {
         const res = await createShiftRequest({
           type: REQUEST_TYPES[requestType].id,
-          targetGuardId: swapOptions[swapChoice].acceptedBy.id,
+          targetGuardId: swapOptions[swapChoice].acceptedBy._id,
           originalShiftId: shift.id,
-          replacementShiftId: swapOptions[swapChoice].id,
-          leaveStartDate: leaveStart,
-          leaveEndDate: leaveEnd,
+          replacementShiftId: swapOptions[swapChoice]._id,
+          leaveStartDate: null,
+          leaveEndDate: null,
           reason,
         });
         Alert.alert(t('shifts.alerts.requestCreated'), t('shifts.alerts.successMessage'));
@@ -248,7 +248,7 @@ export default function ShiftRequestModal({ visible, onClose, colors, shift }: P
                         <View style={s.dropdownMenu}>
                           {swapOptions.map((choice, index) => (
                             <TouchableOpacity
-                              key={choice.id}
+                              key={choice._id}
                               style={[
                                 s.dropdownItem,
                                 swapChoice === index && s.dropdownItemSelected,

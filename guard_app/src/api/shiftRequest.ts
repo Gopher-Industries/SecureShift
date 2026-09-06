@@ -27,7 +27,7 @@ export interface CreateShiftRequestPayload {
 }
 
 export interface SwapOptionsResponse {
-  id: string;
+  _id: string;
   title: string;
   date: Date;
   startTime: string;
@@ -37,7 +37,7 @@ export interface SwapOptionsResponse {
   };
   description: string;
   acceptedBy: {
-    id: string;
+    _id: string;
     name: string;
   };
   payRate: number;
