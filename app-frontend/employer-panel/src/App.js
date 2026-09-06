@@ -22,6 +22,8 @@ import Footer from './components/Footer';
 import PageTitleHandler from './components/PageTitleHandler';
 
 import ProtectedRoute from './routes/ProtectedRoute';
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
+import KeyboardShortcutModal from './components/KeyboardShortcutModal';
 
 import Timesheet from './pages/Timesheet';
 import DailyMonitoring from './pages/DailyMonitoring';
@@ -30,6 +32,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
+import Sidebar from './components/Sidebar';
+import { NotificationProvider } from './components/NotificationContext';
 
 import i18n from './i18n';
 function TaskRoute() {
@@ -41,11 +45,45 @@ function TaskRoute() {
 }
 
 function ProtectedLayout({ children, language, setLanguage }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <ProtectedRoute>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+        }}
+      >
         <Header language={language} setLanguage={setLanguage} />
-        <main style={{ flex: 1, paddingBottom: '20px' }}>{children}</main>
+
+        <div
+          style={{
+            display: 'flex',
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() =>
+              setSidebarCollapsed((previous) => !previous)
+            }
+          />
+
+          <main
+            style={{
+              flex: 1,
+              minWidth: 0,
+              paddingBottom: '20px',
+              transition: 'width 0.25s ease',
+            }}
+          >
+            {children}
+          </main>
+        </div>
+
         <Footer language={language} />
       </div>
     </ProtectedRoute>
@@ -54,6 +92,7 @@ function ProtectedLayout({ children, language, setLanguage }) {
 
 function AppRoutes({ language, setLanguage }) {
   const navigate = useNavigate();
+  const { isHelpModalOpen, closeHelpModal } = useKeyboardShortcuts(navigate);
 
   useEffect(() => {
     attach401Handler(() => navigate('/login'));
@@ -68,6 +107,7 @@ function AppRoutes({ language, setLanguage }) {
   return (
     <>
       <PageTitleHandler />
+      <KeyboardShortcutModal isOpen={isHelpModalOpen} onClose={closeHelpModal} />
       <Routes>
         {/* PUBLIC ROUTES */}
         <Route path="/" element={<Login />} />
@@ -141,10 +181,12 @@ function App() {
   }, [language]);
 
   return (
-    <Router>
+  <Router>
+    <NotificationProvider>
       <AppRoutes language={language} setLanguage={setLanguage} />
-    </Router>
-  );
+    </NotificationProvider>
+  </Router>
+);
 }
 
 export default App;

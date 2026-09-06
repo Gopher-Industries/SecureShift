@@ -30,7 +30,7 @@ describe('Dashboard Controller', () => {
       .mockResolvedValueOnce(10) // total
       .mockResolvedValueOnce(3)  // assigned
       .mockResolvedValueOnce(5)  // completed
-      .mockResolvedValueOnce(2); // cancelled
+      .mockResolvedValueOnce(2); // open
 
     // Mock recent shifts chain
     Shift.find.mockReturnValue({
@@ -62,7 +62,7 @@ describe('Dashboard Controller', () => {
           total: 10,
           assigned: 3,
           completed: 5,
-          cancelled: 2,
+          open: 2,
         },
         recentShifts: expect.any(Array),
         reviews: {

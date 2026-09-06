@@ -18,7 +18,7 @@ import {
 
 import { getUserAttendance, type Attendance } from '../api/attendance';
 import { getMe } from '../api/auth';
-import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
+import { applyToShift, listShifts, myShifts, rateShift, type ShiftDto } from '../api/shifts';
 import CalendarView from '../components/calendar/CalendarView';
 import ShiftCard from '../components/card/ShiftCard';
 import EmptyState from '../components/EmptyState';
@@ -36,7 +36,7 @@ type Props = {
   navigation: any;
 };
 
-function mapMineShifts(
+export function mapMineShifts(
   shifts: ShiftDto[],
   myUid: string,
   attendanceRecords: Attendance[] = [],
@@ -79,7 +79,10 @@ function mapMineShifts(
     });
 }
 
-function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []): CompletedShift[] {
+export function mapCompleted(
+  shifts: ShiftDto[],
+  attendanceRecords: Attendance[] = [],
+): CompletedShift[] {
   return shifts
     .filter((s) => s.status === 'completed')
     .map((s) => {
@@ -95,8 +98,8 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []):
         rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
         date: s.date,
         time: `${s.startTime} - ${s.endTime}`,
-        rated: false,
-        rating: 0,
+        rated: s.ratedByGuard === true,
+        rating: s.guardRating ?? 0,
         attendance: attendance
           ? {
               checkInTime: attendance.checkInTime ?? undefined,
@@ -107,7 +110,7 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []):
     });
 }
 
-function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
+export function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
   return shifts
     .filter((s) => s.status !== 'completed')
     .map((s) => {
@@ -573,6 +576,18 @@ function CompletedTab({ navigation }: Props) {
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
+  // send the rating, then update the row so the stars stay after closing the modal
+  const handleRate = async (rating: number) => {
+    if (!selectedShift) return;
+
+    await rateShift(selectedShift.id, rating);
+
+    setRows((prev) =>
+      prev.map((row) => (row.id === selectedShift.id ? { ...row, rated: true, rating } : row)),
+    );
+    setSelectedShift((prev) => (prev ? { ...prev, rated: true, rating } : prev));
+  };
+
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
   };
@@ -624,6 +639,7 @@ function CompletedTab({ navigation }: Props) {
         visible={selectedShift !== null}
         onClose={() => setSelectedShift(null)}
         colors={colors}
+        onRate={handleRate}
       />
     </View>
   );

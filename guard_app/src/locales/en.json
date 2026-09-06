@@ -164,11 +164,24 @@
     "leaveEnd": "Leave End",
     "notFound": "No shift requests found",
     "requestError": "Failed to load requests.",
+    "assignedGuard": "Assigned Guard:",
+    "swapOptionsError": "Failed to load swap options",
+    "rateShift": "Rate this shift",
+    "submitRating": "Submit Rating",
+    "submittingRating": "Submitting...",
+    "alreadyRated": "You already rated this shift",
+    "selectRating": "Please pick a star rating first",
+    "ratingFailed": "Could not save your rating",
+    "starLabel": "{{count}} star rating",
     "alerts": {
+      "missingReasonHead": "Reason Missing",
+      "missingReasonMsg": "Enter the reason for the shift request.",
       "missingDateHead": "Missing Date",
       "missingDateMsg": "Enter the date you want your shift moved to.",
       "invalidDateHead": "Invalid Date",
       "invalidDateMsg": "Selected date is invalid",
+      "selectShiftHead": "Select Shift",
+      "selectShiftMsg": "No shift selected",
       "requestCreated": "Request Created",
       "requestFailed": "Request Failed",
       "successMessage": "Your request has been sent to your employer"
@@ -399,6 +412,23 @@
     "submitting": "Submitting...",
     "submitSuccess": "Incident report submitted successfully",
     "submitFailed": "Failed to submit incident report",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "attachments": "Attachments (optional)",
+    "addMedia": "Add Photo / Video",
+    "addFile": "Add File",
+    "attachmentHint": "You can attach photos, videos, audio or PDF files up to 25MB.",
+    "remove": "Remove",
+    "fileNotAdded": "File not added",
+    "typeNotAllowed": "this file type is not allowed",
+    "fileTooBig": "this file is bigger than 25MB",
+    "attachmentCount": "{{count}} attachment(s)"
+  },
+  "appLock": {
+    "prompt": "Unlock SecureShift",
+    "lockedTitle": "SecureShift is locked",
+    "lockedMessage": "Verify it's you to continue.",
+    "unlock": "Unlock",
+    "settingsLabel": "App lock (Face ID / PIN)",
+    "unavailable": "Unavailable"
   }
 }

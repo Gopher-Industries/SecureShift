@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Branch from "../models/Branch.js";
 import { ACTIONS } from "../middleware/logger.js";
 
@@ -83,6 +84,9 @@ export const getAllSites = async (req, res) => {
 export const updateSite = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid site ID" });
+    }
     const site = await Branch.findOne({
       _id: id,
       employerId: req.user.id,
@@ -155,6 +159,9 @@ export const updateSite = async (req, res) => {
 export const deleteSite = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid site ID" });
+    }
     const site = await Branch.findOne({
       _id: id,
       employerId: req.user.id,

@@ -1,6 +1,7 @@
 import {
   createShiftRequest as createShiftRequestService,
   getShiftRequestForUser,
+  getShiftSwapOptions,
   listShiftRequestsForUser,
   reviewShiftRequest,
 } from "../services/shiftrequest.service.js";
@@ -55,6 +56,22 @@ export const getShiftRequestById = async (req, res) => {
     return res.json({
       success: true,
       data: shiftRequest,
+    });
+  } catch (error) {
+    return handleError(res, error);
+  }
+};
+
+export const getSwapOptions = async (req, res) => {
+  try {
+    const result = await getShiftSwapOptions({
+      user: req.user,
+      originalShiftID: req.params.id,
+    });
+
+    return res.json({
+      success: true,
+      data: result,
     });
   } catch (error) {
     return handleError(res, error);

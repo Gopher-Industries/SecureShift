@@ -147,17 +147,34 @@ const SMTPIcon = ({ size = 24, color = 'currentColor' }) => (
   </svg>
 );
 
+const RolesIcon = ({ size = 24, color = 'currentColor' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+);
+
 const items = [
   ['/dashboard', 'Dashboard', DashboardIcon],
   ['/users', 'Users', UsersIcon],
   ['/guard-verification', 'Guard Verification', GuardIcon],
   ['/shifts', 'Shifts', ShiftIcon],
+  ['/roles', 'Roles & Permissions', RolesIcon],
   ['/audit-logs', 'Audit Logs', AuditIcon],
   ['/messages', 'Messages', ChatIcon],
   ['/smtp-settings', 'SMTP Settings', SMTPIcon],
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ isOpen, onClose }) {
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed');
     return saved !== null ? JSON.parse(saved) : true;
@@ -167,85 +184,96 @@ export default function AdminSidebar() {
     localStorage.setItem('sidebarCollapsed', JSON.stringify(collapsed));
   }, [collapsed]);
 
+  // Mobile drawer hamesha full-width khulni chahiye, chahe desktop collapse state kuch bhi ho
+  const showLabels = isOpen || !collapsed;
+
   return (
-    <aside
-      style={{
-        width: collapsed ? 64 : 220,
-        background: colors.primaryDark,
-        color: colors.white,
-        paddingTop: 16,
-      }}
-    >
-      <button
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        onClick={() => setCollapsed(!collapsed)}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          color: colors.white,
-          padding: '0 20px',
-          display: 'flex',
-        }}
-      >
-        <MenuIcon />
-      </button>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          padding: '16px 16.75px 10px',
-          gap: '7px',
-        }}
-      >
-        <img src={'/logo.svg'} alt={'SecureShift Admin'} style={{ width: 36, height: 36 }} />
-        <span
+    <>
+      {isOpen && (
+        <div
+          onClick={onClose}
+          className="admin-sidebar-overlay"
           style={{
-            fontWeight: 700,
-            fontSize: 18,
-            opacity: collapsed ? 0 : 1,
-            whiteSpace: 'nowrap',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 40,
+          }}
+        />
+      )}
+
+      <aside
+        className={`admin-sidebar ${isOpen ? 'admin-sidebar-open' : ''}`}
+        style={{
+          width: showLabels ? 220 : 64,
+          background: colors.primaryDark,
+          color: colors.white,
+          paddingTop: 16,
+          flexShrink: 0,
+        }}
+      >
+        <button
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onClick={() => setCollapsed(!collapsed)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: colors.white,
+            padding: '0 20px',
+            display: 'flex',
           }}
         >
-          SecureShift Admin
-        </span>
-      </div>
-      <nav>
-        {items.map(([to, label, Icon]) => (
-          <NavLink
-            key={to}
-            to={to}
-            style={({ isActive }) => ({
-              display: 'block',
-              padding: '10px 20px',
-              color: isActive ? colors.primaryDark : colors.white,
-              textDecoration: 'none',
-              background: isActive ? colors.bg : 'transparent',
-            })}
+          <MenuIcon />
+        </button>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            padding: '16px 16.75px 10px',
+            gap: '7px',
+          }}
+        >
+          <img src={'/logo.svg'} alt={'SecureShift Admin'} style={{ width: 36, height: 36 }} />
+          <span
+            style={{
+              fontWeight: 700,
+              fontSize: 18,
+              opacity: showLabels ? 1 : 0,
+              whiteSpace: 'nowrap',
+            }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
+            SecureShift Admin
+          </span>
+        </div>
+        <nav>
+          {items.map(([to, label, Icon]) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={onClose}
+              style={({ isActive }) => ({
+                display: 'block',
+                padding: '10px 20px',
+                color: isActive ? colors.primaryDark : colors.white,
+                textDecoration: 'none',
+                background: isActive ? colors.bg : 'transparent',
+              })}
             >
-              <div style={{ flexShrink: 0, display: 'flex' }}>
-                <Icon />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ flexShrink: 0, display: 'flex' }}>
+                  <Icon />
+                </div>
+                <span style={{ opacity: showLabels ? 1 : 0, whiteSpace: 'nowrap' }}>{label}</span>
               </div>
-              <span
-                style={{
-                  opacity: collapsed ? 0 : 1,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {label}
-              </span>
-            </div>
-          </NavLink>
-        ))}
-      </nav>
-    </aside>
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+    </>
   );
 }
