@@ -88,16 +88,36 @@ export const updateSite = async (req, res) => {
     }
 
     const { name, code, location } = req.body;
-    if (name) site.name = name;
-    if (code) site.code = code;
-    if (location) {
+
+    if (name !== undefined) site.name = name;
+    if (code !== undefined) site.code = code;
+
+    if (location !== undefined) {
       site.location = {
-        line1: location.line1 || site.location.line1,
-        line2: location.line2 || site.location.line2,
-        city: location.city || site.location.city,
-        state: location.state || site.location.state,
-        postcode: location.postcode || site.location.postcode,
-        country: location.country || site.location.country,
+        line1:
+          location.line1 !== undefined
+            ? location.line1
+            : site.location.line1,
+        line2:
+          location.line2 !== undefined
+            ? location.line2
+            : site.location.line2,
+        city:
+          location.city !== undefined
+            ? location.city
+            : site.location.city,
+        state:
+          location.state !== undefined
+            ? location.state
+            : site.location.state,
+        postcode:
+          location.postcode !== undefined
+            ? location.postcode
+            : site.location.postcode,
+        country:
+          location.country !== undefined
+            ? location.country
+            : site.location.country,
       };
     }
 
