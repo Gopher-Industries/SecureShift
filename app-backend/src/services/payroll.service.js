@@ -529,13 +529,13 @@ const syncPayrollDocuments = async (groups) => {
   const finalisedKeys = new Set();
   existingRecords.forEach((record) => {
     if (["APPROVED", "PROCESSED"].includes(record.status)) {
-      const key = `${record.guardId}:${record.periodStart.toISOString()}:${record.periodEnd.toISOString()}`;
+      const key = `${record.guardId}:${record.employerId}:${record.periodType}:${record.periodStart.toISOString()}:${record.periodEnd.toISOString()}`;
       finalisedKeys.add(key);
     }
   });
 
   const groupsToSync = groups.filter((group) => {
-    const key = `${group.guardId}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
+    const key = `${group.guardId}:${group.employerId}:${group.periodType}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
     return !finalisedKeys.has(key);
   });
 
@@ -555,11 +555,13 @@ const syncPayrollDocuments = async (groups) => {
   }
 
   for (const group of groups) {
-    const key = `${group.guardId}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
+    const key = `${group.guardId}:${group.employerId}:${group.periodType}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
     if (finalisedKeys.has(key)) {
       const existing = existingRecords.find(
         (record) =>
           String(record.guardId) === String(group.guardId) &&
+          String(record.employerId) === String(group.employerId) &&
+          record.periodType === group.periodType &&
           record.periodStart.toISOString() ===
             group.periodStart.toISOString() &&
           record.periodEnd.toISOString() === group.periodEnd.toISOString(),
