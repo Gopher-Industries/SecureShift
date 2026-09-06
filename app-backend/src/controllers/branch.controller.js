@@ -114,31 +114,31 @@ export const updateSite = async (req, res) => {
       site.code = code;
     }
 
-if (location !== undefined) {
-  if (location.line1 !== undefined) {
-    site.location.line1 = location.line1;
-  }
+    if (location !== undefined) {
+      if (location.line1 !== undefined) {
+        site.location.line1 = location.line1;
+      }
 
-  if (location.line2 !== undefined) {
-    site.location.line2 = location.line2;
-  }
+      if (location.line2 !== undefined) {
+        site.location.line2 = location.line2;
+      }
 
-  if (location.city !== undefined) {
-    site.location.city = location.city;
-  }
+      if (location.city !== undefined) {
+        site.location.city = location.city;
+      }
 
-  if (location.state !== undefined) {
-    site.location.state = location.state;
-  }
+      if (location.state !== undefined) {
+        site.location.state = location.state;
+      }
 
-  if (location.postcode !== undefined) {
-    site.location.postcode = location.postcode;
-  }
+      if (location.postcode !== undefined) {
+        site.location.postcode = location.postcode;
+      }
 
-  if (location.country !== undefined) {
-    site.location.country = location.country;
-  }
-}
+      if (location.country !== undefined) {
+        site.location.country = location.country;
+      }
+    }
     await site.save();
 
     await req.audit?.log(req.user.id, ACTIONS.SITE_UPDATED, {
