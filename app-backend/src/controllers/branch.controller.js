@@ -10,6 +10,7 @@ import { ACTIONS } from "../middleware/logger.js";
 export const createSite = async (req, res) => {
   try {
     const { name, code, location } = req.body;
+
     const existing = await Branch.findOne({
       code,
       employerId: req.user.id,
@@ -36,6 +37,7 @@ export const createSite = async (req, res) => {
     });
 
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_CREATED, {
       siteId: site._id,
     });
@@ -68,9 +70,12 @@ export const getAllSites = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    res.status(200).json({ count: sites.length, sites });
+    res.status(200).json({
+      count: sites.length,
+      sites,
+    });
   } catch (err) {
-    res
+    return res
       .status(500)
       .json({ message: "Failed to fetch sites", error: err.message });
   }
@@ -84,9 +89,11 @@ export const getAllSites = async (req, res) => {
 export const updateSite = async (req, res) => {
   try {
     const { id } = req.params;
+
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({ message: "Invalid site ID" });
     }
+
     const site = await Branch.findOne({
       _id: id,
       employerId: req.user.id,
@@ -99,39 +106,41 @@ export const updateSite = async (req, res) => {
 
     const { name, code, location } = req.body;
 
-    if (name !== undefined) site.name = name;
-    if (code !== undefined) site.code = code;
-
-    if (location !== undefined) {
-      site.location = {
-        line1:
-          location.line1 !== undefined
-            ? location.line1
-            : site.location.line1,
-        line2:
-          location.line2 !== undefined
-            ? location.line2
-            : site.location.line2,
-        city:
-          location.city !== undefined
-            ? location.city
-            : site.location.city,
-        state:
-          location.state !== undefined
-            ? location.state
-            : site.location.state,
-        postcode:
-          location.postcode !== undefined
-            ? location.postcode
-            : site.location.postcode,
-        country:
-          location.country !== undefined
-            ? location.country
-            : site.location.country,
-      };
+    if (name !== undefined) {
+      site.name = name;
     }
 
+    if (code !== undefined) {
+      site.code = code;
+    }
+
+if (location !== undefined) {
+  if (location.line1 !== undefined) {
+    site.location.line1 = location.line1;
+  }
+
+  if (location.line2 !== undefined) {
+    site.location.line2 = location.line2;
+  }
+
+  if (location.city !== undefined) {
+    site.location.city = location.city;
+  }
+
+  if (location.state !== undefined) {
+    site.location.state = location.state;
+  }
+
+  if (location.postcode !== undefined) {
+    site.location.postcode = location.postcode;
+  }
+
+  if (location.country !== undefined) {
+    site.location.country = location.country;
+  }
+}
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_UPDATED, {
       siteId: id,
       updatedFields: Object.keys(req.body),
@@ -159,9 +168,11 @@ export const updateSite = async (req, res) => {
 export const deleteSite = async (req, res) => {
   try {
     const { id } = req.params;
+
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({ message: "Invalid site ID" });
     }
+
     const site = await Branch.findOne({
       _id: id,
       employerId: req.user.id,
@@ -173,14 +184,24 @@ export const deleteSite = async (req, res) => {
     }
 
     site.isActive = false;
+
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_DELETED, {
       siteId: id,
     });
 
-    res.status(200).json({ message: "Site deleted successfully" });
+    res.status(200).json({
+      message: "Site deleted successfully",
+    });
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to delete site", error: err.message });
   }

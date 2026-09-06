@@ -18,15 +18,6 @@ const {
 
 const { default: Branch } = await import("../src/models/Branch.js");
 
-jest.unstable_mockModule("../src/models/Branch.js", () => {
-  const Branch = jest.fn();
-
-  Branch.findOne = jest.fn();
-  Branch.find = jest.fn();
-
-  return { default: Branch };
-});
-
 const VALID_SITE_ID = "507f1f77bcf86cd799439011";
 
 const mockRes = () => {
@@ -181,7 +172,7 @@ describe("Branch Controller", () => {
     Branch.findOne.mockResolvedValue(mockSite);
 
     const req = mockReq({
-      params: { id: "site123" },
+      params: { id: VALID_SITE_ID },
       body: {
         location: {
           line1: "",
@@ -217,7 +208,7 @@ describe("Branch Controller", () => {
     Branch.findOne.mockResolvedValue(mockSite);
 
     const req = mockReq({
-      params: { id: "site123" },
+      params: { id: VALID_SITE_ID },
       body: {
         location: {
           city: "Geelong",
@@ -253,7 +244,7 @@ describe("Branch Controller", () => {
     Branch.findOne.mockResolvedValue(mockSite);
 
     const req = mockReq({
-      params: { id: "site123" },
+      params: { id: VALID_SITE_ID },
       body: {
         location: {
           line1: "",
