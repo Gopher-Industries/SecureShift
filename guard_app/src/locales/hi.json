@@ -412,7 +412,16 @@
     "submitting": "जमा किया जा रहा है...",
     "submitSuccess": "घटना रिपोर्ट सफलतापूर्वक जमा की गई",
     "submitFailed": "घटना रिपोर्ट जमा करने में विफल",
-    "cancel": "रद्द करें"
+    "cancel": "रद्द करें",
+    "attachments": "अनुलग्नक (वैकल्पिक)",
+    "addMedia": "फोटो / वीडियो जोड़ें",
+    "addFile": "फ़ाइल जोड़ें",
+    "attachmentHint": "आप 25MB तक की फोटो, वीडियो, ऑडियो या PDF जोड़ सकते हैं।",
+    "remove": "हटाएं",
+    "fileNotAdded": "फ़ाइल नहीं जोड़ी गई",
+    "typeNotAllowed": "यह फ़ाइल प्रकार स्वीकार नहीं है",
+    "fileTooBig": "यह फ़ाइल 25MB से बड़ी है",
+    "attachmentCount": "{{count}} अनुलग्नक"
   },
   "appLock": {
     "prompt": "SecureShift अनलॉक करें",

@@ -406,7 +406,16 @@
     "submitting": "Submitting...",
     "submitSuccess": "Incident report submitted successfully",
     "submitFailed": "Failed to submit incident report",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "attachments": "Attachments (optional)",
+    "addMedia": "Add Photo / Video",
+    "addFile": "Add File",
+    "attachmentHint": "You can attach photos, videos, audio or PDF files up to 25MB.",
+    "remove": "Remove",
+    "fileNotAdded": "File not added",
+    "typeNotAllowed": "this file type is not allowed",
+    "fileTooBig": "this file is bigger than 25MB",
+    "attachmentCount": "{{count}} attachment(s)"
   },
   "appLock": {
     "prompt": "Unlock SecureShift",

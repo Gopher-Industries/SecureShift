@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { jsPDF } from "jspdf";
 import "./EmployerDashboard.css";
+import RefreshButton from "../components/RefreshButton";
 
 /* ---------------- ICONS ---------------- */
 
@@ -101,10 +102,38 @@ const IconPlus = (props) => (
 
 const IconGrid = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" />
-    <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" />
-    <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" />
-    <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" />
+    <rect
+      x="3"
+      y="3"
+      width="7"
+      height="7"
+      rx="1"
+      fill="currentColor"
+    />
+    <rect
+      x="14"
+      y="3"
+      width="7"
+      height="7"
+      rx="1"
+      fill="currentColor"
+    />
+    <rect
+      x="3"
+      y="14"
+      width="7"
+      height="7"
+      rx="1"
+      fill="currentColor"
+    />
+    <rect
+      x="14"
+      y="14"
+      width="7"
+      height="7"
+      rx="1"
+      fill="currentColor"
+    />
   </svg>
 );
 
@@ -119,7 +148,15 @@ const IconList = (props) => (
       rx="1"
       fill="currentColor"
     />
-    <rect x="3" y="17" width="18" height="3" rx="1" fill="currentColor" />
+    <rect
+      x="3"
+      y="17"
+      width="18"
+      height="3"
+      rx="1"
+      fill="currentColor"
+    />
+
   </svg>
 );
 
@@ -150,11 +187,15 @@ const IconDownload = (props) => (
       strokeWidth="2"
       strokeLinecap="round"
     />
+
   </svg>
 );
 
 const Star = ({ filled }) => (
-  <svg viewBox="0 0 24 24" className={`star ${filled ? "filled" : ""}`}>
+  <svg
+    viewBox="0 0 24 24"
+    className={`star ${filled ? "filled" : ""}`}
+  >
     <path d="M12 2l3.09 6.28 6.93 1-5 4.86L18.18 22 12 18.56 5.82 22l1.16-7.86-5-4.86 6.93-1L12 2z" />
   </svg>
 );
@@ -169,7 +210,11 @@ const severityRank = {
 
 const formatLocation = (location) => {
   if (!location) return "No location";
-  if (typeof location === "string") return location;
+
+  if (typeof location === "string") {
+    return location;
+  }
+
 
   return [
     location.street,
@@ -183,8 +228,15 @@ const formatLocation = (location) => {
 
 const formatShiftDate = (value) => {
   if (!value) return "--";
-  if (typeof value !== "string") return String(value);
-  if (/^\d{2}-\d{2}-\d{4}$/.test(value)) return value;
+
+  if (typeof value !== "string") {
+    return String(value);
+  }
+
+  if (/^\d{2}-\d{2}-\d{4}$/.test(value)) {
+    return value;
+  }
+
 
   const parsed = new Date(value);
 
@@ -207,6 +259,7 @@ const parseIncidentDateTime = (incident) => {
   }
 
   const timeMatch = String(incident.time).match(
+
     /(\d{1,2}):(\d{2})\s*(AM|PM)/i
   );
 
@@ -218,8 +271,14 @@ const parseIncidentDateTime = (incident) => {
   const minutes = Number(timeMatch[2]);
   const meridian = timeMatch[3].toUpperCase();
 
-  if (meridian === "PM" && hours < 12) hours += 12;
-  if (meridian === "AM" && hours === 12) hours = 0;
+  if (meridian === "PM" && hours < 12) {
+    hours += 12;
+  }
+
+  if (meridian === "AM" && hours === 12) {
+    hours = 0;
+  }
+
 
   baseDate.setHours(hours, minutes, 0, 0);
 
@@ -230,11 +289,18 @@ const getShiftStatusCategory = (shift) => {
   const text = String(shift?.status?.text || "").toLowerCase();
   const tone = String(shift?.status?.tone || "").toLowerCase();
 
-  if (tone.includes("pending") || text.includes("pending")) {
+  if (
+    tone.includes("pending") ||
+    text.includes("pending")
+  ) {
     return "Pending";
   }
 
-  if (tone.includes("completed") || text.includes("completed")) {
+  if (
+    tone.includes("completed") ||
+    text.includes("completed")
+  ) {
+
     return "Completed";
   }
 
@@ -262,6 +328,7 @@ const safePdfValue = (value, fallback = "Not provided") => {
 
 export default function EmployerDashboard() {
   const { t } = useTranslation();
+
   const navigate = useNavigate();
   const reviewScroller = useRef(null);
 
@@ -270,6 +337,13 @@ export default function EmployerDashboard() {
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  const [fatigueError, setFatigueError] = useState(null);
+  const [fatigueLoading, setFatigueLoading] = useState(true);
+  const [fatigueDashboard, setFatigueDashboard] = useState(null);
 
   const [statusTab, setStatusTab] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
@@ -287,6 +361,8 @@ export default function EmployerDashboard() {
   const [incidentSeverityFilter, setIncidentSeverityFilter] =
     useState("All");
   const [incidentSort, setIncidentSort] = useState("Newest");
+
+  const [expandedGuard, setExpandedGuard] = useState(null);
 
   const [incidents, setIncidents] = useState([
     {
@@ -334,15 +410,283 @@ export default function EmployerDashboard() {
     },
   ]);
 
-  /* ---------------- SHIFT DATA ---------------- */
+  /*
+   * ---------------------------------------------------------
+   * FETCH SHIFTS
+   * ---------------------------------------------------------
+   * This combines the refresh-button feature with the existing
+   * main branch shift loading logic.
+   */
+  const fetchShifts = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+      setError(null);
+    }
 
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to load shifts."
+        );
+      }
+
+      const rawShifts = Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
+
+      const normalizedShifts = rawShifts.map((shift, idx) => {
+        const guardName =
+          shift.guardName ||
+          (typeof shift.guard === "string"
+            ? shift.guard
+            : null) ||
+          shift.guard?.name ||
+          shift.guard?.fullName ||
+          shift.acceptedBy?.name ||
+          shift.acceptedBy?.fullName ||
+          (typeof shift.acceptedBy === "string"
+            ? shift.acceptedBy
+            : null) ||
+          shift.assignedGuard?.name ||
+          shift.assignedGuard?.fullName ||
+          (typeof shift.assignedGuard === "string"
+            ? shift.assignedGuard
+            : null) ||
+          shift.user?.name ||
+          shift.user?.fullName ||
+          null;
+
+        const startTime =
+          shift.startTime || shift.start || null;
+
+        const endTime =
+          shift.endTime || shift.end || null;
+
+        const rawDate =
+          shift.date || shift.shiftDate || null;
+
+        const rawStatus = shift.status;
+
+        const normalizedStatus =
+          typeof rawStatus === "object" &&
+          rawStatus !== null
+            ? {
+                text: rawStatus.text || "Pending",
+                tone: rawStatus.tone || "pending",
+              }
+            : {
+                text: rawStatus || "Pending",
+                tone: String(rawStatus || "pending")
+                  .toLowerCase()
+                  .includes("confirm")
+                  ? "confirmed"
+                  : String(rawStatus || "pending")
+                        .toLowerCase()
+                        .includes("complete")
+                    ? "completed"
+                    : String(rawStatus || "pending")
+                          .toLowerCase()
+                          .includes("reject")
+                      ? "rejected"
+                      : "pending",
+              };
+
+        return {
+          id: shift._id || shift.id || idx,
+
+          title:
+            shift.title ||
+            shift.role ||
+            "Shift 1",
+
+          location: formatLocation(
+            shift.location || shift.venue
+          ),
+
+          date: formatShiftDate(
+            shift.date || shift.shiftDate
+          ),
+
+          rawDate,
+
+          time:
+            shift.startTime && shift.endTime
+              ? `${shift.startTime} - ${shift.endTime}`
+              : shift.time || "--",
+
+          startTime,
+          endTime,
+
+          status: normalizedStatus,
+
+          payRate:
+            shift.payRate ??
+            shift.rate ??
+            shift.hourlyRate ??
+            0,
+
+          priority:
+            shift.priority ||
+            (idx % 3 === 0
+              ? "High"
+              : idx % 3 === 1
+                ? "Medium"
+                : "Low"),
+
+          guardName,
+
+          guard: shift.guard || null,
+          acceptedBy: shift.acceptedBy || null,
+          assignedGuard: shift.assignedGuard || null,
+        };
+      });
+
+      setShifts(normalizedShifts);
+      setLastRefreshed(new Date());
+      setError(null);
+    } catch (err) {
+      setError(err.message || "Failed to load shifts.");
+
+      /*
+       * Existing fallback data is preserved.
+       */
+      setShifts([
+        {
+          id: 1,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 2,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 3,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 4,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 5,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 20, 2026",
+          time: "15:04 - 02:04",
+          status: {
+            text: "Open",
+            tone: "confirmed",
+          },
+          payRate: 23,
+          priority: "High",
+        },
+        {
+          id: 6,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 21, 2026",
+          time: "13:00 - 21:00",
+          status: {
+            text: "Pending",
+            tone: "pending",
+          },
+          payRate: 25,
+          priority: "Medium",
+        },
+        {
+          id: 7,
+          title: "Shift 1",
+          location: "740 Bourke St, Docklands VIC",
+          date: "Mar 22, 2026",
+          time: "09:00 - 17:00",
+          status: {
+            text: "Completed",
+            tone: "completed",
+          },
+          payRate: 24,
+          priority: "Low",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  /*
+   * Initial shift loading.
+   */
   useEffect(() => {
-    const fetchShifts = async () => {
+    fetchShifts();
+  }, []);
+
+  /*
+   * ---------------------------------------------------------
+   * FATIGUE DASHBOARD
+   * ---------------------------------------------------------
+   */
+  useEffect(() => {
+    const fetchFatigue = async () => {
+
       try {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/shifts/myshifts`,
+          `${process.env.REACT_APP_API_BASE_URL}/shifts/fatigue`,
+
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -353,178 +697,54 @@ export default function EmployerDashboard() {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to load shifts.");
+          throw new Error(
+            data.message || "Failed to load fatigue data"
+          );
         }
 
-	const rawShifts = Array.isArray(data?.items)
-          ? data.items
-          : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data)
-              ? data
-              : [];
-
-        const normalizedShifts = rawShifts.map((shift, idx) => {
-          const rawStatus = shift.status;
-
-          const normalizedStatus =
-            typeof rawStatus === "object" && rawStatus !== null
-              ? {
-                  text: rawStatus.text || "Pending",
-                  tone: rawStatus.tone || "pending",
-                }
-              : {
-                  text: rawStatus || "Pending",
-                  tone: String(rawStatus || "pending")
-                    .toLowerCase()
-                    .includes("confirm")
-                    ? "confirmed"
-                    : String(rawStatus || "pending")
-                          .toLowerCase()
-                          .includes("complete")
-                      ? "completed"
-                      : String(rawStatus || "pending")
-                            .toLowerCase()
-                            .includes("reject")
-                        ? "rejected"
-                        : "pending",
-                };
-
-          return {
-            id: shift._id || shift.id || idx,
-            title: shift.title || shift.role || "Shift 1",
-            location: formatLocation(
-              shift.location || shift.venue
-            ),
-            date: formatShiftDate(
-              shift.date || shift.shiftDate
-            ),
-            time:
-              shift.startTime && shift.endTime
-                ? `${shift.startTime} - ${shift.endTime}`
-                : shift.time || "--",
-            status: normalizedStatus,
-            payRate:
-              shift.payRate ??
-              shift.rate ??
-              shift.hourlyRate ??
-              0,
-            priority:
-              shift.priority ||
-              (idx % 3 === 0
-                ? "High"
-                : idx % 3 === 1
-                  ? "Medium"
-                  : "Low"),
-          };
-        });
-
-        setShifts(normalizedShifts);
+        setFatigueDashboard(data.dashboard);
+        setFatigueError(null);
       } catch (err) {
-        setError(err.message || "Failed to load shifts.");
+        setFatigueError(
+          err.message ||
+            "Failed to load fatigue dashboard."
+        );
 
-        setShifts([
-          {
-            id: 1,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: {
-              text: "Open",
-              tone: "confirmed",
-            },
-            payRate: 23,
-            priority: "High",
-          },
-          {
-            id: 2,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: {
-              text: "Open",
-              tone: "confirmed",
-            },
-            payRate: 23,
-            priority: "High",
-          },
-          {
-            id: 3,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: {
-              text: "Open",
-              tone: "confirmed",
-            },
-            payRate: 23,
-            priority: "High",
-          },
-          {
-            id: 4,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: {
-              text: "Open",
-              tone: "confirmed",
-            },
-            payRate: 23,
-            priority: "High",
-          },
-          {
-            id: 5,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 20, 2026",
-            time: "15:04 - 02:04",
-            status: {
-              text: "Open",
-              tone: "confirmed",
-            },
-            payRate: 23,
-            priority: "High",
-          },
-          {
-            id: 6,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 21, 2026",
-            time: "13:00 - 21:00",
-            status: {
-              text: "Pending",
-              tone: "pending",
-            },
-            payRate: 25,
-            priority: "Medium",
-          },
-          {
-            id: 7,
-            title: "Shift 1",
-            location: "740 Bourke St, Docklands VIC",
-            date: "Mar 22, 2026",
-            time: "09:00 - 17:00",
-            status: {
-              text: "Completed",
-              tone: "completed",
-            },
-            payRate: 24,
-            priority: "Low",
-          },
-        ]);
       } finally {
-        setLoading(false);
+        setFatigueLoading(false);
       }
     };
 
-    fetchShifts();
+    fetchFatigue();
   }, []);
 
-  /* ---------------- REVIEWS ---------------- */
+  /*
+   * Close expanded fatigue guard modal with Escape.
+   */
+  useEffect(() => {
+    if (!expandedGuard) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setExpandedGuard(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, [expandedGuard]);
+
+  /*
+   * ---------------------------------------------------------
+   * REVIEWS
+   * ---------------------------------------------------------
+   */
 
   const reviews = useMemo(
     () => [
@@ -556,7 +776,11 @@ export default function EmployerDashboard() {
     []
   );
 
-  /* ---------------- SHIFT FILTERING ---------------- */
+  /*
+   * ---------------------------------------------------------
+   * SHIFT FILTERING / PAGINATION
+   * ---------------------------------------------------------
+   */
 
   const filteredShifts = useMemo(() => {
     return shifts.filter((shift) => {
@@ -592,7 +816,9 @@ export default function EmployerDashboard() {
   }, [currentPage, totalPages]);
 
   const paginatedShifts = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
+    const start =
+      (currentPage - 1) * pageSize;
+
 
     return filteredShifts.slice(
       start,
@@ -613,24 +839,34 @@ export default function EmployerDashboard() {
   const tabCounts = useMemo(() => {
     return {
       All: shifts.length,
+
       Pending: shifts.filter(
-        (s) => getShiftStatusCategory(s) === "Pending"
+        (s) =>
+          getShiftStatusCategory(s) === "Pending"
       ).length,
+
       Open: shifts.filter(
-        (s) => getShiftStatusCategory(s) === "Open"
+        (s) =>
+          getShiftStatusCategory(s) === "Open"
       ).length,
+
       Completed: shifts.filter(
-        (s) => getShiftStatusCategory(s) === "Completed"
+        (s) =>
+          getShiftStatusCategory(s) === "Completed"
+
       ).length,
     };
   }, [shifts]);
 
-  /* ---------------- INCIDENT FILTERING ---------------- */
-
+  /*
+   * ---------------------------------------------------------
+   * INCIDENT FILTERING
+   * ---------------------------------------------------------
+   */
   const filteredIncidents = useMemo(() => {
-    const normalizedQuery = incidentQuery
-      .trim()
-      .toLowerCase();
+    const normalizedQuery =
+      incidentQuery.trim().toLowerCase();
+
 
     return incidents
       .filter((incident) => {
@@ -646,6 +882,7 @@ export default function EmployerDashboard() {
             .toLowerCase()
             .includes(normalizedQuery) ||
           safePdfValue(incident.description, "")
+
             .toLowerCase()
             .includes(normalizedQuery);
 
@@ -718,7 +955,11 @@ export default function EmployerDashboard() {
     );
   }, [incidents]);
 
-  /* ---------------- INCIDENT ACTIONS ---------------- */
+  /*
+   * ---------------------------------------------------------
+   * INCIDENT ACTIONS
+   * ---------------------------------------------------------
+   */
 
   const updateIncident = (
     id,
@@ -1056,6 +1297,23 @@ export default function EmployerDashboard() {
     });
   };
 
+  /*
+   * ---------------------------------------------------------
+   * FATIGUE DATA
+   * ---------------------------------------------------------
+   */
+  const fatiguedGuardList = (
+    fatigueDashboard?.guards ?? []
+  ).filter((guard) => {
+    return guard.isFatigued === true;
+  });
+
+  /*
+   * ---------------------------------------------------------
+   * TRANSLATIONS
+   * ---------------------------------------------------------
+   */
+
   const getTranslatedStatus = (status) => {
     if (!status) return "";
 
@@ -1083,6 +1341,7 @@ export default function EmployerDashboard() {
   const getTranslatedPriority = (
     priority
   ) => {
+
     if (!priority) return "";
 
     const priorityMap = {
@@ -1095,6 +1354,7 @@ export default function EmployerDashboard() {
       priorityMap[
         String(priority).toLowerCase()
       ] || priority
+
     );
   };
 
@@ -1109,9 +1369,8 @@ export default function EmployerDashboard() {
     return tabMap[tab] || tab;
   };
 
-  const getTranslatedFilterLabel = (
-    filter
-  ) => {
+  const getTranslatedFilterLabel = (filter) => {
+
     const filterMap = {
       All: t("all"),
       High: t("high"),
@@ -1127,7 +1386,10 @@ export default function EmployerDashboard() {
   return (
     <div className="ss-page">
       <main className="ss-main">
-        {/* OVERVIEW */}
+
+        {/* =====================================================
+            OVERVIEW
+        ====================================================== */}
 
         <div className="ss-overview-head">
           <div>
@@ -1142,19 +1404,35 @@ export default function EmployerDashboard() {
             </p>
           </div>
 
-          <button
-            className="ss-primary ss-primary--wide"
-            onClick={() =>
-              navigate("/create-shift")
-            }
-            type="button"
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
           >
-            <IconPlus className="ss-plus" />
-            {t("createShift")}
-          </button>
+            <RefreshButton
+              onRefresh={() => fetchShifts(true)}
+              isRefreshing={isRefreshing}
+              lastRefreshed={lastRefreshed}
+            />
+
+            <button
+              className="ss-primary ss-primary--wide"
+              onClick={() =>
+                navigate("/create-shift")
+              }
+              type="button"
+            >
+              <IconPlus className="ss-plus" />
+              {t("createShift")}
+            </button>
+          </div>
         </div>
 
-        {/* SHIFT CARD */}
+        {/* =====================================================
+            SHIFTS DASHBOARD
+        ====================================================== */}
 
         <div className="ss-dashboard-card">
           <div className="ss-topbar">
@@ -1219,6 +1497,7 @@ export default function EmployerDashboard() {
             </div>
           </div>
 
+          {/* Priority filter */}
           <div className="ss-filterbar">
             <span className="ss-filterbar__label">
               {t("priority")}
@@ -1249,6 +1528,9 @@ export default function EmployerDashboard() {
             ))}
           </div>
 
+          {/* =================================================
+              LIST VIEW
+          ================================================== */}
           {view === "list" ? (
             <div className="ss-table">
               <div className="ss-table__head">
@@ -1272,13 +1554,72 @@ export default function EmployerDashboard() {
               )}
 
               {!loading &&
-                !error &&
-                filteredShifts.length ===
-                  0 && (
-                  <div className="ss-empty-state">
-                    {t("noShifts")}
-                  </div>
-                )}
+                  !error &&
+                  filteredShifts.length === 0 && (
+                    <div className="ss-empty-state">
+                      {t("noShifts")}
+                    </div>
+                  )}
+
+                {!loading &&
+                  !error &&
+                  paginatedShifts.map((shift) => (
+                    <div
+                      className="ss-table__row"
+                      key={shift.id}
+                    >
+                      <div className="ss-shift-col">
+                        <div className="ss-shift-title">
+                          {shift.title}
+                        </div>
+
+                        <div className="ss-shift-location">
+                          {shift.location}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span
+                          className={`ss-badge ss-badge--priority-${String(
+                            shift.priority
+                          ).toLowerCase()}`}
+                        >
+                          {getTranslatedPriority(
+                            shift.priority
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="ss-datetime-col">
+                        <div className="ss-datetime-line">
+                          <IconCalendar className="ss-ico" />
+                          {shift.date}
+                        </div>
+
+                        <div className="ss-datetime-line">
+                          <IconClock className="ss-ico" />
+                          {shift.time}
+                        </div>
+                      </div>
+
+                      <div className="ss-pay-col">
+                        ${shift.payRate}
+                        {t("perHour")}
+                      </div>
+
+                      <div>
+                        <span
+                          className={`ss-badge ss-badge--status-${String(
+                            shift.status.tone
+                          ).toLowerCase()}`}
+                        >
+                          {getTranslatedStatus(
+                            shift.status.text
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
 
               {!loading &&
                 !error &&
@@ -1343,73 +1684,76 @@ export default function EmployerDashboard() {
                 )}
             </div>
           ) : (
+            /* =================================================
+               GRID VIEW
+            ================================================== */
             <div className="ss-shifts ss-shifts--grid ss-grid-view">
-              {paginatedShifts.map(
-                (shift) => (
-                  <div
-                    className="ss-card"
-                    key={shift.id}
-                  >
-                    <div className="ss-card__head">
-                      <div className="ss-role">
-                        {shift.title}
-                      </div>
-
-                      <div className="ss-rate">
-                        ${shift.payRate} p/h
-                      </div>
+              {paginatedShifts.map((shift) => (
+                <div
+                  className="ss-card"
+                  key={shift.id}
+                >
+                  <div className="ss-card__head">
+                    <div className="ss-role">
+                      {shift.title}
                     </div>
 
-                    <div className="ss-meta">
-                      {shift.location}
-                    </div>
-
-                    <div className="ss-when">
-                      <span className="ss-when__item">
-                        <IconCalendar className="ss-ico" />
-                        {shift.date}
-                      </span>
-
-                      <span className="ss-when__item">
-                        <IconClock className="ss-ico" />
-                        {shift.time}
-                      </span>
-                    </div>
-
-                    <div className="ss-grid-foot">
-                      <span
-                        className={`ss-badge ss-badge--priority-${String(
-                          shift.priority
-                        ).toLowerCase()}`}
-                      >
-                        {getTranslatedPriority(
-                          shift.priority
-                        )}
-                      </span>
-
-                      <span
-                        className={`ss-badge ss-badge--status-${String(
-                          shift.status.tone
-                        ).toLowerCase()}`}
-                      >
-                        {getTranslatedStatus(
-                          shift.status.text
-                        )}
-                      </span>
+                    <div className="ss-rate">
+                      ${shift.payRate} p/h
                     </div>
                   </div>
-                )
-              )}
+
+                  <div className="ss-meta">
+                    {shift.location}
+                  </div>
+
+                  <div className="ss-when">
+                    <span className="ss-when__item">
+                      <IconCalendar className="ss-ico" />
+                      {shift.date}
+                    </span>
+
+                    <span className="ss-when__item">
+                      <IconClock className="ss-ico" />
+                      {shift.time}
+                    </span>
+                  </div>
+
+                  <div className="ss-grid-foot">
+                    <span
+                      className={`ss-badge ss-badge--priority-${String(
+                        shift.priority
+                      ).toLowerCase()}`}
+                    >
+                      {getTranslatedPriority(
+                        shift.priority
+                      )}
+                    </span>
+
+                    <span
+                      className={`ss-badge ss-badge--status-${String(
+                        shift.status.tone
+                      ).toLowerCase()}`}
+                    >
+                      {getTranslatedStatus(
+                        shift.status.text
+                      )}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
             </div>
           )}
 
+          {/* Pagination */}
           <div className="ss-pagination">
             <div className="ss-pagination__meta">
               {t("showing", {
                 start: showingStart,
                 end: showingEnd,
-                total:
-                  filteredShifts.length,
+                total: filteredShifts.length,
+
               })}
             </div>
 
@@ -1417,9 +1761,8 @@ export default function EmployerDashboard() {
               <button
                 type="button"
                 className="ss-page-btn"
-                disabled={
-                  currentPage === 1
-                }
+                disabled={currentPage === 1}
+
                 onClick={() =>
                   setCurrentPage((prev) =>
                     Math.max(1, prev - 1)
@@ -1431,9 +1774,8 @@ export default function EmployerDashboard() {
               </button>
 
               {Array.from(
-                {
-                  length: totalPages,
-                },
+                { length: totalPages },
+
                 (_, index) => index + 1
               ).map((page) => (
                 <button
@@ -1474,14 +1816,410 @@ export default function EmployerDashboard() {
           </div>
         </div>
 
-        {/* INCIDENT REPORTS */}
-
+        {/* =====================================================
+            FATIGUE MONITORING
+        ====================================================== */}
         <div className="ss-section-head">
           <h2 className="ss-section-title">
-            {t("incidentReportsTitle")}
+            Shift Fatigue Monitoring
           </h2>
 
           <p className="ss-section-subtitle">
+            Fatigue signals from recent shifts
+          </p>
+        </div>
+
+        <div className="ss-dashboard-card">
+          {fatigueLoading && (
+            <div className="ss-fatigue__loading">
+              Loading fatigue data...
+            </div>
+          )}
+
+          {fatigueError && (
+            <div className="ss-fatigue__error">
+              {fatigueError}
+            </div>
+          )}
+
+          {!fatigueLoading &&
+            !fatigueError && (
+              <div className="ss-fatigue">
+                <div className="ss-fatigue__summary">
+                  <div className="ss-fatigue__title">
+                    Risk Signals
+                  </div>
+
+                  <div className="ss-fatigue__stats">
+                    <div className="ss-fatigue__stat">
+                      <div className="ss-fatigue__stat-value">
+                        {fatigueDashboard
+                          ?.summary
+                          ?.guardsMonitored ??
+                          "--"}
+                      </div>
+
+                      <div className="ss-fatigue__stat-label">
+                        Guards Monitored
+                      </div>
+                    </div>
+
+                    <div className="ss-fatigue__stat">
+                      <div className="ss-fatigue__stat-value">
+                        {fatigueDashboard
+                          ?.summary
+                          ?.fatiguedGuards ??
+                          "--"}
+                      </div>
+
+                      <div className="ss-fatigue__stat-label">
+                        Fatigued Guards
+                      </div>
+                    </div>
+
+                    <div className="ss-fatigue__stat">
+                      <div className="ss-fatigue__stat-value">
+                        {fatigueDashboard
+                          ?.summary
+                          ?.averageFatigueScore ??
+                          "--"}
+                        %
+                      </div>
+
+                      <div className="ss-fatigue__stat-label">
+                        Avg Fatigue Score
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="ss-fatigue__list">
+                  <div className="ss-fatigue__title">
+                    Fatigued Guards
+                  </div>
+
+                  {fatigueDashboard?.summary
+                    ?.guardsMonitored === 0 ? (
+                    <div className="ss-fatigue__empty">
+                      No guards are currently
+                      being monitored.
+                    </div>
+                  ) : fatiguedGuardList.length ===
+                    0 ? (
+                    <div className="ss-fatigue__empty">
+                      No fatigue risks detected
+                      yet.
+                    </div>
+                  ) : (
+                    <div className="ss-fatigue__rows">
+                      {fatiguedGuardList.map(
+                        (guard) => {
+                          const isExpanded =
+                            expandedGuard?.guardId ===
+                            guard.guardId;
+
+                          const guardShifts =
+                            shifts.filter(
+                              (shift) =>
+                                shift.acceptedBy?._id ===
+                                guard.guardId
+                            );
+
+                          const guardName =
+                            guardShifts[0]
+                              ?.guardName ??
+                            guard.guardId;
+
+                          return (
+                            <div
+                              className={`ss-fatigue__row ${
+                                isExpanded
+                                  ? "is-expanded"
+                                  : ""
+                              }`}
+                              key={guard.guardId}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() =>
+                                setExpandedGuard(
+                                  isExpanded
+                                    ? null
+                                    : {
+                                        ...guard,
+                                        guardName,
+                                        shifts:
+                                          guardShifts,
+                                      }
+                                )
+                              }
+                              onKeyDown={(event) => {
+                                if (
+                                  event.key ===
+                                    "Enter" ||
+                                  event.key === " "
+                                ) {
+                                  event.preventDefault();
+
+                                  setExpandedGuard(
+                                    isExpanded
+                                      ? null
+                                      : {
+                                          ...guard,
+                                          guardName,
+                                          shifts:
+                                            guardShifts,
+                                        }
+                                  );
+                                }
+                              }}
+                            >
+                              <div className="ss-fatigue__guard">
+                                <div className="ss-fatigue__guard-name">
+                                  {guardName}
+                                </div>
+
+                                <div className="ss-fatigue__guard-sub">
+                                  Fatigue Score{" "}
+                                  {
+                                    guard.fatigueScore
+                                  }
+                                  %
+                                </div>
+                              </div>
+
+                              <div className="ss-fatigue__metric">
+                                <span className="ss-fatigue__metric-value">
+                                  {
+                                    guard.metrics
+                                      .shiftsThisWeek
+                                  }
+                                </span>
+
+                                <span className="ss-fatigue__metric-label">
+                                  Shifts This Week
+                                </span>
+                              </div>
+
+                              <div className="ss-fatigue__metric">
+                                <span className="ss-fatigue__metric-value">
+                                  {
+                                    guard.metrics
+                                      .hoursThisDay
+                                  }
+                                </span>
+
+                                <span className="ss-fatigue__metric-label">
+                                  Hours Today
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+        </div>
+
+        {/* =====================================================
+            FATIGUE MODAL
+        ====================================================== */}
+        {expandedGuard && (
+          <div
+            className="ss-fatigue__modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            onClick={() =>
+              setExpandedGuard(null)
+            }
+          >
+            <div
+              className="ss-fatigue__modal"
+              onClick={(event) =>
+                event.stopPropagation()
+              }
+            >
+              <div className="ss-fatigue__modal-header">
+                <div>
+                  <div className="ss-fatigue__modal-title">
+                    {expandedGuard.guardName}
+                  </div>
+
+                  <div className="ss-fatigue__guard-sub">
+                    Fatigue Score{" "}
+                    {expandedGuard.fatigueScore}%
+                  </div>
+                </div>
+
+                <button
+                  className="ss-fatigue__modal-close"
+                  onClick={() =>
+                    setExpandedGuard(null)
+                  }
+                  aria-label="Close fatigue details"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="ss-fatigue__modal-metrics">
+                <div className="ss-fatigue__modal-metrics-title">
+                  Current Workload
+                </div>
+
+                <div className="ss-fatigue__modal-metrics-item">
+                  <span>
+                    {
+                      expandedGuard.metrics
+                        .shiftsThisWeek
+                    }{" "}
+                  </span>
+
+                  <span>
+                    Shifts This Week
+                  </span>
+                </div>
+
+                <div className="ss-fatigue__modal-metrics-item">
+                  <span>
+                    {
+                      expandedGuard.metrics
+                        .hoursThisWeek
+                    }{" "}
+                  </span>
+
+                  <span>
+                    Hours This Week
+                  </span>
+                </div>
+
+                <div className="ss-fatigue__modal-metrics-item">
+                  <span>
+                    {
+                      expandedGuard.metrics
+                        .hoursThisDay
+                    }{" "}
+                  </span>
+
+                  <span>
+                    Hours Today
+                  </span>
+                </div>
+              </div>
+
+              <div className="ss-fatigue__warnings">
+                <div className="ss-fatigue__warnings-title">
+                  Warnings
+                </div>
+
+                {expandedGuard.warnings.length ===
+                0 ? (
+                  <div className="ss-fatigue__warnings-indicator">
+                    <span>
+                      There are currently no
+                      fatigue warnings
+                    </span>
+                  </div>
+                ) : (
+                  expandedGuard.warnings.map(
+                    (warning, index) => (
+                      <div
+                        key={index}
+                        className="ss-fatigue__warnings-indicator"
+                      >
+                        {warning}
+                      </div>
+                    )
+                  )
+                )}
+              </div>
+
+              <div className="ss-fatigue__detail">
+                <div className="ss-fatigue__detail-subtitle">
+                  Guard Shift Details
+                </div>
+
+                {expandedGuard.shifts.map(
+                  (shiftItem, index) => {
+                    const locationText =
+                      typeof shiftItem.location ===
+                      "string"
+                        ? shiftItem.location
+                        : shiftItem.location
+                          ? [
+                              shiftItem.location
+                                .street,
+                              shiftItem.location
+                                .suburb,
+                              shiftItem.location
+                                .state,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")
+                          : "No location";
+
+                    const dateText =
+                      shiftItem.date
+                        ? new Date(
+                            `${shiftItem.rawDate}`
+                          ).toLocaleDateString(
+                            "en-GB"
+                          )
+                        : "--";
+
+                    return (
+                      <div
+                        className="ss-fatigue__detail-row"
+                        key={index}
+                      >
+                        <div className="ss-fatigue__detail-title">
+                          {shiftItem.title}
+                        </div>
+
+                        <div className="ss-fatigue__detail-meta">
+                          <span>
+                            {dateText}
+                          </span>
+
+                          <span>
+                            {shiftItem.startTime}{" "}
+                            -{" "}
+                            {shiftItem.endTime}
+                          </span>
+
+                          <span>
+                            {locationText}
+                          </span>
+
+                          <span>
+                            Status:{" "}
+                            {
+                              shiftItem.status
+                                .text
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================
+            INCIDENT REPORTS
+        ====================================================== */}
+        <div className="ss-section-head">
+          <h2 className="ss-section-title">
+            Incident Reports
+          </h2>
+
+          <p className="ss-section-subtitle">
+
             {t("pendingIncidents", {
               count:
                 incidentSummary.pending,
@@ -1495,14 +2233,11 @@ export default function EmployerDashboard() {
           <div className="ss-incident-toolbar">
             <input
               className="ss-incident-search"
-              placeholder={t(
-                "searchIncident"
-              )}
+              placeholder={t("searchIncident")}
               value={incidentQuery}
               onChange={(e) =>
-                setIncidentQuery(
-                  e.target.value
-                )
+                setIncidentQuery(e.target.value)
+
               }
             />
 
@@ -1528,9 +2263,8 @@ export default function EmployerDashboard() {
             </select>
 
             <select
-              value={
-                incidentSeverityFilter
-              }
+              value={incidentSeverityFilter}
+
               onChange={(e) =>
                 setIncidentSeverityFilter(
                   e.target.value
@@ -1557,9 +2291,8 @@ export default function EmployerDashboard() {
             <select
               value={incidentSort}
               onChange={(e) =>
-                setIncidentSort(
-                  e.target.value
-                )
+                setIncidentSort(e.target.value)
+
               }
             >
               <option value="Newest">
@@ -1616,8 +2349,8 @@ export default function EmployerDashboard() {
           </div>
 
           <div className="ss-incident-list">
-            {filteredIncidents.length ===
-              0 && (
+            {filteredIncidents.length === 0 && (
+
               <div className="ss-empty-state">
                 {t("noIncidents")}
               </div>
@@ -1734,6 +2467,7 @@ export default function EmployerDashboard() {
 
         {/* REVIEWS */}
 
+
         <div className="ss-section-head ss-section-head--reviews">
           <h2 className="ss-section-title">
             {t("recentReviews")}
@@ -1801,9 +2535,8 @@ export default function EmployerDashboard() {
                     (k) => (
                       <Star
                         key={k}
-                        filled={
-                          k < r.stars
-                        }
+                        filled={k < r.stars}
+
                       />
                     )
                   )}
@@ -1822,7 +2555,9 @@ export default function EmployerDashboard() {
         </div>
       </main>
 
-      {/* INCIDENT MODAL */}
+      {/* =======================================================
+          INCIDENT DETAILS MODAL
+      ======================================================== */}
 
       {selectedIncident && (
         <div
@@ -1836,9 +2571,8 @@ export default function EmployerDashboard() {
             onClick={(e) =>
               e.stopPropagation()
             }
-            style={{
-              maxWidth: "700px",
-            }}
+            style={{ maxWidth: "700px" }}
+
           >
             <div className="create-shift-header">
               <div>
@@ -1848,6 +2582,7 @@ export default function EmployerDashboard() {
                     {safePdfValue(
                       selectedIncident.id
                     )}
+
                   </span>
                   )
                 </h1>
@@ -1866,6 +2601,7 @@ export default function EmployerDashboard() {
                     time:
                       selectedIncident.time ||
                       "--",
+
                   })}
                 </p>
               </div>
@@ -1905,6 +2641,7 @@ export default function EmployerDashboard() {
                   {safePdfValue(
                     selectedIncident.guard
                   )}
+
                 </div>
               </div>
 
@@ -1962,6 +2699,7 @@ export default function EmployerDashboard() {
                 {safePdfValue(
                   selectedIncident.description
                 )}
+
               </div>
             </div>
 
@@ -2065,6 +2803,7 @@ export default function EmployerDashboard() {
                 Download PDF
               </button>
 
+
               <button
                 className="primary"
                 type="button"
@@ -2098,6 +2837,7 @@ export default function EmployerDashboard() {
               <button
                 className="secondary"
                 type="button"
+
                 style={{
                   color: "#666",
                 }}
