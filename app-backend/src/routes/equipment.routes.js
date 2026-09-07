@@ -1,7 +1,7 @@
 import express from "express";
 import * as equipmentController from "../controllers/equipment.controller.js";
 import auth from "../middleware/auth.js";
-import { allowRoles } from "../middleware/role.js";
+import { allowRoles } from "../middleware/rbac.js";
 
 const router = express.Router();
 
