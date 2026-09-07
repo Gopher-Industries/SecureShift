@@ -49,10 +49,19 @@ function ContactUs() {
   const handleContactSubmit = async (formData) => {
     /*
      * The backend contact endpoint has not been provided yet.
-     * Replace this resolved Promise with the API request when the endpoint
-     * becomes available.
+     * Simulating a 1-second network request to display loading state & spinner.
+     * Message containing '[error]' triggers simulated failure.
      */
-    return Promise.resolve(formData);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    if (
+      formData.message &&
+      formData.message.toLowerCase().includes('[error]')
+    ) {
+      throw new Error('Simulated API failure. Please try again.');
+    }
+
+    return formData;
   };
 
   return (

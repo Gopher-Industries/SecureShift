@@ -1,4 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -32,15 +33,62 @@ type Shift = {
   status?: string;
 };
 
+type Attachment = {
+  _id: string;
+  originalName?: string;
+  mimeType?: string;
+  mediaType?: string;
+};
+
 type Incident = {
   _id: string;
   description: string;
   severity: string;
   status?: string;
   createdAt?: string;
+  attachments?: Attachment[];
 };
 
+type PickedFile = {
+  uri: string;
+  name: string;
+  mimeType: string;
+  size?: number;
+};
+
+// same list the backend accepts, otherwise the upload comes back as a 400
+const ALLOWED_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'application/pdf',
+  'video/mp4',
+  'video/mpeg',
+  'video/quicktime',
+  'video/webm',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/webm',
+  'audio/mp4',
+];
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+
+// works with a mime type or with the mediaType the server sends back
+function fileIcon(type?: string) {
+  if (!type) return '📎';
+  if (type.startsWith('image')) return '🖼️';
+  if (type.startsWith('video')) return '🎬';
+  if (type.startsWith('audio')) return '🎵';
+  if (type.includes('pdf')) return '📄';
+  return '📎';
+}
+
 type ApiResponse = Incident[] | { incidents?: Incident[]; data?: Incident[] };
+
+// myshifts is paginated now, so the list comes back inside items
+type ShiftsResponse = Shift[] | { items?: Shift[] };
 
 const getNowDateTime = () => new Date().toISOString().slice(0, 16).replace('T', ' ');
 
@@ -63,7 +111,7 @@ export default function IncidentReportScreen() {
 
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<Severity | null>(null);
-  const [images, setImages] = useState<string[]>([]);
+  const [files, setFiles] = useState<PickedFile[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [dateTime] = useState(getNowDateTime());
   const [errorState, setErrorState] = useState<ErrorState>(null);
@@ -90,8 +138,8 @@ export default function IncidentReportScreen() {
 
   const fetchShifts = async () => {
     try {
-      const { data } = await http.get<Shift[]>('/shifts/myshifts');
-      const list = Array.isArray(data) ? data : [];
+      const { data } = await http.get<ShiftsResponse>('/shifts/myshifts');
+      const list = Array.isArray(data) ? data : (data.items ?? []);
       setShifts(list.filter((s) => s.status === 'assigned'));
     } catch (err: unknown) {
       const message =
@@ -108,16 +156,73 @@ export default function IncidentReportScreen() {
     }, []),
   );
 
-  const pickImage = async () => {
+  // keeps out anything the server would reject anyway
+  const addFiles = (picked: PickedFile[]) => {
+    const accepted: PickedFile[] = [];
+    const rejected: string[] = [];
+
+    for (const file of picked) {
+      if (!ALLOWED_TYPES.includes(file.mimeType)) {
+        rejected.push(`${file.name} (${t('incidentReport.typeNotAllowed')})`);
+      } else if (file.size && file.size > MAX_FILE_SIZE) {
+        rejected.push(`${file.name} (${t('incidentReport.fileTooBig')})`);
+      } else {
+        accepted.push(file);
+      }
+    }
+
+    if (accepted.length > 0) {
+      setFiles((prev) => [...prev, ...accepted]);
+    }
+
+    if (rejected.length > 0) {
+      setErrorState({
+        title: t('incidentReport.fileNotAdded'),
+        message: rejected.join('\n'),
+      });
+    }
+  };
+
+  const pickMedia = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images', 'videos'],
       quality: 0.7,
       allowsMultipleSelection: true,
     });
 
-    if (!res.canceled) {
-      setImages((prev) => [...prev, ...res.assets.map((a) => a.uri)]);
-    }
+    if (res.canceled) return;
+
+    addFiles(
+      res.assets.map((a) => ({
+        uri: a.uri,
+        name: a.fileName ?? (a.uri.split('/').pop() || 'attachment'),
+        mimeType: a.mimeType ?? (a.type === 'video' ? 'video/mp4' : 'image/jpeg'),
+        size: a.fileSize,
+      })),
+    );
+  };
+
+  const pickDocument = async () => {
+    const res = await DocumentPicker.getDocumentAsync({
+      type: ALLOWED_TYPES,
+      copyToCacheDirectory: true,
+      multiple: true,
+    });
+
+    if (res.canceled || !res.assets) return;
+
+    addFiles(
+      res.assets.map((a) => ({
+        uri: a.uri,
+        name: a.name,
+        mimeType: a.mimeType ?? 'application/octet-stream',
+        size: a.size ?? undefined,
+      })),
+    );
+  };
+
+  const removeFile = (uri: string) => {
+    setFiles((prev) => prev.filter((f) => f.uri !== uri));
   };
 
   const closeErrorBox = () => {
@@ -126,16 +231,18 @@ export default function IncidentReportScreen() {
 
   const uploadAttachments = async (incidentId: string): Promise<number> => {
     let failedCount = 0;
-    for (const uri of images) {
-      const filename = uri.split('/').pop() ?? 'photo.jpg';
-      const match = /\.(\w+)$/.exec(filename);
-      const ext = match ? match[1].toLowerCase() : 'jpeg';
-      const type = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+    for (const file of files) {
       const formData = new FormData();
-      formData.append('file', { uri, name: filename, type } as unknown as Blob);
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name,
+        type: file.mimeType,
+      } as unknown as Blob);
       try {
         await http.post(`/incidents/${incidentId}/attachments`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
+          // videos and audio are much bigger than photos, the default timeout is too short for them
+          timeout: 120000,
         });
       } catch {
         failedCount += 1;
@@ -167,20 +274,20 @@ export default function IncidentReportScreen() {
       );
 
       let failedUploads = 0;
-      if (images.length > 0 && response.data?._id) {
+      if (files.length > 0 && response.data?._id) {
         failedUploads = await uploadAttachments(response.data._id);
       }
 
       const successMessage =
         failedUploads > 0
-          ? `${t('incidentReport.submitSuccess')}, but ${failedUploads} photo(s) failed to upload.`
+          ? `${t('incidentReport.submitSuccess')}, but ${failedUploads} file(s) failed to upload.`
           : t('incidentReport.submitSuccess');
 
       Alert.alert('Success', successMessage);
       setSelectedShift(null);
       setDescription('');
       setSeverity(null);
-      setImages([]);
+      setFiles([]);
       fetchIncidents();
     } catch (err: unknown) {
       const message =
@@ -217,6 +324,18 @@ export default function IncidentReportScreen() {
               )}
               {!!item.createdAt && (
                 <Text style={s.incidentDate}>{new Date(item.createdAt).toLocaleString()}</Text>
+              )}
+              {item.attachments && item.attachments.length > 0 && (
+                <View style={s.attachmentList}>
+                  <Text style={s.attachmentCount}>
+                    {t('incidentReport.attachmentCount', { count: item.attachments.length })}
+                  </Text>
+                  {item.attachments.map((file) => (
+                    <Text key={file._id} style={s.attachmentName} numberOfLines={1}>
+                      {fileIcon(file.mediaType)} {file.originalName ?? file.mimeType}
+                    </Text>
+                  ))}
+                </View>
               )}
             </View>
           ))
@@ -266,14 +385,36 @@ export default function IncidentReportScreen() {
           ))}
         </View>
 
-        <Text style={s.label}>Photos (optional)</Text>
-        <TouchableOpacity style={s.photoBtn} onPress={pickImage}>
-          <Text style={s.photoBtnText}>Add Photos</Text>
-        </TouchableOpacity>
+        <Text style={s.label}>{t('incidentReport.attachments')}</Text>
+        <View style={s.row}>
+          <TouchableOpacity style={s.photoBtn} onPress={pickMedia}>
+            <Text style={s.photoBtnText}>{t('incidentReport.addMedia')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.photoBtn} onPress={pickDocument}>
+            <Text style={s.photoBtnText}>{t('incidentReport.addFile')}</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={s.hint}>{t('incidentReport.attachmentHint')}</Text>
 
         <ScrollView horizontal style={s.previewRow} showsHorizontalScrollIndicator={false}>
-          {images.map((uri) => (
-            <Image key={uri} source={{ uri }} style={s.preview} />
+          {files.map((file) => (
+            <TouchableOpacity
+              key={file.uri}
+              onPress={() => removeFile(file.uri)}
+              style={s.previewItem}
+            >
+              {file.mimeType.startsWith('image/') ? (
+                <Image source={{ uri: file.uri }} style={s.preview} />
+              ) : (
+                <View style={[s.preview, s.filePreview]}>
+                  <Text style={s.fileIcon}>{fileIcon(file.mimeType)}</Text>
+                  <Text style={s.fileName} numberOfLines={2}>
+                    {file.name}
+                  </Text>
+                </View>
+              )}
+              <Text style={s.removeText}>{t('incidentReport.remove')}</Text>
+            </TouchableOpacity>
           ))}
         </ScrollView>
 
@@ -443,17 +584,61 @@ const getStyles = (colors: AppColors) =>
       fontWeight: '600',
     },
     photoBtn: {
+      flex: 1,
       backgroundColor: colors.primary,
       paddingVertical: 12,
+      paddingHorizontal: 8,
       borderRadius: 10,
       alignItems: 'center',
     },
     photoBtnText: {
       color: colors.white,
       fontWeight: '600',
+      fontSize: 13,
     },
     previewRow: {
       marginTop: 10,
+    },
+    hint: {
+      fontSize: 12,
+      color: colors.muted,
+      marginTop: 6,
+    },
+    previewItem: {
+      marginRight: 10,
+      alignItems: 'center',
+    },
+    filePreview: {
+      backgroundColor: colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 6,
+    },
+    fileIcon: {
+      fontSize: 22,
+    },
+    fileName: {
+      fontSize: 10,
+      color: colors.text,
+      textAlign: 'center',
+    },
+    removeText: {
+      fontSize: 11,
+      color: colors.status.rejected,
+      marginTop: 4,
+    },
+    attachmentList: {
+      marginTop: 8,
+    },
+    attachmentCount: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    attachmentName: {
+      fontSize: 12,
+      color: colors.muted,
+      marginTop: 2,
     },
     preview: {
       width: 70,

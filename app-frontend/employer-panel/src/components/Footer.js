@@ -27,11 +27,13 @@ export default function Footer({ language }) {
   const headerStyle = {
     backgroundColor: '#072261',
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     color: 'white',
-    padding: '0px 20px',
-    height: '70px',
+    padding: '12px 20px',
+    minHeight: '70px',
+    gap: '10px',
     borderBottom: '1px solid #ccc',
   };
 
@@ -62,11 +64,11 @@ export default function Footer({ language }) {
 
   const footerNavListStyle = {
     display: 'flex',
-    justifyContent: 'start',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     alignItems: 'center',
     padding: '10px',
     gap: '10px',
-    marginLeft: '10px',
   };
 
   return (

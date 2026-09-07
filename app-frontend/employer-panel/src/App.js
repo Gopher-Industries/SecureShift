@@ -30,6 +30,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
+import Sidebar from './components/Sidebar';
 import { NotificationProvider } from './components/NotificationContext';
 
 import i18n from './i18n';
@@ -43,6 +44,8 @@ function TaskRoute() {
 }
 
 function ProtectedLayout({ children, language, setLanguage, theme, setTheme }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <ProtectedRoute>
       <div
@@ -57,14 +60,31 @@ function ProtectedLayout({ children, language, setLanguage, theme, setTheme }) {
       >
         <Header language={language} setLanguage={setLanguage} theme={theme} setTheme={setTheme} />
 
-        <main
+        <div
           style={{
+            display: 'flex',
             flex: 1,
-            paddingBottom: '20px',
+            minWidth: 0,
           }}
         >
-          {children}
-        </main>
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() =>
+              setSidebarCollapsed((previous) => !previous)
+            }
+          />
+
+          <main
+            style={{
+              flex: 1,
+              minWidth: 0,
+              paddingBottom: '20px',
+              transition: 'width 0.25s ease',
+            }}
+          >
+            {children}
+          </main>
+        </div>
 
         <Footer language={language} />
       </div>

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Notification from "../models/Notification.js";
 
 /**
@@ -146,6 +147,33 @@ export const getUnreadCount = async (req, res) => {
     });
 
     res.json({ unreadCount: count });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * DELETE /notifications/:id
+ * Delete a single notification owned by the authenticated user
+ */
+export const deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid notification ID" });
+    }
+
+    const notification = await Notification.findOneAndDelete({
+      _id: id,
+      userId: req.user._id,
+    });
+
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    res.json({ message: "Notification deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

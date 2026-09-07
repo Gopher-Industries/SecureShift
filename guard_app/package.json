@@ -14,7 +14,7 @@
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write .",
     "format:check": "prettier -c .",
-    "prepare": "husky"
+    "prepare": "cd .. && husky guard_app/.husky"
   },
   "jest": {
     "preset": "jest-expo",
@@ -89,9 +89,12 @@
     "typescript": "~5.9.2"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,md}": [
-      "prettier -w",
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write",
       "eslint --ext .js,.jsx,.ts,.tsx"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
     ]
   }
 }

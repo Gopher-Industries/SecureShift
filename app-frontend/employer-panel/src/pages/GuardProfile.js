@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import translations from '../i18n/translations';
 import http from '../lib/http';
 import './GuardProfile.css';
+import RefreshButton from '../components/RefreshButton';
 
 const allSkills = [
   'CCTV Monitoring',
@@ -35,6 +36,8 @@ export default function GuardProfiles({ language }) {
   const [guards, setGuards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -46,43 +49,46 @@ export default function GuardProfiles({ language }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const fetchGuards = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError('');
+
+    try {
+      const res = await http.get('/users/guards');
+      const data = res.data;
+
+      const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : [];
+
+      const normalized = list.map((g, i) => ({
+        id: g._id || g.id || String(i),
+        name: g.name || [g.firstName, g.lastName].filter(Boolean).join(' ') || 'Unknown',
+        skills: Array.isArray(g.skills)
+          ? g.skills
+          : typeof g.skills === 'string'
+            ? g.skills.split(',').map((s) => s.trim())
+            : Array.isArray(g.skillset)
+              ? g.skillset
+              : [],
+        availability: g.availability ?? g.status ?? (g.available ? 'Available' : 'Unavailable'),
+        photo: g.photo?.url || g.photo || g.avatar || g.imageUrl || '/GuardPicPlaceholder.png',
+      }));
+
+      setGuards(normalized);
+      setLastRefreshed(new Date());
+    } catch (e) {
+      setError(e.response?.data?.message || e.message || 'Failed to fetch guards');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        setError('');
-
-        const res = await http.get('/users/guards');
-        const data = res.data;
-
-        const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : [];
-
-        const normalized = list.map((g, i) => ({
-          id: g._id || g.id || String(i),
-          name: g.name || [g.firstName, g.lastName].filter(Boolean).join(' ') || 'Unknown',
-          skills: Array.isArray(g.skills)
-            ? g.skills
-            : typeof g.skills === 'string'
-              ? g.skills.split(',').map((s) => s.trim())
-              : Array.isArray(g.skillset)
-                ? g.skillset
-                : [],
-          availability: g.availability ?? g.status ?? (g.available ? 'Available' : 'Unavailable'),
-          photo: g.photo?.url || g.photo || g.avatar || g.imageUrl || '/GuardPicPlaceholder.png',
-        }));
-
-        if (mounted) setGuards(normalized);
-      } catch (e) {
-        if (mounted) setError(e.response?.data?.message || e.message || 'Failed to fetch guards');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
+    fetchGuards();
   }, []);
 
   const toggleSkill = (skill) =>
@@ -110,7 +116,14 @@ export default function GuardProfiles({ language }) {
   return (
     <div className="gp-page">
       <div className="gp-content">
-        <h2 className="gp-title">{t.guardProfiles}</h2>
+        <div className="gp-header">
+          <h2 className="gp-title">{t.guardProfiles}</h2>
+          <RefreshButton
+            onRefresh={() => fetchGuards(true)}
+            isRefreshing={isRefreshing}
+            lastRefreshed={lastRefreshed}
+          />
+        </div>
 
         {loading && <p className="gp-status-msg">Loading guards…</p>}
         {!loading && error && <p className="gp-status-msg error">Failed to load: {error}</p>}

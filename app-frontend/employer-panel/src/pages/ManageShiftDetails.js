@@ -12,7 +12,7 @@ const ManageShiftDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🔹 Chat state
+  // Chat state
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
 
@@ -79,7 +79,7 @@ const ManageShiftDetails = () => {
     };
 
     fetchMessages();
-  }, [shift]); // ← shift, not id
+  }, [shift]);
 
   // ======================
   // Approve guard
@@ -110,50 +110,50 @@ const ManageShiftDetails = () => {
   // Send chat message
   // ======================
   const sendMessage = async () => {
-  if (!newMessage.trim()) return;
+    if (!newMessage.trim()) return;
 
-  const guardId = shift?.acceptedBy?._id 
-    || shift?.acceptedBy 
-    || shift?.assignedGuard?._id 
-    || shift?.assignedGuard;
+    const guardId = shift?.acceptedBy?._id
+      || shift?.acceptedBy
+      || shift?.assignedGuard?._id
+      || shift?.assignedGuard;
 
-  if (!guardId || guardId === 'null') {
-    showNotification('warning', 'No guard assigned to this shift yet.');
-    return;
-  }
+    if (!guardId || guardId === 'null') {
+      showNotification('warning', 'No guard assigned to this shift yet.');
+      return;
+    }
 
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/v1/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        receiverId: guardId,
-        content: newMessage,
-      }),
-    });
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          receiverId: guardId,
+          content: newMessage,
+        }),
+      });
 
-    if (!res.ok) throw new Error('Failed to send message');
+      if (!res.ok) throw new Error('Failed to send message');
 
-    const data = await res.json();
-    setMessages((prev) => [
-      ...prev,
-      {
-        _id: data.data?.messageId,
-        content: data.data?.content || newMessage,
-        senderName: 'You',
-        timestamp: data.data?.timestamp || new Date().toISOString(),
-      },
-    ]);
-    setNewMessage('');
-  } catch (err) {
-    console.error(err);
-    showNotification('error', 'Failed to send message');
-  }
-};
+      const data = await res.json();
+      setMessages((prev) => [
+        ...prev,
+        {
+          _id: data.data?.messageId,
+          content: data.data?.content || newMessage,
+          senderName: 'You',
+          timestamp: data.data?.timestamp || new Date().toISOString(),
+        },
+      ]);
+      setNewMessage('');
+    } catch (err) {
+      console.error(err);
+      showNotification('error', 'Failed to send message');
+    }
+  };
 
   if (loading) return <p>Loading shift…</p>;
   if (error) return <p className="msd-error">{error}</p>;

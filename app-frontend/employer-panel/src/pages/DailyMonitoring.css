@@ -295,6 +295,7 @@
 
 .dm-detail-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 14px;
   padding-bottom: 16px;
@@ -321,6 +322,7 @@
 
 .dm-detail-name-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   margin-bottom: 4px;

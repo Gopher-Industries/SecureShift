@@ -176,13 +176,13 @@ export default function EmailSettings() {
             justifyContent: 'center',
             marginTop: '20px',
           }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        > <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: '1 1 320px', minWidth: '280px' }}>
+
             {formFields
               .filter((field) => field.slot === 'left')
               .map((field, index) => (
                 <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ width: '150px', fontWeight: 'bold' }}>{field.label}:</div>
+                    <div style={{ width: '150px', maxWidth: '40%', flexShrink: 0, fontWeight: 'bold' }}>{field.label}:</div>
                   <div style={{ flex: 1 }}>
                     <input
                       {...register(field.name)}
@@ -191,7 +191,9 @@ export default function EmailSettings() {
                       disabled={!enableEdit}
                       style={{
                         backgroundColor: !enableEdit ? '#ABABAB' : 'white',
-                        width: '422px',
+                        width: '100%',
+                        maxWidth: '422px',
+                        boxSizing: 'border-box',
                         color: 'black',
                         padding: '8px 12px',
                         border: '1px solid #ccc',
@@ -207,7 +209,7 @@ export default function EmailSettings() {
               ))}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: '1 1 320px', minWidth: '280px' }}>
             {formFields
               .filter((field) => field.slot === 'right')
               .map((field, index) => (
@@ -221,7 +223,9 @@ export default function EmailSettings() {
                       disabled={!enableEdit}
                       style={{
                         backgroundColor: !enableEdit ? '#ABABAB' : 'white',
-                        width: '422px',
+                        width: '100%',
+                        maxWidth: '422px',
+                        boxSizing: 'border-box',
                         color: 'black',
                         padding: '8px 12px',
                         border: '1px solid #ccc',
@@ -399,8 +403,10 @@ export default function EmailSettings() {
 function PageHeader() {
   const headerStyles = {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: '16px',
   };
 
   const titleStyles = {
