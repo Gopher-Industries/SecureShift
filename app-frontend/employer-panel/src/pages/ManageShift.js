@@ -4,6 +4,7 @@ import http from '../lib/http';
 import translations from "../i18n/translations";
 import RefreshButton from '../components/RefreshButton';
 import { useNotification } from '../components/NotificationContext';
+import { jsPDF } from 'jspdf';
 
 // ─── STYLES (defined first) ───
 const getStatusTagStyle = (status) => ({
@@ -157,6 +158,8 @@ const aiCardStyle = { marginTop: '10px', padding: '10px', borderRadius: '10px', 
 const aiTitleStyle = { margin: '0 0 6px', fontSize: '12px', fontWeight: '700', color: '#274b93' };
 const aiScoreStyle = { fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#111827' };
 const aiReasonStyle = { fontSize: '12px', color: '#4b5563', marginBottom: '2px' };
+
+const pdfButtonStyle = { width: '44px', height: '44px', backgroundColor: '#EAFAE7', border: '1px solid #bbf7d0', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2E7D32', fontSize: '18px', flexShrink: 0 };
 
 // ─── Map backend status to filter display ───
 const statusDisplayMap = {
@@ -921,6 +924,137 @@ const ManageShift = ({ language }) => {
     navigate(`/create-shift?edit=${shiftId}`);
   };
 
+  // ─── PDF export handler ───
+const safeVal = (val, fallback = 'N/A') => {
+  if (val === null || val === undefined) return fallback;
+  const str = String(val).trim();
+  return str.length ? str : fallback;
+};
+
+const generateShiftPDF = (shift) => {
+  try {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginX = 48;
+    let y = 0;
+
+    // Header band
+    doc.setFillColor(39, 75, 147); // brand blue
+    doc.rect(0, 0, pageWidth, 70, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('Secure Shift', marginX, 40);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Shift Report', marginX, 56);
+
+    y = 100;
+    doc.setTextColor(30, 30, 30);
+
+    const formatDatePDF = (dateString) => {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      if (isNaN(date)) return 'N/A';
+      return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
+    const formatTimeRangePDF = (start, end) => {
+      if (!start || !end) return 'N/A';
+      return `${start} – ${end}`;
+    };
+
+    const checkPageBreak = (needed = 20) => {
+      if (y + needed > pageHeight - 50) {
+        doc.addPage();
+        y = 56;
+      }
+    };
+
+    const sectionHeader = (label) => {
+      checkPageBreak(40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(39, 75, 147);
+      doc.text(label, marginX, y);
+      doc.setDrawColor(224, 224, 224);
+      doc.line(marginX, y + 6, pageWidth - marginX, y + 6);
+      y += 26;
+      doc.setTextColor(30, 30, 30);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+    };
+
+    const row = (label, value) => {
+      checkPageBreak(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${label}:`, marginX, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(safeVal(value), marginX + 140, y);
+      y += 20;
+    };
+
+    // Title block
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(safeVal(shift.title, 'Untitled Shift'), marginX, y);
+    y += 18;
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Status: ${safeVal(shift.status)}`, marginX, y);
+    doc.setTextColor(30, 30, 30);
+    y += 30;
+
+    // Shift details
+    sectionHeader('Shift Details');
+    row('Date', formatDatePDF(shift.date));
+    row('Time', formatTimeRangePDF(shift.startTime, shift.endTime));
+    row('Location', shift.locationLabel);
+    row('Pay Rate', shift.payRate && shift.payRate !== '--' ? `$${shift.payRate}` : 'N/A');
+    row('Field', shift.field);
+    row('Urgency', shift.urgency);
+    y += 10;
+
+    // Assigned guard
+    sectionHeader('Assigned Guard');
+    const guard = shift.assignedGuard;
+    if (guard && typeof guard === 'object') {
+      row('Name', guard.name);
+      row('Email', guard.email);
+      row('License Type', guard.licenseType);
+    } else if (guard) {
+      row('Guard reference', guard);
+    } else {
+      checkPageBreak(20);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(120, 120, 120);
+      doc.text('No guard has been assigned to this shift yet.', marginX, y);
+      doc.setTextColor(30, 30, 30);
+      doc.setFont('helvetica', 'normal');
+      y += 20;
+    }
+    y += 10;
+
+    // Applicants
+    sectionHeader('Applicants');
+    row('Applicant count', shift.applicantCount ?? 0);
+    y += 10;
+
+    // Footer
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Generated on ${new Date().toLocaleString()}`, marginX, pageHeight - 30);
+
+    const safeFileName = safeVal(shift.title, 'shift').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+    doc.save(`shift_${safeFileName}_${shift.id || 'export'}.pdf`);
+  } catch (err) {
+    console.error('Failed to generate shift PDF', err);
+    showNotification('error', 'Failed to generate PDF. Please try again.');
+  }
+};
+
   // ─── Detail modal handlers ───
   const openShiftModal = (shift) => {
     setSelectedShift(shift);
@@ -1141,6 +1275,7 @@ const ManageShift = ({ language }) => {
                 )}
                 <div style={cardActionsRowStyle}>
                   <button style={viewDetailsButtonStyle} onClick={() => openShiftModal(shift)}>View Details</button>
+                  <button style={pdfButtonStyle} onClick={() => generateShiftPDF(shift)} title="Download shift PDF">📄</button>
                   {shift.status === 'Draft' && (
                     <>
                       <button style={editButtonStyle} onClick={() => handleEditShift(shift.id)} title="Edit draft">✏️</button>
