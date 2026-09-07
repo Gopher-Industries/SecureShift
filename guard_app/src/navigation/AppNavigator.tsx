@@ -9,6 +9,7 @@ import EditProfileScreen from '../screen/EditProfileScreen';
 import IncidentReportScreen from '../screen/IncidentReportScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
+import MyPerformanceScreen from '../screen/MyPerformanceScreen';
 import NotificationsScreen from '../screen/notifications';
 import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
@@ -49,6 +50,7 @@ export type RootStackParamList = {
     | undefined;
   Notifications: undefined;
   Certificates: undefined;
+  MyPerformance: undefined;
   ShiftDetails: { shift: any };
   TimesheetDetails: { timesheetId: string };
   ShiftRequests: undefined;
@@ -134,6 +136,11 @@ export default function AppNavigator() {
         name="Certificates"
         component={CertificatesScreen}
         options={{ headerShown: true, title: t('nav.certificates') }}
+      />
+      <Stack.Screen
+        name="MyPerformance"
+        component={MyPerformanceScreen}
+        options={{ headerShown: true, title: t('nav.myPerformance') }}
       />
       <Stack.Screen
         name="ShiftDetails"
