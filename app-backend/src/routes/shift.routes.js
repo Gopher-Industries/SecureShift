@@ -186,7 +186,9 @@ router
  * PATCH /api/v1/shifts/:id
  * Allows employers (owners) or admins to update editable fields.
  */
-router.route("/myshifts").get(protect, getMyShifts);
+router
+  .route("/myshifts")
+  .get(protect, authorizeRoles("guard", "employer", "admin"), getMyShifts);
 
 /**
  * @swagger
