@@ -219,6 +219,7 @@
     "profile": "Profile"
   },
   "nav": {
+    "myPerformance": "My Performance",
     "settings": "Settings",
     "privacyPolicy": "Privacy Policy",
     "messages": "Messages",
@@ -430,5 +431,29 @@
     "unlock": "Unlock",
     "settingsLabel": "App lock (Face ID / PIN)",
     "unavailable": "Unavailable"
+  },
+  "performance": {
+    "title": "My Performance",
+    "scoreLabel": "Guard score",
+    "outOf": "out of {{total}}",
+    "breakdown": "Score breakdown",
+    "punctuality": "Punctuality",
+    "punctualityDetail": "{{onTime}} of {{total}} check-ins on time",
+    "shiftCompletion": "Shift completion",
+    "shiftCompletionDetail": "{{completed}} of {{total}} shifts completed",
+    "incidents": "Incidents",
+    "incidentsDetail": "{{high}} high, {{medium}} medium, {{low}} low",
+    "streaks": "Streaks",
+    "currentStreak": "Current streak",
+    "bestStreak": "Best streak",
+    "onTimeThisMonth": "On time this month",
+    "trend": "Recent trend",
+    "sampleData": "Sample data",
+    "sampleNote": "Streaks and trend are sample data. They will use real values once the API sends them.",
+    "empty": "No score yet",
+    "emptyMessage": "Your score will show here after you work some shifts.",
+    "error": "Could not load your performance.",
+    "retry": "Try again",
+    "viewDetails": "View details"
   }
 }

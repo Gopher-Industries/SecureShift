@@ -168,7 +168,11 @@ export default function ProfileScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.card, styles.performanceCard]}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={[styles.card, styles.performanceCard]}
+          onPress={() => navigation.navigate('MyPerformance')}
+        >
           <View style={styles.cardTitleContainer}>
             <Ionicons name="star" size={18} color={colors.text} style={{ marginBottom: 10 }} />
             <Text style={styles.cardTitle}>{t('profile.perfSummary')}</Text>
@@ -198,7 +202,12 @@ export default function ProfileScreen({ navigation, route }: any) {
               <Text style={styles.statLabel}>{t('profile.reviews')}</Text>
             </View>
           </View>
-        </View>
+
+          <View style={styles.viewDetailsRow}>
+            <Text style={styles.viewDetailsText}>{t('performance.viewDetails')}</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+          </View>
+        </TouchableOpacity>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{t('profile.contactInfo')}</Text>
@@ -377,6 +386,18 @@ const getStyles = (colors: AppColors) =>
       fontSize: 12,
       color: colors.muted,
       marginTop: 2,
+    },
+    viewDetailsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: 4,
+      marginTop: 12,
+    },
+    viewDetailsText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.primary,
     },
     infoText: {
       fontSize: 14,
