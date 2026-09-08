@@ -20,7 +20,7 @@ import {
 } from "../controllers/admin.controller.js";
 
 import auth from "../middleware/auth.js";
-import { adminOnly } from "../middleware/role.js";
+import { adminOnly } from "../middleware/rbac.js";
 
 const router = express.Router();
 
