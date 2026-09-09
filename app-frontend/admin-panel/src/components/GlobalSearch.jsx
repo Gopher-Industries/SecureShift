@@ -191,7 +191,7 @@ export default function GlobalSearch() {
 
           {!loading && !error && !hasAnyResults && (
             <div style={{ padding: '10px 12px', color: colors.muted, fontSize: 14 }}>
-              No matches for &quot"{query}"&quot;
+              No matches for &quot{query}&quot;
             </div>
           )}
 
