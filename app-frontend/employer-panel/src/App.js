@@ -32,6 +32,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
+import AllReviews from './pages/AllReviews';
 import Sidebar from './components/Sidebar';
 import { NotificationProvider } from './components/NotificationContext';
 
@@ -168,6 +169,10 @@ function AppRoutes({ language, setLanguage }) {
         <Route
           path="/contact-us"
           element={protectedLayout(<ContactUs />)}
+        />
+        <Route
+          path="/all-reviews"
+          element={protectedLayout(<AllReviews />)}
         />
         <Route
           path="/faqs"
