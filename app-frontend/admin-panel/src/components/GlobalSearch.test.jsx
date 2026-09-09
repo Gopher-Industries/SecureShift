@@ -36,7 +36,7 @@ describe('GlobalSearch', () => {
       { _id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com', role: 'employer' },
       { _id: 'g1', name: 'Grace Hopper', email: 'grace@example.com', role: 'guard' },
     ]);
-        getShifts.mockResolvedValue([{ _id: 's1', title: 'Night Watch — Ada Site', status: 'open' }]);
+    getShifts.mockResolvedValue([{ _id: 's1', title: 'Night Watch — Ada Site', status: 'open' }]);
   });
 
   it('does not search until the minimum query length is reached', async () => {
