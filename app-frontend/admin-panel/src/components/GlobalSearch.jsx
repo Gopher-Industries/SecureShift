@@ -78,18 +78,18 @@ export default function GlobalSearch() {
 
         const matchedUsers = usersData
           .filter((u) => u.role !== 'guard')
-          .filter((u) => matches([u.name, u.email], q))
+          .filter((u) => matches([u.name, u.email, u._id], q))
           .slice(0, MAX_RESULTS_PER_GROUP);
 
         const matchedGuards = usersData
           .filter((u) => u.role === 'guard')
-          .filter((u) => matches([u.name, u.email], q))
+          .filter((u) => matches([u.name, u.email, u._id], q))
           .slice(0, MAX_RESULTS_PER_GROUP);
 
         const matchedShifts = shiftsData
           .filter((s) =>
             matches(
-              [s.title, s.status, personLabel(s.createdBy), personLabel(s.acceptedBy)],
+              [s.title, s.status, s._id, personLabel(s.createdBy), personLabel(s.acceptedBy)],
               q
             )
           )
