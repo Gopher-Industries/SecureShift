@@ -2,9 +2,9 @@ import React from 'react';
 
 export default function PrivacyPolicy() {
   return (
-    <div style={styles.page}>
+    <section style={styles.page} aria-labelledby="privacy-policy-title">
       <div style={styles.container}>
-        <h1 style={styles.title}>Privacy Policy</h1>
+        <h1 id="privacy-policy-title" style={styles.title}>Privacy Policy</h1>
         <p style={styles.updated}>Last updated: April 2026</p>
 
         <p style={styles.paragraph}>
@@ -58,20 +58,19 @@ export default function PrivacyPolicy() {
           project team.
         </p>
       </div>
-    </div>
+    </section>
   );
 }
 
 const styles = {
   page: {
-    backgroundColor: '#f7f7f7',
-    minHeight: '100vh',
-    padding: '40px 20px',
+    backgroundColor: 'transparent',
+    padding: '24px 0 32px',
   },
   container: {
     maxWidth: '900px',
-    margin: '0 auto',
     backgroundColor: '#ffffff',
+    margin: '0 auto',
     padding: '40px',
     borderRadius: '12px',
     boxShadow: '0 2px 10px rgba(0,0,0,0.08)',

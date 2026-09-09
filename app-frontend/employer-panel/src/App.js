@@ -32,6 +32,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
+import AllReviews from './pages/AllReviews';
 import Sidebar from './components/Sidebar';
 import { NotificationProvider } from './components/NotificationContext';
 
@@ -116,10 +117,6 @@ function AppRoutes({ language, setLanguage }) {
         <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
         <Route path="/submission" element={<SubmissionConfirmation />} />
         <Route path="/task-detail" element={<TaskRoute />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-and-condition" element={<TermsAndConditions />} />
-
-        <Route path="/contact-us" element={<ContactUs />} /> 
         {/* PROTECTED ROUTES */}
         <Route
           path="/employer-dashboard"
@@ -160,6 +157,22 @@ function AppRoutes({ language, setLanguage }) {
         <Route
           path="/payroll"
           element={protectedLayout(<Payroll language={language} />)}
+        />
+        <Route
+          path="/privacy-policy"
+          element={protectedLayout(<PrivacyPolicy />)}
+        />
+        <Route
+          path="/terms-and-condition"
+          element={protectedLayout(<TermsAndConditions />)}
+        />
+        <Route
+          path="/contact-us"
+          element={protectedLayout(<ContactUs />)}
+        />
+        <Route
+          path="/all-reviews"
+          element={protectedLayout(<AllReviews />)}
         />
         <Route
           path="/faqs"

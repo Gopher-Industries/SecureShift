@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./EmployerDashboard.css";
 import RefreshButton from "../components/RefreshButton";
+import reviewsData from "./reviewsData";
 
 /* --- icons --- */
 const IconCalendar = (props) => (
@@ -693,32 +694,7 @@ export default function EmployerDashboard() {
    * ---------------------------------------------------------
    */
   const reviews = useMemo(
-    () => [
-      {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
-        stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
-      },
-      {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
-        stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
-      },
-      {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
-        stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
-      },
-    ],
+    () => reviewsData.slice(0, 3),
     []
   );
 
@@ -1991,34 +1967,46 @@ export default function EmployerDashboard() {
             {t("recentReviews")}
           </h2>
 
-          <div className="ss-review-arrows">
+          <div className="ss-review-actions">
             <button
-              className="ss-mini-arrow"
-              onClick={() =>
-                scrollByAmount(
-                  reviewScroller,
-                  -300
-                )
-              }
+              className="ss-view-all-reviews-btn"
               type="button"
-              aria-label={t("previous")}
+              onClick={() =>
+                navigate("/all-reviews")
+              }
             >
-              ‹
+              {t("viewAllReviews")}
             </button>
 
-            <button
-              className="ss-mini-arrow"
-              onClick={() =>
-                scrollByAmount(
-                  reviewScroller,
-                  300
-                )
-              }
-              type="button"
-              aria-label={t("next")}
-            >
-              ›
-            </button>
+            <div className="ss-review-arrows">
+              <button
+                className="ss-mini-arrow"
+                onClick={() =>
+                  scrollByAmount(
+                    reviewScroller,
+                    -300
+                  )
+                }
+                type="button"
+                aria-label={t("previous")}
+              >
+                ‹
+              </button>
+
+              <button
+                className="ss-mini-arrow"
+                onClick={() =>
+                  scrollByAmount(
+                    reviewScroller,
+                    300
+                  )
+                }
+                type="button"
+                aria-label={t("next")}
+              >
+                ›
+              </button>
+            </div>
           </div>
         </div>
 

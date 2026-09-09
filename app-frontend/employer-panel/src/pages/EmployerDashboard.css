@@ -916,6 +916,28 @@ body {
   gap: 8px;
 }
 
+.ss-review-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ss-view-all-reviews-btn {
+  border: 1px solid #d9dfeb;
+  background: #fff;
+  color: #1b2a4a;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ss-view-all-reviews-btn:hover {
+  border-color: #124f70;
+  color: #124f70;
+}
+
 .ss-mini-arrow {
   width: 26px;
   height: 26px;
@@ -1066,6 +1088,11 @@ body {
   .ss-section-head--reviews {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .ss-review-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .ss-incident-toolbar {
