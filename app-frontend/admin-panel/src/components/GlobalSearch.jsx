@@ -135,7 +135,6 @@ export default function GlobalSearch() {
   function goToShift(shift) {
     setOpen(false);
     setRaw('');
-    
     // No shift detail page yet, so deep-link into the filtered shifts list.
     navigate(`/shifts?q=${encodeURIComponent(shift.title || shift._id)}`);
   }
@@ -192,7 +191,7 @@ export default function GlobalSearch() {
 
           {!loading && !error && !hasAnyResults && (
             <div style={{ padding: '10px 12px', color: colors.muted, fontSize: 14 }}>
-              No matches for "{query}"
+              No matches for &quot"{query}"&quot;
             </div>
           )}
 
