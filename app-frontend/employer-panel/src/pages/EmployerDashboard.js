@@ -2033,60 +2033,33 @@ export default function EmployerDashboard() {
         {/* REVIEWS */}
 
 
-        <div className="ss-section-head ss-section-head--reviews">
-          <h2 className="ss-section-title">
-            {t("recentReviews")}
-          </h2>
+              <div className="ss-review-actions">
+        <button
+          className="ss-mini-arrow"
+          onClick={() => scrollByAmount(reviewScroller, -300)}
+          type="button"
+          aria-label={t("previous")}
+        >
+          ‹
+        </button>
 
-          <div className="ss-review-actions">
-            <button
-              className="ss-mini-arrow"
-              onClick={() => scrollByAmount(reviewScroller, -300)}
-              type="button"
-              aria-label={t("previous")}
-            >
-              ‹
-            </button>
-            <button
-              className="ss-mini-arrow"
-              onClick={() => scrollByAmount(reviewScroller, 300)}
-              type="button"
-              aria-label={t("next")}
-            >
-              {t("viewAllReviews")}
-            </button>
+        <button
+          className="ss-view-all-reviews-btn"
+          type="button"
+          onClick={() => navigate("/all-reviews")}
+        >
+          {t("viewAllReviews")}
+        </button>
 
-            <div className="ss-review-arrows">
-              <button
-                className="ss-mini-arrow"
-                onClick={() =>
-                  scrollByAmount(
-                    reviewScroller,
-                    -300
-                  )
-                }
-                type="button"
-                aria-label={t("previous")}
-              >
-                ‹
-              </button>
-
-              <button
-                className="ss-mini-arrow"
-                onClick={() =>
-                  scrollByAmount(
-                    reviewScroller,
-                    300
-                  )
-                }
-                type="button"
-                aria-label={t("next")}
-              >
-                ›
-              </button>
-            </div>
-          </div>
-        </div>
+        <button
+          className="ss-mini-arrow"
+          onClick={() => scrollByAmount(reviewScroller, 300)}
+          type="button"
+          aria-label={t("next")}
+        >
+          ›
+        </button>
+      </div>
 
         <div className="ss-dashboard-card ss-dashboard-card--reviews">
           <div
