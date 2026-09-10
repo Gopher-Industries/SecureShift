@@ -30,6 +30,10 @@ interface UploadedDocument {
   uploadedAt: string;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+
 const STORAGE_KEY = 'uploaded_documents';
 
 export default function DocumentsScreen() {
@@ -82,15 +86,19 @@ export default function DocumentsScreen() {
 
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
+        type: ALLOWED_MIME_TYPES,
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
 
-        const maxSize = 10 * 1024 * 1024;
-        if (file.size && file.size > maxSize) {
+        if (!file.mimeType || !ALLOWED_MIME_TYPES.includes(file.mimeType)) {
+          Alert.alert('Invalid File Type', 'Please select a PDF, JPG, or PNG file.');
+          return;
+        }
+
+        if (file.size && file.size > MAX_FILE_SIZE) {
           Alert.alert(t('docs.fileTooLarge'), t('docs.selectFileSmaller'));
           return;
         }
@@ -125,7 +133,10 @@ export default function DocumentsScreen() {
         setSelectedDocType('');
         setShowDropdown(false);
 
-        Alert.alert('Success', 'Document uploaded successfully!');
+        Alert.alert(
+          'Document Saved',
+          'Document saved locally. Documentation API upload is not available yet.',
+        );
       }
     } catch (err) {
       console.error('Error uploading document:', err);
