@@ -22,6 +22,30 @@ export const getPayroll = async (req, res) => {
   }
 };
 
+export const getPayrollSummary = async (req, res) => {
+  try {
+    const result = await getPayrollRecords(req.query, req.user);
+
+    const statusCounts = { PENDING: 0, APPROVED: 0, PROCESSED: 0 };
+    for (const record of result.payroll) {
+      if (statusCounts[record.status] !== undefined) {
+        statusCounts[record.status] += 1;
+      }
+    }
+
+    return res.status(200).json({
+      filters: result.filters,
+      totalPayableHours: result.summary.totalPayableHours,
+      totalOrdinaryHours: result.summary.totalOrdinaryHours,
+      totalOvertimeHours: result.summary.totalOvertimeHours,
+      totalEarnings: result.summary.totalAmount,
+      statusCounts,
+    });
+  } catch (error) {
+    return sendError(res, error, "Failed to retrieve payroll summary");
+  }
+};
+
 export const approvePayroll = async (req, res) => {
   try {
     const payroll = await approvePayrollRecords(req.body.payrollIds, req.user);
