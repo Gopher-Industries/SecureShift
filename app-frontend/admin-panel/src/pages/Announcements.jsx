@@ -1,3 +1,4 @@
+import Modal from '../components/Modal';
 import { useEffect, useState } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -161,39 +162,22 @@ export default function Announcements() {
       </Card>
 
       {/* Confirm before send — prevents accidental mass sends */}
-      {showConfirm && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-          }}
-        >
-          <Card style={{ maxWidth: 420 }}>
-            <h3 style={{ marginTop: 0 }}>Confirm Announcement</h3>
-            <p style={{ fontSize: 14 }}>
-              You&apos;re about to send <strong>&quot;{title}&quot;</strong> to This cannot be
-              easily undone once a real send endpoint is wired up.
-            </p>
-            <p style={{ fontSize: 14 }}>Are you sure?</p>
-            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-              <Button onClick={handleConfirmedSend} disabled={sending}>
-                {sending ? 'Sending…' : `Yes, send to ${audienceLabel}`}
-              </Button>
-              <Button variant="secondary" onClick={() => setShowConfirm(false)} disabled={sending}>
-                Cancel
-              </Button>
-            </div>
-          </Card>
+      <Modal open={showConfirm} title="Confirm Announcement" onClose={() => setShowConfirm(false)}>
+        <p style={{ fontSize: 14 }}>
+          You&apos;re about to send <strong>&quot;{title}&quot;</strong> to{' '}
+          <strong>{audienceLabel}</strong>. This cannot be easily undone once a real send endpoint
+          is wired up.
+        </p>
+        <p style={{ fontSize: 14 }}>Are you sure?</p>
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <Button onClick={handleConfirmedSend} disabled={sending}>
+            {sending ? 'Sending…' : `Yes, send to ${audienceLabel}`}
+          </Button>
+          <Button variant="secondary" onClick={() => setShowConfirm(false)} disabled={sending}>
+            Cancel
+          </Button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
