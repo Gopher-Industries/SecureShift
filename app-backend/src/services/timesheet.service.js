@@ -5,6 +5,7 @@ import Timesheet from "../models/Timesheet.js";
 import {
   calculateAttendanceHours,
   calculateScheduledHours,
+  calculatePayableHours,
 } from "./payroll.service.js";
 
 const ISO_DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -67,11 +68,6 @@ const ensureObjectId = (value, fieldName) => {
 
 const roundHours = (value) =>
   Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
-
-const calculatePayableHours = (actualHours, shift) => {
-  const breakMinutes = Number.isFinite(shift?.breakTime) ? shift.breakTime : 0;
-  return roundHours(actualHours - breakMinutes / 60);
-};
 
 const buildShiftQuery = (filters, user) => {
   const { userId, role } = getUserContext(user);
@@ -185,7 +181,7 @@ const buildValidTimesheetRecord = (shift, attendance) => {
     checkOutTime: attendance.checkOutTime,
     scheduledHours: calculateScheduledHours(shift),
     actualHours,
-    payableHours: calculatePayableHours(actualHours, shift),
+    payableHours: calculatePayableHours(shift, actualHours),
     attendanceBased: true,
   };
 };
