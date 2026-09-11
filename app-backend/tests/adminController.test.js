@@ -222,6 +222,76 @@ describe('Admin Controller - getAuditLogs', () => {
       expect.objectContaining({ logs: [] })
     );
   });
+
+  it('should query AuditLog with user ID $in filter for guard role and calculate hasNext pagination', async () => {
+    req.query = { role: 'guard', page: '1', limit: '10' };
+
+    User.find.mockReturnValue({
+      select: jest.fn().mockResolvedValue([{ _id: 'guard1' }, { _id: 'guard2' }]),
+    });
+    mockAuditLogFind([
+      { _id: 'log1', action: 'INCIDENT_CREATED', user: { role: 'guard', name: 'Guard One' } },
+    ]);
+    AuditLog.countDocuments.mockResolvedValue(25);
+
+    await getAuditLogs(req, res);
+
+    expect(User.find).toHaveBeenCalledWith({
+      role: 'guard',
+      isDeleted: { $ne: true },
+    });
+    expect(AuditLog.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: { $in: ['guard1', 'guard2'] },
+      })
+    );
+    expect(AuditLog.countDocuments).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: { $in: ['guard1', 'guard2'] },
+      })
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        logs: expect.any(Array),
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 25,
+          hasNext: true,
+        },
+      })
+    );
+  });
+
+  it('should combine role filter with date range (from and to) filters', async () => {
+    req.query = {
+      role: 'employer',
+      from: '2026-01-01',
+      to: '2026-01-31',
+    };
+
+    User.find.mockReturnValue({
+      select: jest.fn().mockResolvedValue([{ _id: 'emp1' }]),
+    });
+    mockAuditLogFind([
+      { _id: 'log2', action: 'SHIFT_CREATED', user: { role: 'employer' } },
+    ]);
+    AuditLog.countDocuments.mockResolvedValue(1);
+
+    await getAuditLogs(req, res);
+
+    expect(AuditLog.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: { $in: ['emp1'] },
+        timestamp: {
+          $gte: new Date('2026-01-01'),
+          $lte: new Date('2026-01-31'),
+        },
+      })
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
 });
 describe('Admin Controller - getAllUsers', () => {
   let req, res;

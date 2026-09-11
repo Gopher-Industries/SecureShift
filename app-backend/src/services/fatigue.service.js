@@ -40,7 +40,7 @@ export const calculateShiftHours = (startTime, endTime) => {
   return durationMinutes / 60;
 };
 
-const getStartOfWeek = (date) => {
+export const getStartOfWeek = (date) => {
   const start = new Date(date);
   const day = start.getDay();
   const diffToMonday = day === 0 ? -6 : 1 - day;
@@ -51,7 +51,7 @@ const getStartOfWeek = (date) => {
   return start;
 };
 
-const getEndOfWeek = (date) => {
+export const getEndOfWeek = (date) => {
   const end = getStartOfWeek(date);
 
   end.setDate(end.getDate() + 6);
@@ -196,6 +196,59 @@ export const assessGuardFatigue = async (guardId, proposedShift) => {
   const hoursThisDay = existingDailyHours + proposedShiftHours;
   const hoursThisWeek = existingWeeklyHours + proposedShiftHours;
 
+  return assessFatigueFromMetrics({
+    shiftsThisWeek,
+    hoursThisDay,
+    hoursThisWeek,
+  });
+};
+
+export const assessCurrentGuardFatigue = async (
+  guardId,
+  referenceDate = new Date(),
+  // Falls back to the default parameter of the exact date and time right now
+) => {
+  // 1. Validating the guard ID
+  if (!guardId) {
+    throw new Error("Guard ID is required for fatigue assessment");
+  }
+
+  // 2. Reference date validation
+  const parsedReferenceDate = new Date(referenceDate);
+  if (Number.isNaN(parsedReferenceDate.getTime())) {
+    throw new Error("Reference date must be valid for fatigue assessment");
+  }
+
+  // 3. Establishing Week boundaries
+  const weekStart = getStartOfWeek(parsedReferenceDate);
+  const weekEnd = getEndOfWeek(parsedReferenceDate);
+
+  // 4. Existing shifts database query
+  const existingShifts = await Shift.find({
+    acceptedBy: guardId,
+    status: { $in: ["assigned", "completed"] },
+    date: {
+      $gte: weekStart,
+      $lte: weekEnd,
+    },
+  }).select("date startTime endTime status acceptedBy");
+
+  // 5. Calculate weekly & daily hours
+  const existingWeeklyHours = existingShifts.reduce((total, shift) => {
+    return total + calculateShiftHours(shift.startTime, shift.endTime);
+  }, 0);
+
+  const existingDailyHours = existingShifts
+    .filter((shift) => isSameShiftDate(shift.date, parsedReferenceDate))
+    .reduce((total, shift) => {
+      return total + calculateShiftHours(shift.startTime, shift.endTime);
+    }, 0);
+
+  const shiftsThisWeek = existingShifts.length;
+  const hoursThisDay = existingDailyHours;
+  const hoursThisWeek = existingWeeklyHours;
+
+  // 6. Return current fatigue
   return assessFatigueFromMetrics({
     shiftsThisWeek,
     hoursThisDay,

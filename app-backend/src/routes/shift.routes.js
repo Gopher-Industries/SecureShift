@@ -10,6 +10,7 @@ import {
   listAvailableShifts,
   getShiftHistory,
   updateShift,
+  getEmployerFatigueDashboard,
   getShiftById,
   deleteShift,
   duplicateShift,
@@ -256,9 +257,45 @@ router.post(
   duplicateShift,
 );
 
+/**
+ * @swagger
+ * /api/v1/shifts/history:
+ *   get:
+ *     summary: Get shift history (Guard/Employer only)
+ *     description: |
+ *       • Guard → all past/completed shifts the guard worked on.
+ *       • Employer → all past/completed shifts the employer created.
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: List of completed shifts for the user }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ */
 router
   .route("/history")
   .get(protect, authorizeRole("guard", "employer"), getShiftHistory);
+
+/**
+ * @swagger
+ * /api/v1/shifts/fatigue:
+ *   get:
+ *     summary: Get fatigue metrics (Employer only)
+ *     description: |
+ *       • Employer → fatigue metrics based on the assigned guard's workload during the
+ *                    current week.
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: Guard fatigue summary for the employer }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden }
+ */
+router
+  .route("/fatigue")
+  .get(protect, authorizeRole("employer"), getEmployerFatigueDashboard);
 
 router
   .route("/:id")
@@ -571,22 +608,5 @@ router
 router
   .route("/:id/rate")
   .patch(protect, authorizeRole("guard", "employer"), rateShift);
-
-/**
- * @swagger
- * /api/v1/shifts/history:
- *   get:
- *     summary: Get shift history (Guard/Employer only)
- *     description: |
- *       • Guard → all past/completed shifts the guard worked on.
- *       • Employer → all past/completed shifts the employer created.
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200: { description: List of completed shifts for the user }
- *       401: { description: Unauthorized }
- *       403: { description: Forbidden }
- */
 
 export default router;

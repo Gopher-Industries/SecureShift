@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Branch from "../models/Branch.js";
 import { ACTIONS } from "../middleware/logger.js";
 
@@ -9,6 +10,7 @@ import { ACTIONS } from "../middleware/logger.js";
 export const createSite = async (req, res) => {
   try {
     const { name, code, location } = req.body;
+
     const existing = await Branch.findOne({
       code,
       employerId: req.user.id,
@@ -35,13 +37,20 @@ export const createSite = async (req, res) => {
     });
 
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_CREATED, {
       siteId: site._id,
     });
 
     res.status(201).json(site);
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to create site", error: err.message });
   }
@@ -61,9 +70,12 @@ export const getAllSites = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    res.status(200).json({ count: sites.length, sites });
+    res.status(200).json({
+      count: sites.length,
+      sites,
+    });
   } catch (err) {
-    res
+    return res
       .status(500)
       .json({ message: "Failed to fetch sites", error: err.message });
   }
@@ -77,6 +89,11 @@ export const getAllSites = async (req, res) => {
 export const updateSite = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid site ID" });
+    }
+
     const site = await Branch.findOne({
       _id: id,
       employerId: req.user.id,
@@ -88,20 +105,42 @@ export const updateSite = async (req, res) => {
     }
 
     const { name, code, location } = req.body;
-    if (name) site.name = name;
-    if (code) site.code = code;
-    if (location) {
-      site.location = {
-        line1: location.line1 || site.location.line1,
-        line2: location.line2 || site.location.line2,
-        city: location.city || site.location.city,
-        state: location.state || site.location.state,
-        postcode: location.postcode || site.location.postcode,
-        country: location.country || site.location.country,
-      };
+
+    if (name !== undefined) {
+      site.name = name;
     }
 
+    if (code !== undefined) {
+      site.code = code;
+    }
+
+    if (location !== undefined) {
+      if (location.line1 !== undefined) {
+        site.location.line1 = location.line1;
+      }
+
+      if (location.line2 !== undefined) {
+        site.location.line2 = location.line2;
+      }
+
+      if (location.city !== undefined) {
+        site.location.city = location.city;
+      }
+
+      if (location.state !== undefined) {
+        site.location.state = location.state;
+      }
+
+      if (location.postcode !== undefined) {
+        site.location.postcode = location.postcode;
+      }
+
+      if (location.country !== undefined) {
+        site.location.country = location.country;
+      }
+    }
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_UPDATED, {
       siteId: id,
       updatedFields: Object.keys(req.body),
@@ -109,7 +148,13 @@ export const updateSite = async (req, res) => {
 
     res.status(200).json(site);
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to update site", error: err.message });
   }
@@ -123,6 +168,11 @@ export const updateSite = async (req, res) => {
 export const deleteSite = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid site ID" });
+    }
+
     const site = await Branch.findOne({
       _id: id,
       employerId: req.user.id,
@@ -134,14 +184,24 @@ export const deleteSite = async (req, res) => {
     }
 
     site.isActive = false;
+
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_DELETED, {
       siteId: id,
     });
 
-    res.status(200).json({ message: "Site deleted successfully" });
+    res.status(200).json({
+      message: "Site deleted successfully",
+    });
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to delete site", error: err.message });
   }

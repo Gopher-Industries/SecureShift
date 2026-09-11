@@ -1,6 +1,6 @@
 import express from "express";
 import auth from "../middleware/auth.js";
-import { authorizeRoles } from "../controllers/rbac.controller.js";
+import { authorizeRoles } from "../middleware/rbac.js";
 import { addDocument } from "../controllers/document.controller.js";
 import {
   getDocuments,

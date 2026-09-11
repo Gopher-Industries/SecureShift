@@ -36,7 +36,6 @@ export default function Shifts() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
-  const [page, setPage] = useState(1);
 
   // Load all shifts when the page opens
   useEffect(() => {
@@ -61,11 +60,6 @@ export default function Shifts() {
     };
   }, []);
 
-  // Go back to page 1 when the search or filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [query, status]);
-
   // Filter shifts by search text and status
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -86,11 +80,6 @@ export default function Shifts() {
       return haystack.includes(q);
     });
   }, [shifts, query, status]);
-
-  // Calculate pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Column shown in the table
   const columns = [
@@ -138,46 +127,13 @@ export default function Shifts() {
       ) : error ? (
         <p style={{ color: '#c00' }}>{error}</p>
       ) : (
-        <>
-          <DataTable columns={columns} rows={paged} empty="No shifts found" />
-          {filtered.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginTop: 12,
-                color: '#555',
-                fontSize: 14,
-              }}
-            >
-              <span>
-                Showing {(currentPage - 1) * PAGE_SIZE + 1}
-                {'\u2013'}
-                {Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length}
-              </span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
-                >
-                  Prev
-                </button>
-                <span>
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          empty="No shifts found"
+          pageSize={PAGE_SIZE}
+          pageResetTrigger={`${query}-${status}`}
+        />
       )}
     </div>
   );
