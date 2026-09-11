@@ -50,6 +50,7 @@ describe("Shift attendance service", () => {
       status: "assigned",
     });
 
+
   beforeAll(async () => {
     await startTestDatabase();
     await Promise.all([
@@ -95,6 +96,22 @@ describe("Shift attendance service", () => {
     });
 
     shift = await createAssignedShift();
+  });
+
+    test("shift stores and retrieves latitude and longitude", async () => {
+    const testShift = await createAssignedShift({
+      title: "Coordinate Storage Shift",
+      location: {
+        latitude: -37,
+        longitude: 145,
+      },
+    });
+    
+    const savedShift = await Shift.findById(testShift._id);
+
+    expect(savedShift.location.latitude).toBe(-37);
+    expect(savedShift.location.longitude).toBe(145);
+
   });
 
   afterAll(async () => {

@@ -280,12 +280,14 @@ export const updateShift = async (req, res) => {
 
     if (location !== undefined) {
       const loc = { ...shift.location?.toObject?.() };
-      const { street, suburb, state, postcode } = location;
+      const { street, suburb, state, postcode, latitude, longitude } = location;
 
       if (street !== undefined) loc.street = street.trim();
       if (suburb !== undefined) loc.suburb = suburb.trim();
       if (state !== undefined) loc.state = state.trim();
       if (postcode !== undefined) loc.postcode = postcode;
+      if (latitude !== undefined) loc.latitude = Number(latitude);
+      if (longitude !== undefined) loc.longitude = Number(longitude); 
 
       updates.location = loc;
     }
