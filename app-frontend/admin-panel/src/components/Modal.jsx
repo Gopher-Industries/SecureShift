@@ -28,7 +28,7 @@ export default function Modal({ open, title, children, onClose }) {
         prevFocusRef.current.focus();
       }
     };
-// eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Keydown / focus-trap: needs the latest onClose, so it stays keyed on
