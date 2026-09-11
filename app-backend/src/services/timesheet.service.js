@@ -66,9 +66,6 @@ const ensureObjectId = (value, fieldName) => {
   }
 };
 
-const roundHours = (value) =>
-  Math.round((Math.max(0, value) + Number.EPSILON) * 100) / 100;
-
 const buildShiftQuery = (filters, user) => {
   const { userId, role } = getUserContext(user);
   const range = parseDateRange(filters, { required: true });
