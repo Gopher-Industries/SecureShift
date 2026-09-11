@@ -287,7 +287,7 @@ export const updateShift = async (req, res) => {
       if (state !== undefined) loc.state = state.trim();
       if (postcode !== undefined) loc.postcode = postcode;
       if (latitude !== undefined) loc.latitude = Number(latitude);
-      if (longitude !== undefined) loc.longitude = Number(longitude); 
+      if (longitude !== undefined) loc.longitude = Number(longitude);
 
       updates.location = loc;
     }
