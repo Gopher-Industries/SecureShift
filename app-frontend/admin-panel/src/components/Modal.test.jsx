@@ -1,4 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import { useEffect, useState } from 'react';
+import userEvent from '@testing-library/user-event';
 import Modal from './Modal';
 
 describe('Modal', () => {
@@ -24,5 +26,61 @@ describe('Modal', () => {
     expect(firstHeading.id).not.toBe(secondHeading.id);
     expect(firstDialog).toHaveAttribute('aria-labelledby', firstHeading.id);
     expect(secondDialog).toHaveAttribute('aria-labelledby', secondHeading.id);
+  });
+
+  it('does not re-steal focus when the parent re-renders with a new inline onClose', async () => {
+    jest.useFakeTimers();
+
+    function Wrapper() {
+      const [, forceRerender] = useState(0);
+
+      useEffect(() => {
+        const interval = setInterval(() => forceRerender((n) => n + 1), 1000);
+        return () => clearInterval(interval);
+      }, []);
+
+      return (
+        <Modal open={true} title="Test modal" onClose={() => {}}>
+          <input aria-label="second field" />
+          <button>Confirm</button>
+        </Modal>
+      );
+    }
+
+    render(<Wrapper />);
+
+    const secondField = screen.getByLabelText('second field');
+    secondField.focus();
+    expect(secondField).toHaveFocus();
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(secondField).toHaveFocus();
+
+    jest.useRealTimers();
+  });
+
+  it('restores focus to the previously-focused element on close', () => {
+    function Wrapper() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open modal</button>
+          <Modal open={open} title="Test modal" onClose={() => setOpen(false)}>
+            <button>Inside modal</button>
+          </Modal>
+        </>
+      );
+    }
+
+    render(<Wrapper />);
+
+    const openButton = screen.getByRole('button', { name: /open modal/i });
+    openButton.focus();
+    expect(openButton).toHaveFocus();
+
+    userEvent.click(openButton);
   });
 });

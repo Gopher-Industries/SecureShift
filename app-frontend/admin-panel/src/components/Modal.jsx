@@ -5,6 +5,9 @@ export default function Modal({ open, title, children, onClose }) {
   const modalRef = useRef(null);
   const prevFocusRef = useRef(null);
 
+  // Focus-on-open: runs only when `open` changes, so a parent re-render
+  // (which creates a new inline onClose) never re-steals focus from
+  // whatever the user has since focused inside the modal.
   useEffect(() => {
     if (!open) return;
 
@@ -25,8 +28,12 @@ export default function Modal({ open, title, children, onClose }) {
         prevFocusRef.current.focus();
       }
     };
+// eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Keydown / focus-trap: needs the latest onClose, so it stays keyed on
+  // [open, onClose] and re-attaches when either changes — but re-attaching
+  // a listener has no visible side effect (unlike re-focusing), so this is safe.
   useEffect(() => {
     if (!open) return;
 
