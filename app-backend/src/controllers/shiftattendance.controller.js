@@ -64,7 +64,10 @@ export const getAttendanceByUserId = async (req, res) => {
       });
     }
 
-    const attendanceRecords = await getAttendanceHistoryForUser(userId);
+    const attendanceRecords = await getAttendanceHistoryForUser(
+      userId,
+      req.user,
+    );
 
     res.status(200).json({
       message: "Attendance history retrieved successfully",
