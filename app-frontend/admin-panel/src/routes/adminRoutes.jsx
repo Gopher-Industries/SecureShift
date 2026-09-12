@@ -7,14 +7,18 @@ import Users from '../pages/Users';
 import UserDetails from '../pages/UserDetails';
 import GuardVerification from '../pages/GuardVerification';
 import Shifts from '../pages/Shifts';
+import Roles from '../pages/Roles';
 import AuditLogs from '../pages/AuditLogs';
 import Messages from '../pages/Messages';
 import SMTPSettings from '../pages/SMTPSettings';
+import NotFound from '../pages/NotFound';
+import AccessDenied from '../pages/AccessDenied';
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<AdminLogin />} />
+
       <Route
         element={
           <ProtectedRoute>
@@ -23,16 +27,29 @@ export default function AppRoutes() {
         }
       >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
         <Route path="/dashboard" element={<AdminDashboard />} />
+
         <Route path="/users" element={<Users />} />
+
         <Route path="/users/:id" element={<UserDetails />} />
+
         <Route path="/guard-verification" element={<GuardVerification />} />
+
         <Route path="/shifts" element={<Shifts />} />
+
+        <Route path="/roles" element={<Roles />} />
+
         <Route path="/audit-logs" element={<AuditLogs />} />
+
         <Route path="/messages" element={<Messages />} />
+
         <Route path="/smtp-settings" element={<SMTPSettings />} />
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+      <Route path="/access-denied" element={<AccessDenied />} />
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

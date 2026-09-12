@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 import Shift from "../models/Shift.js";
 import Branch from "../models/Branch.js";
+import {
+  getEndOfWeek,
+  getStartOfWeek,
+  assessCurrentGuardFatigue,
+} from "../services/fatigue.service.js";
 import { ACTIONS } from "../middleware/logger.js";
 
 import {
@@ -77,6 +82,12 @@ export const createShift = async (req, res) => {
     const finalStartTime = startTime || "09:00";
     const finalEndTime = endTime || "17:00";
     const finalPayRate = payRate !== undefined ? Number(payRate) : 0;
+
+    if (!Number.isFinite(finalPayRate) || finalPayRate < 0) {
+      return res.status(400).json({
+        message: "payRate must be a non-negative number",
+      });
+    }
     const finalShiftType = shiftType || "Day";
     const finalDescription = description || "";
     const finalRequirements = requirements || "";
@@ -576,32 +587,80 @@ export const getMyShifts = async (req, res) => {
   try {
     const role = req.user.role;
     const uid = req.user._id;
-    const pastOnly = req.query.status === "past";
+
+    // Pagination
+    const pageRaw = req.query.page ?? "1";
+    const limitRaw = req.query.limit ?? "20";
+
+    if (!/^\d+$/.test(String(pageRaw)) || Number(pageRaw) < 1) {
+      return res.status(400).json({
+        message: "page must be a positive integer",
+      });
+    }
+
+    if (!/^\d+$/.test(String(limitRaw)) || Number(limitRaw) < 1) {
+      return res.status(400).json({
+        message: "limit must be a positive integer",
+      });
+    }
+
+    const page = Number(pageRaw);
+    const limit = Math.min(Number(limitRaw), 50);
+    const skip = (page - 1) * limit;
+
+    // Supported status filters
+    const allowedStatuses = [
+      "draft",
+      "open",
+      "applied",
+      "assigned",
+      "completed",
+      "past",
+    ];
+
+    const requestedStatus = req.query.status;
+
+    if (requestedStatus && !allowedStatuses.includes(requestedStatus)) {
+      return res.status(400).json({
+        message: "Invalid status filter",
+      });
+    }
 
     let query = {};
 
+    // Preserve existing role-based access
     if (role === "guard") {
       query = {
         $or: [{ applicants: uid }, { acceptedBy: uid }],
       };
     } else if (role === "employer") {
       query = { createdBy: uid };
-    } // admin sees all
-
-    if (pastOnly) {
-      query = {
-        ...query,
-        status: "completed",
-      };
+    } else if (role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
     }
 
-    const shifts = await Shift.find(query)
-      .sort({ date: -1, createdAt: -1 })
-      .populate("createdBy", "name email")
-      .populate("acceptedBy", "name email")
-      .populate("applicants", "name email");
+    // Keep the existing "past" behaviour
+    if (requestedStatus) {
+      query.status = requestedStatus === "past" ? "completed" : requestedStatus;
+    }
 
-    return res.json(shifts);
+    const [shifts, total] = await Promise.all([
+      Shift.find(query)
+        .sort({ date: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("createdBy", "name email")
+        .populate("acceptedBy", "name email")
+        .populate("applicants", "name email"),
+      Shift.countDocuments(query),
+    ]);
+
+    return res.json({
+      page,
+      limit,
+      total,
+      items: shifts,
+    });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
@@ -818,5 +877,182 @@ export const getShiftHistory = async (req, res) => {
     });
   } catch (e) {
     return res.status(500).json({ message: e.message });
+  }
+};
+/**
+ * GET /api/v1/shifts/fatigue
+ */
+export const getEmployerFatigueDashboard = async (req, res) => {
+  try {
+    // 1. Get logged-in employer ID
+    const uid = req.user._id;
+    // 2. Set the reference date to today
+    const referenceDate = new Date();
+    // 3. Find employer's assigned/completed shifts for the current week
+    const weekStart = getStartOfWeek(referenceDate);
+    const weekEnd = getEndOfWeek(referenceDate);
+    // 4. Extract acceptedBy from each shift
+    const shifts = await Shift.find({
+      createdBy: uid,
+      acceptedBy: { $ne: null },
+      status: { $in: ["assigned", "completed"] },
+      date: {
+        $gte: weekStart,
+        $lte: weekEnd,
+      },
+    });
+    // 5. Remove duplicate guard IDs
+    const guardIds = shifts.map((shift) => {
+      return shift.acceptedBy.toString();
+    });
+
+    const uniqueGuardIds = [...new Set(guardIds)];
+    // 6. Call assessCurrentGuardFatigue for each unique guard
+    const assessmentPromises = uniqueGuardIds.map((guardId) => {
+      return assessCurrentGuardFatigue(guardId, referenceDate);
+    });
+
+    const guardAssessments = await Promise.all(assessmentPromises);
+    // 7. Build the dashboard response
+    const guardResults = uniqueGuardIds.map((guardId, index) => {
+      const assessment = guardAssessments[index];
+
+      return {
+        guardId: guardId,
+        fatigueScore: assessment.fatigueScore,
+        warnings: assessment.warnings,
+        isFatigued: assessment.isFatigued,
+        metrics: {
+          shiftsThisWeek: assessment.metrics.shiftsThisWeek,
+          hoursThisDay: assessment.metrics.hoursThisDay,
+          hoursThisWeek: assessment.metrics.hoursThisWeek,
+        },
+      };
+    });
+
+    const guardsMonitored = uniqueGuardIds.length;
+
+    const fatiguedGuards = guardResults.filter((guard) => {
+      return guard.isFatigued === true;
+    }).length;
+
+    const totalFatigueScore = guardResults.reduce((total, guard) => {
+      return total + guard.fatigueScore;
+    }, 0);
+
+    const averageFatigueScore =
+      guardsMonitored === 0
+        ? 0
+        : Math.round(totalFatigueScore / guardsMonitored);
+
+    const dashboardResponse = {
+      referenceDate: referenceDate,
+      summary: {
+        guardsMonitored: guardsMonitored,
+        fatiguedGuards: fatiguedGuards,
+        averageFatigueScore: averageFatigueScore,
+      },
+      guards: guardResults,
+    };
+    // 8. Return 200
+    return res.status(200).json({
+      dashboard: dashboardResponse,
+    });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+/** POST /api/v1/shifts/:id/duplicate
+ * Employer only - duplicates their own shift as a new draft.
+ */
+export const duplicateShift = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date } = req.body;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+
+    if (!date) {
+      return res.status(400).json({
+        message: "A new shift date is required",
+      });
+    }
+
+    const newDate = new Date(date);
+
+    if (Number.isNaN(newDate.getTime())) {
+      return res.status(400).json({
+        message: "Invalid shift date",
+      });
+    }
+
+    const uid = req.user?._id || req.user?.id;
+
+    if (!uid) {
+      return res.status(401).json({
+        message: "Authenticated user id missing from context",
+      });
+    }
+
+    const sourceShift = await Shift.findById(id);
+
+    if (!sourceShift) {
+      return res.status(404).json({
+        message: "Shift not found",
+      });
+    }
+
+    // Employers can only duplicate their own shifts.
+    if (String(sourceShift.createdBy) !== String(uid)) {
+      return res.status(403).json({
+        message: "You can only duplicate your own shifts",
+      });
+    }
+
+    const duplicatedShift = await Shift.create({
+      title: sourceShift.title,
+      date: newDate,
+      startTime: sourceShift.startTime,
+      endTime: sourceShift.endTime,
+      shiftType: sourceShift.shiftType,
+      breakTime: sourceShift.breakTime,
+      detailedInstructions: sourceShift.detailedInstructions,
+      siteId: sourceShift.siteId,
+      location: sourceShift.location,
+      field: sourceShift.field,
+      description: sourceShift.description,
+      requirements: sourceShift.requirements,
+      urgency: sourceShift.urgency,
+      payRate: sourceShift.payRate,
+
+      // New shift must start as a clean draft.
+      status: "draft",
+      applicants: [],
+      guardIds: [],
+      acceptedBy: undefined,
+      guardRating: undefined,
+      employerRating: undefined,
+      ratedByGuard: false,
+      ratedByEmployer: false,
+
+      // Keep the original employer as owner.
+      createdBy: uid,
+    });
+
+    await req.audit?.log(req.user?._id, "SHIFT_DUPLICATED", {
+      sourceShiftId: sourceShift._id,
+      newShiftId: duplicatedShift._id,
+    });
+
+    return res.status(201).json({
+      message: "Shift duplicated successfully",
+      shift: duplicatedShift,
+    });
+  } catch (e) {
+    return res.status(500).json({
+      message: e.message,
+    });
   }
 };

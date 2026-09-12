@@ -93,12 +93,12 @@ export default function CompanyProfile({ language }) {
           }}
         >
           {/* LEFT SIDE */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: '1 1 320px', minWidth: '280px' }}>
             {formField
               .filter((field) => field.slot === 'left')
               .map((field, index) => (
                 <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <div style={{ width: '150px', fontWeight: 'bold' }}>{field.label}:</div>
+                 <div style={{ width: '150px', maxWidth: '40%', flexShrink: 0, fontWeight: 'bold' }}>{field.label}:</div>
                   <div style={{ flex: 1 }}>
                     <TextInput
                       {...register(field.name)}
@@ -114,12 +114,12 @@ export default function CompanyProfile({ language }) {
           </div>
 
           {/* RIGHT SIDE */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', flex: '1 1 320px', minWidth: '280px' }}>
             {formField
               .filter((field) => field.slot === 'right')
               .map((field, index) => (
                 <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'start' }}>
-                  <div style={{ width: '150px', fontWeight: 'bold' }}>{field.label}:</div>
+                <div style={{ width: '150px', maxWidth: '40%', flexShrink: 0, fontWeight: 'bold' }}>{field.label}:</div>
                   <div style={{ flex: 1 }}>
                     {field.name === 'state' ? (
                       <ChipsGroup
@@ -176,8 +176,10 @@ export default function CompanyProfile({ language }) {
 function PageHeader({ companyName, title }) {
   const headerStyles = {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: '16px',
   };
 
   const companyNameStyles = {
@@ -214,8 +216,9 @@ function ButtonGroup({
   const buttonGroupStyles = {
     marginTop: '30px',
     display: 'flex',
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: '100px',
+    gap: '20px',
     cursor: 'pointer',
   };
 
@@ -226,7 +229,7 @@ function ButtonGroup({
     backgroundColor: '#284B93',
     color: 'white',
     fontWeight: 'bold',
-    padding: '50px',
+    padding: '16px 24px',
     cursor: 'pointer',
     transition: 'background-color 0.3s',
   };

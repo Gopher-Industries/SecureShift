@@ -54,7 +54,13 @@ const DEFAULTS = [
   {
     name: "employer",
     description: "Employer role",
-    permissions: ["shift:read", "shift:write", "payment:read", "payment:write"],
+    permissions: [
+      "user:read",
+      "shift:read",
+      "shift:write",
+      "payment:read",
+      "payment:write",
+    ],
     isSystem: true,
   },
   {

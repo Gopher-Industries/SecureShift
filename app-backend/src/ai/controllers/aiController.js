@@ -20,7 +20,7 @@ export async function chat(req, res) {
     // SEARCH KNOWLEDGE BASE
     // =========================================================
 
-    const searchResult = await semanticSearch(question);
+    const searchResult = await semanticSearch(question, 3);
 
     let chunks = [];
     let mode = "general";

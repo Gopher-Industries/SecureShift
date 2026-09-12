@@ -8,69 +8,268 @@ import { createEmbedding } from "../embeddings/embeddingService.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const docsFolder = path.join(__dirname, "../../../knowledge-base/docs");
+const docsFolder = path.join(
+  __dirname,
+  "../../../knowledge-base/docs",
+);
 
-const vectorsFolder = path.join(__dirname, "../../../knowledge-base/vectors");
+const vectorsFolder = path.join(
+  __dirname,
+  "../../../knowledge-base/vectors",
+);
 
-// Create vectors folder if it doesn't exist
+// =========================================================
+// CREATE VECTOR DIRECTORY
+// =========================================================
+
 if (!fs.existsSync(vectorsFolder)) {
-  fs.mkdirSync(vectorsFolder, { recursive: true });
+  fs.mkdirSync(vectorsFolder, {
+    recursive: true,
+  });
 }
 
-async function buildIndex() {
-  const files = fs.readdirSync(docsFolder);
+// =========================================================
+// GET TXT DOCUMENTS
+// =========================================================
 
-  console.log("Documents found:", files);
+function getTextFiles() {
+  if (!fs.existsSync(docsFolder)) {
+    console.error(
+      `Knowledge-base folder does not exist: ${docsFolder}`,
+    );
 
-  for (const file of files) {
-    if (!file.endsWith(".txt")) continue;
-
-    console.log(`\nProcessing ${file}`);
-
-    const text = fs.readFileSync(path.join(docsFolder, file), "utf8");
-
-    // Split document into sections/chunks
-    const chunks = splitIntoChunks(text);
-
-    console.log(`Found ${chunks.length} chunks`);
-
-    // ==========================================
-    // DEBUG: Show generated chunks
-    // ==========================================
-    console.log("\n========== CHUNKS ==========");
-
-    chunks.forEach((chunk, index) => {
-      console.log(`\n--- Chunk ${index + 1} ---`);
-      console.log("Section:", chunk.section);
-      console.log("Text:", chunk.text);
-    });
-
-    console.log("\n============================\n");
-
-    const vectors = [];
-
-    for (let i = 0; i < chunks.length; i++) {
-      console.log(`Embedding ${file} (${i + 1}/${chunks.length})`);
-
-      const embedding = await createEmbedding(chunks[i].text);
-
-      vectors.push({
-        id: i,
-        document: file,
-        section: chunks[i].section,
-        text: chunks[i].text,
-        embedding,
-      });
-    }
-
-    const outputFile = path.join(vectorsFolder, file.replace(".txt", ".json"));
-
-    fs.writeFileSync(outputFile, JSON.stringify(vectors, null, 2));
-
-    console.log(`Saved ${outputFile}`);
+    return [];
   }
 
-  console.log("\n✅ All documents indexed.");
+  return fs
+    .readdirSync(docsFolder)
+    .filter((file) =>
+      file.toLowerCase().endsWith(".txt"),
+    );
 }
 
-buildIndex();
+// =========================================================
+// PROCESS DOCUMENT
+// =========================================================
+
+async function processDocument(fileName) {
+  const filePath = path.join(
+    docsFolder,
+    fileName,
+  );
+
+  console.log(
+    `\n========================================`,
+  );
+
+  console.log(
+    `Processing: ${fileName}`,
+  );
+
+  console.log(
+    `========================================`,
+  );
+
+  const text = fs.readFileSync(
+    filePath,
+    "utf8",
+  );
+
+  if (!text.trim()) {
+    console.warn(
+      `⚠️ Empty document: ${fileName}`,
+    );
+
+    return;
+  }
+
+  console.log(
+    `Text length: ${text.length}`,
+  );
+
+  // ---------------------------------------------------------
+  // CHUNK DOCUMENT
+  // ---------------------------------------------------------
+
+  const chunks =
+    splitIntoChunks(text);
+
+  console.log(
+    `📦 Found ${chunks.length} chunks`,
+  );
+
+  // ---------------------------------------------------------
+  // DEBUG CHUNKS
+  // ---------------------------------------------------------
+
+  chunks.forEach(
+    (chunk, index) => {
+      console.log(
+        `\n--- Chunk ${index + 1} ---`,
+      );
+
+      console.log(
+        "Section:",
+        chunk.section,
+      );
+
+      console.log(
+        "Text:",
+        chunk.text.substring(
+          0,
+          500,
+        ),
+      );
+    },
+  );
+
+  // ---------------------------------------------------------
+  // CREATE EMBEDDINGS
+  // ---------------------------------------------------------
+
+  const vectors = [];
+
+  for (
+    let i = 0;
+    i < chunks.length;
+    i++
+  ) {
+    const chunk =
+      chunks[i];
+
+    console.log(
+      `Embedding ${fileName} (${i + 1}/${chunks.length})`,
+    );
+
+    const embedding =
+      await createEmbedding(
+        chunk.text,
+      );
+
+    vectors.push({
+      id: `${fileName}-${i}`,
+      document: fileName,
+      section: chunk.section,
+      text: chunk.text,
+      embedding,
+    });
+  }
+
+  // ---------------------------------------------------------
+  // SAVE VECTOR FILE
+  // ---------------------------------------------------------
+
+  const outputFile =
+    path.join(
+      vectorsFolder,
+      fileName.replace(
+        /\.txt$/i,
+        ".json",
+      ),
+    );
+
+  fs.writeFileSync(
+    outputFile,
+    JSON.stringify(
+      vectors,
+      null,
+      2,
+    ),
+  );
+
+  console.log(
+    `✅ Saved ${outputFile}`,
+  );
+}
+
+// =========================================================
+// BUILD INDEX
+// =========================================================
+
+async function buildIndex() {
+  console.log(
+    "\n========================================",
+  );
+
+  console.log(
+    "🚀 SecureShift RAG Index Builder",
+  );
+
+  console.log(
+    "========================================\n",
+  );
+
+  const files =
+    getTextFiles();
+
+  console.log(
+    `Documents found: ${files.length}`,
+  );
+
+  files.forEach(
+    (file) => {
+      console.log(
+        ` - ${file}`,
+      );
+    },
+  );
+
+  if (files.length === 0) {
+    console.warn(
+      "⚠️ No TXT documentation files found.",
+    );
+
+    return;
+  }
+
+  // ---------------------------------------------------------
+  // Process documents
+  // ---------------------------------------------------------
+
+  for (const file of files) {
+    await processDocument(file);
+  }
+
+  console.log(
+    "\n========================================",
+  );
+
+  console.log(
+    "✅ All documents indexed successfully.",
+  );
+
+  console.log(
+    "========================================\n",
+  );
+}
+
+// =========================================================
+// START
+// =========================================================
+
+buildIndex().catch(
+  (error) => {
+    console.error(
+      "\n========================================",
+    );
+
+    console.error(
+      "❌ INDEXING FAILED",
+    );
+
+    console.error(
+      "Message:",
+      error.message,
+    );
+
+    console.error(
+      error.stack,
+    );
+
+    console.error(
+      "========================================\n",
+    );
+
+    process.exit(1);
+  },
+);

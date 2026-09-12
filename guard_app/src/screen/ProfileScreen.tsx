@@ -15,8 +15,8 @@ import {
   Image,
 } from 'react-native';
 
-import { getUserProfile } from '../api/profile';
 import { fetchGuardScore, GuardScore } from '../api/guardScore';
+import { getUserProfile } from '../api/profile';
 import { LocalStorage } from '../lib/localStorage';
 import { LicenseStatus } from '../models/License';
 import { UserProfile } from '../models/UserProfile';
@@ -132,10 +132,19 @@ export default function ProfileScreen({ navigation, route }: any) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.avatarContainer}>
           {profileImage ? (
-            <Image source={{ uri: profileImage }} style={styles.avatar} />
+            <Image
+              source={{ uri: profileImage }}
+              style={styles.avatar}
+              accessibilityLabel={t('profile.yourProfilePic')}
+            />
           ) : (
             <View style={styles.avatar}>
-              <Ionicons name="person" size={60} color={colors.white} />
+              <Ionicons
+                name="person"
+                size={60}
+                color={colors.white}
+                accessibilityLabel={t('profile.yourProfilePic')}
+              />
             </View>
           )}
         </View>
@@ -149,7 +158,11 @@ export default function ProfileScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.editButtonContainer}>
-          <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={handleEditProfile}
+            accessibilityLabel={t('profile.editProfile')}
+          >
             <Ionicons name="pencil" size={16} color={colors.primary} />
             <Text style={styles.editButtonText}>{t('profile.edit')}</Text>
           </TouchableOpacity>
@@ -247,6 +260,23 @@ export default function ProfileScreen({ navigation, route }: any) {
               </Pressable>
             ))}
           </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.card}
+          onPress={() => navigation.navigate('Equipment')}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons
+              name="construct-outline"
+              size={20}
+              color={colors.primary}
+              style={{ marginRight: 10 }}
+            />
+            <Text style={styles.cardTitle}>Equipment</Text>
+          </View>
+
+          <Text style={styles.infoText}>View assigned equipment and report faults.</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

@@ -278,3 +278,30 @@
 *:after {
   box-sizing: border-box;
 }
+
+.adminSignInSection {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.adminSignInPrompt {
+  color: #6b7280;
+  margin-right: 0.35rem;
+}
+
+.adminSignInLink {
+  color: #072261;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.adminSignInLink:hover {
+  text-decoration: underline;
+}
+
+.adminSignInLink:focus-visible {
+  outline: 2px solid #072261;
+  outline-offset: 3px;
+  border-radius: 2px;
+}

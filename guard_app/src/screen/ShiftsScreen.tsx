@@ -3,7 +3,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
@@ -17,14 +16,16 @@ import {
   View,
 } from 'react-native';
 
+import { getUserAttendance, type Attendance } from '../api/attendance';
 import { getMe } from '../api/auth';
-import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
+import { applyToShift, listShifts, myShifts, rateShift, type ShiftDto } from '../api/shifts';
 import CalendarView from '../components/calendar/CalendarView';
 import ShiftCard from '../components/card/ShiftCard';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
 import ShiftDetailsModal from '../components/modal/ShiftDetailsModal';
 import ViewToggle from '../components/toggle/ViewToggle';
 import { useAppTheme } from '../theme';
-import { getUserAttendance, type Attendance } from '../api/attendance';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
@@ -35,7 +36,7 @@ type Props = {
   navigation: any;
 };
 
-function mapMineShifts(
+export function mapMineShifts(
   shifts: ShiftDto[],
   myUid: string,
   attendanceRecords: Attendance[] = [],
@@ -78,7 +79,10 @@ function mapMineShifts(
     });
 }
 
-function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []): CompletedShift[] {
+export function mapCompleted(
+  shifts: ShiftDto[],
+  attendanceRecords: Attendance[] = [],
+): CompletedShift[] {
   return shifts
     .filter((s) => s.status === 'completed')
     .map((s) => {
@@ -94,8 +98,8 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []):
         rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
         date: s.date,
         time: `${s.startTime} - ${s.endTime}`,
-        rated: false,
-        rating: 0,
+        rated: s.ratedByGuard === true,
+        rating: s.guardRating ?? 0,
         attendance: attendance
           ? {
               checkInTime: attendance.checkInTime ?? undefined,
@@ -106,7 +110,7 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: Attendance[] = []):
     });
 }
 
-function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
+export function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
   return shifts
     .filter((s) => s.status !== 'completed')
     .map((s) => {
@@ -303,6 +307,8 @@ function AllTab({ navigation }: Props) {
         <View style={s.searchContainer}>
           <Text style={s.searchIcon}>🔍</Text>
           <TextInput
+            accessible={true}
+            accessibilityLabel={t('shifts.search')}
             value={q}
             onChangeText={setQ}
             placeholder={t('shifts.search')}
@@ -390,7 +396,7 @@ function AllTab({ navigation }: Props) {
         ))}
       </ScrollView>
 
-      {loading && <ActivityIndicator size="large" color={colors.primary} />}
+      {loading && <LoadingState />}
 
       {error ? (
         <View style={s.errorContainer}>
@@ -417,7 +423,7 @@ function AllTab({ navigation }: Props) {
             />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
+          ListEmptyComponent={<EmptyState icon="briefcase-outline" title={t('shifts.noShifts')} />}
         />
       )}
 
@@ -501,7 +507,7 @@ function AppliedTab({ navigation }: Props) {
         <ViewToggle view={view} onViewChange={setView} colors={colors} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={colors.primary} />}
+      {loading && <LoadingState />}
 
       {view === 'calendar' ? (
         <CalendarView shifts={filtered} onShiftPress={setSelectedShift} colors={colors} />
@@ -514,7 +520,7 @@ function AppliedTab({ navigation }: Props) {
             <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
+          ListEmptyComponent={<EmptyState icon="briefcase-outline" title={t('shifts.noShifts')} />}
         />
       )}
 
@@ -570,6 +576,18 @@ function CompletedTab({ navigation }: Props) {
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
+  // send the rating, then update the row so the stars stay after closing the modal
+  const handleRate = async (rating: number) => {
+    if (!selectedShift) return;
+
+    await rateShift(selectedShift.id, rating);
+
+    setRows((prev) =>
+      prev.map((row) => (row.id === selectedShift.id ? { ...row, rated: true, rating } : row)),
+    );
+    setSelectedShift((prev) => (prev ? { ...prev, rated: true, rating } : prev));
+  };
+
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
   };
@@ -593,7 +611,7 @@ function CompletedTab({ navigation }: Props) {
         <ViewToggle view={view} onViewChange={setView} colors={colors} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={colors.primary} />}
+      {loading && <LoadingState />}
 
       {view === 'calendar' ? (
         <CalendarView
@@ -610,7 +628,9 @@ function CompletedTab({ navigation }: Props) {
             <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noCompleted')}</Text>}
+          ListEmptyComponent={
+            <EmptyState icon="checkmark-done-outline" title={t('shifts.noCompleted')} />
+          }
         />
       )}
 
@@ -619,6 +639,7 @@ function CompletedTab({ navigation }: Props) {
         visible={selectedShift !== null}
         onClose={() => setSelectedShift(null)}
         colors={colors}
+        onRate={handleRate}
       />
     </View>
   );
@@ -703,13 +724,6 @@ const getStyles = (colors: AppColors) =>
       flex: 1,
       fontSize: 14,
       color: colors.text,
-    },
-
-    emptyText: {
-      textAlign: 'center',
-      color: colors.muted,
-      marginTop: 40,
-      fontSize: 14,
     },
 
     requestsButton: {

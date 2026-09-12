@@ -13,9 +13,9 @@ const vectorsFolder = path.join(
   "../../../knowledge-base/vectors",
 );
 
-// ==========================================
-// Load all vectors
-// ==========================================
+// =========================================================
+// LOAD ALL VECTORS
+// =========================================================
 
 let vectors = [];
 
@@ -27,17 +27,23 @@ if (!fs.existsSync(vectorsFolder)) {
   const files = fs.readdirSync(vectorsFolder);
 
   for (const file of files) {
-    if (!file.endsWith(".json")) continue;
+    if (!file.endsWith(".json")) {
+      continue;
+    }
 
     try {
-      const filePath = path.join(vectorsFolder, file);
+      const filePath = path.join(
+        vectorsFolder,
+        file,
+      );
 
       const fileVectors = JSON.parse(
         fs.readFileSync(filePath, "utf8"),
       );
 
       fileVectors.forEach((chunk) => {
-        chunk.document = file;
+        chunk.document = chunk.document || file;
+
         vectors.push(chunk);
       });
     } catch (error) {
@@ -49,15 +55,15 @@ if (!fs.existsSync(vectorsFolder)) {
   }
 
   console.log(
-    `Loaded ${vectors.length} chunks from ${
-      files.filter((file) => file.endsWith(".json")).length
-    } documents`,
+    `Loaded ${vectors.length} chunks from ${files.filter(
+      (file) => file.endsWith(".json"),
+    ).length} documents`,
   );
 }
 
-// ==========================================
-// Clean text
-// ==========================================
+// =========================================================
+// CLEAN TEXT
+// =========================================================
 
 function cleanText(text) {
   return String(text || "")
@@ -67,9 +73,9 @@ function cleanText(text) {
     .trim();
 }
 
-// ==========================================
-// Extract useful keywords
-// ==========================================
+// =========================================================
+// KEYWORDS
+// =========================================================
 
 function getKeywords(question) {
   const stopWords = new Set([
@@ -104,9 +110,15 @@ function getKeywords(question) {
     "our",
     "you",
     "your",
+    "this",
+    "that",
+    "it",
+    "be",
+    "from",
+    "into",
+    "using",
   ]);
 
-  // Normalize related words
   const aliases = {
     technologies: "technology",
     technology: "technology",
@@ -156,6 +168,18 @@ function getKeywords(question) {
 
     messages: "message",
     message: "message",
+
+    containers: "docker",
+    container: "docker",
+
+    building: "build",
+    built: "build",
+    builds: "build",
+    build: "build",
+
+    running: "run",
+    runs: "run",
+    run: "run",
   };
 
   return cleanText(question)
@@ -165,12 +189,15 @@ function getKeywords(question) {
         word.length > 2 &&
         !stopWords.has(word),
     )
-    .map((word) => aliases[word] || word);
+    .map(
+      (word) =>
+        aliases[word] || word,
+    );
 }
 
-// ==========================================
-// Keyword score
-// ==========================================
+// =========================================================
+// KEYWORD SCORE
+// =========================================================
 
 function keywordScore(question, chunk) {
   const keywords = getKeywords(question);
@@ -179,189 +206,285 @@ function keywordScore(question, chunk) {
     return 0;
   }
 
-  const section = cleanText(chunk.section || "");
-  const text = cleanText(chunk.text || "");
+  const section = cleanText(
+    chunk.section || "",
+  );
+
+  const text = cleanText(
+    chunk.text || "",
+  );
 
   let score = 0;
 
   for (const keyword of keywords) {
-    // Stronger weight when keyword appears in section
+    // Section match is useful but should not dominate.
     if (section.includes(keyword)) {
       score += 2;
     }
 
-    // Normal weight when keyword appears in text
+    // Actual text match is more important.
     if (text.includes(keyword)) {
       score += 1;
     }
   }
 
-  const maxScore = keywords.length * 3;
+  const maxScore =
+    keywords.length * 3;
 
-  return Math.min(score / maxScore, 1);
+  return Math.min(
+    score / maxScore,
+    1,
+  );
 }
 
-// ==========================================
-// Technical phrase / error matching
-// ==========================================
+// =========================================================
+// TECHNICAL MATCH
+// =========================================================
 
-function technicalMatchScore(question, chunk) {
+function technicalMatchScore(
+  question,
+  chunk,
+) {
   const q = cleanText(question);
-  const text = cleanText(chunk.text || "");
-  const section = cleanText(chunk.section || "");
+  const text = cleanText(
+    chunk.text || "",
+  );
 
   let score = 0;
 
-  // ==========================================
-  // Exact MongoDB DNS error
-  // ==========================================
+  // ---------------------------------------------------------
+  // Docker / Build / Run
+  // ---------------------------------------------------------
 
   if (
-    q.includes("getaddrinfo eai again mongodb") &&
-    text.includes("getaddrinfo eai again mongodb")
+    q.includes("build") ||
+    q.includes("run") ||
+    q.includes("docker")
   ) {
-    score = 1;
+    // Strong match only when the ACTUAL chunk text
+    // contains Docker/build commands.
+    if (
+      text.includes("docker compose") ||
+      text.includes("dockerfile") ||
+      text.includes("docker build") ||
+      text.includes("docker run")
+    ) {
+      score = Math.max(
+        score,
+        1,
+      );
+    }
   }
 
-  // ==========================================
-  // MongoDB hostname troubleshooting
-  // ==========================================
+  // ---------------------------------------------------------
+  // MongoDB
+  // ---------------------------------------------------------
 
   if (
-    q.includes("mongodb") &&
-    (
+    q.includes("mongodb") ||
+    q.includes("database")
+  ) {
+    if (
+      text.includes("mongodb") ||
       text.includes("mongodb 27017") ||
       text.includes("localhost 27017") ||
-      text.includes("eai again") ||
-      text.includes("getaddrinfo")
-    )
-  ) {
-    score = Math.max(score, 0.8);
+      text.includes("mongoose")
+    ) {
+      score = Math.max(
+        score,
+        1,
+      );
+    }
   }
 
-  // ==========================================
-  // Docker hostname troubleshooting
-  // ==========================================
+  // ---------------------------------------------------------
+  // Git / GitHub
+  // ---------------------------------------------------------
 
   if (
-    q.includes("mongodb") &&
-    q.includes("docker") &&
-    (
-      text.includes("mongodb 27017") ||
-      section.includes("docker")
-    )
+    q.includes("git") ||
+    q.includes("github") ||
+    q.includes("branch") ||
+    q.includes("commit") ||
+    q.includes("pull request")
   ) {
-    score = Math.max(score, 0.8);
+    if (
+      text.includes("git") ||
+      text.includes("github") ||
+      text.includes("pull request")
+    ) {
+      score = Math.max(
+        score,
+        0.9,
+      );
+    }
   }
 
-  // ==========================================
-  // MongoDB connection questions
-  // ==========================================
+  // ---------------------------------------------------------
+  // Shift creation
+  // ---------------------------------------------------------
 
   if (
-    q.includes("mongodb") &&
-    (
-      text.includes("mongodb 27017") ||
-      text.includes("localhost 27017")
-    )
+    q.includes("create shift") ||
+    q.includes("create a shift") ||
+    q.includes("make a shift")
   ) {
-    score = Math.max(score, 0.6);
+    if (
+      text.includes("create a shift") ||
+      text.includes("create shift") ||
+      text.includes("shift management")
+    ) {
+      score = Math.max(
+        score,
+        1,
+      );
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Frontend
+  // ---------------------------------------------------------
+
+  if (
+    q.includes("frontend") ||
+    q.includes("react")
+  ) {
+    if (
+      text.includes("frontend") ||
+      text.includes("react")
+    ) {
+      score = Math.max(
+        score,
+        0.9,
+      );
+    }
+  }
+
+  // ---------------------------------------------------------
+  // Backend
+  // ---------------------------------------------------------
+
+  if (
+    q.includes("backend") ||
+    q.includes("api")
+  ) {
+    if (
+      text.includes("backend") ||
+      text.includes("api") ||
+      text.includes("express")
+    ) {
+      score = Math.max(
+        score,
+        0.9,
+      );
+    }
   }
 
   return score;
 }
 
-// ==========================================
-// Section / topic matching
-// ==========================================
+// =========================================================
+// SECTION MATCH
+// =========================================================
 
-function sectionMatchScore(question, chunk) {
+function sectionMatchScore(
+  question,
+  chunk,
+) {
   const q = cleanText(question);
-  const section = cleanText(chunk.section || "");
-  const text = cleanText(chunk.text || "");
 
-  // ==========================================
-  // Technology questions
-  // ==========================================
+  const section = cleanText(
+    chunk.section || "",
+  );
 
-  const isTechnologyQuestion =
-    q.includes("technolog") ||
+  const text = cleanText(
+    chunk.text || "",
+  );
+
+  // ---------------------------------------------------------
+  // Technology
+  // ---------------------------------------------------------
+
+  if (
+    q.includes("technology") ||
     q.includes("tech stack") ||
     q.includes("framework") ||
-    q.includes("database") ||
-    q.includes("backend") ||
-    q.includes("frontend");
-
-  if (isTechnologyQuestion) {
-    if (section.includes("technology stack")) {
+    q.includes("database")
+  ) {
+    if (
+      section.includes("technology stack")
+    ) {
       return 1;
     }
 
-    if (text.includes("technology stack")) {
-      return 0.8;
+    if (
+      text.includes("technology stack")
+    ) {
+      return 0.7;
     }
   }
 
-  // ==========================================
-  // Architecture questions
-  // ==========================================
+  // ---------------------------------------------------------
+  // Architecture
+  // ---------------------------------------------------------
 
-  const isArchitectureQuestion =
-    q.includes("architect") ||
-    q.includes("system architecture") ||
-    q.includes("project architecture");
-
-  if (isArchitectureQuestion) {
-    if (section.includes("project architecture")) {
+  if (
+    q.includes("architecture") ||
+    q.includes("system architecture")
+  ) {
+    if (
+      section.includes("project architecture")
+    ) {
       return 1;
     }
 
-    if (text.includes("project architecture")) {
-      return 0.8;
+    if (
+      text.includes("project architecture")
+    ) {
+      return 0.7;
     }
   }
 
-  // ==========================================
-  // Docker questions
-  // ==========================================
+  // ---------------------------------------------------------
+  // Docker
+  // ---------------------------------------------------------
 
-  const isDockerQuestion =
+  if (
     q.includes("docker") ||
     q.includes("container") ||
-    q.includes("docker compose");
-
-  if (isDockerQuestion) {
+    q.includes("build secureshift") ||
+    q.includes("run secureshift")
+  ) {
     if (
-      section.includes("docker") ||
-      section.includes("container")
+      section.includes("docker setup") ||
+      section.includes("docker compose") ||
+      section.includes("full docker")
     ) {
       return 1;
     }
 
     if (
-      text.includes("docker") ||
-      text.includes("container")
+      text.includes("docker compose up") ||
+      text.includes("docker compose") ||
+      text.includes("docker build")
     ) {
       return 0.8;
     }
   }
 
-  // ==========================================
-  // Git / GitHub questions
-  // ==========================================
+  // ---------------------------------------------------------
+  // Git
+  // ---------------------------------------------------------
 
-  const isGitQuestion =
+  if (
     q.includes("git") ||
     q.includes("github") ||
     q.includes("branch") ||
     q.includes("commit") ||
-    q.includes("pull request") ||
-    q.includes("merge");
-
-  if (isGitQuestion) {
+    q.includes("pull request")
+  ) {
     if (
       section.includes("git") ||
-      section.includes("github") ||
       section.includes("pull request")
     ) {
       return 1;
@@ -369,56 +492,45 @@ function sectionMatchScore(question, chunk) {
 
     if (
       text.includes("git") ||
-      text.includes("github") ||
-      text.includes("pull request")
+      text.includes("github")
     ) {
-      return 0.8;
+      return 0.7;
     }
   }
 
-  // ==========================================
-  // Shift questions
-  // ==========================================
+  // ---------------------------------------------------------
+  // Shift
+  // ---------------------------------------------------------
 
-  const isShiftQuestion =
+  if (
     q.includes("shift") ||
     q.includes("schedule") ||
-    q.includes("roster") ||
-    q.includes("applicant") ||
-    q.includes("approve shift") ||
-    q.includes("create a shift") ||
-    q.includes("create shift");
-
-  if (isShiftQuestion) {
+    q.includes("roster")
+  ) {
     if (
       section.includes("shift") ||
       section.includes("schedule") ||
-      section.includes("roster") ||
-      section.includes("applicant")
+      section.includes("roster")
     ) {
       return 1;
     }
 
     if (
       text.includes("shift") ||
-      text.includes("schedule") ||
-      text.includes("roster") ||
-      text.includes("applicant")
+      text.includes("schedule")
     ) {
-      return 0.8;
+      return 0.7;
     }
   }
 
-  // ==========================================
-  // Guard questions
-  // ==========================================
+  // ---------------------------------------------------------
+  // Guard
+  // ---------------------------------------------------------
 
-  const isGuardQuestion =
+  if (
     q.includes("guard") ||
-    q.includes("employee") ||
-    q.includes("worker");
-
-  if (isGuardQuestion) {
+    q.includes("employee")
+  ) {
     if (
       section.includes("guard") ||
       section.includes("employee")
@@ -430,39 +542,41 @@ function sectionMatchScore(question, chunk) {
       text.includes("guard") ||
       text.includes("employee")
     ) {
-      return 0.8;
+      return 0.7;
     }
   }
 
-  // ==========================================
-  // Notification questions
-  // ==========================================
+  // ---------------------------------------------------------
+  // Notifications
+  // ---------------------------------------------------------
 
-  const isNotificationQuestion =
+  if (
     q.includes("notification") ||
     q.includes("notify") ||
-    q.includes("alert");
-
-  if (isNotificationQuestion) {
-    if (section.includes("notification")) {
+    q.includes("alert")
+  ) {
+    if (
+      section.includes("notification")
+    ) {
       return 1;
     }
 
-    if (text.includes("notification")) {
-      return 0.8;
+    if (
+      text.includes("notification")
+    ) {
+      return 0.7;
     }
   }
 
-  // ==========================================
-  // Message questions
-  // ==========================================
+  // ---------------------------------------------------------
+  // Chat / Messages
+  // ---------------------------------------------------------
 
-  const isMessageQuestion =
+  if (
     q.includes("message") ||
     q.includes("conversation") ||
-    q.includes("chat");
-
-  if (isMessageQuestion) {
+    q.includes("chat")
+  ) {
     if (
       section.includes("message") ||
       section.includes("conversation")
@@ -474,46 +588,167 @@ function sectionMatchScore(question, chunk) {
       text.includes("message") ||
       text.includes("conversation")
     ) {
-      return 0.8;
-    }
-  }
-
-  // ==========================================
-  // SecureShift overview questions
-  // ==========================================
-
-  const isOverviewQuestion =
-    q === "secureshift" ||
-    q.includes("what is secureshift") ||
-    q.includes("what does secureshift do") ||
-    q.includes("tell me about secureshift") ||
-    q.includes("about secureshift") ||
-    q.includes("overview of secureshift");
-
-  if (isOverviewQuestion) {
-    if (section.includes("about secureshift")) {
-      return 1;
-    }
-
-    if (
-      text.includes(
-        "secureshift is a workforce management platform",
-      )
-    ) {
-      return 0.8;
+      return 0.7;
     }
   }
 
   return 0;
 }
 
-// ==========================================
-// Semantic search
-// ==========================================
+// =========================================================
+// DOCUMENT RELEVANCE
+// =========================================================
+
+function documentMatchScore(
+  question,
+  chunk,
+) {
+  const q = cleanText(question);
+
+  const document = cleanText(
+    chunk.document || "",
+  );
+
+  let score = 0;
+
+  // SecureShift questions should prefer
+  // SecureShift documentation.
+  if (
+    q.includes("secureshift") &&
+    document.includes("secureshift")
+  ) {
+    score = Math.max(
+      score,
+      0.5,
+    );
+  }
+
+  return score;
+}
+
+// =========================================================
+// SPECIAL QUERY INTENT
+// =========================================================
+
+function getQueryIntent(question) {
+  const q = cleanText(question);
+
+  // Build / run SecureShift
+  if (
+    q.includes("build secureshift") ||
+    q.includes("build and run secureshift") ||
+    q.includes("run secureshift") ||
+    q.includes("how do i build secureshift")
+  ) {
+    return "build";
+  }
+
+  // Docker questions
+  if (
+    q.includes("docker") &&
+    (
+      q.includes("build") ||
+      q.includes("run") ||
+      q.includes("start")
+    )
+  ) {
+    return "build";
+  }
+
+  // Shift creation
+  if (
+    q.includes("create shift") ||
+    q.includes("create a shift") ||
+    q.includes("make a shift")
+  ) {
+    return "shift";
+  }
+
+  return "general";
+}
+
+// =========================================================
+// INTENT MATCH
+// =========================================================
+
+function intentMatchScore(
+  question,
+  chunk,
+) {
+  const intent =
+    getQueryIntent(question);
+
+  if (intent === "build") {
+    const text = cleanText(
+      chunk.text || "",
+    );
+
+    const section = cleanText(
+      chunk.section || "",
+    );
+
+    // Strongest signal:
+    // actual Docker build/run command.
+    if (
+      text.includes(
+        "docker compose up --build",
+      )
+    ) {
+      return 1;
+    }
+
+    if (
+      text.includes("docker compose up") ||
+      text.includes("docker compose build") ||
+      text.includes("docker build")
+    ) {
+      return 0.9;
+    }
+
+    // Docker setup section without actual command
+    // gets a smaller score.
+    if (
+      section.includes("docker setup") ||
+      section.includes("docker compose") ||
+      section.includes("full docker")
+    ) {
+      return 0.5;
+    }
+
+    return 0;
+  }
+
+  if (intent === "shift") {
+    const text = cleanText(
+      chunk.text || "",
+    );
+
+    if (
+      text.includes("create a shift") ||
+      text.includes("create shift")
+    ) {
+      return 1;
+    }
+
+    if (
+      text.includes("shift management")
+    ) {
+      return 0.7;
+    }
+
+    return 0;
+  }
+
+  return 0;
+}
+
+// =========================================================
+// SEMANTIC SEARCH
+// =========================================================
 
 export async function semanticSearch(
   question,
-  topK = 5,
+  topK = 3,
 ) {
   if (
     !question ||
@@ -536,74 +771,117 @@ export async function semanticSearch(
     };
   }
 
-  // ==========================================
-  // Create embedding for user's question
-  // ==========================================
+  // ---------------------------------------------------------
+  // Create question embedding
+  // ---------------------------------------------------------
 
   const questionEmbedding =
     await createEmbedding(question);
 
-  // ==========================================
-  // Score every knowledge-base chunk
-  // ==========================================
+  // ---------------------------------------------------------
+  // Score every chunk
+  // ---------------------------------------------------------
 
-  const scored = vectors.map((chunk) => {
-    const semantic = cosineSimilarity(
-      questionEmbedding,
-      chunk.embedding,
-    );
+  const scored = vectors.map(
+    (chunk) => {
+      const semantic =
+        cosineSimilarity(
+          questionEmbedding,
+          chunk.embedding,
+        );
 
-    const keyword = keywordScore(
-      question,
-      chunk,
-    );
+      const keyword =
+        keywordScore(
+          question,
+          chunk,
+        );
 
-    const sectionMatch =
-      sectionMatchScore(
-        question,
-        chunk,
-      );
+      const sectionMatch =
+        sectionMatchScore(
+          question,
+          chunk,
+        );
 
-    const technicalMatch =
-      technicalMatchScore(
-        question,
-        chunk,
-      );
+      const technicalMatch =
+        technicalMatchScore(
+          question,
+          chunk,
+        );
 
-    /*
-      Final score:
+      const documentMatch =
+        documentMatchScore(
+          question,
+          chunk,
+        );
 
-      Semantic similarity = 30%
-      Keyword matching    = 20%
-      Section matching    = 30%
-      Technical matching  = 20%
-    */
+      const intentMatch =
+        intentMatchScore(
+          question,
+          chunk,
+        );
 
-    const score =
-      semantic * 0.30 +
-      keyword * 0.20 +
-      sectionMatch * 0.30 +
-      technicalMatch * 0.20;
+      /*
+       * Retrieval weighting:
+       *
+       * Semantic similarity = 45%
+       * Keyword matching    = 15%
+       * Section matching    = 10%
+       * Technical matching  = 10%
+       * Document matching   = 5%
+       * Intent matching     = 15%
+       *
+       * Intent matching is particularly useful for
+       * specific questions such as:
+       *
+       * "How do I build SecureShift?"
+       *
+       * because a chunk containing:
+       *
+       * docker compose up --build -d
+       *
+       * should outrank a chunk that merely happens
+       * to belong to a Docker-related section.
+       */
 
-    return {
-      ...chunk,
+      const score =
+        semantic * 0.45 +
+        keyword * 0.15 +
+        sectionMatch * 0.10 +
+        technicalMatch * 0.10 +
+        documentMatch * 0.05 +
+        intentMatch * 0.15;
 
-      semanticScore: semantic,
-      keywordScore: keyword,
-      sectionMatchScore: sectionMatch,
-      technicalMatchScore: technicalMatch,
+      return {
+        ...chunk,
 
-      score,
-    };
-  });
+        semanticScore: semantic,
+        keywordScore: keyword,
+        sectionMatchScore:
+          sectionMatch,
+        technicalMatchScore:
+          technicalMatch,
+        documentMatchScore:
+          documentMatch,
+        intentMatchScore:
+          intentMatch,
 
-  // ==========================================
-  // Highest score first
-  // ==========================================
+        score,
+      };
+    },
+  );
+
+  // ---------------------------------------------------------
+  // Sort highest first
+  // ---------------------------------------------------------
 
   scored.sort(
-    (a, b) => b.score - a.score,
+    (a, b) =>
+      b.score - a.score,
   );
+
+  // ---------------------------------------------------------
+  // Top results
+  // ---------------------------------------------------------
 
   const results = scored.slice(
     0,
@@ -613,9 +891,9 @@ export async function semanticSearch(
   const bestScore =
     results[0]?.score || 0;
 
-  // ==========================================
-  // Debug output
-  // ==========================================
+  // ---------------------------------------------------------
+  // Debug
+  // ---------------------------------------------------------
 
   console.log(
     "\n========== SEMANTIC SEARCH ==========",
@@ -624,6 +902,11 @@ export async function semanticSearch(
   console.log(
     "Question:",
     question,
+  );
+
+  console.log(
+    "Intent:",
+    getQueryIntent(question),
   );
 
   console.log(
@@ -664,6 +947,16 @@ export async function semanticSearch(
 
       console.log(
         "Document:",
+        result.documentMatchScore.toFixed(3),
+      );
+
+      console.log(
+        "Intent:",
+        result.intentMatchScore.toFixed(3),
+      );
+
+      console.log(
+        "Document:",
         result.document,
       );
 
@@ -675,7 +968,7 @@ export async function semanticSearch(
       console.log(
         "Text:",
         String(result.text || "")
-          .substring(0, 300)
+          .substring(0, 500)
           .replace(/\n/g, " "),
       );
     },

@@ -10,7 +10,7 @@ import { registerSOSInteractionRoutes } from "./sos.route-set.js";
 import auth from "../middleware/auth.js";
 
 // ✅ correct role import (your file)
-import { allowRoles } from "../middleware/role.js";
+import { allowRoles } from "../middleware/rbac.js";
 
 const router = express.Router();
 

@@ -4,6 +4,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, FlatList, Pressable, Modal, TouchableOpacity, StyleSheet } from 'react-native';
 
+import EmptyState from '../components/EmptyState';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
@@ -143,12 +144,10 @@ export default function CertificatesScreen() {
       <Text style={styles.title}>Certificates</Text>
 
       {docs.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>No documents</Text>
-          <Text style={styles.emptyText}>
-            Upload a document to see it listed here with expiry details.
-          </Text>
-        </View>
+        <EmptyState
+          title="No documents"
+          message="Upload a document to see it listed here with expiry details."
+        />
       ) : (
         <FlatList
           data={docs}
@@ -266,21 +265,6 @@ const getStyles = (colors: AppColors) =>
       marginTop: 8,
       color: colors.status.rejected,
       fontSize: 12,
-    },
-    emptyCard: {
-      padding: 16,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    emptyTitle: {
-      fontWeight: '800',
-      color: colors.text,
-    },
-    emptyText: {
-      marginTop: 6,
-      color: colors.muted,
     },
     modalOverlay: {
       flex: 1,

@@ -108,6 +108,7 @@ export function authorizeRoles(...allowedRoles) {
   return (req, res, next) => {
     const role = req.user?.role;
     if (!role) return res.status(401).json({ message: "Not authenticated" });
+
     if (!allowedRoles.includes(role)) {
       return res.status(403).json({ message: "Insufficient role" });
     }
@@ -211,3 +212,38 @@ export function requireSelfOrRoles({ paramKey = "userId", roles = [] } = {}) {
     return res.status(403).json({ message: "Insufficient privileges" });
   };
 }
+
+/**
+ * These functions are aliases to authorizeRoles for backward compatibility.
+ * They are intended to replace the deprecated role.js middleware.
+ */
+
+/**
+ * @file middleware/role.js will be removed in the future.
+ * @description Role-based access control middleware for SecureShift.
+ * Allows routes to be protected by specific user roles (admin, employer, guard).
+ *
+ * @usage
+ * app.use(auth, allowRoles('admin'))
+ */
+
+/**
+ * Middleware to allow access based on roles
+ * @param  {...string} allowedRoles - Roles allowed for the route
+ * @returns middleware function
+ */
+export const allowRoles = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Access denied for your role." });
+    }
+    next();
+  };
+};
+
+// Shorthand exports for common roles
+export const guardOnly = allowRoles("guard");
+export const employerOnly = allowRoles("employer");
+export const adminOnly = allowRoles("admin");

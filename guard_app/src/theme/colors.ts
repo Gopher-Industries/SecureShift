@@ -2,7 +2,7 @@ export const lightColors = {
   bg: '#F6F7FB',
   card: '#FFFFFF',
   text: '#111111',
-  muted: '#667085',
+  muted: '#636c80',
   primary: '#274289',
   primarySoft: '#EEF2FF',
   border: '#E7EBF2',
@@ -17,7 +17,7 @@ export const lightColors = {
   purpleSoft: '#ECEBFF',
   status: {
     pending: '#A56600',
-    confirmed: '#1FB04D',
+    confirmed: '#147c35',
     rejected: '#B00020',
   },
 };

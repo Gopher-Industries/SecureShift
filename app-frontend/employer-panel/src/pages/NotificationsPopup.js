@@ -155,11 +155,13 @@ export default function NotificationsPopup({ language }) {
           borderRadius: '10px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
           width: '320px',
+          maxWidth: 'calc(100vw - 24px)',
           maxHeight: '400px',
           overflowY: 'auto',
           zIndex: 1000,
           color: '#333',
         }}>
+          
           <div style={{ padding: '14px 16px', fontWeight: '700', fontSize: '16px', borderBottom: '1px solid #e0e0e0' }}>
           {t.notifications}
           </div>

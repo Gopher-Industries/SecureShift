@@ -36,6 +36,19 @@ const toMinutes = (hhmm) => {
 };
 
 /**
+ * True when `value` is a real UTC calendar date (YYYY-MM-DD).
+ * Uses a Date round-trip so overflow dates like 2026-02-30 are rejected
+ * instead of being normalised to March.
+ */
+const isValidCalendarDate = (value) => {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return (
+    !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+  );
+};
+
+/**
  * Validate and normalise the create-slot payload.
  * Returns the clean fields to persist; throws a 400 on any bad input.
  */
@@ -46,12 +59,7 @@ const validateSlotInput = (body = {}) => {
     throw httpError(400, 'date is required in "YYYY-MM-DD" format.');
   }
 
-  // Reject impossible calendar dates that still match the regex (e.g. 2025-13-40).
-  const parsed = new Date(`${date}T00:00:00.000Z`);
-  if (
-    Number.isNaN(parsed.getTime()) ||
-    parsed.toISOString().slice(0, 10) !== date
-  ) {
+  if (!isValidCalendarDate(date)) {
     throw httpError(400, `date "${date}" is not a valid calendar date.`);
   }
 
@@ -96,6 +104,12 @@ const validateSlotInput = (body = {}) => {
             'recurring.endDate must be in "YYYY-MM-DD" format.',
           );
         }
+        if (!isValidCalendarDate(recurring.endDate)) {
+          throw httpError(
+            400,
+            `recurring.endDate "${recurring.endDate}" is not a valid calendar date.`,
+          );
+        }
         if (recurring.endDate < date) {
           throw httpError(400, "recurring.endDate cannot be before date.");
         }
@@ -128,12 +142,24 @@ const buildDateRangeFilter = (query = {}) => {
     if (typeof startDate !== "string" || !ISO_DATE_REGEX.test(startDate)) {
       throw httpError(400, 'startDate must be in "YYYY-MM-DD" format.');
     }
+    if (!isValidCalendarDate(startDate)) {
+      throw httpError(
+        400,
+        `startDate "${startDate}" is not a valid calendar date.`,
+      );
+    }
     range.$gte = startDate;
   }
 
   if (endDate !== undefined) {
     if (typeof endDate !== "string" || !ISO_DATE_REGEX.test(endDate)) {
       throw httpError(400, 'endDate must be in "YYYY-MM-DD" format.');
+    }
+    if (!isValidCalendarDate(endDate)) {
+      throw httpError(
+        400,
+        `endDate "${endDate}" is not a valid calendar date.`,
+      );
     }
     range.$lte = endDate;
   }
