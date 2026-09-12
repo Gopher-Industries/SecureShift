@@ -753,9 +753,24 @@ body {
   gap: 14px;
   align-items: center;
   background: #fff;
+  border: 1px solid transparent;
   border-radius: 14px;
   padding: 16px;
   box-shadow: var(--shadow-soft);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.ss-incident-row.is-pinned {
+  background: #fffaf0;
+  border-color: #f0c96a;
+  box-shadow: 0 4px 12px rgba(180, 126, 15, 0.12);
+}
+
+.ss-incident-row.is-pinned .ss-incident-row__line {
+  background: #f4b740;
 }
 
 .ss-incident-row__line {
@@ -806,6 +821,81 @@ body {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.ss-incident-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ss-pin-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d7deeb;
+  border-radius: 8px;
+  background: #fff;
+  color: #75819a;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.ss-pin-btn:hover {
+  background: #f7f9fc;
+  border-color: #aab5c8;
+  transform: translateY(-1px);
+}
+
+.ss-pin-btn.is-pinned {
+  background: #fff1bf;
+  border-color: #e4b943;
+  color: #8a5a00;
+}
+
+.ss-pin-btn:focus-visible {
+  outline: 3px solid rgba(18, 73, 157, 0.25);
+  outline-offset: 2px;
+}
+
+.ss-pin-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.ss-pinned-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #fff1bf;
+  color: #8a5a00;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ss-pinned-indicator__icon {
+  width: 12px;
+  height: 12px;
+}
+
+.ss-pin-error {
+  margin-bottom: 12px;
+  border: 1px solid #f4b4b4;
+  border-radius: 8px;
+  background: #fff1f1;
+  color: #b42318;
+  padding: 10px 12px;
+  font-size: 12px;
 }
 
 .ss-review-btn {
@@ -1088,8 +1178,12 @@ body {
   .ss-incident-id,
   .ss-incident-date,
   .ss-incident-badges,
-  .ss-review-btn {
+  .ss-incident-actions {
     grid-column: 3;
+  }
+
+  .ss-incident-actions {
+    justify-content: flex-start;
   }
 
   .ss-reviews__track {
