@@ -1,7 +1,7 @@
 import express from "express";
 import * as equipmentController from "../controllers/equipment.controller.js";
 import auth from "../middleware/auth.js";
-import { allowRoles } from "../middleware/rbac.js";
+import { authorizeRoles } from "../middleware/rbac.js";
 
 const router = express.Router();
 
@@ -51,7 +51,12 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post("/", auth, equipmentController.createEquipment);
+router.post(
+  "/",
+  auth,
+  authorizeRoles("guard", "admin"),
+  equipmentController.createEquipment,
+);
 
 /**
  * @swagger
@@ -93,7 +98,12 @@ router.post("/", auth, equipmentController.createEquipment);
  *       404:
  *         description: Equipment not found
  */
-router.patch("/:id/assign", auth, equipmentController.assignEquipment);
+router.patch(
+  "/:id/assign",
+  auth,
+  authorizeRoles("guard", "admin"),
+  equipmentController.assignEquipment,
+);
 
 /**
  * @swagger
@@ -136,7 +146,12 @@ router.patch("/:id/assign", auth, equipmentController.assignEquipment);
  *       404:
  *         description: Equipment not found
  */
-router.patch("/:id/report", auth, equipmentController.reportEquipment);
+router.patch(
+  "/:id/report",
+  auth,
+  authorizeRoles("guard", "admin"),
+  equipmentController.reportEquipment,
+);
 
 /**
  * @swagger
@@ -168,7 +183,7 @@ router.patch("/:id/report", auth, equipmentController.reportEquipment);
 router.get(
   "/guard/:guardId",
   auth,
-  allowRoles("guard", "admin"),
+  authorizeRoles("guard", "admin"),
   equipmentController.getEquipmentByGuard,
 );
 
