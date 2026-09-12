@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import translations from "../i18n/translations";
+import translations from '../i18n/translations';
+import http from '../lib/http';
+import './GuardProfile.css';
 import RefreshButton from '../components/RefreshButton';
-
-// ❌ removed local dummy guardData
 
 const allSkills = [
   'CCTV Monitoring',
@@ -18,14 +18,11 @@ const allSkills = [
   'Surveillance',
   'Vehicle Patrol',
 ];
+
 const availabilityOptions = ['Available', 'Unavailable', 'On Leave'];
 
-// NEW: read API base from env (Vite or CRA) ---------------------------------
-const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api/v1';
-// NEW
-
-function GuardProfiles({ language }) {
-  const t = translations[language || "en"] || translations.en;
+export default function GuardProfiles({ language }) {
+  const t = translations[language || 'en'] || translations.en;
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSkills, setSelectedSkills] = useState([]);
@@ -36,10 +33,11 @@ function GuardProfiles({ language }) {
   const skillsRef = useRef();
   const availabilityRef = useRef();
 
-  // NEW: state for API data / loading / error ---------------------------------
-  const [guards, setGuards] = useState([]); // NEW
-  const [loading, setLoading] = useState(true); // NEW
-  const [error, setError] = useState(''); // NEW
+  const [guards, setGuards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -51,9 +49,6 @@ function GuardProfiles({ language }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState(null);
-
   const fetchGuards = async (isManualRefresh = false) => {
     if (isManualRefresh) {
       setIsRefreshing(true);
@@ -63,21 +58,9 @@ function GuardProfiles({ language }) {
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/users/guards`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await http.get('/users/guards');
+      const data = res.data;
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `Request failed (${res.status})`);
-      }
-
-      const data = await res.json();
       const list = Array.isArray(data) ? data : Array.isArray(data?.guards) ? data.guards : [];
 
       const normalized = list.map((g, i) => ({
@@ -97,7 +80,7 @@ function GuardProfiles({ language }) {
       setGuards(normalized);
       setLastRefreshed(new Date());
     } catch (e) {
-      setError(e.message || 'Failed to fetch guards');
+      setError(e.response?.data?.message || e.message || 'Failed to fetch guards');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -112,180 +95,61 @@ function GuardProfiles({ language }) {
     setSelectedSkills((prev) =>
       prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
     );
+
   const toggleAvailability = (avail) =>
     setSelectedAvailability((prev) =>
       prev.includes(avail) ? prev.filter((a) => a !== avail) : [...prev, avail]
     );
 
-  // UPDATED: filter the fetched guards (not the old dummy array) --------------
   const filteredGuards = guards.filter(
-    (
-      guard // UPDATED
-    ) =>
+    (guard) =>
       (selectedSkills.length === 0 ||
         selectedSkills.every((skill) => (guard.skills || []).includes(skill))) &&
       (selectedAvailability.length === 0 || selectedAvailability.includes(guard.availability))
-  ); // UPDATED
+  );
 
   const indexOfLastCard = currentPage * cardsPerPage;
   const indexOfFirstCard = indexOfLastCard - cardsPerPage;
   const currentCards = filteredGuards.slice(indexOfFirstCard, indexOfLastCard);
-  const totalPages = Math.max(1, Math.ceil(filteredGuards.length / cardsPerPage)); // small safety
-
-  // ===== Inline Styles =====
-  const pageStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '100vh',
-    backgroundColor: '#fafafa',
-  };
-  const contentStyle = { flex: 1, padding: '1rem' };
-  const filtersStyle = { display: 'flex', justifyContent: 'center', gap: '1rem', margin: '1rem 0' };
-  const dropdownStyle = { position: 'relative', display: 'inline-block' };
-
-  const dropdownButtonStyle = (open = false, selectedCount = 0) => ({
-    padding: '8px 16px',
-    borderRadius: '9999px',
-    border: 'none',
-    backgroundColor: open || selectedCount > 0 ? '#ababab' : '#274b93',
-    color: '#fff',
-    fontFamily: 'Poppins, sans-serif',
-    fontWeight: 500,
-    fontSize: '16px',
-    cursor: 'pointer',
-    minWidth: '180px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    transition: 'background 0.2s ease',
-  });
-
-  const dropdownContentStyle = {
-    position: 'absolute',
-    top: '110%',
-    left: 0,
-    backgroundColor: '#fff',
-    border: '1px solid #ccc',
-    borderRadius: '12px',
-    padding: '0.5rem 1rem',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-    zIndex: 10,
-    maxHeight: '250px',
-    overflowY: 'auto',
-    whiteSpace: 'nowrap',
-    width: 'max-content',
-    minWidth: '180px',
-  };
-
-  const dropdownLabelStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontFamily: 'Poppins, sans-serif',
-    fontSize: '16px',
-    fontWeight: 500,
-    marginBottom: '6px',
-    cursor: 'pointer',
-  };
-  const checkboxStyle = {
-    width: '18px',
-    height: '18px',
-    accentColor: '#274b93',
-    cursor: 'pointer',
-  };
-  const guardContainerStyle = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    padding: '2rem',
-    gap: '1rem',
-  };
-  const guardCardStyle = {
-    border: '1px solid #e0e0e0',
-    borderRadius: '12px',
-    padding: '20px 24px',
-    backgroundColor: '#ababab',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-    textAlign: 'center',
-    fontFamily: 'Poppins, sans-serif',
-    flex: '1 1 260px',
-    maxWidth: '280px',
-    boxSizing: 'border-box',
-  };
-  const guardImageStyle = {
-    borderRadius: '50%',
-    width: '100px',
-    height: '100px',
-    marginBottom: '1rem',
-    objectFit: 'cover',
-  }; // tiny improvement
-  const backButtonStyle = {
-    display: 'block',
-    margin: '2rem auto',
-    padding: '12px 32px',
-    border: 'none',
-    borderRadius: '9999px',
-    backgroundColor: '#274b93',
-    color: '#fff',
-    fontSize: '16px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'background 0.2s ease',
-    textAlign: 'center',
-  };
-  const paginationStyle = { textAlign: 'center', margin: '1rem 0' };
-  const paginationButtonStyle = (active = false) => ({
-    margin: '0 4px',
-    padding: '8px 12px',
-    borderRadius: '12px',
-    border: 'none',
-    backgroundColor: active ? '#ababab' : '#274b93',
-    color: active ? '#000' : '#fff',
-    fontFamily: 'Poppins, sans-serif',
-    fontWeight: 500,
-    fontSize: '16px',
-    cursor: 'pointer',
-    transition: 'background 0.2s ease',
-  });
+  const totalPages = Math.max(1, Math.ceil(filteredGuards.length / cardsPerPage));
 
   return (
-    <div style={pageStyle}>
-      <div style={contentStyle}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '1rem' }}>
-          <h2 style={{ margin: 0 }}>{t.guardProfiles}</h2>
+    <div className="gp-page">
+      <div className="gp-content">
+        <div className="gp-header">
+          <h2 className="gp-title">{t.guardProfiles}</h2>
           <RefreshButton
             onRefresh={() => fetchGuards(true)}
             isRefreshing={isRefreshing}
             lastRefreshed={lastRefreshed}
           />
         </div>
-        {/* NEW: loading / error / empty states */}
-        {loading && <p style={{ textAlign: 'center' }}>Loading guards…</p>} {/* NEW */}
-        {!loading && error /* NEW */ && (
-          <p style={{ textAlign: 'center', color: '#b00020' }}>Failed to load: {error}</p> /* NEW */
+
+        {loading && <p className="gp-status-msg">Loading guards…</p>}
+        {!loading && error && <p className="gp-status-msg error">Failed to load: {error}</p>}
+        {!loading && !error && guards.length === 0 && (
+          <p className="gp-status-msg">No guards found.</p>
         )}
-        {!loading && !error && guards.length === 0 /* NEW */ && (
-          <p style={{ textAlign: 'center' }}>No guards found.</p> /* NEW */
-        )}
+
         {/* Filters */}
-        <div style={filtersStyle}>
-          <div style={dropdownStyle} ref={skillsRef}>
+        <div className="gp-filters">
+          <div className="gp-dropdown" ref={skillsRef}>
             <button
-              style={dropdownButtonStyle(skillsOpen, selectedSkills.length)}
+              className={`gp-dropdown-btn ${skillsOpen || selectedSkills.length > 0 ? 'active' : ''}`}
               onClick={() => setSkillsOpen(!skillsOpen)}
             >
               Filter by Skills {selectedSkills.length > 0 ? `(${selectedSkills.length})` : ''}
-              <span style={{ marginLeft: '8px' }}>▼</span>
+              <span>▼</span>
             </button>
             {skillsOpen && (
-              <div style={dropdownContentStyle}>
+              <div className="gp-dropdown-menu">
                 {allSkills.map((skill) => (
-                  <label key={skill} style={dropdownLabelStyle}>
+                  <label key={skill} className="gp-dropdown-label">
                     <input
                       type="checkbox"
                       checked={selectedSkills.includes(skill)}
                       onChange={() => toggleSkill(skill)}
-                      style={checkboxStyle}
+                      className="gp-checkbox"
                     />
                     {skill}
                   </label>
@@ -294,24 +158,26 @@ function GuardProfiles({ language }) {
             )}
           </div>
 
-          <div style={dropdownStyle} ref={availabilityRef}>
+          <div className="gp-dropdown" ref={availabilityRef}>
             <button
-              style={dropdownButtonStyle(availabilityOpen, selectedAvailability.length)}
+              className={`gp-dropdown-btn ${
+                availabilityOpen || selectedAvailability.length > 0 ? 'active' : ''
+              }`}
               onClick={() => setAvailabilityOpen(!availabilityOpen)}
             >
               Filter by Availability{' '}
               {selectedAvailability.length > 0 ? `(${selectedAvailability.length})` : ''}
-              <span style={{ marginLeft: '8px' }}>▼</span>
+              <span>▼</span>
             </button>
             {availabilityOpen && (
-              <div style={dropdownContentStyle}>
+              <div className="gp-dropdown-menu">
                 {availabilityOptions.map((avail) => (
-                  <label key={avail} style={dropdownLabelStyle}>
+                  <label key={avail} className="gp-dropdown-label">
                     <input
                       type="checkbox"
                       checked={selectedAvailability.includes(avail)}
                       onChange={() => toggleAvailability(avail)}
-                      style={checkboxStyle}
+                      className="gp-checkbox"
                     />
                     {avail}
                   </label>
@@ -320,11 +186,12 @@ function GuardProfiles({ language }) {
             )}
           </div>
         </div>
+
         {/* Guard Cards */}
-        <div style={guardContainerStyle}>
+        <div className="gp-card-container">
           {currentCards.map((guard) => (
-            <div key={guard.id} style={guardCardStyle}>
-              <img src={guard.photo} alt={guard.name} style={guardImageStyle} />
+            <div key={guard.id} className="gp-card">
+              <img src={guard.photo} alt={guard.name} className="gp-card-img" />
               <h3>{guard.name}</h3>
               <p>
                 <strong>Skills:</strong> {(guard.skills || []).join(', ')}
@@ -335,30 +202,25 @@ function GuardProfiles({ language }) {
             </div>
           ))}
         </div>
+
         {/* Pagination */}
-        <div style={paginationStyle}>
+        <div className="gp-pagination">
           {Array.from({ length: totalPages }, (_, i) => (
             <button
               key={i + 1}
-              style={paginationButtonStyle(currentPage === i + 1)}
+              className={`gp-page-btn ${currentPage === i + 1 ? 'active' : ''}`}
               onClick={() => setCurrentPage(i + 1)}
             >
               {i + 1}
             </button>
           ))}
         </div>
+
         {/* Back Button */}
-        <button
-          style={backButtonStyle}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#ababab')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#274b93')}
-          onClick={() => navigate('/employer-dashboard')}
-        >
+        <button className="gp-back-btn" onClick={() => navigate('/employer-dashboard')}>
           Back to Dashboard
         </button>
       </div>
     </div>
   );
 }
-
-export default GuardProfiles;

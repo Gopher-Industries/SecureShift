@@ -196,7 +196,7 @@ const formatLocation = (location) => {
     location.postcode,
   ]
     .filter(Boolean)
-    .join(", ");
+    .join(', ');
 };
 
 const formatShiftDate = (value) => {
@@ -266,12 +266,12 @@ const getShiftStatusCategory = (shift) => {
   }
 
   if (
-    tone.includes("confirmed") ||
-    tone.includes("open") ||
-    text.includes("confirmed") ||
-    text.includes("open")
+    tone.includes('confirmed') ||
+    tone.includes('open') ||
+    text.includes('confirmed') ||
+    text.includes('open')
   ) {
-    return "Open";
+    return 'Open';
   }
 
   return "All";
@@ -316,47 +316,47 @@ export default function EmployerDashboard() {
 
   const [incidents, setIncidents] = useState([
     {
-      id: "INC-9921",
-      guard: "John Doe",
-      shift: "Crowd Control - Marvel",
-      date: "09-08-2025",
-      time: "10:45 PM",
-      status: "Pending",
-      severity: "High",
+      id: 'INC-9921',
+      guard: 'John Doe',
+      shift: 'Crowd Control - Marvel',
+      date: '09-08-2025',
+      time: '10:45 PM',
+      status: 'Pending',
+      severity: 'High',
       description:
-        "A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.",
+        'A patron was found attempting to bypass security with restricted items. Incident was recorded and patron escorted out.',
       photos: [
-        "https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80",
+        'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=300&q=80',
       ],
-      comments: "",
+      comments: '',
     },
     {
-      id: "INC-9920",
-      guard: "Leah Carter",
-      shift: "Gate Check - MCG",
-      date: "08-08-2025",
-      time: "08:15 PM",
-      status: "Resolved",
-      severity: "Medium",
+      id: 'INC-9920',
+      guard: 'Leah Carter',
+      shift: 'Gate Check - MCG',
+      date: '08-08-2025',
+      time: '08:15 PM',
+      status: 'Resolved',
+      severity: 'Medium',
       description:
-        "A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.",
+        'A disagreement between attendees escalated near Gate 2. Security separated both parties and incident was de-escalated without injury.',
       photos: [],
-      comments: "Resolved on site, no further action required.",
+      comments: 'Resolved on site, no further action required.',
     },
     {
-      id: "INC-9919",
-      guard: "Aiden Ross",
-      shift: "Shopping Centre Security - Chadstone",
-      date: "07-08-2025",
-      time: "03:05 PM",
-      status: "Pending",
-      severity: "Low",
+      id: 'INC-9919',
+      guard: 'Aiden Ross',
+      shift: 'Shopping Centre Security - Chadstone',
+      date: '07-08-2025',
+      time: '03:05 PM',
+      status: 'Pending',
+      severity: 'Low',
       description:
-        "Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.",
+        'Minor slip hazard reported in food court area. Zone was isolated and cleaning team notified.',
       photos: [
-        "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80",
+        'https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&w=300&q=80',
       ],
-      comments: "",
+      comments: '',
     },
   ]);
 
@@ -695,28 +695,25 @@ export default function EmployerDashboard() {
   const reviews = useMemo(
     () => [
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
       {
-        name: "Marcus Johnson",
-        role: "Downtown Plaza",
+        name: 'Marcus Johnson',
+        role: 'Downtown Plaza',
         stars: 5,
-        text:
-          "Always punctual, professional and kept the site secure throughout a difficult overnight shift.",
-        date: "May 4, 2025",
+        text: 'Always punctual, professional and kept the site secure throughout a difficult overnight shift.',
+        date: 'May 4, 2025',
       },
     ],
     []
@@ -928,7 +925,7 @@ export default function EmployerDashboard() {
 
     setIncidentDraft({
       severity: incident.severity,
-      comments: incident.comments || "",
+      comments: incident.comments || '',
     });
   };
 
@@ -1874,10 +1871,10 @@ export default function EmployerDashboard() {
               className="ss-reset-btn"
               type="button"
               onClick={() => {
-                setIncidentQuery("");
-                setIncidentStatusFilter("All");
-                setIncidentSeverityFilter("All");
-                setIncidentSort("Newest");
+                setIncidentQuery('');
+                setIncidentStatusFilter('All');
+                setIncidentSeverityFilter('All');
+                setIncidentSort('Newest');
               }}
             >
               {t("reset")}
@@ -1922,9 +1919,9 @@ export default function EmployerDashboard() {
 
                 <div className="ss-incident-avatar">
                   {inc.guard
-                    .split(" ")
+                    .split(' ')
                     .map((name) => name[0])
-                    .join("")
+                    .join('')
                     .slice(0, 2)}
                 </div>
 
@@ -2292,7 +2289,7 @@ export default function EmployerDashboard() {
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    "Resolved",
+                    'Resolved',
                     incidentDraft.severity,
                     incidentDraft.comments
                   )
@@ -2306,7 +2303,7 @@ export default function EmployerDashboard() {
                 onClick={() =>
                   updateIncident(
                     selectedIncident.id,
-                    "Pending",
+                    'Pending',
                     incidentDraft.severity,
                     incidentDraft.comments
                   )

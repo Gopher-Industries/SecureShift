@@ -1,0 +1,221 @@
+/* =========================
+   Guard Profiles Page
+   ========================= */
+
+.gp-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--background);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.gp-content {
+  flex: 1;
+  padding: 1rem;
+}
+
+.gp-title {
+  text-align: center;
+  margin-top: 1rem;
+  color: var(--text-primary);
+}
+
+.gp-status-msg {
+  text-align: center;
+  font-size: 15px;
+  margin: 1.5rem 0;
+  color: var(--text-secondary);
+}
+
+.gp-status-msg.error {
+  color: #dc2626;
+}
+
+/* Filters */
+
+.gp-filters {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.gp-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.gp-dropdown-btn {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: none;
+  background-color: var(--primary);
+  color: #ffffff;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 16px;
+  cursor: pointer;
+  min-width: 180px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.gp-dropdown-btn:hover {
+  opacity: 0.9;
+}
+
+.gp-dropdown-btn.active {
+  background-color: var(--border);
+  color: var(--text-primary);
+}
+
+.gp-dropdown-menu {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 4px 12px var(--shadow);
+  z-index: 10;
+  max-height: 250px;
+  overflow-y: auto;
+  white-space: nowrap;
+  width: max-content;
+  min-width: 180px;
+}
+
+.gp-dropdown-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.gp-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Guard Cards Grid */
+
+.gp-card-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.gp-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  background-color: var(--surface);
+  box-shadow: 0 2px 6px var(--shadow);
+  text-align: center;
+  font-family: inherit;
+  flex: 0 0 calc(25% - 1rem);
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+  .gp-card {
+    flex: 0 0 calc(33.333% - 1rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .gp-card {
+    flex: 0 0 calc(50% - 1rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .gp-card {
+    flex: 0 0 100%;
+  }
+}
+
+.gp-card-img {
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 1rem;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.gp-card h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.gp-card p {
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.gp-card strong {
+  color: var(--text-primary);
+}
+
+/* Pagination & Buttons */
+
+.gp-pagination {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.gp-page-btn {
+  margin: 0 4px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: none;
+  background-color: var(--primary);
+  color: #ffffff;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.gp-page-btn.active {
+  background-color: var(--border);
+  color: var(--text-primary);
+}
+
+.gp-back-btn {
+  display: block;
+  margin: 2rem auto;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 9999px;
+  background-color: var(--primary);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  text-align: center;
+}
+
+.gp-back-btn:hover {
+  opacity: 0.9;
+}

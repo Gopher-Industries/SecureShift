@@ -169,9 +169,7 @@ function ContactForm({
     } catch (error) {
       setSubmissionStatus({
         type: 'error',
-        message:
-          error?.message ||
-          'We could not submit your message. Please try again.',
+        message: error?.message || 'We could not submit your message. Please try again.',
       });
     } finally {
       setIsSubmitting(false);
@@ -179,12 +177,7 @@ function ContactForm({
   };
 
   return (
-    <form
-      className="contact-form"
-      onSubmit={handleSubmit}
-      noValidate
-      aria-label="Contact form"
-    >
+    <form className="contact-form" onSubmit={handleSubmit} noValidate aria-label="Contact form">
       <div className="contact-form__group">
         <label htmlFor="contact-name">
           Name <span aria-hidden="true">*</span>
@@ -206,11 +199,7 @@ function ContactForm({
         />
 
         {errors.name && (
-          <p
-            id="contact-name-error"
-            className="contact-form__error"
-            role="alert"
-          >
+          <p id="contact-name-error" className="contact-form__error" role="alert">
             {errors.name}
           </p>
         )}
@@ -237,11 +226,7 @@ function ContactForm({
         />
 
         {errors.email && (
-          <p
-            id="contact-email-error"
-            className="contact-form__error"
-            role="alert"
-          >
+          <p id="contact-email-error" className="contact-form__error" role="alert">
             {errors.email}
           </p>
         )}
@@ -320,9 +305,7 @@ function ContactForm({
             Message <span aria-hidden="true">*</span>
           </label>
 
-          <span className="contact-form__counter">
-            {values.message.length}/1000
-          </span>
+          <span className="contact-form__counter">{values.message.length}/1000</span>
         </div>
 
         <textarea
@@ -336,17 +319,11 @@ function ContactForm({
           rows={6}
           maxLength={1000}
           aria-invalid={Boolean(errors.message)}
-          aria-describedby={
-            errors.message ? 'contact-message-error' : undefined
-          }
+          aria-describedby={errors.message ? 'contact-message-error' : undefined}
         />
 
         {errors.message && (
-          <p
-            id="contact-message-error"
-            className="contact-form__error"
-            role="alert"
-          >
+          <p id="contact-message-error" className="contact-form__error" role="alert">
             {errors.message}
           </p>
         )}
