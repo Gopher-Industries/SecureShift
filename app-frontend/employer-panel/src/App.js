@@ -32,13 +32,10 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
-
 import AIAssistant from './pages/AIAssistant';
 
 import Sidebar from './components/Sidebar';
 import { NotificationProvider } from './components/NotificationContext';
-
-
 import i18n from './i18n';
 import AIChatWidget from "./components/AIChatWidget";
 function TaskRoute() {
