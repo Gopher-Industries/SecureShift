@@ -1,5 +1,6 @@
 import express from "express";
 import auth from "../middleware/auth.js";
+import { authorizeRoles } from "../middleware/rbac.js";
 import {
   approvePayroll,
   downloadPayrollExport,
@@ -10,22 +11,6 @@ import {
 } from "../controllers/payroll.controller.js";
 
 const router = express.Router();
-
-const authorizeRole =
-  (...allowedRoles) =>
-  (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    if (!allowedRoles.includes(req.user.role)) {
-      return res
-        .status(403)
-        .json({ message: "Forbidden: insufficient permissions" });
-    }
-
-    next();
-  };
 
 /**
  * @swagger
@@ -84,7 +69,7 @@ const authorizeRole =
  *       403:
  *         description: Forbidden
  */
-router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayroll);
+router.get("/", auth, authorizeRoles("admin", "employer", "guard"), getPayroll);
 /**
  * @swagger
  * /api/v1/payroll/export:
@@ -142,19 +127,19 @@ router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayroll);
 router.get(
   "/export",
   auth,
-  authorizeRole("admin", "employer", "guard"),
+  authorizeRoles("admin", "employer", "guard"),
   downloadPayrollExport,
 );
 router.get(
   "/export/csv",
   auth,
-  authorizeRole("admin", "employer", "guard"),
+  authorizeRoles("admin", "employer", "guard"),
   downloadPayrollCsv,
 );
 router.get(
   "/export/pdf",
   auth,
-  authorizeRole("admin", "employer", "guard"),
+  authorizeRoles("admin", "employer", "guard"),
   downloadPayrollPdf,
 );
 /**
@@ -192,7 +177,7 @@ router.get(
 router.post(
   "/approve",
   auth,
-  authorizeRole("admin", "employer"),
+  authorizeRoles("admin", "employer"),
   approvePayroll,
 );
 /**
@@ -230,7 +215,7 @@ router.post(
 router.post(
   "/process",
   auth,
-  authorizeRole("admin", "employer"),
+  authorizeRoles("admin", "employer"),
   processPayroll,
 );
 
