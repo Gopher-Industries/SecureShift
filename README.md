@@ -168,7 +168,7 @@ Retrieval-Augmented Generation (RAG) setup.
 The AI knowledge base is based on:
 
 
-```text
+
 app-backend/knowledge-base/docs/onboarding.txt
 
 The generated vector index is stored at:
