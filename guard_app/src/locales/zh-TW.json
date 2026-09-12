@@ -323,7 +323,13 @@
     "selectDate": "選擇日期",
     "startTime": "開始時間",
     "endTime": "結束時間",
-    "missingInfoMsg": "請選擇日期，開始時間和結束時間。"
+    "missingInfoMsg": "請選擇日期，開始時間和結束時間。",
+    "hoursToday": "今日工作時長",
+    "hoursWeek": "本週工作時長",
+    "shiftsWeek": "本週輪班狀況",
+    "dayHourWarn": "今天工作時間已超過建議時長，請休息一天。",
+    "weekShiftWarn": "本週輪班次數已超過建議次數，請休息一週。",
+    "weekHourWarn": "本週工作時長已超過建議時長，請休息一週。"
   },
   "editProfile": {
     "title": "編輯您的個人資訊",

@@ -322,7 +322,13 @@
     "selectDate": "Select date",
     "startTime": "Start time",
     "endTime": "End time",
-    "missingInfoMsg": "Please select a date, start time, and end time."
+    "missingInfoMsg": "Please select a date, start time, and end time.",
+    "hoursToday": "Hours worked Today",
+    "hoursWeek": "Hours this Week",
+    "shiftsWeek": "Shifts this Week",
+    "dayHourWarn": "Exceeded number of recommended work hours today. Please rest for the day.",
+    "weekShiftWarn": "Exceeded number of recommended shifts this week. Please rest for the week.",
+    "weekHourWarn": "Exceeded number of recommended work hours this week. Please rest for the week."
   },
   "editProfile": {
     "title": "Edit Your Profile",
