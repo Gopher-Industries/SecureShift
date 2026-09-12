@@ -57,5 +57,3 @@ if (host && !["localhost", "127.0.0.1", "::1"].includes(host)) {
 console.log(
   `GOOD: [Test] Security check passed. Target: ${dbName} on ${host || "localhost"}`,
 );
-
-jest.setTimeout(30000);
