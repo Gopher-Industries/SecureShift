@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import "./EmployerDashboard.css";
 import RefreshButton from "../components/RefreshButton";
 
+
 /* --- icons --- */
 const IconCalendar = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -1318,10 +1319,10 @@ export default function EmployerDashboard() {
           {/* Pagination */}
           <div className="ss-pagination">
             <div className="ss-pagination__meta">
-              {t("showing", {
+              {t('showing', {
                 start: showingStart,
                 end: showingEnd,
-                total: filteredShifts.length,
+                total: filteredShifts.length
               })}
             </div>
 
@@ -1391,405 +1392,9 @@ export default function EmployerDashboard() {
           </h2>
 
           <p className="ss-section-subtitle">
-            Fatigue signals from recent shifts
-          </p>
-        </div>
-
-        <div className="ss-dashboard-card">
-          {fatigueLoading && (
-            <div className="ss-fatigue__loading">
-              Loading fatigue data...
-            </div>
-          )}
-
-          {fatigueError && (
-            <div className="ss-fatigue__error">
-              {fatigueError}
-            </div>
-          )}
-
-          {!fatigueLoading &&
-            !fatigueError && (
-              <div className="ss-fatigue">
-                <div className="ss-fatigue__summary">
-                  <div className="ss-fatigue__title">
-                    Risk Signals
-                  </div>
-
-                  <div className="ss-fatigue__stats">
-                    <div className="ss-fatigue__stat">
-                      <div className="ss-fatigue__stat-value">
-                        {fatigueDashboard
-                          ?.summary
-                          ?.guardsMonitored ??
-                          "--"}
-                      </div>
-
-                      <div className="ss-fatigue__stat-label">
-                        Guards Monitored
-                      </div>
-                    </div>
-
-                    <div className="ss-fatigue__stat">
-                      <div className="ss-fatigue__stat-value">
-                        {fatigueDashboard
-                          ?.summary
-                          ?.fatiguedGuards ??
-                          "--"}
-                      </div>
-
-                      <div className="ss-fatigue__stat-label">
-                        Fatigued Guards
-                      </div>
-                    </div>
-
-                    <div className="ss-fatigue__stat">
-                      <div className="ss-fatigue__stat-value">
-                        {fatigueDashboard
-                          ?.summary
-                          ?.averageFatigueScore ??
-                          "--"}
-                        %
-                      </div>
-
-                      <div className="ss-fatigue__stat-label">
-                        Avg Fatigue Score
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="ss-fatigue__list">
-                  <div className="ss-fatigue__title">
-                    Fatigued Guards
-                  </div>
-
-                  {fatigueDashboard?.summary
-                    ?.guardsMonitored === 0 ? (
-                    <div className="ss-fatigue__empty">
-                      No guards are currently
-                      being monitored.
-                    </div>
-                  ) : fatiguedGuardList.length ===
-                    0 ? (
-                    <div className="ss-fatigue__empty">
-                      No fatigue risks detected
-                      yet.
-                    </div>
-                  ) : (
-                    <div className="ss-fatigue__rows">
-                      {fatiguedGuardList.map(
-                        (guard) => {
-                          const isExpanded =
-                            expandedGuard?.guardId ===
-                            guard.guardId;
-
-                          const guardShifts =
-                            shifts.filter(
-                              (shift) =>
-                                shift.acceptedBy?._id ===
-                                guard.guardId
-                            );
-
-                          const guardName =
-                            guardShifts[0]
-                              ?.guardName ??
-                            guard.guardId;
-
-                          return (
-                            <div
-                              className={`ss-fatigue__row ${
-                                isExpanded
-                                  ? "is-expanded"
-                                  : ""
-                              }`}
-                              key={guard.guardId}
-                              role="button"
-                              tabIndex={0}
-                              onClick={() =>
-                                setExpandedGuard(
-                                  isExpanded
-                                    ? null
-                                    : {
-                                        ...guard,
-                                        guardName,
-                                        shifts:
-                                          guardShifts,
-                                      }
-                                )
-                              }
-                              onKeyDown={(event) => {
-                                if (
-                                  event.key ===
-                                    "Enter" ||
-                                  event.key === " "
-                                ) {
-                                  event.preventDefault();
-
-                                  setExpandedGuard(
-                                    isExpanded
-                                      ? null
-                                      : {
-                                          ...guard,
-                                          guardName,
-                                          shifts:
-                                            guardShifts,
-                                        }
-                                  );
-                                }
-                              }}
-                            >
-                              <div className="ss-fatigue__guard">
-                                <div className="ss-fatigue__guard-name">
-                                  {guardName}
-                                </div>
-
-                                <div className="ss-fatigue__guard-sub">
-                                  Fatigue Score{" "}
-                                  {
-                                    guard.fatigueScore
-                                  }
-                                  %
-                                </div>
-                              </div>
-
-                              <div className="ss-fatigue__metric">
-                                <span className="ss-fatigue__metric-value">
-                                  {
-                                    guard.metrics
-                                      .shiftsThisWeek
-                                  }
-                                </span>
-
-                                <span className="ss-fatigue__metric-label">
-                                  Shifts This Week
-                                </span>
-                              </div>
-
-                              <div className="ss-fatigue__metric">
-                                <span className="ss-fatigue__metric-value">
-                                  {
-                                    guard.metrics
-                                      .hoursThisDay
-                                  }
-                                </span>
-
-                                <span className="ss-fatigue__metric-label">
-                                  Hours Today
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        }
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-        </div>
-
-        {/* =====================================================
-            FATIGUE MODAL
-        ====================================================== */}
-        {expandedGuard && (
-          <div
-            className="ss-fatigue__modal-backdrop"
-            role="dialog"
-            aria-modal="true"
-            onClick={() =>
-              setExpandedGuard(null)
-            }
-          >
-            <div
-              className="ss-fatigue__modal"
-              onClick={(event) =>
-                event.stopPropagation()
-              }
-            >
-              <div className="ss-fatigue__modal-header">
-                <div>
-                  <div className="ss-fatigue__modal-title">
-                    {expandedGuard.guardName}
-                  </div>
-
-                  <div className="ss-fatigue__guard-sub">
-                    Fatigue Score{" "}
-                    {expandedGuard.fatigueScore}%
-                  </div>
-                </div>
-
-                <button
-                  className="ss-fatigue__modal-close"
-                  onClick={() =>
-                    setExpandedGuard(null)
-                  }
-                  aria-label="Close fatigue details"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="ss-fatigue__modal-metrics">
-                <div className="ss-fatigue__modal-metrics-title">
-                  Current Workload
-                </div>
-
-                <div className="ss-fatigue__modal-metrics-item">
-                  <span>
-                    {
-                      expandedGuard.metrics
-                        .shiftsThisWeek
-                    }{" "}
-                  </span>
-
-                  <span>
-                    Shifts This Week
-                  </span>
-                </div>
-
-                <div className="ss-fatigue__modal-metrics-item">
-                  <span>
-                    {
-                      expandedGuard.metrics
-                        .hoursThisWeek
-                    }{" "}
-                  </span>
-
-                  <span>
-                    Hours This Week
-                  </span>
-                </div>
-
-                <div className="ss-fatigue__modal-metrics-item">
-                  <span>
-                    {
-                      expandedGuard.metrics
-                        .hoursThisDay
-                    }{" "}
-                  </span>
-
-                  <span>
-                    Hours Today
-                  </span>
-                </div>
-              </div>
-
-              <div className="ss-fatigue__warnings">
-                <div className="ss-fatigue__warnings-title">
-                  Warnings
-                </div>
-
-                {expandedGuard.warnings.length ===
-                0 ? (
-                  <div className="ss-fatigue__warnings-indicator">
-                    <span>
-                      There are currently no
-                      fatigue warnings
-                    </span>
-                  </div>
-                ) : (
-                  expandedGuard.warnings.map(
-                    (warning, index) => (
-                      <div
-                        key={index}
-                        className="ss-fatigue__warnings-indicator"
-                      >
-                        {warning}
-                      </div>
-                    )
-                  )
-                )}
-              </div>
-
-              <div className="ss-fatigue__detail">
-                <div className="ss-fatigue__detail-subtitle">
-                  Guard Shift Details
-                </div>
-
-                {expandedGuard.shifts.map(
-                  (shiftItem, index) => {
-                    const locationText =
-                      typeof shiftItem.location ===
-                      "string"
-                        ? shiftItem.location
-                        : shiftItem.location
-                          ? [
-                              shiftItem.location
-                                .street,
-                              shiftItem.location
-                                .suburb,
-                              shiftItem.location
-                                .state,
-                            ]
-                              .filter(Boolean)
-                              .join(", ")
-                          : "No location";
-
-                    const dateText =
-                      shiftItem.date
-                        ? new Date(
-                            `${shiftItem.rawDate}`
-                          ).toLocaleDateString(
-                            "en-GB"
-                          )
-                        : "--";
-
-                    return (
-                      <div
-                        className="ss-fatigue__detail-row"
-                        key={index}
-                      >
-                        <div className="ss-fatigue__detail-title">
-                          {shiftItem.title}
-                        </div>
-
-                        <div className="ss-fatigue__detail-meta">
-                          <span>
-                            {dateText}
-                          </span>
-
-                          <span>
-                            {shiftItem.startTime}{" "}
-                            -{" "}
-                            {shiftItem.endTime}
-                          </span>
-
-                          <span>
-                            {locationText}
-                          </span>
-
-                          <span>
-                            Status:{" "}
-                            {
-                              shiftItem.status
-                                .text
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  }
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* =====================================================
-            INCIDENT REPORTS
-        ====================================================== */}
-        <div className="ss-section-head">
-          <h2 className="ss-section-title">
-            Incident Reports
-          </h2>
-
-          <p className="ss-section-subtitle">
-            {t("pendingIncidents", {
-              count:
-                incidentSummary.pending,
-              total:
-                incidentSummary.total,
+            {t('pendingIncidents', {
+              count: incidentSummary.pending,
+              total: incidentSummary.total
             })}
           </p>
         </div>
@@ -1804,14 +1409,9 @@ export default function EmployerDashboard() {
                 setIncidentQuery(e.target.value)
               }
             />
-
             <select
               value={incidentStatusFilter}
-              onChange={(e) =>
-                setIncidentStatusFilter(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setIncidentStatusFilter(e.target.value)}
             >
               <option value="All">
                 {t("allStatuses")}
@@ -1825,14 +1425,9 @@ export default function EmployerDashboard() {
                 {t("resolved")}
               </option>
             </select>
-
             <select
               value={incidentSeverityFilter}
-              onChange={(e) =>
-                setIncidentSeverityFilter(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setIncidentSeverityFilter(e.target.value)}
             >
               <option value="All">
                 {t("allSeverities")}
@@ -1850,12 +1445,9 @@ export default function EmployerDashboard() {
                 {t("low")}
               </option>
             </select>
-
             <select
               value={incidentSort}
-              onChange={(e) =>
-                setIncidentSort(e.target.value)
-              }
+              onChange={(e) => setIncidentSort(e.target.value)}
             >
               <option value="Newest">
                 {t("sortNewest")}
@@ -1994,26 +1586,15 @@ export default function EmployerDashboard() {
           <div className="ss-review-arrows">
             <button
               className="ss-mini-arrow"
-              onClick={() =>
-                scrollByAmount(
-                  reviewScroller,
-                  -300
-                )
-              }
+              onClick={() => scrollByAmount(reviewScroller, -300)}
               type="button"
               aria-label={t("previous")}
             >
               ‹
             </button>
-
             <button
               className="ss-mini-arrow"
-              onClick={() =>
-                scrollByAmount(
-                  reviewScroller,
-                  300
-                )
-              }
+              onClick={() => scrollByAmount(reviewScroller, 300)}
               type="button"
               aria-label={t("next")}
             >
@@ -2328,6 +1909,7 @@ export default function EmployerDashboard() {
               </button>
             </div>
           </div>
+
         </div>
       )}
     </div>

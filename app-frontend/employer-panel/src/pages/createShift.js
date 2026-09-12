@@ -68,43 +68,16 @@ const mapDefault = { lat: -37.8136, lng: 144.9631 };
 
 // ---- BULLETPROOF ADDRESS PARSER ----
 const parseAddress = (address) => {
-  if (!address) return { street: '', suburb: '', state: '', postcode: '' };
+  const match = address.match(/^(.+),\s*(.+?)\s+([A-Z]{2,3})\s+(\d{4})/);
+  if (match) return { street: match[1], suburb: match[2], state: match[3], postcode: match[4] };
 
-  let street = '';
-  let suburb = '';
-  let state = '';
-  let postcode = '';
-
-  // 1. Extract state and postcode (e.g., "VIC 3207", "NSW 2000")
-  const statePostcodeRegex = /([A-Z]{2,3})\s*(\d{4})$/;
-  const match = address.match(statePostcodeRegex);
-  if (match) {
-    state = match[1];
-    postcode = match[2];
-    address = address.replace(statePostcodeRegex, '').trim();
-  }
-
-  // 2. Split by comma if present
-  const parts = address.split(',').map(s => s.trim()).filter(Boolean);
-
-  if (parts.length >= 2) {
-    street = parts[0];
-    suburb = parts.slice(1).join(', ');
-  } else if (parts.length === 1) {
-    // No comma: treat the whole thing as street, and try to guess suburb
-    street = parts[0];
-    // If we have state/postcode, the part before them might be suburb
-    // But it's ambiguous; we'll set suburb = street as a fallback
-    suburb = street;
-  }
-
-  // 3. If any field is missing, set sensible defaults to avoid backend error
-  if (!street) street = 'Unknown';
-  if (!suburb) suburb = street; // fallback
-  if (!state) state = 'VIC';    // fallback
-  if (!postcode) postcode = '3000'; // fallback
-
-  return { street, suburb, state, postcode };
+  const parts = address.split(',').map((p) => p.trim()).filter(Boolean);
+  return {
+    street: parts[0] || address || 'Not specified',
+    suburb: parts[1] || 'Not specified',
+    state: parts[2] || 'VIC',
+    postcode: parts[3] || '0000',
+  };
 };
 
 const slugify = (text) =>
