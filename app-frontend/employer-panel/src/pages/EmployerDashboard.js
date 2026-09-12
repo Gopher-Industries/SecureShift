@@ -157,6 +157,39 @@ const IconList = (props) => (
   </svg>
 );
 
+const IconPin = ({ filled = false, ...props }) => (
+  <svg viewBox="0 0 24 24" {...props}>
+    <path
+      d="M9 3h6l-1 5 3 3v2H7v-2l3-3-1-5Z"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    <line
+      x1="12"
+      y1="13"
+      x2="12"
+      y2="21"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const IconFavourite = ({ filled = false, ...props }) => (
+  <svg viewBox="0 0 24 24" {...props}>
+    <path
+      d="M12 2.8l2.8 5.67 6.26.91-4.53 4.42 1.07 6.24L12 17.1l-5.6 2.94 1.07-6.24-4.53-4.42 6.26-.91L12 2.8Z"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const IconUser = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
     <circle cx="12" cy="8" r="4" fill="currentColor" />
@@ -277,6 +310,98 @@ const getShiftStatusCategory = (shift) => {
   return "All";
 };
 
+const getPinnedIncidentStorageKey = () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      const userIdentifier =
+        user?._id || user?.id || user?.email || "default";
+
+      return `secureshift:pinned-incidents:${userIdentifier}`;
+    }
+  } catch (error) {
+    console.warn(
+      "Could not read user information for pinned incidents.",
+      error
+    );
+  }
+
+  return "secureshift:pinned-incidents:default";
+};
+
+const loadPinnedIncidentIds = () => {
+  try {
+    const storedValue = localStorage.getItem(
+      getPinnedIncidentStorageKey()
+    );
+
+    if (!storedValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(storedValue);
+
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter((id) => typeof id === "string")
+      : [];
+  } catch (error) {
+    console.warn(
+      "Could not load pinned incident reports.",
+      error
+    );
+
+    return [];
+  }
+};
+
+const getFavouriteIncidentStorageKey = () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      const userIdentifier =
+        user?._id || user?.id || user?.email || "default";
+
+      return `secureshift:favourite-incidents:${userIdentifier}`;
+    }
+  } catch (error) {
+    console.warn(
+      "Could not read user information for favourite incidents.",
+      error
+    );
+  }
+
+  return "secureshift:favourite-incidents:default";
+};
+
+const loadFavouriteIncidentIds = () => {
+  try {
+    const storedValue = localStorage.getItem(
+      getFavouriteIncidentStorageKey()
+    );
+
+    if (!storedValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(storedValue);
+
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter((id) => typeof id === "string")
+      : [];
+  } catch (error) {
+    console.warn(
+      "Could not load favourite incident reports.",
+      error
+    );
+
+    return [];
+  }
+};
+
 export default function EmployerDashboard() {
   const { t } = useTranslation();
   const [view, setView] = useState("list");
@@ -311,6 +436,14 @@ export default function EmployerDashboard() {
   const [incidentSeverityFilter, setIncidentSeverityFilter] =
     useState("All");
   const [incidentSort, setIncidentSort] = useState("Newest");
+
+  const [pinnedIncidentIds, setPinnedIncidentIds] =
+    useState(loadPinnedIncidentIds);
+  const [pinError, setPinError] = useState("");
+
+  const [favouriteIncidentIds, setFavouriteIncidentIds] =
+    useState(loadFavouriteIncidentIds);
+  const [favouriteError, setFavouriteError] = useState("");
 
   const [expandedGuard, setExpandedGuard] = useState(null);
 
@@ -842,6 +975,13 @@ export default function EmployerDashboard() {
         );
       })
       .sort((a, b) => {
+        const aPinned = pinnedIncidentIds.includes(a.id);
+        const bPinned = pinnedIncidentIds.includes(b.id);
+
+        if (aPinned !== bPinned) {
+          return aPinned ? -1 : 1;
+        }
+
         if (incidentSort === "Newest") {
           return (
             parseIncidentDateTime(b) -
@@ -871,6 +1011,7 @@ export default function EmployerDashboard() {
     incidentSeverityFilter,
     incidentSort,
     incidentStatusFilter,
+    pinnedIncidentIds,
   ]);
 
   const incidentSummary = useMemo(() => {
@@ -901,6 +1042,74 @@ export default function EmployerDashboard() {
    * INCIDENT ACTIONS
    * ---------------------------------------------------------
    */
+  const isIncidentPinned = (incidentId) =>
+    pinnedIncidentIds.includes(incidentId);
+
+  const toggleIncidentPin = (incidentId) => {
+    const currentlyPinned = isIncidentPinned(incidentId);
+
+    const nextPinnedIncidentIds = currentlyPinned
+      ? pinnedIncidentIds.filter((id) => id !== incidentId)
+      : [...pinnedIncidentIds, incidentId];
+
+    try {
+      localStorage.setItem(
+        getPinnedIncidentStorageKey(),
+        JSON.stringify(nextPinnedIncidentIds)
+      );
+
+      setPinnedIncidentIds(nextPinnedIncidentIds);
+      setPinError("");
+    } catch (error) {
+      console.error(
+        "Unable to persist incident pin state.",
+        error
+      );
+
+      setPinError(
+        "Unable to save the pinned report status. Please try again."
+      );
+    }
+  };
+
+  const isIncidentFavourite = (incidentId) =>
+    favouriteIncidentIds.includes(incidentId);
+
+  const toggleIncidentFavourite = (incidentId) => {
+    const currentlyFavourite =
+      isIncidentFavourite(incidentId);
+
+    const nextFavouriteIncidentIds =
+      currentlyFavourite
+        ? favouriteIncidentIds.filter(
+            (id) => id !== incidentId
+          )
+        : [...favouriteIncidentIds, incidentId];
+
+    try {
+      localStorage.setItem(
+        getFavouriteIncidentStorageKey(),
+        JSON.stringify(nextFavouriteIncidentIds)
+      );
+
+      setFavouriteIncidentIds(
+        nextFavouriteIncidentIds
+      );
+
+      setFavouriteError("");
+    } catch (error) {
+      console.error(
+        "Unable to persist incident favourite state.",
+        error
+      );
+
+      setFavouriteError(
+        "Unable to save the favourite report status. Please try again."
+      );
+    }
+  };
+
+
   const updateIncident = (
     id,
     newStatus,
@@ -1906,6 +2115,24 @@ export default function EmployerDashboard() {
             </span>
           </div>
 
+          {pinError && (
+            <div
+              className="ss-pin-error"
+              role="alert"
+            >
+              {pinError}
+            </div>
+          )}
+
+          {favouriteError && (
+            <div
+              className="ss-favourite-error"
+              role="alert"
+            >
+              {favouriteError}
+            </div>
+          )}
+
           <div className="ss-incident-list">
             {filteredIncidents.length === 0 && (
               <div className="ss-empty-state">
@@ -1915,7 +2142,11 @@ export default function EmployerDashboard() {
 
             {filteredIncidents.map((inc) => (
               <div
-                className="ss-incident-row"
+                className={`ss-incident-row ${
+                  isIncidentPinned(inc.id)
+                    ? "is-pinned"
+                    : ""
+                }`}
                 key={inc.id}
               >
                 <div className="ss-incident-row__line" />
@@ -1948,6 +2179,26 @@ export default function EmployerDashboard() {
                 </div>
 
                 <div className="ss-incident-badges">
+                  {isIncidentPinned(inc.id) && (
+                    <span className="ss-pinned-indicator">
+                      <IconPin
+                        className="ss-pinned-indicator__icon"
+                        filled
+                      />
+                      Pinned
+                    </span>
+                  )}
+
+                  {isIncidentFavourite(inc.id) && (
+                    <span className="ss-favourite-indicator">
+                      <IconFavourite
+                        className="ss-favourite-indicator__icon"
+                        filled
+                      />
+                      Favourite
+                    </span>
+                  )}
+
                   <span
                     className={`ss-badge ss-badge--priority-${inc.severity.toLowerCase()}`}
                   >
@@ -1969,15 +2220,73 @@ export default function EmployerDashboard() {
                   </span>
                 </div>
 
-                <button
-                  className="ss-review-btn"
-                  type="button"
-                  onClick={() =>
-                    openIncidentModal(inc)
-                  }
-                >
-                  {t("review")}
-                </button>
+                <div className="ss-incident-actions">
+                  <button
+                    className={`ss-favourite-btn ${
+                      isIncidentFavourite(inc.id)
+                        ? "is-favourite"
+                        : ""
+                    }`}
+                    type="button"
+                    onClick={() =>
+                      toggleIncidentFavourite(inc.id)
+                    }
+                    aria-pressed={isIncidentFavourite(inc.id)}
+                    aria-label={`${
+                      isIncidentFavourite(inc.id)
+                        ? "Remove favourite from"
+                        : "Add favourite to"
+                    } incident ${inc.id}`}
+                    title={
+                      isIncidentFavourite(inc.id)
+                        ? "Remove incident from favourites"
+                        : "Add incident to favourites"
+                    }
+                  >
+                    <IconFavourite
+                      className="ss-favourite-icon"
+                      filled={isIncidentFavourite(inc.id)}
+                    />
+                  </button>
+
+                  <button
+                    className={`ss-pin-btn ${
+                      isIncidentPinned(inc.id)
+                        ? "is-pinned"
+                        : ""
+                    }`}
+                    type="button"
+                    onClick={() =>
+                      toggleIncidentPin(inc.id)
+                    }
+                    aria-pressed={isIncidentPinned(inc.id)}
+                    aria-label={`${
+                      isIncidentPinned(inc.id)
+                        ? "Unpin"
+                        : "Pin"
+                    } incident ${inc.id}`}
+                    title={
+                      isIncidentPinned(inc.id)
+                        ? "Unpin incident report"
+                        : "Pin incident report"
+                    }
+                  >
+                    <IconPin
+                      className="ss-pin-icon"
+                      filled={isIncidentPinned(inc.id)}
+                    />
+                  </button>
+
+                  <button
+                    className="ss-review-btn"
+                    type="button"
+                    onClick={() =>
+                      openIncidentModal(inc)
+                    }
+                  >
+                    {t("review")}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
