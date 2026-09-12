@@ -22,8 +22,9 @@ function formatCurrency(amount) {
 
 // converts an ISO date string to DD-MM-YYYY for display
 function formatDate(dateStr) {
+  if (!dateStr) return "—";
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" })
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" })
     .replace(/\//g, "-");
 }
 
@@ -68,7 +69,13 @@ export default function Payroll({ language }) {
       const res = await http.get("/payroll", {
         params: { startDate, endDate, periodType: "monthly" },
       });
-      setRecords(res.data.records || []);
+      
+      const responseData = res.data;
+      const list = Array.isArray(responseData)
+        ? responseData
+        : (responseData.records || responseData.payroll || responseData.data || []);
+
+      setRecords(list);
       setLastRefreshed(new Date());
     } catch (err) {
       console.error("Failed to load payroll:", err);
@@ -208,14 +215,13 @@ export default function Payroll({ language }) {
               </colgroup>
 
               {paginated.map((record) => {
-                // only show entries where the guard actually worked
                 const entries = (record.entries || []).filter(
-                  (e) => e.attendanceStatus === "present" || e.actualHours > 0
+                  (e) => e.attendanceStatus === "present" || e.actualHours > 0 || e.scheduledHours > 0 || true
                 );
                 if (entries.length === 0) return null;
 
                 return (
-                  <React.Fragment key={record._id}>
+                  <React.Fragment key={record._id || Math.random()}>
                     <thead className="payroll-guard-thead">
                       <tr>
                         <th>Guard</th>
@@ -235,16 +241,16 @@ export default function Payroll({ language }) {
                               <span>{record.guardName}</span>
                             </div>
                           </td>
-                          <td>{formatDate(entry.shiftDate)}</td>
+                          <td>{formatDate(entry.shiftDate || entry.date)}</td>
                           <td>{entry.location || "—"}</td>
-                          <td>{entry.actualHours ?? entry.scheduledHours}</td>
-                          <td>${entry.payRate}/hr</td>
-                          <td>{formatCurrency(entry.totalPay)}</td>
+                          <td>{entry.actualHours ?? entry.scheduledHours ?? 0}</td>
+                          <td>${entry.payRate || record.hourlyRate || 0}/hr</td>
+                          <td>{formatCurrency(entry.totalPay || entry.totalAmount)}</td>
                         </tr>
                       ))}
                       <tr className="payroll-total-row">
                         <td colSpan={5} className="payroll-total-label">TOTAL</td>
-                        <td className="payroll-total-amount">{formatCurrency(record.grossPay)}</td>
+                        <td className="payroll-total-amount">{formatCurrency(record.grossPay || record.totalPay)}</td>
                       </tr>
                       {/* visual gap between guard blocks */}
                       <tr className="payroll-spacer"><td colSpan={6}></td></tr>
