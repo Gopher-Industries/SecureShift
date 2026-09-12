@@ -1,48 +1,28 @@
 import { Ollama } from "ollama";
 
 const OLLAMA_HOST =
-  process.env.OLLAMA_HOST ||
-  "http://host.docker.internal:11434";
+  process.env.OLLAMA_HOST || "http://host.docker.internal:11434";
 
-const OLLAMA_MODEL =
-  "llama3.2";
+const OLLAMA_MODEL = "llama3.2";
 
-const ollama =
-  new Ollama({
-    host: OLLAMA_HOST,
-  });
+const ollama = new Ollama({
+  host: OLLAMA_HOST,
+});
 
 // =========================================================
 // ASK OLLAMA
 // =========================================================
 
-export async function askOllama(
-  question,
-  chunks = [],
-) {
-  console.log(
-    "\n========== ASKING OLLAMA ==========",
-  );
+export async function askOllama(question, chunks = []) {
+  console.log("\n========== ASKING OLLAMA ==========");
 
-  console.log(
-    "Host:",
-    OLLAMA_HOST,
-  );
+  console.log("Host:", OLLAMA_HOST);
 
-  console.log(
-    "Model:",
-    OLLAMA_MODEL,
-  );
+  console.log("Model:", OLLAMA_MODEL);
 
-  console.log(
-    "Question:",
-    question,
-  );
+  console.log("Question:", question);
 
-  console.log(
-    "Chunks:",
-    chunks.length,
-  );
+  console.log("Chunks:", chunks.length);
 
   try {
     let systemPrompt;
@@ -53,10 +33,9 @@ export async function askOllama(
     // =======================================================
 
     if (chunks.length > 0) {
-      const context =
-        chunks
-          .map(
-            (chunk, index) => `
+      const context = chunks
+        .map(
+          (chunk, index) => `
 SOURCE ${index + 1}
 
 Document:
@@ -68,10 +47,8 @@ ${chunk.section}
 Documentation:
 ${chunk.text}
 `,
-          )
-          .join(
-            "\n\n-----------------------------\n\n",
-          );
+        )
+        .join("\n\n-----------------------------\n\n");
 
       systemPrompt = `
 You are SecureShift AI, the official AI assistant for the SecureShift workforce management platform.
@@ -145,7 +122,6 @@ Give a direct and concise answer based only on the relevant SecureShift document
     // =======================================================
     // GENERAL MODE
     // =======================================================
-
     else {
       systemPrompt = `
 You are SecureShift AI.
@@ -159,121 +135,76 @@ Do not claim that information is SecureShift-specific unless it is provided by t
 Use simple English and Markdown.
 `;
 
-      userPrompt =
-        question;
+      userPrompt = question;
     }
 
-    console.log(
-      "System prompt length:",
-      systemPrompt.length,
-    );
+    console.log("System prompt length:", systemPrompt.length);
 
-    console.log(
-      "User prompt length:",
-      userPrompt.length,
-    );
+    console.log("User prompt length:", userPrompt.length);
 
-    console.log(
-      "Sending request to Ollama...",
-    );
+    console.log("Sending request to Ollama...");
 
-    const startTime =
-      Date.now();
+    const startTime = Date.now();
 
     // =======================================================
     // CALL OLLAMA
     // =======================================================
 
-    const response =
-      await ollama.chat({
-        model:
-          OLLAMA_MODEL,
+    const response = await ollama.chat({
+      model: OLLAMA_MODEL,
 
-        messages: [
-          {
-            role: "system",
-            content:
-              systemPrompt,
-          },
-
-          {
-            role: "user",
-            content:
-              userPrompt,
-          },
-        ],
-
-        stream: false,
-
-        options: {
-          temperature: 0,
-
-          // Slightly more room for procedural answers
-          num_predict: 400,
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
         },
-      });
 
-    const responseTime =
-      Date.now() -
-      startTime;
+        {
+          role: "user",
+          content: userPrompt,
+        },
+      ],
 
-    console.log(
-      "✅ Ollama response received",
-    );
+      stream: false,
 
-    console.log(
-      "Response time:",
-      responseTime,
-      "ms",
-    );
+      options: {
+        temperature: 0,
 
-    const answer =
-      response?.message?.content?.trim();
+        // Slightly more room for procedural answers
+        num_predict: 400,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+
+    console.log("✅ Ollama response received");
+
+    console.log("Response time:", responseTime, "ms");
+
+    const answer = response?.message?.content?.trim();
 
     if (!answer) {
-      throw new Error(
-        "Ollama returned an empty response.",
-      );
+      throw new Error("Ollama returned an empty response.");
     }
 
-    console.log(
-      "Answer length:",
-      answer.length,
-    );
+    console.log("Answer length:", answer.length);
 
-    console.log(
-      "===================================\n",
-    );
+    console.log("===================================\n");
 
     return answer;
   } catch (error) {
-    console.error(
-      "\n========== OLLAMA ERROR ==========",
-    );
+    console.error("\n========== OLLAMA ERROR ==========");
 
-    console.error(
-      "Message:",
-      error.message,
-    );
+    console.error("Message:", error.message);
 
-    console.error(
-      "Name:",
-      error.name,
-    );
+    console.error("Name:", error.name);
 
     if (error.cause) {
-      console.error(
-        "Cause:",
-        error.cause,
-      );
+      console.error("Cause:", error.cause);
     }
 
-    console.error(
-      "==================================\n",
-    );
+    console.error("==================================\n");
 
-    throw new Error(
-      `SecureShift AI error: ${error.message}`,
-    );
+    throw new Error(`SecureShift AI error: ${error.message}`);
   }
 }

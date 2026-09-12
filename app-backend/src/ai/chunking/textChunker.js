@@ -43,11 +43,7 @@ function isHeading(line) {
  * Count words in a string.
  */
 function countWords(text) {
-  return text
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .length;
+  return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
 /**
@@ -74,9 +70,7 @@ export function splitIntoChunks(text) {
       return;
     }
 
-    const chunkText = buffer
-      .join("\n")
-      .trim();
+    const chunkText = buffer.join("\n").trim();
 
     if (!chunkText) {
       return;
@@ -126,10 +120,7 @@ export function splitIntoChunks(text) {
 
     // If adding this line makes the chunk too large,
     // save the current chunk first.
-    if (
-      wordCount > 0 &&
-      wordCount + lineWordCount > MAX_WORDS
-    ) {
+    if (wordCount > 0 && wordCount + lineWordCount > MAX_WORDS) {
       saveChunk();
 
       // Repeat section heading in the new chunk
