@@ -1,5 +1,5 @@
 ﻿import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { autoTable } from "jspdf-autotable";
 
 const formatCurrency = (amount) => {
   return "$" + (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -71,7 +71,7 @@ export const generatePayrollPDF = (records = [], monthName = "", year = new Date
     { content: formatCurrency(grandTotal), styles: { fontStyle: "bold", fillColor: [241, 245, 249] } },
   ]);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: 42,
     head: [tableHeaders],
     body: tableRows,

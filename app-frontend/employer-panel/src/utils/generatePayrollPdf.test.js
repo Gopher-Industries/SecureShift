@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { autoTable } from "jspdf-autotable";
 import { generatePayrollPDF } from "./generatePayrollPdf";
 
 jest.mock("jspdf", () => ({
@@ -6,7 +7,9 @@ jest.mock("jspdf", () => ({
   default: jest.fn(),
 }));
 
-jest.mock("jspdf-autotable", () => ({}));
+jest.mock("jspdf-autotable", () => ({
+  autoTable: jest.fn(),
+}));
 
 const createPdfMock = () => {
   const pdf = {
@@ -15,7 +18,6 @@ const createPdfMock = () => {
     text: jest.fn(),
     setDrawColor: jest.fn(),
     line: jest.fn(),
-    autoTable: jest.fn(),
     save: jest.fn(),
     internal: {
       getNumberOfPages: jest.fn().mockReturnValue(1),
@@ -54,7 +56,8 @@ describe("generatePayrollPDF", () => {
 
     generatePayrollPDF(records, "September", 2026);
 
-    expect(pdf.autoTable).toHaveBeenCalledWith(
+    expect(autoTable).toHaveBeenCalledWith(
+      pdf,
       expect.objectContaining({
         head: [["Guard Name", "Shift Date", "Location", "Hours", "Pay Rate", "Shift Total"]],
         body: expect.arrayContaining([
