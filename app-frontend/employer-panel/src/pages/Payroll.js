@@ -6,32 +6,59 @@ import RefreshButton from "../components/RefreshButton";
 import { generatePayrollPDF } from "../utils/generatePayrollPdf";
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const GUARDS_PER_PAGE = 3;
 
 function initials(name) {
-  return name.split(" ").map((p) => p[0]).join("").toUpperCase();
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
 }
 
 function formatCurrency(amount) {
-  return "$" + (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return (
+    "$" +
+    Number(amount || 0)
+      .toFixed(2)
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  );
 }
 
-// converts an ISO date string to DD-MM-YYYY for display
 function formatDate(dateStr) {
   if (!dateStr) return "—";
+
   const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" })
-    .replace(/\//g, "-");
+
+  return isNaN(d.getTime())
+    ? "—"
+    : d
+        .toLocaleDateString("en-AU", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+        .replace(/\//g, "-");
 }
 
-// builds the first and last day of a given month as ISO date strings
 function getMonthRange(year, month) {
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0);
+
   return {
     startDate: start.toISOString().split("T")[0],
     endDate: end.toISOString().split("T")[0],
@@ -41,6 +68,7 @@ function getMonthRange(year, month) {
 export default function Payroll({ language }) {
   const t = translations[language || "en"] || translations.en;
   const now = new Date();
+
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear] = useState(now.getFullYear());
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,7 +80,6 @@ export default function Payroll({ language }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(null);
 
-  // PDF generation state
   const [pdfDownloading, setPdfDownloading] = useState(false);
   const [pdfError, setPdfError] = useState("");
 
@@ -63,17 +90,31 @@ export default function Payroll({ language }) {
       setLoading(true);
       setRecords([]);
     }
+
     setError("");
+
     try {
-      const { startDate, endDate } = getMonthRange(selectedYear, selectedMonth);
+      const { startDate, endDate } = getMonthRange(
+        selectedYear,
+        selectedMonth,
+      );
+
       const res = await http.get("/payroll", {
-        params: { startDate, endDate, periodType: "monthly" },
+        params: {
+          startDate,
+          endDate,
+          periodType: "monthly",
+        },
       });
-      
+
       const responseData = res.data;
+
       const list = Array.isArray(responseData)
         ? responseData
-        : (responseData.records || responseData.payroll || responseData.data || []);
+        : responseData.records ||
+          responseData.payroll ||
+          responseData.data ||
+          [];
 
       setRecords(list);
       setLastRefreshed(new Date());
@@ -91,7 +132,7 @@ export default function Payroll({ language }) {
   }, [selectedMonth, selectedYear]);
 
   const handleMonthChange = (e) => {
-    setSelectedMonth(parseInt(e.target.value));
+    setSelectedMonth(parseInt(e.target.value, 10));
     setCurrentPage(1);
     setPdfError("");
   };
@@ -106,7 +147,11 @@ export default function Payroll({ language }) {
     setPdfError("");
 
     try {
-      generatePayrollPDF(records, MONTHS[selectedMonth], selectedYear);
+      generatePayrollPDF(
+        records,
+        MONTHS[selectedMonth],
+        selectedYear,
+      );
     } catch (err) {
       setPdfError(err.message || "Failed to generate PDF report.");
     } finally {
@@ -114,38 +159,67 @@ export default function Payroll({ language }) {
     }
   };
 
-  // filter by search term against guard name
-  const filtered = records.filter((r) =>
-    (r.guardName || "").toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = records.filter((record) =>
+    (record.guard?.name || "")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase()),
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / GUARDS_PER_PAGE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / GUARDS_PER_PAGE),
+  );
+
   const paginated = filtered.slice(
     (currentPage - 1) * GUARDS_PER_PAGE,
-    currentPage * GUARDS_PER_PAGE
+    currentPage * GUARDS_PER_PAGE,
   );
 
-  // collapses middle pages into ellipsis when there are many
   const getPageNumbers = () => {
-    if (totalPages <= 6) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 6) {
+      return Array.from(
+        { length: totalPages },
+        (_, i) => i + 1,
+      );
+    }
+
     const pages = [1];
-    if (currentPage > 3) pages.push("...");
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+
+    if (currentPage > 3) {
+      pages.push("...");
+    }
+
+    for (
+      let i = Math.max(2, currentPage - 1);
+      i <= Math.min(totalPages - 1, currentPage + 1);
+      i++
+    ) {
       pages.push(i);
     }
-    if (currentPage < totalPages - 2) pages.push("...");
+
+    if (currentPage < totalPages - 2) {
+      pages.push("...");
+    }
+
     pages.push(totalPages);
+
     return pages;
   };
 
   return (
     <div className="payroll-page">
       <div className="payroll-container">
-
-        {/* Page header - title + month picker + PDF action */}
         <div className="payroll-header-row">
           <h1 className="payroll-title">{t.payroll}</h1>
-          <div className="payroll-period" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+          <div
+            className="payroll-period"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
             <button
               onClick={handleDownloadPDF}
               disabled={pdfDownloading || loading}
@@ -157,25 +231,38 @@ export default function Payroll({ language }) {
                 border: "none",
                 borderRadius: "6px",
                 fontWeight: "600",
-                cursor: pdfDownloading ? "not-allowed" : "pointer",
-                opacity: pdfDownloading || loading ? 0.6 : 1,
+                cursor:
+                  pdfDownloading || loading
+                    ? "not-allowed"
+                    : "pointer",
+                opacity:
+                  pdfDownloading || loading ? 0.6 : 1,
               }}
             >
-              {pdfDownloading ? "Generating PDF..." : "Download Payroll PDF"}
+              {pdfDownloading
+                ? "Generating PDF..."
+                : "Download Payroll PDF"}
             </button>
+
             <RefreshButton
               onRefresh={() => fetchPayroll(true)}
               isRefreshing={isRefreshing}
               lastRefreshed={lastRefreshed}
             />
-            <span className="payroll-period-label">Pay Period</span>
+
+            <span className="payroll-period-label">
+              Pay Period
+            </span>
+
             <select
               className="payroll-month-select"
               value={selectedMonth}
               onChange={handleMonthChange}
             >
-              {MONTHS.map((m, i) => (
-                <option key={i} value={i}>{m}</option>
+              {MONTHS.map((month, index) => (
+                <option key={index} value={index}>
+                  {month}
+                </option>
               ))}
             </select>
           </div>
@@ -191,14 +278,28 @@ export default function Payroll({ language }) {
           />
         </div>
 
-        {pdfError && <div className="payroll-status payroll-status--error">{pdfError}</div>}
-        {loading && <div className="payroll-status">Loading payroll...</div>}
-        {error && <div className="payroll-status payroll-status--error">{error}</div>}
+        {pdfError && (
+          <div className="payroll-status payroll-status--error">
+            {pdfError}
+          </div>
+        )}
 
-        {/* Single table so the colgroup keeps columns aligned across all guard blocks */}
+        {loading && (
+          <div className="payroll-status">
+            Loading payroll...
+          </div>
+        )}
+
+        {error && (
+          <div className="payroll-status payroll-status--error">
+            {error}
+          </div>
+        )}
+
         {!loading && !error && filtered.length === 0 && (
           <div className="payroll-empty">
-            No completed shifts found for {MONTHS[selectedMonth]}.
+            No completed shifts found for{" "}
+            {MONTHS[selectedMonth]}.
           </div>
         )}
 
@@ -216,12 +317,21 @@ export default function Payroll({ language }) {
 
               {paginated.map((record) => {
                 const entries = (record.entries || []).filter(
-                  (e) => e.attendanceStatus === "present" || e.actualHours > 0 || e.scheduledHours > 0 || true
+                  (entry) =>
+                    entry.attendanceBased ||
+                    entry.actualHours > 0 ||
+                    entry.scheduledHours > 0,
                 );
+
                 if (entries.length === 0) return null;
 
+                const guardName =
+                  record.guard?.name || "Unknown Guard";
+
                 return (
-                  <React.Fragment key={record._id || Math.random()}>
+                  <React.Fragment
+                    key={record.id || record._id}
+                  >
                     <thead className="payroll-guard-thead">
                       <tr>
                         <th>Guard</th>
@@ -232,28 +342,74 @@ export default function Payroll({ language }) {
                         <th>Amount</th>
                       </tr>
                     </thead>
+
                     <tbody>
-                      {entries.map((entry, idx) => (
-                        <tr key={idx} className="payroll-shift-row">
+                      {entries.map((entry, index) => (
+                        <tr
+                          key={entry.shiftId || index}
+                          className="payroll-shift-row"
+                        >
                           <td>
                             <div className="guard-cell">
-                              <div className="guard-avatar">{initials(record.guardName || "?")}</div>
-                              <span>{record.guardName}</span>
+                              <div className="guard-avatar">
+                                {initials(guardName)}
+                              </div>
+
+                              <span>{guardName}</span>
                             </div>
                           </td>
-                          <td>{formatDate(entry.shiftDate || entry.date)}</td>
-                          <td>{entry.location || "—"}</td>
-                          <td>{entry.actualHours ?? entry.scheduledHours ?? 0}</td>
-                          <td>${entry.payRate || record.hourlyRate || 0}/hr</td>
-                          <td>{formatCurrency(entry.totalPay || entry.totalAmount)}</td>
+
+                          <td>
+                            {formatDate(
+                              entry.shiftDate ||
+                                entry.date,
+                            )}
+                          </td>
+
+                          <td>
+                            {entry.department || "—"}
+                          </td>
+
+                          <td>
+                            {entry.actualHours ??
+                              entry.scheduledHours ??
+                              0}
+                          </td>
+
+                          <td>
+                            $
+                            {Number(
+                              entry.hourlyRate || 0,
+                            ).toFixed(2)}
+                            /hr
+                          </td>
+
+                          <td>
+                            {formatCurrency(
+                              entry.totalAmount,
+                            )}
+                          </td>
                         </tr>
                       ))}
+
                       <tr className="payroll-total-row">
-                        <td colSpan={5} className="payroll-total-label">TOTAL</td>
-                        <td className="payroll-total-amount">{formatCurrency(record.grossPay || record.totalPay)}</td>
+                        <td
+                          colSpan={5}
+                          className="payroll-total-label"
+                        >
+                          TOTAL
+                        </td>
+
+                        <td className="payroll-total-amount">
+                          {formatCurrency(
+                            record.totalAmount,
+                          )}
+                        </td>
                       </tr>
-                      {/* visual gap between guard blocks */}
-                      <tr className="payroll-spacer"><td colSpan={6}></td></tr>
+
+                      <tr className="payroll-spacer">
+                        <td colSpan={6}></td>
+                      </tr>
                     </tbody>
                   </React.Fragment>
                 );
@@ -262,37 +418,62 @@ export default function Payroll({ language }) {
           </div>
         )}
 
-        <div className="pagination" style={{ marginTop: "24px", justifyContent: "center" }}>
+        <div
+          className="pagination"
+          style={{
+            marginTop: "24px",
+            justifyContent: "center",
+          }}
+        >
           <button
             className="page-btn"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onClick={() =>
+              setCurrentPage((page) =>
+                Math.max(1, page - 1),
+              )
+            }
             disabled={currentPage === 1}
           >
             ‹
           </button>
-          {getPageNumbers().map((p, i) =>
-            p === "..." ? (
-              <span key={i} className="page-ellipsis">…</span>
+
+          {getPageNumbers().map((page, index) =>
+            page === "..." ? (
+              <span
+                key={index}
+                className="page-ellipsis"
+              >
+                …
+              </span>
             ) : (
               <button
-                key={i}
-                className={`page-btn ${p === currentPage ? "active-page" : ""}`}
-                onClick={() => setCurrentPage(p)}
+                key={index}
+                className={`page-btn ${
+                  page === currentPage
+                    ? "active-page"
+                    : ""
+                }`}
+                onClick={() => setCurrentPage(page)}
               >
-                {p}
+                {page}
               </button>
-            )
+            ),
           )}
+
           <button
             className="page-btn"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() =>
+              setCurrentPage((page) =>
+                Math.min(totalPages, page + 1),
+              )
+            }
             disabled={currentPage === totalPages}
           >
             ›
           </button>
         </div>
-
       </div>
     </div>
   );
 }
+
