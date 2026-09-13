@@ -416,7 +416,7 @@ const buildComputedEntries = (shifts, attendanceRecords) => {
       ),
       scheduledHours,
       actualHours: roundHours(actualHours ?? scheduledHours),
-      payableHours: 
+      payableHours:
         actualHours != null
           ? calculatePayableHours(shift, actualHours)
           : scheduledHours,
