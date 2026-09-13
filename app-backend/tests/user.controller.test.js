@@ -196,6 +196,26 @@ describe("User Controller API Tests", () => {
     expect(res.body.favourites.length).toBeGreaterThan(0);
   });
 
+  test("Reject malformed favourite guard ID", async () => {
+    const res = await request(app)
+      .post("/api/v1/users/favourites/not-a-valid-id")
+      .set("Authorization", `Bearer ${employerToken}`);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid guard ID");
+  });
+
+  test("Return 404 for valid but nonexistent favourite guard ID", async () => {
+    const nonexistentGuardId = "507f1f77bcf86cd799439011";
+
+    const res = await request(app)
+      .post(`/api/v1/users/favourites/${nonexistentGuardId}`)
+      .set("Authorization", `Bearer ${employerToken}`);
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.message).toBe("Guard not found");
+  });
+
   test("Get favourite guards", async () => {
     const res = await request(app)
       .get("/api/v1/users/favourites")

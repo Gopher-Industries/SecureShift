@@ -164,6 +164,8 @@
     "leaveEnd": "છોડી દેવાનો અંત",
     "notFound": "કોઈ શિફ્ટ વિનંતીઓ મળી નથી",
     "requestError": "વિનંતીઓ લોડ કરવામાં નિષ્ફળતા.",
+    "assignedGuard": "સોંપાયેલ રક્ષક:",
+    "swapOptionsError": "સ્વેપ વિકલ્પો લોડ કરવામાં નિષ્ફળ",
     "rateShift": "આ શિફ્ટને રેટિંગ આપો",
     "submitRating": "રેટિંગ મોકલો",
     "submittingRating": "મોકલી રહ્યા છીએ...",
@@ -172,10 +174,14 @@
     "ratingFailed": "તમારું રેટિંગ સાચવી શકાયું નથી",
     "starLabel": "{{count}} સ્ટાર રેટિંગ",
     "alerts": {
+      "missingReasonHead": "કારણ ખૂટે છે",
+      "missingReasonMsg": "શિફ્ટ વિનંતીનું કારણ દાખલ કરો.",
       "missingDateHead": "ગુમ થયેલ તારીખ",
       "missingDateMsg": "તમે જે તારીખે તમારી શિફ્ટ ખસેડવા માંગો છો તે તારીખ દાખલ કરો.",
       "invalidDateHead": "અયોગ્ય તારીખ",
       "invalidDateMsg": "પસંદ થયેલ તારીખ અયોગ્ય છે",
+      "selectShiftHead": "શિફ્ટ પસંદ કરો",
+      "selectShiftMsg": "કોઈ શિફ્ટ પસંદ કરેલ નથી",
       "requestCreated": "માંગણી બનાવેલ છે",
       "requestFailed": "વિનંતી નિષ્ફળ",
       "successMessage": "તમારી વિનંતી તમારા એમ્પ્લોયરને મોકલવામાં આવી છે"
