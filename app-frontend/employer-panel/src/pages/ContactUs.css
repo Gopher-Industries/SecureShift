@@ -1,7 +1,11 @@
 .contact-page {
-  min-height: calc(100vh - 80px);
-  padding: 32px 36px 40px;
-  background: #ffffff;
+  min-height: auto;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 24px 32px 32px;
+  background: transparent;
 }
 
 .contact-header {
@@ -186,7 +190,7 @@
 
 @media (max-width: 900px) {
   .contact-page {
-    padding: 24px 20px;
+    padding: 20px 24px 28px;
   }
 
   .contact-content {
@@ -196,7 +200,7 @@
 
 @media (max-width: 480px) {
   .contact-page {
-    padding: 20px 14px 30px;
+    padding: 18px 16px 24px;
   }
 
   .contact-info,

@@ -116,10 +116,6 @@ function AppRoutes({ language, setLanguage }) {
         <Route path="/expression-of-interest" element={<ExpressionOfInterest />} />
         <Route path="/submission" element={<SubmissionConfirmation />} />
         <Route path="/task-detail" element={<TaskRoute />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-and-condition" element={<TermsAndConditions />} />
-
-        <Route path="/contact-us" element={<ContactUs />} /> 
         {/* PROTECTED ROUTES */}
         <Route
           path="/employer-dashboard"
@@ -160,6 +156,18 @@ function AppRoutes({ language, setLanguage }) {
         <Route
           path="/payroll"
           element={protectedLayout(<Payroll language={language} />)}
+        />
+        <Route
+          path="/privacy-policy"
+          element={protectedLayout(<PrivacyPolicy />)}
+        />
+        <Route
+          path="/terms-and-condition"
+          element={protectedLayout(<TermsAndConditions />)}
+        />
+        <Route
+          path="/contact-us"
+          element={protectedLayout(<ContactUs />)}
         />
         <Route
           path="/faqs"
