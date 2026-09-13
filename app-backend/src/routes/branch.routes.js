@@ -9,7 +9,7 @@ import {
 } from "../controllers/branch.controller.js";
 
 import auth from "../middleware/auth.js";
-import { employerOnly } from "../middleware/role.js";
+import { employerOnly } from "../middleware/rbac.js";
 
 const router = express.Router();
 
