@@ -3,6 +3,7 @@ import "./Payroll.css";
 import http from "../lib/http";
 import translations from "../i18n/translations";
 import RefreshButton from "../components/RefreshButton";
+import { generatePayrollPDF } from "../utils/generatePayrollPdf";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -21,8 +22,9 @@ function formatCurrency(amount) {
 
 // converts an ISO date string to DD-MM-YYYY for display
 function formatDate(dateStr) {
+  if (!dateStr) return "—";
   const d = new Date(dateStr);
-  return d.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" })
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" })
     .replace(/\//g, "-");
 }
 
@@ -50,6 +52,10 @@ export default function Payroll({ language }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(null);
 
+  // PDF generation state
+  const [pdfDownloading, setPdfDownloading] = useState(false);
+  const [pdfError, setPdfError] = useState("");
+
   const fetchPayroll = async (isManualRefresh = false) => {
     if (isManualRefresh) {
       setIsRefreshing(true);
@@ -63,7 +69,13 @@ export default function Payroll({ language }) {
       const res = await http.get("/payroll", {
         params: { startDate, endDate, periodType: "monthly" },
       });
-      setRecords(res.data.records || []);
+      
+      const responseData = res.data;
+      const list = Array.isArray(responseData)
+        ? responseData
+        : (responseData.records || responseData.payroll || responseData.data || []);
+
+      setRecords(list);
       setLastRefreshed(new Date());
     } catch (err) {
       console.error("Failed to load payroll:", err);
@@ -81,11 +93,25 @@ export default function Payroll({ language }) {
   const handleMonthChange = (e) => {
     setSelectedMonth(parseInt(e.target.value));
     setCurrentPage(1);
+    setPdfError("");
   };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
+  };
+
+  const handleDownloadPDF = () => {
+    setPdfDownloading(true);
+    setPdfError("");
+
+    try {
+      generatePayrollPDF(records, MONTHS[selectedMonth], selectedYear);
+    } catch (err) {
+      setPdfError(err.message || "Failed to generate PDF report.");
+    } finally {
+      setPdfDownloading(false);
+    }
   };
 
   // filter by search term against guard name
@@ -116,10 +142,27 @@ export default function Payroll({ language }) {
     <div className="payroll-page">
       <div className="payroll-container">
 
-        {/* Page header - title + month picker */}
+        {/* Page header - title + month picker + PDF action */}
         <div className="payroll-header-row">
           <h1 className="payroll-title">{t.payroll}</h1>
           <div className="payroll-period" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              onClick={handleDownloadPDF}
+              disabled={pdfDownloading || loading}
+              className="payroll-pdf-btn"
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#2563eb",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                fontWeight: "600",
+                cursor: pdfDownloading ? "not-allowed" : "pointer",
+                opacity: pdfDownloading || loading ? 0.6 : 1,
+              }}
+            >
+              {pdfDownloading ? "Generating PDF..." : "Download Payroll PDF"}
+            </button>
             <RefreshButton
               onRefresh={() => fetchPayroll(true)}
               isRefreshing={isRefreshing}
@@ -148,6 +191,7 @@ export default function Payroll({ language }) {
           />
         </div>
 
+        {pdfError && <div className="payroll-status payroll-status--error">{pdfError}</div>}
         {loading && <div className="payroll-status">Loading payroll...</div>}
         {error && <div className="payroll-status payroll-status--error">{error}</div>}
 
@@ -171,14 +215,13 @@ export default function Payroll({ language }) {
               </colgroup>
 
               {paginated.map((record) => {
-                // only show entries where the guard actually worked
                 const entries = (record.entries || []).filter(
-                  (e) => e.attendanceStatus === "present" || e.actualHours > 0
+                  (e) => e.attendanceStatus === "present" || e.actualHours > 0 || e.scheduledHours > 0 || true
                 );
                 if (entries.length === 0) return null;
 
                 return (
-                  <React.Fragment key={record._id}>
+                  <React.Fragment key={record._id || Math.random()}>
                     <thead className="payroll-guard-thead">
                       <tr>
                         <th>Guard</th>
@@ -198,16 +241,16 @@ export default function Payroll({ language }) {
                               <span>{record.guardName}</span>
                             </div>
                           </td>
-                          <td>{formatDate(entry.shiftDate)}</td>
+                          <td>{formatDate(entry.shiftDate || entry.date)}</td>
                           <td>{entry.location || "—"}</td>
-                          <td>{entry.actualHours ?? entry.scheduledHours}</td>
-                          <td>${entry.payRate}/hr</td>
-                          <td>{formatCurrency(entry.totalPay)}</td>
+                          <td>{entry.actualHours ?? entry.scheduledHours ?? 0}</td>
+                          <td>${entry.payRate || record.hourlyRate || 0}/hr</td>
+                          <td>{formatCurrency(entry.totalPay || entry.totalAmount)}</td>
                         </tr>
                       ))}
                       <tr className="payroll-total-row">
                         <td colSpan={5} className="payroll-total-label">TOTAL</td>
-                        <td className="payroll-total-amount">{formatCurrency(record.grossPay)}</td>
+                        <td className="payroll-total-amount">{formatCurrency(record.grossPay || record.totalPay)}</td>
                       </tr>
                       {/* visual gap between guard blocks */}
                       <tr className="payroll-spacer"><td colSpan={6}></td></tr>

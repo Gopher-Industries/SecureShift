@@ -485,6 +485,7 @@ export const buildSeedData = (now = new Date()) => {
       {
         _id: SEED_IDS.notifications.application,
         userId: SEED_IDS.users.employerOperations,
+        createdBy: SEED_IDS.users.guardPending,
         type: "SHIFT_APPLIED",
         title: "New shift application",
         message: "Noah Williams applied for Warehouse Gate Security.",
@@ -497,6 +498,7 @@ export const buildSeedData = (now = new Date()) => {
       {
         _id: SEED_IDS.notifications.approval,
         userId: SEED_IDS.users.guardApproved,
+        createdBy: SEED_IDS.users.employerOperations,
         type: "SHIFT_APPROVED",
         title: "Shift approved",
         message: "You were assigned to Evening Event Security.",
@@ -506,6 +508,7 @@ export const buildSeedData = (now = new Date()) => {
       {
         _id: SEED_IDS.notifications.documentExpiry,
         userId: SEED_IDS.users.guardExpired,
+        createdBy: SEED_IDS.users.admin,
         type: "DOCUMENT_EXPIRING",
         title: "Licence expired",
         message: "Your seeded security licence has expired.",
