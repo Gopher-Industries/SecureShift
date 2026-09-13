@@ -416,7 +416,10 @@ const buildComputedEntries = (shifts, attendanceRecords) => {
       ),
       scheduledHours,
       actualHours: roundHours(actualHours ?? scheduledHours),
-      payableHours: calculatePayableHours(shift, actualHours ?? scheduledHours),
+      payableHours: 
+        actualHours != null
+          ? calculatePayableHours(shift, actualHours)
+          : scheduledHours,
       attendanceBased: actualHours != null,
     });
   }
