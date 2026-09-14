@@ -323,7 +323,13 @@
     "selectDate": "选择日期",
     "startTime": "开始时间",
     "endTime": "结束时间",
-    "missingInfoMsg": "请选择日期，开始时间和结束时间。"
+    "missingInfoMsg": "请选择日期，开始时间和结束时间。",
+    "hoursToday": "今日工作时长",
+    "hoursWeek": "本周工作时长",
+    "shiftsWeek": "本周轮班情况",
+    "dayHourWarn": "今天工作时间已超过建议时长，请休息一天。",
+    "weekShiftWarn": "本周轮班次数已超过建议次数，请休息一周。",
+    "weekHourWarn": "本周工作时长已超过建议时长，请休息一周。"
   },
   "editProfile": {
     "title": "编辑您的个人信息",
