@@ -92,6 +92,7 @@ router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayroll);
  * /api/v1/payroll/summary:
  *   get:
  *     summary: Get a payroll summary for a date range
+ *     description: Read-only. Reads existing payroll records and does not create or update any payroll data.
  *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []

@@ -3,6 +3,7 @@ import * as payrollService from "../src/services/payroll.service.js";
 
 jest.mock("../src/services/payroll.service.js", () => ({
   getPayrollRecords: jest.fn(),
+  getPayrollSummaryRecords: jest.fn(),
 }));
 
 describe("Payroll Controller - getPayrollSummary", () => {
@@ -27,34 +28,35 @@ describe("Payroll Controller - getPayrollSummary", () => {
   });
 
   it("should return 200 with hours, earnings and status counts", async () => {
-    payrollService.getPayrollRecords.mockResolvedValue({
-      filters: { startDate: "2026-01-01", endDate: "2026-01-31" },
-      summary: {
-        totalPayableHours: 50,
-        totalOrdinaryHours: 40,
-        totalOvertimeHours: 10,
-        totalAmount: 1500,
-      },
-      payroll: [{ status: "PENDING" }, { status: "APPROVED" }],
-    });
-
-    await getPayrollSummary(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
+    const mockResult = {
       filters: { startDate: "2026-01-01", endDate: "2026-01-31" },
       totalPayableHours: 50,
       totalOrdinaryHours: 40,
       totalOvertimeHours: 10,
       totalEarnings: 1500,
       statusCounts: { PENDING: 1, APPROVED: 1, PROCESSED: 0 },
-    });
+    };
+
+    payrollService.getPayrollSummaryRecords.mockResolvedValue(mockResult);
+
+    await getPayrollSummary(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(mockResult);
+  });
+
+  it("should not use the payroll path that writes records", async () => {
+    payrollService.getPayrollSummaryRecords.mockResolvedValue({});
+
+    await getPayrollSummary(req, res);
+
+    expect(payrollService.getPayrollRecords).not.toHaveBeenCalled();
   });
 
   it("should return 400 when the date range is invalid", async () => {
     const error = new Error("startDate cannot be after endDate");
     error.statusCode = 400;
-    payrollService.getPayrollRecords.mockRejectedValue(error);
+    payrollService.getPayrollSummaryRecords.mockRejectedValue(error);
 
     await getPayrollSummary(req, res);
 
@@ -67,7 +69,7 @@ describe("Payroll Controller - getPayrollSummary", () => {
   it("should return 403 when a guard requests another guard's payroll", async () => {
     const error = new Error("Guards can only access their own payroll");
     error.statusCode = 403;
-    payrollService.getPayrollRecords.mockRejectedValue(error);
+    payrollService.getPayrollSummaryRecords.mockRejectedValue(error);
 
     await getPayrollSummary(req, res);
 

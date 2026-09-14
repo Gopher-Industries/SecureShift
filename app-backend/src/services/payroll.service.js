@@ -709,6 +709,61 @@ export const getPayrollRecords = async (query, user) => {
   };
 };
 
+// Read-only: reads existing payroll records and never creates or updates them.
+export const getPayrollSummaryRecords = async (query, user) => {
+  const { userId, role } = getUserContext(user);
+  const range = parseDateRange(query);
+
+  const payrollQuery = {
+    periodType: query.periodType,
+    periodStart: { $gte: range.start },
+    periodEnd: { $lte: range.end },
+  };
+
+  if (role === "guard") {
+    if (query.guardId && String(query.guardId) !== String(userId)) {
+      throw createHttpError(403, "Guards can only access their own payroll");
+    }
+    payrollQuery.guardId = userId;
+  } else if (role === "employer") {
+    payrollQuery.employerId = userId;
+    if (query.guardId) {
+      payrollQuery.guardId = query.guardId;
+    }
+  } else if (role === "admin") {
+    if (query.guardId) {
+      payrollQuery.guardId = query.guardId;
+    }
+  } else {
+    throw createHttpError(403, "Forbidden: unsupported role");
+  }
+
+  const payrollDocs = await Payroll.find(payrollQuery).lean();
+
+  const statusCounts = { PENDING: 0, APPROVED: 0, PROCESSED: 0 };
+  for (const doc of payrollDocs) {
+    if (statusCounts[doc.status] !== undefined) {
+      statusCounts[doc.status] += 1;
+    }
+  }
+
+  const summary = buildSummary(payrollDocs);
+
+  return {
+    filters: {
+      startDate: query.startDate,
+      endDate: query.endDate,
+      periodType: query.periodType,
+      guardId: query.guardId || null,
+    },
+    totalPayableHours: summary.totalPayableHours,
+    totalOrdinaryHours: summary.totalOrdinaryHours,
+    totalOvertimeHours: summary.totalOvertimeHours,
+    totalEarnings: summary.totalAmount,
+    statusCounts,
+  };
+};
+
 export const approvePayrollRecords = async (payrollIds, user) => {
   const docs = await ensureScopedPayrollDocs(payrollIds, user);
   const userId = user._id || user.id;
