@@ -122,8 +122,13 @@ export default function Shifts() {
         </select>
       </div>
 
+      {/*NEW: Show result count */}
+      <p style={{ color: '#666', fontSize: '0.9rem', marginTop: 8 }}>
+        Showing {filtered.length} {filtered.length === 1 ? 'shift' : 'shifts'}
+      </p>
+
       {loading ? (
-        <LoadingComponent label={'Loading shifts\u2026'} />
+        <LoadingComponent label={'Loading shifts…'} />
       ) : error ? (
         <p style={{ color: '#c00' }}>{error}</p>
       ) : (
