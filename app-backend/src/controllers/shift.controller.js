@@ -274,7 +274,7 @@ export const updateShift = async (req, res) => {
     } = req.body;
 
     const textFields = { title, field, description, requirements };
-    
+
     for (const [key, value] of Object.entries(textFields)) {
       if (value !== undefined && typeof value !== "string") {
         return res.status(400).json({
@@ -282,7 +282,7 @@ export const updateShift = async (req, res) => {
         });
       }
     }
-    
+
     if (title !== undefined) updates.title = title.trim();
     if (date !== undefined) updates.date = new Date(date);
     if (startTime !== undefined) updates.startTime = startTime;
