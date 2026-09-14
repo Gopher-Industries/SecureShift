@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getShifts } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
@@ -31,10 +32,11 @@ function personLabel(person) {
 
 // Read-only admin oversight of all shifts
 export default function Shifts() {
+  const [searchParams] = useSearchParams();
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(searchParams.get('q') || '');
   const [status, setStatus] = useState('');
 
   // Load all shifts when the page opens
