@@ -182,6 +182,7 @@ const RolesIcon = ({ size = 24, color = 'currentColor' }) => (
 const items = [
   ['/dashboard', 'Dashboard', DashboardIcon],
   ['/users', 'Users', UsersIcon],
+  ['/employers', 'Employers', UsersIcon],
   ['/guard-verification', 'Guard Verification', GuardIcon],
   ['/shifts', 'Shifts', ShiftIcon],
   ['/incidents', 'Incident Oversight', IncidentIcon],

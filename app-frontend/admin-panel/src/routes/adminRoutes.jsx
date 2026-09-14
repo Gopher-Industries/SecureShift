@@ -5,6 +5,8 @@ import AdminLayout from '../layouts/AdminLayout';
 import AdminLogin from '../pages/AdminLogin';
 import AdminDashboard from '../pages/AdminDashboard';
 import Users from '../pages/Users';
+import Employers from '../pages/Employers';
+import EmployerDetails from '../pages/EmployerDetails';
 import UserDetails from '../pages/UserDetails';
 import GuardVerification from '../pages/GuardVerification';
 import Shifts from '../pages/Shifts';
@@ -34,6 +36,10 @@ export default function AppRoutes() {
         <Route path="/dashboard" element={<AdminDashboard />} />
 
         <Route path="/users" element={<Users />} />
+
+        <Route path="/employers" element={<Employers />} />
+
+        <Route path="/employers/:id" element={<EmployerDetails />} />
 
         <Route path="/users/:id" element={<UserDetails />} />
 
