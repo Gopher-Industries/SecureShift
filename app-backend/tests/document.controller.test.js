@@ -185,4 +185,57 @@ describe('Document Controller', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
+});  // ------------------------
+  // BE-071: 404 for missing expiry-update target
+  // ------------------------
+  test("should return 404 when the document to update does not exist", async () => {
+    const notFoundError = new Error("Document not found");
+    notFoundError.statusCode = 404;
+    updateDocumentExpiry.mockRejectedValue(notFoundError);
+
+    const req = mockReq({
+      params: { id: "doc-missing" },
+      body: { expiryDate: "2027-01-01" },
+    });
+
+    const res = mockRes();
+
+    await updateDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: "Document not found" });
+  });
+
+  test("should still return 400 when the expiry date is invalid", async () => {
+    updateDocumentExpiry.mockRejectedValue(new Error("Invalid expiry date"));
+
+    const req = mockReq({
+      params: { id: "doc1" },
+      body: { expiryDate: "not-a-date" },
+    });
+
+    const res = mockRes();
+
+    await updateDocument(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Invalid expiry date" });
+  });
+
+  test("should not return 404 when the update succeeds", async () => {
+    const mockResult = { message: "Document expiry updated successfully" };
+    updateDocumentExpiry.mockResolvedValue(mockResult);
+
+    const req = mockReq({
+      params: { id: "doc1" },
+      body: { expiryDate: "2027-01-01" },
+    });
+
+    const res = mockRes();
+
+    await updateDocument(req, res);
+
+    expect(res.status).not.toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith(mockResult);
+  });
 });
