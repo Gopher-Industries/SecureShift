@@ -185,7 +185,7 @@ describe('Document Controller', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-});  // ------------------------
+  // ------------------------
   // BE-071: 404 for missing expiry-update target
   // ------------------------
   test("should return 404 when the document to update does not exist", async () => {
