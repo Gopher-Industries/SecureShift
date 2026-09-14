@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import AddAvailabilityModal from '../modal/AddAvailabilityModal';
@@ -44,9 +44,13 @@ export default function AvailabilitySimpleView({
 }: Props) {
   const styles = getStyles(colors);
 
-  const hoursToday = Math.floor(Math.random() * 16);
-  const hoursWeek = Math.floor(Math.random() * 50);
-  const shiftsWeek = Math.floor(Math.random() * 10);
+  const mockData = (max: number) => {
+    return Math.floor(Math.random() * max);
+  };
+
+  const hoursToday = useMemo(() => mockData(16), [16]);
+  const hoursWeek = useMemo(() => mockData(50), [50]);
+  const shiftsWeek = useMemo(() => mockData(10), [10]);
   let mockWarning = '';
   // Mock warning - base actual warning off of the warning given by the backend
   if (hoursToday > 10) {
@@ -79,7 +83,7 @@ export default function AvailabilitySimpleView({
       </View>
 
       {mockWarning.length > 0 && (
-        <View style={styles.warnginCard}>
+        <View style={styles.warningCard}>
           <Text style={styles.warningText}>{mockWarning}</Text>
         </View>
       )}
@@ -187,8 +191,8 @@ const getStyles = (colors: AppColors) =>
       color: colors.primary,
       fontWeight: 'bold',
     },
-    warnginCard: {
-      backgroundColor: colors.status.rejected,
+    warningCard: {
+      backgroundColor: colors.status.pending,
       borderRadius: 12,
       padding: 14,
       marginBottom: 12,
