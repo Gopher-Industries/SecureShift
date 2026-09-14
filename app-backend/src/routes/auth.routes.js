@@ -367,15 +367,11 @@ router.post(
       };
 
       // Use your submitEOI controller to store eoiData in a collection
-      const { employerCreated } = await submitEOI(eoiData);
+      await submitEOI(eoiData);
 
-      let message = "EOI submitted successfully";
-      if (!employerCreated) {
-        message +=
-          " (Account already exists for this email; no new credentials sent)";
-      }
-
-      res.status(201).json({ message, files: fileInfos });
+      res
+        .status(201)
+        .json({ message: "EOI submitted successfully", files: fileInfos });
     } catch (err) {
       console.error("EOI upload error:", err);
       res.status(500).json({ error: err.message });
