@@ -167,6 +167,22 @@ function AppRoutes({ language, setLanguage }) {
           element={protectedLayout(<Payroll language={language} />)}
         />
         <Route
+          path="/privacy-policy"
+          element={protectedLayout(<PrivacyPolicy />)}
+        />
+        <Route
+          path="/terms-and-condition"
+          element={protectedLayout(<TermsAndConditions />)}
+        />
+        <Route
+          path="/contact-us"
+          element={protectedLayout(<ContactUs />)}
+        />
+        <Route
+          path="/all-reviews"
+          element={protectedLayout(<AllReviews />)}
+        />
+        <Route
           path="/faqs"
           element={protectedLayout(<FAQs />)}
         />
