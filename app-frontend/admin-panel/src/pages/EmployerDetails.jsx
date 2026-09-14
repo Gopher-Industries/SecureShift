@@ -12,12 +12,7 @@ function formatAddress(address) {
     return address;
   }
 
-  const parts = [
-    address.street,
-    address.suburb,
-    address.state,
-    address.postcode,
-  ].filter(Boolean);
+  const parts = [address.street, address.suburb, address.state, address.postcode].filter(Boolean);
 
   return parts.length ? parts.join(', ') : '—';
 }
@@ -27,9 +22,7 @@ function formatDate(value) {
 
   const date = new Date(value);
 
-  return Number.isNaN(date.getTime())
-    ? '—'
-    : date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
 }
 
 function formatTime(shift) {
@@ -76,17 +69,12 @@ export default function EmployerDetails() {
           ? shiftData
           : shiftData.shifts || shiftData.data || [];
 
-        const employerShifts = allShifts.filter(
-          (shift) => String(shift.createdBy) === String(id)
-        );
+        const employerShifts = allShifts.filter((shift) => String(shift.createdBy) === String(id));
 
         setEmployer(user);
         setShifts(employerShifts);
       } catch (err) {
-        setError(
-          err?.response?.data?.message ||
-            'Failed to load employer details'
-        );
+        setError(err?.response?.data?.message || 'Failed to load employer details');
       } finally {
         setLoading(false);
       }
@@ -121,10 +109,7 @@ export default function EmployerDetails() {
       <h1>Employer Details</h1>
 
       <p style={{ marginTop: -8 }}>
-        <Link
-          to="/employers"
-          style={{ color: colors.primary }}
-        >
+        <Link to="/employers" style={{ color: colors.primary }}>
           &larr; Back to Employers
         </Link>
       </p>

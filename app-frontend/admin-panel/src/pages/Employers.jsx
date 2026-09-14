@@ -21,19 +21,13 @@ export default function Employers() {
 
         const data = await getUsers();
 
-        const users = Array.isArray(data)
-          ? data
-          : data.users || data.data || [];
+        const users = Array.isArray(data) ? data : data.users || data.data || [];
 
-        const employerUsers = users.filter(
-          (user) => user.role === 'employer'
-        );
+        const employerUsers = users.filter((user) => user.role === 'employer');
 
         setEmployers(employerUsers);
       } catch (err) {
-        setError(
-          err?.response?.data?.message || 'Failed to load employers'
-        );
+        setError(err?.response?.data?.message || 'Failed to load employers');
       } finally {
         setLoading(false);
       }
@@ -43,9 +37,7 @@ export default function Employers() {
   }, []);
 
   const filteredEmployers = employers.filter((employer) => {
-    const searchText = `${employer.name} ${employer.email} ${
-      employer.phone || ''
-    }`.toLowerCase();
+    const searchText = `${employer.name} ${employer.email} ${employer.phone || ''}`.toLowerCase();
 
     const matchesSearch = searchText.includes(query.toLowerCase());
 
@@ -53,8 +45,7 @@ export default function Employers() {
     // employer records do not have a status field.
     const employerStatus = employer.status || 'active';
 
-    const matchesStatus =
-      !statusFilter || employerStatus === statusFilter;
+    const matchesStatus = !statusFilter || employerStatus === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -64,10 +55,7 @@ export default function Employers() {
       key: 'name',
       header: 'Name',
       render: (employer) => (
-        <Link
-          to={`/employers/${employer._id}`}
-          style={{ color: colors.primary }}
-        >
+        <Link to={`/employers/${employer._id}`} style={{ color: colors.primary }}>
           {employer.name}
         </Link>
       ),
