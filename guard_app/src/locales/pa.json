@@ -220,6 +220,7 @@
     "profile": "ਪ੍ਰੋਫਾਈਲ"
   },
   "nav": {
+    "myPerformance": "ਮੇਰੀ ਕਾਰਗੁਜ਼ਾਰੀ",
     "settings": "ਸੈਟਿੰਗਾਂ",
     "privacyPolicy": "ਗੋਪਨੀਯਤਾ ਨੀਤੀ",
     "messages": "ਸੁਨੇਹੇ",
@@ -350,5 +351,29 @@
     "unlock": "ਅਨਲਾਕ ਕਰੋ",
     "settingsLabel": "ਐਪ ਲਾਕ (Face ID / PIN)",
     "unavailable": "ਉਪਲਬਧ ਨਹੀਂ"
+  },
+  "performance": {
+    "title": "ਮੇਰੀ ਕਾਰਗੁਜ਼ਾਰੀ",
+    "scoreLabel": "ਗਾਰਡ ਸਕੋਰ",
+    "outOf": "{{total}} ਵਿੱਚੋਂ",
+    "breakdown": "ਸਕੋਰ ਵੇਰਵਾ",
+    "punctuality": "ਸਮੇਂ ਦੀ ਪਾਬੰਦੀ",
+    "punctualityDetail": "{{total}} ਵਿੱਚੋਂ {{onTime}} ਚੈੱਕ-ਇਨ ਸਮੇਂ ਸਿਰ",
+    "shiftCompletion": "ਸ਼ਿਫਟ ਪੂਰਤੀ",
+    "shiftCompletionDetail": "{{total}} ਵਿੱਚੋਂ {{completed}} ਸ਼ਿਫਟਾਂ ਪੂਰੀਆਂ",
+    "incidents": "ਘਟਨਾਵਾਂ",
+    "incidentsDetail": "{{high}} ਉੱਚ, {{medium}} ਦਰਮਿਆਨੀ, {{low}} ਘੱਟ",
+    "streaks": "ਲਗਾਤਾਰਤਾ",
+    "currentStreak": "ਮੌਜੂਦਾ ਲਗਾਤਾਰਤਾ",
+    "bestStreak": "ਸਭ ਤੋਂ ਵਧੀਆ ਲਗਾਤਾਰਤਾ",
+    "onTimeThisMonth": "ਇਸ ਮਹੀਨੇ ਸਮੇਂ ਸਿਰ",
+    "trend": "ਤਾਜ਼ਾ ਰੁਝਾਨ",
+    "sampleData": "ਨਮੂਨਾ ਡਾਟਾ",
+    "sampleNote": "ਲਗਾਤਾਰਤਾ ਅਤੇ ਰੁਝਾਨ ਨਮੂਨਾ ਡਾਟਾ ਹਨ। API ਭੇਜਣ ਤੇ ਅਸਲ ਮੁੱਲ ਦਿਖਣਗੇ।",
+    "empty": "ਹਾਲੇ ਕੋਈ ਸਕੋਰ ਨਹੀਂ",
+    "emptyMessage": "ਕੁਝ ਸ਼ਿਫਟਾਂ ਕਰਨ ਤੋਂ ਬਾਅਦ ਤੁਹਾਡਾ ਸਕੋਰ ਇੱਥੇ ਦਿਖੇਗਾ।",
+    "error": "ਕਾਰਗੁਜ਼ਾਰੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ।",
+    "retry": "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+    "viewDetails": "ਵੇਰਵਾ ਵੇਖੋ"
   }
 }

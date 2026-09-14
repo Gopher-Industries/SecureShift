@@ -222,6 +222,7 @@
     "profile": "प्रोफ़ाइल"
   },
   "nav": {
+    "myPerformance": "मेरा प्रदर्शन",
     "settings": "सेटिंग्स",
     "privacyPolicy": "गोपनीयता नीति",
     "messages": "संदेश",
@@ -436,5 +437,29 @@
     "unlock": "अनलॉक करें",
     "settingsLabel": "ऐप लॉक (Face ID / PIN)",
     "unavailable": "अनुपलब्ध"
+  },
+  "performance": {
+    "title": "मेरा प्रदर्शन",
+    "scoreLabel": "गार्ड स्कोर",
+    "outOf": "{{total}} में से",
+    "breakdown": "स्कोर विवरण",
+    "punctuality": "समय की पाबंदी",
+    "punctualityDetail": "{{total}} में से {{onTime}} चेक-इन समय पर",
+    "shiftCompletion": "शिफ्ट पूर्णता",
+    "shiftCompletionDetail": "{{total}} में से {{completed}} शिफ्ट पूरी",
+    "incidents": "घटनाएँ",
+    "incidentsDetail": "{{high}} उच्च, {{medium}} मध्यम, {{low}} निम्न",
+    "streaks": "निरंतरता",
+    "currentStreak": "वर्तमान निरंतरता",
+    "bestStreak": "सर्वश्रेष्ठ निरंतरता",
+    "onTimeThisMonth": "इस महीने समय पर",
+    "trend": "हाल का रुझान",
+    "sampleData": "नमूना डेटा",
+    "sampleNote": "निरंतरता और रुझान नमूना डेटा हैं। API भेजने पर असली मान दिखेंगे।",
+    "empty": "अभी कोई स्कोर नहीं",
+    "emptyMessage": "कुछ शिफ्ट करने के बाद आपका स्कोर यहाँ दिखेगा।",
+    "error": "प्रदर्शन लोड नहीं हो सका।",
+    "retry": "फिर कोशिश करें",
+    "viewDetails": "विवरण देखें"
   }
 }

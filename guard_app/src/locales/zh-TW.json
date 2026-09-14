@@ -220,6 +220,7 @@
     "profile": "我的"
   },
   "nav": {
+    "myPerformance": "我的表現",
     "settings": "設定",
     "privacyPolicy": "隱私權政策",
     "messages": "訊息",
@@ -431,5 +432,29 @@
     "unlock": "解鎖",
     "settingsLabel": "應用程式鎖（Face ID / PIN）",
     "unavailable": "無法使用"
+  },
+  "performance": {
+    "title": "我的表現",
+    "scoreLabel": "保全評分",
+    "outOf": "滿分 {{total}}",
+    "breakdown": "評分明細",
+    "punctuality": "準時率",
+    "punctualityDetail": "{{total}} 次簽到中有 {{onTime}} 次準時",
+    "shiftCompletion": "排班完成率",
+    "shiftCompletionDetail": "{{total}} 個排班中完成 {{completed}} 個",
+    "incidents": "事件",
+    "incidentsDetail": "{{high}} 高，{{medium}} 中，{{low}} 低",
+    "streaks": "連續紀錄",
+    "currentStreak": "目前連續",
+    "bestStreak": "最佳連續",
+    "onTimeThisMonth": "本月準時",
+    "trend": "近期趨勢",
+    "sampleData": "範例資料",
+    "sampleNote": "連續紀錄和趨勢為範例資料，API 提供後會顯示真實數值。",
+    "empty": "尚無評分",
+    "emptyMessage": "完成一些排班後，你的評分會顯示在這裡。",
+    "error": "無法載入表現資料。",
+    "retry": "重試",
+    "viewDetails": "查看詳情"
   }
 }

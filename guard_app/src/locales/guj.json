@@ -219,6 +219,7 @@
     "profile": "પ્રોફાઇલ"
   },
   "nav": {
+    "myPerformance": "મારું પ્રદર્શન",
     "settings": "સેટિંગ્સ",
     "privacyPolicy": "ગોપનીયતા નીતિ",
     "messages": "સંદેશાઓ",
@@ -430,5 +431,29 @@
     "unlock": "અનલૉક કરો",
     "settingsLabel": "એપ લૉક (Face ID / PIN)",
     "unavailable": "અનુપલબ્ધ"
+  },
+  "performance": {
+    "title": "મારું પ્રદર્શન",
+    "scoreLabel": "ગાર્ડ સ્કોર",
+    "outOf": "{{total}} માંથી",
+    "breakdown": "સ્કોર વિગતો",
+    "punctuality": "સમયપાલન",
+    "punctualityDetail": "{{total}} માંથી {{onTime}} ચેક-ઇન સમયસર",
+    "shiftCompletion": "શિફ્ટ પૂર્ણતા",
+    "shiftCompletionDetail": "{{total}} માંથી {{completed}} શિફ્ટ પૂર્ણ",
+    "incidents": "ઘટનાઓ",
+    "incidentsDetail": "{{high}} ઉચ્ચ, {{medium}} મધ્યમ, {{low}} નીચી",
+    "streaks": "સાતત્ય",
+    "currentStreak": "હાલનું સાતત્ય",
+    "bestStreak": "શ્રેષ્ઠ સાતત્ય",
+    "onTimeThisMonth": "આ મહિને સમયસર",
+    "trend": "તાજેતરનું વલણ",
+    "sampleData": "નમૂના ડેટા",
+    "sampleNote": "સાતત્ય અને વલણ નમૂના ડેટા છે. API મોકલશે ત્યારે ખરા મૂલ્ય દેખાશે.",
+    "empty": "હજુ કોઈ સ્કોર નથી",
+    "emptyMessage": "તમે થોડી શિફ્ટ કરો પછી સ્કોર અહીં દેખાશે.",
+    "error": "પ્રદર્શન લોડ થઈ શક્યું નહીં.",
+    "retry": "ફરી પ્રયત્ન કરો",
+    "viewDetails": "વિગતો જુઓ"
   }
 }
