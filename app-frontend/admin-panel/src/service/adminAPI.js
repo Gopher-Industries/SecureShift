@@ -27,6 +27,12 @@ export const getMessages = (params) => http.get('/admin/messages', { params }).t
 export const deleteMessage = (id, body) =>
   http.delete(`/admin/messages/${id}`, { data: body }).then((r) => r.data);
 
+// Incident oversight
+export const getIncidents = (params) => http.get('/incidents', { params }).then((r) => r.data);
+export const getIncident = (id) => http.get(`/incidents/${id}`).then((r) => r.data);
+export const updateIncident = (id, body) =>
+  http.patch(`/incidents/${id}`, body).then((r) => r.data);
+
 // System configuration
 export const getSmtpSettings = () => http.get('/admin/smtp-settings').then((r) => r.data);
 export const updateSmtpSettings = (body) =>

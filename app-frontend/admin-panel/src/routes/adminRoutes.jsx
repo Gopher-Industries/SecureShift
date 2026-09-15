@@ -1,3 +1,4 @@
+import Announcements from '../pages/Announcements';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import AdminLayout from '../layouts/AdminLayout';
@@ -7,6 +8,8 @@ import Users from '../pages/Users';
 import UserDetails from '../pages/UserDetails';
 import GuardVerification from '../pages/GuardVerification';
 import Shifts from '../pages/Shifts';
+import Incidents from '../pages/Incidents';
+import IncidentDetails from '../pages/IncidentDetails';
 import Roles from '../pages/Roles';
 import AuditLogs from '../pages/AuditLogs';
 import Messages from '../pages/Messages';
@@ -37,6 +40,9 @@ export default function AppRoutes() {
         <Route path="/guard-verification" element={<GuardVerification />} />
 
         <Route path="/shifts" element={<Shifts />} />
+        <Route path="/incidents" element={<Incidents />} />
+
+        <Route path="/incidents/:id" element={<IncidentDetails />} />
 
         <Route path="/roles" element={<Roles />} />
 
@@ -45,6 +51,7 @@ export default function AppRoutes() {
         <Route path="/messages" element={<Messages />} />
 
         <Route path="/smtp-settings" element={<SMTPSettings />} />
+        <Route path="/announcements" element={<Announcements />} />
       </Route>
 
       <Route path="/access-denied" element={<AccessDenied />} />
