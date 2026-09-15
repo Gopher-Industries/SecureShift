@@ -4,6 +4,7 @@ import {
   exportPayrollCsv,
   exportPayrollPdf,
   getPayrollRecords,
+  getPayrollSummaryRecords,
   processPayrollRecords,
 } from "../services/payroll.service.js";
 
@@ -19,6 +20,15 @@ export const getPayroll = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     return sendError(res, error, "Failed to retrieve payroll");
+  }
+};
+
+export const getPayrollSummary = async (req, res) => {
+  try {
+    const result = await getPayrollSummaryRecords(req.query, req.user);
+    return res.status(200).json(result);
+  } catch (error) {
+    return sendError(res, error, "Failed to retrieve payroll summary");
   }
 };
 

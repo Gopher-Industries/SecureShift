@@ -7,6 +7,7 @@ import {
   downloadPayrollCsv,
   downloadPayrollPdf,
   getPayroll,
+  getPayrollSummary,
   processPayroll,
 } from "../controllers/payroll.controller.js";
 
@@ -69,7 +70,62 @@ const router = express.Router();
  *       403:
  *         description: Forbidden
  */
+
 router.get("/", auth, authorizeRoles("admin", "employer", "guard"), getPayroll);
+
+/**
+ * @swagger
+ * /api/v1/payroll/summary:
+ *   get:
+ *     summary: Get a payroll summary for a date range
+ *     description: Read-only. Reads existing payroll records and does not create or update any payroll data.
+ *     tags: [Payroll]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date in YYYY-MM-DD format
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date in YYYY-MM-DD format
+ *       - in: query
+ *         name: periodType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [daily, weekly, monthly]
+ *       - in: query
+ *         name: guardId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional guard filter. Guards may only use their own id.
+ *     responses:
+ *       200:
+ *         description: Payroll summary returned successfully
+ *       400:
+ *         description: Invalid query parameters
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+  "/summary",
+  auth,
+  authorizeRoles("admin", "employer", "guard"),
+  getPayrollSummary,
+);
+
 /**
  * @swagger
  * /api/v1/payroll/export:
