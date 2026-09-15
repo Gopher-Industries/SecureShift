@@ -58,7 +58,9 @@
     "crashMessage": "ਇਸ ਸਕਰੀਨ ਵਿੱਚ ਸਮੱਸਿਆ ਆ ਗਈ। ਤੁਸੀਂ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰ ਸਕਦੇ ਹੋ।"
   },
   "net": {
-    "offline": "ਇੰਟਰਨੈੱਟ ਕਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ"
+    "offline": "ਇੰਟਰਨੈੱਟ ਕਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ",
+    "syncing": "{{count}} ਹਾਜ਼ਰੀ ਅੱਪਡੇਟ ਸਿੰਕ ਹੋ ਰਹੇ ਹਨ…",
+    "pendingSync": "{{count}} ਹਾਜ਼ਰੀ ਅੱਪਡੇਟ ਸਿੰਕ ਹੋਣੇ ਬਾਕੀ"
   },
   "home": {
     "welcome": "ਵਾਪਸੀ ਤੇ ਸਵਾਗਤ ਹੈ, {{name}}!",
@@ -164,6 +166,8 @@
     "leaveEnd": "ਛੱਡੋ ਦਾ ਅੰਤ",
     "notFound": "ਕੋਈ ਸ਼ਿਫਟ ਬੇਨਤੀ ਨਹੀਂ ਮਿਲੀ",
     "requestError": "ਬੇਨਤੀਆਂ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ।",
+    "assignedGuard": "ਨਿਯੁਕਤ ਗਾਰਡ:",
+    "swapOptionsError": "ਸਵੈਪ ਵਿਕਲਪ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ",
     "rateShift": "ਇਸ ਸ਼ਿਫਟ ਨੂੰ ਰੇਟਿੰਗ ਦਿਓ",
     "submitRating": "ਰੇਟਿੰਗ ਭੇਜੋ",
     "submittingRating": "ਭੇਜਿਆ ਜਾ ਰਿਹਾ ਹੈ...",
@@ -172,10 +176,14 @@
     "ratingFailed": "ਤੁਹਾਡੀ ਰੇਟਿੰਗ ਸੰਭਾਲੀ ਨਹੀਂ ਜਾ ਸਕੀ",
     "starLabel": "{{count}} ਸਟਾਰ ਰੇਟਿੰਗ",
     "alerts": {
+      "missingReasonHead": "ਕਾਰਨ ਗੁੰਮ ਹੈ",
+      "missingReasonMsg": "ਸ਼ਿਫਟ ਬੇਨਤੀ ਦਾ ਕਾਰਨ ਦਰਜ ਕਰੋ.",
       "missingDateHead": "ਗੁੰਮ ਹੋਈ ਮਿਤੀ",
       "missingDateMsg": "ਉਸ ਤਾਰੀਖ਼ ਨੂੰ ਦਾਖਲ ਕਰੋ ਜਿਸ 'ਤੇ ਤੁਸੀਂ ਆਪਣੀ ਸ਼ਿਫਟ ਨੂੰ ਤਬਦੀਲ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ.",
       "invalidDateHead": "ਅਵੈਧ ਮਿਤੀ",
       "invalidDateMsg": "ਚੁਣੀ ਗਈ ਮਿਤੀ ਅਵੈਧ ਹੈ",
+      "selectShiftHead": "ਸ਼ਿਫਟ ਚੁਣੋ",
+      "selectShiftMsg": "ਕੋਈ ਸ਼ਿਫਟ ਨਹੀਂ ਚੁਣੀ ਗਈ",
       "requestCreated": "ਬੇਨਤੀ ਬਣਾਈ ਗਈ",
       "requestFailed": "ਬੇਨਤੀ ਅਸਫਲ ਰਹੀ",
       "requestSuccessful": "ਬੇਨਤੀ ਸਫਲ ਹੋਈ",
@@ -214,6 +222,7 @@
     "profile": "ਪ੍ਰੋਫਾਈਲ"
   },
   "nav": {
+    "myPerformance": "ਮੇਰੀ ਕਾਰਗੁਜ਼ਾਰੀ",
     "settings": "ਸੈਟਿੰਗਾਂ",
     "privacyPolicy": "ਗੋਪਨੀਯਤਾ ਨੀਤੀ",
     "messages": "ਸੁਨੇਹੇ",
@@ -344,5 +353,29 @@
     "unlock": "ਅਨਲਾਕ ਕਰੋ",
     "settingsLabel": "ਐਪ ਲਾਕ (Face ID / PIN)",
     "unavailable": "ਉਪਲਬਧ ਨਹੀਂ"
+  },
+  "performance": {
+    "title": "ਮੇਰੀ ਕਾਰਗੁਜ਼ਾਰੀ",
+    "scoreLabel": "ਗਾਰਡ ਸਕੋਰ",
+    "outOf": "{{total}} ਵਿੱਚੋਂ",
+    "breakdown": "ਸਕੋਰ ਵੇਰਵਾ",
+    "punctuality": "ਸਮੇਂ ਦੀ ਪਾਬੰਦੀ",
+    "punctualityDetail": "{{total}} ਵਿੱਚੋਂ {{onTime}} ਚੈੱਕ-ਇਨ ਸਮੇਂ ਸਿਰ",
+    "shiftCompletion": "ਸ਼ਿਫਟ ਪੂਰਤੀ",
+    "shiftCompletionDetail": "{{total}} ਵਿੱਚੋਂ {{completed}} ਸ਼ਿਫਟਾਂ ਪੂਰੀਆਂ",
+    "incidents": "ਘਟਨਾਵਾਂ",
+    "incidentsDetail": "{{high}} ਉੱਚ, {{medium}} ਦਰਮਿਆਨੀ, {{low}} ਘੱਟ",
+    "streaks": "ਲਗਾਤਾਰਤਾ",
+    "currentStreak": "ਮੌਜੂਦਾ ਲਗਾਤਾਰਤਾ",
+    "bestStreak": "ਸਭ ਤੋਂ ਵਧੀਆ ਲਗਾਤਾਰਤਾ",
+    "onTimeThisMonth": "ਇਸ ਮਹੀਨੇ ਸਮੇਂ ਸਿਰ",
+    "trend": "ਤਾਜ਼ਾ ਰੁਝਾਨ",
+    "sampleData": "ਨਮੂਨਾ ਡਾਟਾ",
+    "sampleNote": "ਲਗਾਤਾਰਤਾ ਅਤੇ ਰੁਝਾਨ ਨਮੂਨਾ ਡਾਟਾ ਹਨ। API ਭੇਜਣ ਤੇ ਅਸਲ ਮੁੱਲ ਦਿਖਣਗੇ।",
+    "empty": "ਹਾਲੇ ਕੋਈ ਸਕੋਰ ਨਹੀਂ",
+    "emptyMessage": "ਕੁਝ ਸ਼ਿਫਟਾਂ ਕਰਨ ਤੋਂ ਬਾਅਦ ਤੁਹਾਡਾ ਸਕੋਰ ਇੱਥੇ ਦਿਖੇਗਾ।",
+    "error": "ਕਾਰਗੁਜ਼ਾਰੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ।",
+    "retry": "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+    "viewDetails": "ਵੇਰਵਾ ਵੇਖੋ"
   }
 }

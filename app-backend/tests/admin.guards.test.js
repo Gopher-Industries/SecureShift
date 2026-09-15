@@ -292,3 +292,24 @@ describe("GET /api/v1/admin/guards/pending", () => {
     expect(docs[0].status).toBe("pending");
   });
 });
+
+describe("Admin license review malformed guard IDs", () => {
+  test("verify rejects a malformed guard ID with 400", async () => {
+    const res = await request(app)
+      .patch("/api/v1/admin/guards/not-a-valid-object-id/license/verify")
+      .set("Authorization", `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Invalid id" });
+  });
+
+  test("reject rejects a malformed guard ID with 400", async () => {
+    const res = await request(app)
+      .patch("/api/v1/admin/guards/not-a-valid-object-id/license/reject")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ reason: "Invalid licence document" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ message: "Invalid id" });
+  });
+});

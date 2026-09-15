@@ -12,15 +12,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { checkIn, checkOut, getUserAttendance } from '../api/attendance';
 import ErrorMessageBox from '../components/ErrorMessageBox';
+import { formatAttendanceTime } from '../components/functions/formatAttendanceTime';
 import LocationVerificationModal from '../components/modal/LocationVerificationModal';
+import { enqueueAttendance } from '../lib/attendanceQueue';
 import { getAttendanceForShift, setAttendanceForShift } from '../lib/attendancestore';
-import { LocalStorage } from '../lib/localStorage';
 import { getHandoverNotesForSite, HandoverNote, saveHandoverNote } from '../lib/handoverNotesStore';
+import { LocalStorage } from '../lib/localStorage';
+import { getIsConnected } from '../lib/networkStatus';
 import { useAppTheme } from '../theme';
 import { formatDate } from '../utils/date';
-import { formatAttendanceTime } from '../components/functions/formatAttendanceTime';
 
 import type { ShiftDto } from '../api/shifts';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -330,6 +333,30 @@ export default function ShiftDetailsScreen() {
     }
   };
 
+  // Queue an attendance action locally and reflect it optimistically. Used when
+  // the device is offline or the request can't reach the server; the app-level
+  // sync (useAttendanceSync) replays it once connectivity returns.
+  const saveAttendanceOffline = async (
+    type: 'check-in' | 'check-out',
+    loc: { latitude: number; longitude: number; timestamp: number },
+  ) => {
+    await enqueueAttendance({ shiftId: shift._id, type, location: loc });
+
+    const timeIso = new Date(loc.timestamp).toISOString();
+    const next: AttendanceState =
+      type === 'check-in'
+        ? { checkInTime: timeIso, checkOutTime: attendance?.checkOutTime }
+        : { checkInTime: attendance?.checkInTime, checkOutTime: timeIso };
+
+    setAttendance(next);
+    setAttendanceForShift(shift._id, next).catch(() => {});
+
+    Alert.alert(
+      'Saved offline',
+      `Your ${type === 'check-in' ? 'check-in' : 'check-out'} was saved and will sync automatically when you're back online.`,
+    );
+  };
+
   const handleVerificationSuccess = async (loc: {
     latitude: number;
     longitude: number;
@@ -348,6 +375,12 @@ export default function ShiftDetailsScreen() {
 
         if (clientValidationError) {
           showErrorBox(clientValidationError.title, clientValidationError.message);
+          return;
+        }
+
+        // Offline: queue the check-in and sync it later.
+        if (!(await getIsConnected())) {
+          await saveAttendanceOffline('check-in', loc);
           return;
         }
 
@@ -374,6 +407,12 @@ export default function ShiftDetailsScreen() {
           return;
         }
 
+        // Offline: queue the check-out and sync it later.
+        if (!(await getIsConnected())) {
+          await saveAttendanceOffline('check-out', loc);
+          return;
+        }
+
         console.log('➡️ checkOut request for shift:', shift._id);
         const res = await checkOut(shift._id, loc);
 
@@ -390,6 +429,13 @@ export default function ShiftDetailsScreen() {
     } catch (e: unknown) {
       setModalVisible(false);
       console.log('❌ attendance API failed:', e);
+
+      // Request never reached the server (no response = connectivity failure):
+      // queue it so it syncs when the network returns, instead of erroring out.
+      if (e instanceof AxiosError && !e.response) {
+        await saveAttendanceOffline(actionType, loc);
+        return;
+      }
 
       const msg =
         e instanceof AxiosError

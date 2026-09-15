@@ -58,7 +58,9 @@
     "crashMessage": "આ સ્ક્રીનમાં સમસ્યા આવી. તમે ફરી પ્રયાસ કરી શકો છો."
   },
   "net": {
-    "offline": "ઇન્ટરનેટ કનેક્શન નથી"
+    "offline": "ઇન્ટરનેટ કનેક્શન નથી",
+    "syncing": "{{count}} હાજરી અપડેટ સિંક થઈ રહ્યા છે…",
+    "pendingSync": "{{count}} હાજરી અપડેટ સિંક થવાના બાકી"
   },
   "home": {
     "welcome": "ફરી સ્વાગત છે, {{name}}!",
@@ -164,6 +166,8 @@
     "leaveEnd": "છોડી દેવાનો અંત",
     "notFound": "કોઈ શિફ્ટ વિનંતીઓ મળી નથી",
     "requestError": "વિનંતીઓ લોડ કરવામાં નિષ્ફળતા.",
+    "assignedGuard": "સોંપાયેલ રક્ષક:",
+    "swapOptionsError": "સ્વેપ વિકલ્પો લોડ કરવામાં નિષ્ફળ",
     "rateShift": "આ શિફ્ટને રેટિંગ આપો",
     "submitRating": "રેટિંગ મોકલો",
     "submittingRating": "મોકલી રહ્યા છીએ...",
@@ -172,10 +176,14 @@
     "ratingFailed": "તમારું રેટિંગ સાચવી શકાયું નથી",
     "starLabel": "{{count}} સ્ટાર રેટિંગ",
     "alerts": {
+      "missingReasonHead": "કારણ ખૂટે છે",
+      "missingReasonMsg": "શિફ્ટ વિનંતીનું કારણ દાખલ કરો.",
       "missingDateHead": "ગુમ થયેલ તારીખ",
       "missingDateMsg": "તમે જે તારીખે તમારી શિફ્ટ ખસેડવા માંગો છો તે તારીખ દાખલ કરો.",
       "invalidDateHead": "અયોગ્ય તારીખ",
       "invalidDateMsg": "પસંદ થયેલ તારીખ અયોગ્ય છે",
+      "selectShiftHead": "શિફ્ટ પસંદ કરો",
+      "selectShiftMsg": "કોઈ શિફ્ટ પસંદ કરેલ નથી",
       "requestCreated": "માંગણી બનાવેલ છે",
       "requestFailed": "વિનંતી નિષ્ફળ",
       "successMessage": "તમારી વિનંતી તમારા એમ્પ્લોયરને મોકલવામાં આવી છે"
@@ -213,6 +221,7 @@
     "profile": "પ્રોફાઇલ"
   },
   "nav": {
+    "myPerformance": "મારું પ્રદર્શન",
     "settings": "સેટિંગ્સ",
     "privacyPolicy": "ગોપનીયતા નીતિ",
     "messages": "સંદેશાઓ",
@@ -424,5 +433,29 @@
     "unlock": "અનલૉક કરો",
     "settingsLabel": "એપ લૉક (Face ID / PIN)",
     "unavailable": "અનુપલબ્ધ"
+  },
+  "performance": {
+    "title": "મારું પ્રદર્શન",
+    "scoreLabel": "ગાર્ડ સ્કોર",
+    "outOf": "{{total}} માંથી",
+    "breakdown": "સ્કોર વિગતો",
+    "punctuality": "સમયપાલન",
+    "punctualityDetail": "{{total}} માંથી {{onTime}} ચેક-ઇન સમયસર",
+    "shiftCompletion": "શિફ્ટ પૂર્ણતા",
+    "shiftCompletionDetail": "{{total}} માંથી {{completed}} શિફ્ટ પૂર્ણ",
+    "incidents": "ઘટનાઓ",
+    "incidentsDetail": "{{high}} ઉચ્ચ, {{medium}} મધ્યમ, {{low}} નીચી",
+    "streaks": "સાતત્ય",
+    "currentStreak": "હાલનું સાતત્ય",
+    "bestStreak": "શ્રેષ્ઠ સાતત્ય",
+    "onTimeThisMonth": "આ મહિને સમયસર",
+    "trend": "તાજેતરનું વલણ",
+    "sampleData": "નમૂના ડેટા",
+    "sampleNote": "સાતત્ય અને વલણ નમૂના ડેટા છે. API મોકલશે ત્યારે ખરા મૂલ્ય દેખાશે.",
+    "empty": "હજુ કોઈ સ્કોર નથી",
+    "emptyMessage": "તમે થોડી શિફ્ટ કરો પછી સ્કોર અહીં દેખાશે.",
+    "error": "પ્રદર્શન લોડ થઈ શક્યું નહીં.",
+    "retry": "ફરી પ્રયત્ન કરો",
+    "viewDetails": "વિગતો જુઓ"
   }
 }

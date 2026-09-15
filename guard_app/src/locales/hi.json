@@ -58,7 +58,9 @@
     "crashMessage": "इस स्क्रीन में कोई समस्या आ गई। आप फिर से कोशिश कर सकते हैं।"
   },
   "net": {
-    "offline": "इंटरनेट कनेक्शन नहीं है"
+    "offline": "इंटरनेट कनेक्शन नहीं है",
+    "syncing": "{{count}} उपस्थिति अपडेट सिंक हो रहे हैं…",
+    "pendingSync": "{{count}} उपस्थिति अपडेट सिंक होने बाकी हैं"
   },
   "home": {
     "welcome": "वापसी पर स्वागत है, {{name}}!",
@@ -167,6 +169,8 @@
     "selectTime": "समय चुनें",
     "notFound": "कोई शिफ्ट अनुरोध नहीं मिला",
     "requestError": "अनुरोध लोड करने में विफल।",
+    "assignedGuard": "नियुक्त गार्ड:",
+    "swapOptionsError": "स्वैप ऑप्शन लोड करने में विफल",
     "rateShift": "इस शिफ्ट को रेटिंग दें",
     "submitRating": "रेटिंग भेजें",
     "submittingRating": "भेजा जा रहा है...",
@@ -175,10 +179,14 @@
     "ratingFailed": "आपकी रेटिंग सहेजी नहीं जा सकी",
     "starLabel": "{{count}} स्टार रेटिंग",
     "alerts": {
+      "missingReasonHead": "कारण गायब",
+      "missingReasonMsg": "शिफ्ट रिक्वेस्ट का कारण डालें.",
       "missingDateHead": "लापता तिथि",
       "missingDateMsg": "वह तारीख डालें, जिस पर आप अपनी शिफ्ट ले जाना चाहते हैं.",
       "invalidDateHead": "अमान्य दिनांक",
       "invalidDateMsg": "चयनित दिनांक अमान्य है",
+      "selectShiftHead": "शिफ्ट चुनें",
+      "selectShiftMsg": "कोई  शिफ्ट नहीं चुना गया",
       "requestCreated": "अनुरोध बनाया गया",
       "requestFailed": "अनुरोध विफल रहा",
       "successMessage": "आपका अनुरोध आपके नियोक्ता को भेज दिया गया है"
@@ -216,6 +224,7 @@
     "profile": "प्रोफ़ाइल"
   },
   "nav": {
+    "myPerformance": "मेरा प्रदर्शन",
     "settings": "सेटिंग्स",
     "privacyPolicy": "गोपनीयता नीति",
     "messages": "संदेश",
@@ -430,5 +439,29 @@
     "unlock": "अनलॉक करें",
     "settingsLabel": "ऐप लॉक (Face ID / PIN)",
     "unavailable": "अनुपलब्ध"
+  },
+  "performance": {
+    "title": "मेरा प्रदर्शन",
+    "scoreLabel": "गार्ड स्कोर",
+    "outOf": "{{total}} में से",
+    "breakdown": "स्कोर विवरण",
+    "punctuality": "समय की पाबंदी",
+    "punctualityDetail": "{{total}} में से {{onTime}} चेक-इन समय पर",
+    "shiftCompletion": "शिफ्ट पूर्णता",
+    "shiftCompletionDetail": "{{total}} में से {{completed}} शिफ्ट पूरी",
+    "incidents": "घटनाएँ",
+    "incidentsDetail": "{{high}} उच्च, {{medium}} मध्यम, {{low}} निम्न",
+    "streaks": "निरंतरता",
+    "currentStreak": "वर्तमान निरंतरता",
+    "bestStreak": "सर्वश्रेष्ठ निरंतरता",
+    "onTimeThisMonth": "इस महीने समय पर",
+    "trend": "हाल का रुझान",
+    "sampleData": "नमूना डेटा",
+    "sampleNote": "निरंतरता और रुझान नमूना डेटा हैं। API भेजने पर असली मान दिखेंगे।",
+    "empty": "अभी कोई स्कोर नहीं",
+    "emptyMessage": "कुछ शिफ्ट करने के बाद आपका स्कोर यहाँ दिखेगा।",
+    "error": "प्रदर्शन लोड नहीं हो सका।",
+    "retry": "फिर कोशिश करें",
+    "viewDetails": "विवरण देखें"
   }
 }

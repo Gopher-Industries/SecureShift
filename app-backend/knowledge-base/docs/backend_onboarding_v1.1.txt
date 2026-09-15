@@ -1,0 +1,189 @@
+SecureShift Backend Onboarding — Version 1.1 SecureShift Backend
+Onboarding
+Windows 11 + WSL2 and macOS | Docker, host -run backend, MongoDB
+Compass, seed data and email
+Version 1.1 — updated for local development seed data Recommended
+everyday backend setup: Run MongoDB in Docker, run the backend directly
+in WSL or macOS with Nodemon, and connect MongoDB Compass to localhost.
+Recommended full-system check: Run MongoDB, backend and employer
+frontend together with Docker Compose. 1. Understand the two MongoDB
+hostnames • Use mongodb:27017 only when the backend itself runs inside
+Docker Compose. • Use localhost:27017 when the backend runs directly in
+WSL, Windows or macOS. • MongoDB Compass on Windows or macOS also
+connects to localhost:27017. Inside Docker Compose:
+mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
+
+Outside Docker / Compass:
+mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshift_local
+2. First-time setup after pulling the Docker onboarding changes Warning:
+The reset below permanently deletes the existing local Docker MongoDB
+volume. Existing developers need it once after the database name and
+credentials change. Fresh clones do not need it. cd
+~/developer/SecureShift git switch main git pull –ff-only docker compose
+down -v docker compose up –build -d docker compose ps After this
+one-time reset, use docker compose down without -v for normal shutdown.
+3. Full Docker Compose workflow Windows / WSL2 cd
+~/developer/SecureShift docker compose up –build -d docker compose ps
+curl -i http://localhost:5000/api/v1/health • Employer panel:
+http://localhost:3000 • Swagger: http://localhost:5000/api-docs/ •
+MongoDB Compass: use the localhost connection in Section 7. macOS If
+port 5000 is occupied, create a root .env file: cd /path/to/SecureShift
+cp .env.example .env Uncomment or add: BACKEND_HOST_PORT=5001
+
+SecureShift Backend Onboarding — Version 1.1 docker compose up –build -d
+docker compose ps curl -i http://localhost:5001/api/v1/health • Employer
+panel: http://localhost:3000 • Swagger: http://localhost:5001/api-docs/
+• MongoDB Compass still uses localhost:27017 unless MONGODB_HOST_PORT is
+overridden. 4. Recommended backend-development workflow This is the
+fastest workflow for backend contributors. MongoDB stays in Docker,
+while the backend runs directly with Nodemon for immediate reloads and
+easier debugging. Windows / WSL2 cd ~/developer/SecureShift docker
+compose down docker compose up -d mongodb docker compose ps Create or
+edit app-backend/.env: NODE_ENV=development PORT=5000
+MONGO_URI=mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshi
+ft_local
+
+JWT_SECRET= LICENCE_ENC_KEY=
+
+EMAIL_ENABLED=false SMTP_HOST=localhost SMTP_PORT=587 SMTP_SECURE=false
+SMTP_USER=local@example.test SMTP_PASS=local-dev-password
+SMTP_FROM_EMAIL=local@example.test
+
+SEED_ALLOW_LOCAL=false SEED_RESET_CONFIRM= cd app-backend git
+check-ignore -v .env npm install npm run dev curl -i
+http://localhost:5000/api/v1/health macOS cd /path/to/SecureShift docker
+compose down docker compose up -d mongodb docker compose ps Create or
+edit app-backend/.env. If port 5000 is occupied, use PORT=5001:
+NODE_ENV=development PORT=5001
+MONGO_URI=mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshi
+ft_local
+
+JWT_SECRET= LICENCE_ENC_KEY=
+
+EMAIL_ENABLED=false SMTP_HOST=localhost SMTP_PORT=587
+
+SecureShift Backend Onboarding — Version 1.1 SMTP_SECURE=false
+SMTP_USER=local@example.test SMTP_PASS=local-dev-password
+SMTP_FROM_EMAIL=local@example.test
+
+SEED_ALLOW_LOCAL=false SEED_RESET_CONFIRM= cd app-backend git
+check-ignore -v .env npm install npm run dev curl -i
+http://localhost:5001/api/v1/health 5. Generate local backend secrets
+Run these commands separately on each machine: openssl rand -hex 32
+openssl rand -base64 32 • Paste the first value into JWT_SECRET. • Paste
+the second value into LICENCE_ENC_KEY. • Different values on WSL and Mac
+are fine for independent local databases. • Use the same values only
+when both machines must decrypt the same encrypted records or preserve
+compatible sessions against a shared database. • Keep each
+LICENCE_ENC_KEY stable once meaningful local encrypted data exists. •
+Never commit app-backend/.env. 6. Populate the local database with seed
+data The seed workflow creates deterministic fictional development data
+for backend, employer frontend and Guard App testing. It is idempotent:
+running it again updates the same records rather than duplicating them.
+Safety: The seed refuses production, Atlas/SRV, remote hosts and any
+database except secureshift_local, secureshift_dev or secureshift_test.
+Reset deletes only deterministic seed IDs and requires an exact
+confirmation string. Backend outside Docker; MongoDB in Docker In
+app-backend/.env, temporarily set: NODE_ENV=development
+SEED_ALLOW_LOCAL=true
+MONGO_URI=mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshi
+ft_local Then run from app-backend: npm run seed
+SEED_RESET_CONFIRM=SecureShiftLocalReset npm run seed:reset Reset:
+seed:reset removes only known seeded records. It does not empty the
+entire database. Set SEED_ALLOW_LOCAL back to false when you do not need
+seeding. Seed alongside Docker Compose From the repository root, use
+one-off backend containers. Compose supplies the internal mongodb
+hostname automatically: docker compose run –rm -e SEED_ALLOW_LOCAL=true
+backend npm run seed
+
+docker compose run –rm -e SEED_ALLOW_LOCAL=true -e
+SEED_RESET_CONFIRM=SecureShiftLocalReset backend npm run seed:reset
+
+SecureShift Backend Onboarding — Version 1.1 Seeded test accounts All
+seeded accounts use the local-only password SecureShift1!. Employer and
+guard login still use the normal OTP flow; the seed does not bypass OTP.
+Role Scenario Email Admin Admin access admin.local@secureshift.test
+Employer Operations employer ops.local@secureshift.test Employer Venue
+employer venue.local@secureshift.test Guard Approved licence
+mia.guard@secureshift.test Guard Pending licence
+noah.guard@secureshift.test Guard Rejected licence
+isha.guard@secureshift.test Guard Expired licence
+liam.guard@secureshift.test
+
+The seed also creates roles, two branches, guard availability, five
+shift scenarios, attendance, isolated payroll, messages a nd
+notifications. Payroll generation is scoped to the deterministic seeded
+completed shift and does not absorb unrelated developer-created shifts.
+Fixture time zones: Some seed helpers currently mix local-time and UTC
+calculations. Scenarios and durations remain correct, but absolute
+stored timestamps can differ between Docker UTC and a host such as
+Adelaide. This is acceptable for local fixtures and may be normalised
+later. 7. MongoDB Compass connection Create a new Compass connection
+named SecureShift Local Docker:
+mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshift_local
+If localhost does not work, try:
+mongodb://secureshift_app:secureshift_app_password@127.0.0.1:27017/secureshift_local?authSource=secureshift_local
+Confirm MongoDB is published to the host: docker compose ps Expected
+port mapping: 0.0.0.0:27017->27017/tcp Check collection document counts:
+docker compose exec mongodb mongosh
+“mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshift_local”
+–quiet –eval ‘db.getCollectionNames().forEach(c => print(c + “:” +
+db.getCollection(c).countDocuments({})))’ Empty collections: After
+docker compose down -v, previous local documents are gone. Empty
+collections with indexes are normal until data is created or npm run
+seed is run. 8. MongoDB 6 end-of-life warning MongoDB Compass may warn
+that MongoDB 6 has reached end of life because the current Compose file
+uses mongo:6. This does not prevent local development and is not the
+cause of empty collections. • Do not silently change docker-compose.yml
+on main. • Treat a MongoDB image upgrade as a separate tested PR. • Test
+application compatibility, clean-volume startup, authentication, health
+checks and the migration path. 9. Email and verification codes
+EMAIL_ENABLED=false means no genuine SMTP account is required. The
+local@example.test values are placeholders; real emails and verification
+codes will not be sent.
+
+SecureShift Backend Onboarding — Version 1.1 To test real email
+delivery, obtain the team’s private SMTP configuration:
+EMAIL_ENABLED=true SMTP_HOST= SMTP_PORT= SMTP_SECURE= SMTP_USER=
+SMTP_PASS= SMTP_FROM_EMAIL= • Store real credentials only in the ignored
+app-backend/.env. • Never post SMTP passwords in GitHub, Teams channels
+or documentation. • The seed does not bypass OTP. When email is
+disabled, use Compass or an approved development workflow to inspect
+local users and statuses. 10. Validation checklist • docker compose ps
+shows secureshift-db healthy. • Backend health returns HTTP 200 with
+{“status”:“ok”}. • Compass connects to secureshift_local through
+localhost:27017. • npm run seed produces stable counts on repeated runs.
+• npm run seed:reset removes seeded records but preserves unrelated
+local records. • git check-ignore -v app-backend/.env confirms the
+private environment file is ignored. • No real passwords, SMTP
+credentials, JWT secrets or encryption keys are committed. 11.
+Troubleshooting Symptom Likely cause and fix getaddrinfo EAI_AGAIN
+mongodb Backend is outside Docker. Change @mongodb:27017 to
+@localhost:27017 in app-backend/.env. Compass connects but shows zero
+documents The volume was reset, this is a different local database, or
+seed data has not been loaded. Run npm run seed or the Docker seed
+command. Mongo healthcheck fails with UserNotFound An old volume still
+contains old credentials. Run docker compose down - v once, then
+rebuild. Port 5000 already in use on Mac Use PORT=5001 for a host-run
+backend and BACKEND_HOST_PORT=5001 for the full Compose stack. Seed
+refuses to run Confirm NODE_ENV is not production,
+SEED_ALLOW_LOCAL=true, the URI is explicit and authenticated, and the
+database name is exactly secureshift_local, secureshift_dev or
+secureshift_test. Seed reset refuses to run Set
+SEED_RESET_CONFIRM=SecureShiftLocalReset for that command. No
+verification email arrives EMAIL_ENABLED is false or SMTP settings are
+placeholders. Use valid private SMTP settings. Atlas URI returns
+ESERVFAIL This is separate from local Docker MongoDB. Use the localhost
+connection for local work.
+
+12. Daily command summary Backend development - WSL cd
+    ~/developer/SecureShift docker compose up -d mongodb cd app-backend
+    npm run dev
+
+SecureShift Backend Onboarding — Version 1.1 Backend development - Mac
+cd /path/to/SecureShift docker compose up -d mongodb cd app-backend npm
+run dev Load local seed data - host-run backend cd app-backend npm run
+seed Load local seed data - Docker docker compose run –rm -e
+SEED_ALLOW_LOCAL=true backend npm run seed Full stack check cd
+/path/to/SecureShift docker compose down docker compose up –build -d
+docker compose ps Normal shutdown docker compose down

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import http from '../lib/http';
 import translations from "../i18n/translations";
+import RefreshButton from '../components/RefreshButton';
 import { useNotification } from '../components/NotificationContext';
 
 // ─── STYLES (defined first) ───
@@ -22,10 +23,10 @@ const summaryNumberStyle = { margin: '0', fontSize: '24px', fontWeight: '700', c
 const bigIconStyle = { width: '24px', height: '24px' };
 const smallIconStyle = { width: '20px', height: '20px' };
 const filterSectionStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' };
-const filterGroupStyle = { display: 'flex', alignItems: 'center', gap: '12px' };
+const filterGroupStyle = { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' };
 const sortGroupStyle = { display: 'flex', alignItems: 'center', gap: '12px' };
 const filterLabelStyle = { fontSize: '14px', fontWeight: '400', color: '#1E1E1E' };
-const filterButtonsStyle = { display: 'flex', gap: '8px' };
+const filterButtonsStyle = { display: 'flex', gap: '8px', flexWrap: 'wrap' };
 const filterButtonStyle = { backgroundColor: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '8px 16px', fontSize: '14px', color: '#666', cursor: 'pointer', fontWeight: '500' };
 const activeFilterButtonStyle = { ...filterButtonStyle, backgroundColor: '#274b93', color: 'white', border: '1px solid #274b93' };
 const sortButtonStyle = { backgroundColor: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '8px 16px', fontSize: '14px', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' };
@@ -186,18 +187,18 @@ const TABS = Object.freeze({ DETAILS: 'details', APPLICANTS: 'applicants', EQUIP
 const EQ_TABS = Object.freeze({ ISSUED: 'issued', ASSESS: 'assess', SUMMARY: 'summary' });
 
 const EQ_CATEGORIES = [
-  { value: 'comms',  label: 'Comms',  color: '#185FA5' },
+  { value: 'comms', label: 'Comms', color: '#185FA5' },
   { value: 'safety', label: 'Safety', color: '#3B6D11' },
   { value: 'access', label: 'Access', color: '#993C1D' },
-  { value: 'other',  label: 'Other',  color: '#5F5E5A' },
+  { value: 'other', label: 'Other', color: '#5F5E5A' },
 ];
 const catColor = (cat) => EQ_CATEGORIES.find((c) => c.value === cat)?.color ?? '#5F5E5A';
 const catLabel = (cat) => EQ_CATEGORIES.find((c) => c.value === cat)?.label ?? 'Other';
 
 const CONDITIONS = [
-  { value: 'good',     label: 'Good',     icon: '✓', activeBg: '#EAF3DE', activeColor: '#3B6D11', activeBorder: '#97C459' },
+  { value: 'good', label: 'Good', icon: '✓', activeBg: '#EAF3DE', activeColor: '#3B6D11', activeBorder: '#97C459' },
   { value: 'moderate', label: 'Moderate', icon: '~', activeBg: '#FAEEDA', activeColor: '#854F0B', activeBorder: '#EF9F27' },
-  { value: 'damaged',  label: 'Damaged',  icon: '✕', activeBg: '#FCEBEB', activeColor: '#A32D2D', activeBorder: '#E24B4A' },
+  { value: 'damaged', label: 'Damaged', icon: '✕', activeBg: '#FCEBEB', activeColor: '#A32D2D', activeBorder: '#E24B4A' },
 ];
 const condStyle = (cond) => CONDITIONS.find((c) => c.value === cond);
 
@@ -237,24 +238,38 @@ const SummaryCard = ({ label, number, icon, bg }) => (
   </div>
 );
 
-const FilterSortSection = ({ Filter, selectedFilter, onFilterChange, sortBy, setShowSortModal }) => (
-  <div style={filterSectionStyle}>
-    <div style={filterGroupStyle}>
-      <img src={'/ic-filter.svg'} alt="Filter" style={smallIconStyle} />
-      <span style={filterLabelStyle}>Filter by:</span>
-      <div style={filterButtonsStyle}>
-        {Object.values(Filter).map((f) => (
-          <button key={f} style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle} onClick={() => onFilterChange(f)}>{f}</button>
-        ))}
+const FilterSortSection = ({ Filter, Sort, selectedFilter, onFilterChange, sortBy, setShowSortModal, t }) => {
+  const filterLabels = {
+    [Filter.All]: t.all,
+    [Filter.Draft]: t.draftFilter,
+    [Filter.Completed]: t.completed,
+    [Filter.InProgress]: t.inProgressFilter,
+    [Filter.Pending]: t.pending,
+    [Filter.Open]: t.open,
+  };
+  const sortLabels = {
+    [Sort.DateAsc]: t.dateAsc,
+    [Sort.DateDesc]: t.dateDesc,
+  };
+  return (
+    <div style={filterSectionStyle}>
+      <div style={filterGroupStyle}>
+        <img src={'/ic-filter.svg'} alt="Filter" style={smallIconStyle} />
+        <span style={filterLabelStyle}>{t.filterByLabel}</span>
+        <div style={filterButtonsStyle}>
+          {Object.values(Filter).map((f) => (
+            <button key={f} style={selectedFilter === f ? activeFilterButtonStyle : filterButtonStyle} onClick={() => onFilterChange(f)}>{filterLabels[f] || f}</button>
+          ))}
+        </div>
+      </div>
+      <div style={sortGroupStyle}>
+        <img src={'/ic-sort.svg'} alt="Sort" style={smallIconStyle} />
+        <span style={filterLabelStyle}>{t.sortByLabel}</span>
+        <button style={sortButtonStyle} onClick={() => setShowSortModal(true)}>{sortLabels[sortBy] || sortBy} <span style={{ fontSize: '10px' }}>▼</span></button>
       </div>
     </div>
-    <div style={sortGroupStyle}>
-      <img src={'/ic-sort.svg'} alt="Sort" style={smallIconStyle} />
-      <span style={filterLabelStyle}>Sort by:</span>
-      <button style={sortButtonStyle} onClick={() => setShowSortModal(true)}>{sortBy} <span style={{ fontSize: '10px' }}>▼</span></button>
-    </div>
-  </div>
-);
+  );
+};
 
 const Pagination = ({ totalPages, currentPage, goPrevPage, goNextPage, goToPage, getPaginationNumbers }) => (
   <div style={paginationStyle}>
@@ -272,23 +287,29 @@ const Pagination = ({ totalPages, currentPage, goPrevPage, goNextPage, goToPage,
   </div>
 );
 
-const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal }) => (
-  <div style={modalOverlayStyle} onClick={() => setShowSortModal(false)}>
-    <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-      <div style={modalHeaderStyle}>
-        <h3 style={modalTitleStyle}>Sort by</h3>
-        <button style={closeButtonStyle} onClick={() => setShowSortModal(false)}>×</button>
-      </div>
-      <div style={modalBodyStyle}>
-        {Object.values(Sort).map((option) => (
-          <button key={option} style={option === sortBy ? activeSortOptionStyle : sortOptionStyle} onClick={() => selectSortBy(option)}>
-            {option} {option === sortBy && <span style={checkmarkStyle}>✓</span>}
-          </button>
-        ))}
+const SortModal = ({ Sort, sortBy, selectSortBy, setShowSortModal, t }) => {
+  const sortLabels = {
+    [Sort.DateAsc]: t.dateAsc,
+    [Sort.DateDesc]: t.dateDesc,
+  };
+  return (
+    <div style={modalOverlayStyle} onClick={() => setShowSortModal(false)}>
+      <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
+        <div style={modalHeaderStyle}>
+          <h3 style={modalTitleStyle}>{t.sortByLabel}</h3>
+          <button style={closeButtonStyle} onClick={() => setShowSortModal(false)}>×</button>
+        </div>
+        <div style={modalBodyStyle}>
+          {Object.values(Sort).map((option) => (
+            <button key={option} style={option === sortBy ? activeSortOptionStyle : sortOptionStyle} onClick={() => selectSortBy(option)}>
+              {sortLabels[option] || option} {option === sortBy && <span style={checkmarkStyle}>✓</span>}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── Chat Icon ───
 const ChatIcon = () => (
@@ -382,12 +403,12 @@ const ApplicantsPanel = ({ shift, applicantAction, onApprove, onReject }) => {
               <div style={applicantActionsStyle}>
                 {isApproved ? <span style={approvedPillStyle}>✓ Approved</span>
                   : isRejected ? <span style={rejectedPillStyle}>✗ Rejected</span>
-                  : (
-                    <>
-                      <button style={approveButtonStyle} onClick={() => onApprove(gid)} disabled={action === 'approving'}>{action === 'approving' ? '...' : 'Approve'}</button>
-                      <button style={rejectButtonStyle} onClick={() => onReject(gid)} disabled={action === 'rejecting'}>{action === 'rejecting' ? '...' : 'Reject'}</button>
-                    </>
-                  )}
+                    : (
+                      <>
+                        <button style={approveButtonStyle} onClick={() => onApprove(gid)} disabled={action === 'approving'}>{action === 'approving' ? '...' : 'Approve'}</button>
+                        <button style={rejectButtonStyle} onClick={() => onReject(gid)} disabled={action === 'rejecting'}>{action === 'rejecting' ? '...' : 'Reject'}</button>
+                      </>
+                    )}
               </div>
             </div>
           );
@@ -426,8 +447,8 @@ const EquipmentPanel = ({
 
       <div style={eqTabBarStyle}>
         {[
-          { key: EQ_TABS.ISSUED,  label: `Issued items${total > 0 ? ` (${total})` : ''}` },
-          { key: EQ_TABS.ASSESS,  label: `Return & Assess${assessed > 0 ? ` (${assessed}/${total})` : ''}` },
+          { key: EQ_TABS.ISSUED, label: `Issued items${total > 0 ? ` (${total})` : ''}` },
+          { key: EQ_TABS.ASSESS, label: `Return & Assess${assessed > 0 ? ` (${assessed}/${total})` : ''}` },
           { key: EQ_TABS.SUMMARY, label: 'Summary' },
         ].map(({ key, label }) => (
           <button key={key} style={eqTab === key ? eqActiveSubTabStyle : eqSubTabStyle} onClick={() => setEqTab(key)}>
@@ -706,22 +727,31 @@ const ManageShift = ({ language }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const chatEndRef = useRef(null);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  const fetchShifts = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    try {
+      const { data } = await http.get('/shifts');
+      let apiShifts;
+      if (Array.isArray(data)) apiShifts = data;
+      else if (Array.isArray(data.shifts)) apiShifts = data.shifts;
+      else if (data.items && Array.isArray(data.items)) apiShifts = data.items;
+      else apiShifts = [];
+      setShifts(apiShifts.map(normalizeShift));
+      setLastRefreshed(new Date());
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Error fetching shifts.');
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchShifts = async () => {
-      try {
-        const { data } = await http.get('/shifts');
-        let apiShifts;
-        if (Array.isArray(data)) apiShifts = data;
-        else if (Array.isArray(data.shifts)) apiShifts = data.shifts;
-        else if (data.items && Array.isArray(data.items)) apiShifts = data.items;
-        else apiShifts = [];
-        setShifts(apiShifts.map(normalizeShift));
-      } catch (err) {
-        setError(err?.response?.data?.message || 'Error fetching shifts.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchShifts();
   }, []);
 
@@ -1068,27 +1098,36 @@ const ManageShift = ({ language }) => {
     <div style={containerStyle}>
       <div style={headerStyle}>
         <h1 style={titleStyle}>{t.manageShifts}</h1>
-        <button style={addButtonStyle} onClick={() => navigate('/create-shift')}>
-          <img src={'/ic-add.svg'} alt="Add" style={bigIconStyle} /> Add New Shift
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <RefreshButton
+            onRefresh={() => fetchShifts(true)}
+            isRefreshing={isRefreshing}
+            lastRefreshed={lastRefreshed}
+          />
+          <button style={addButtonStyle} onClick={() => navigate('/create-shift')}>
+          <img src={'/ic-add.svg'} alt="Add" style={bigIconStyle} /> {t.addNewShift}
+          </button>
+        </div>
       </div>
       <div style={summaryGridStyle}>
-        <SummaryCard label="Total shifts" number={totalShifts} icon="/ic-task.svg" bg="#EFF4FF" />
-        <SummaryCard label="Completed shifts" number={completedShifts} icon="/ic-completed.svg" bg="#EAFAE7" />
-        <SummaryCard label="In-Progress shifts" number={inProgressShifts} icon="/ic-lightning.svg" bg="#F6EFFF" />
-        <SummaryCard label="Pending shifts" number={pendingShifts} icon="/ic-hourglass.svg" bg="#FBFAE2" />
-        <SummaryCard label="Draft shifts" number={draftShifts} icon="/ic-lightning.svg" bg="#F3E8FF" />
+        <SummaryCard label={t.totalShiftsLabel} number={totalShifts} icon="/ic-task.svg" bg="#EFF4FF" />
+        <SummaryCard label={t.completedShiftsLabel} number={completedShifts} icon="/ic-completed.svg" bg="#EAFAE7" />
+        <SummaryCard label={t.inProgressShiftsLabel} number={inProgressShifts} icon="/ic-lightning.svg" bg="#F6EFFF" />
+        <SummaryCard label={t.pendingShiftsLabel} number={pendingShifts} icon="/ic-hourglass.svg" bg="#FBFAE2" />
+        <SummaryCard label={t.draftShiftsLabel} number={draftShifts} icon="/ic-lightning.svg" bg="#F3E8FF" />
       </div>
       <FilterSortSection
         Filter={Filter}
+        Sort={Sort}
         selectedFilter={selectedFilter}
         onFilterChange={(filter) => { setSelectedFilter(filter); setCurrentPage(1); }}
         sortBy={sortBy}
         setShowSortModal={setShowSortModal}
+        t={t}
       />
       {loading && <p>Loading shifts...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {!loading && !error && currentItems.length === 0 && <p>No shifts found.</p>}
+      {!loading && !error && currentItems.length === 0 && <p>{t.noShiftsFoundLabel}</p>}
       <div style={gridStyle}>
         {currentItems.map((shift) => {
           const [datePart] = shift.dateTime?.split(' ') || [null];
@@ -1123,7 +1162,7 @@ const ManageShift = ({ language }) => {
                   </div>
                 )}
                 <div style={cardActionsRowStyle}>
-                  <button style={viewDetailsButtonStyle} onClick={() => openShiftModal(shift)}>View Details</button>
+                  <button style={viewDetailsButtonStyle} onClick={() => openShiftModal(shift)}>{t.viewDetails}</button>
                   {shift.status === 'Draft' && (
                     <>
                       <button style={editButtonStyle} onClick={() => handleEditShift(shift.id)} title="Edit draft">✏️</button>
@@ -1155,7 +1194,7 @@ const ManageShift = ({ language }) => {
         />
       )}
       {showSortModal && (
-        <SortModal Sort={Sort} sortBy={sortBy} selectSortBy={selectSortBy} setShowSortModal={setShowSortModal} />
+        <SortModal Sort={Sort} sortBy={sortBy} selectSortBy={selectSortBy} setShowSortModal={setShowSortModal} t={t} />
       )}
 
       {/* ─── Shift Detail Modal ─── */}
@@ -1168,14 +1207,14 @@ const ManageShift = ({ language }) => {
                 <h2 style={detailModalTitle}>
                   {activeTab === TABS.APPLICANTS ? 'Applicants'
                     : activeTab === TABS.EQUIPMENT ? 'Equipment'
-                    : isEditing ? 'Edit Shift' : 'Shift Details'}
+                      : isEditing ? 'Edit Shift' : 'Shift Details'}
                 </h2>
                 <p style={detailModalSubtitle}>
                   {activeTab === TABS.APPLICANTS
                     ? `${selectedShift.applicants?.length ?? 0} applicant(s) for this shift.`
                     : activeTab === TABS.EQUIPMENT
-                    ? 'Track issued equipment and assess condition on return.'
-                    : 'Review and update shift fields.'}
+                      ? 'Track issued equipment and assess condition on return.'
+                      : 'Review and update shift fields.'}
                 </p>
               </div>
               <button style={modalCloseButton} onClick={closeShiftModal}>×</button>

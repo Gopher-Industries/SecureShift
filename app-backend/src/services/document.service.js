@@ -115,6 +115,12 @@ export const getDocumentById = async (docId) => {
 
 //  Update expiry date
 export const updateDocumentExpiry = async (docId, expiryDate, user) => {
+  const httpError = (status, message) => {
+    const err = new Error(message);
+    err.statusCode = status;
+    return err;
+  };
+
   if (!expiryDate) throw new Error("expiryDate is required");
 
   const newDate = new Date(expiryDate);
@@ -124,14 +130,14 @@ export const updateDocumentExpiry = async (docId, expiryDate, user) => {
 
   // Same casting issue as getDocumentById.
   if (!mongoose.Types.ObjectId.isValid(docId)) {
-    throw new Error("Document not found");
+    throw httpError(404, "Document not found");
   }
 
   const targetUser = await User.findOne({
     "documents._id": new mongoose.Types.ObjectId(docId),
   });
 
-  if (!targetUser) throw new Error("Document not found");
+  if (!targetUser) throw httpError(404, "Document not found");
 
   const doc = targetUser.documents.id(docId);
 

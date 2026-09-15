@@ -11,8 +11,10 @@
 
 .payroll-header-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
@@ -65,6 +67,8 @@
   font-size: 14px;
   color: #1a202c;
   width: 280px;
+  max-width: 100%;
+  box-sizing: border-box;
   outline: none;
   transition: border-color 0.2s;
 }
@@ -77,12 +81,13 @@
   background: white;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 /* table-layout: fixed lets the colgroup percentages take effect */
 .payroll-table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   font-size: 14px;
   table-layout: fixed;

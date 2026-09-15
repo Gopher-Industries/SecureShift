@@ -102,6 +102,21 @@ describe("AvailabilitySlot Controller", () => {
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
+    test("400 when date is an impossible calendar date (2026-02-30)", async () => {
+      const req = mockReq({
+        body: { date: "2026-02-30", fromTime: "09:00", toTime: "17:00" },
+      });
+      const res = mockRes();
+
+      await createSlot(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'date "2026-02-30" is not a valid calendar date.',
+      });
+      expect(AvailabilitySlot.create).not.toHaveBeenCalled();
+    });
+
     test("400 when time format is wrong", async () => {
       const req = mockReq({
         body: { date: "2025-12-25", fromTime: "9am", toTime: "17:00" },
@@ -199,6 +214,29 @@ describe("AvailabilitySlot Controller", () => {
       );
     });
 
+    test("201 when date is a valid calendar date (2026-02-28)", async () => {
+      const created = {
+        _id: SLOT_ID,
+        guardId: GUARD_ID,
+        date: "2026-02-28",
+        fromTime: "09:00",
+        toTime: "17:00",
+      };
+      AvailabilitySlot.create.mockResolvedValue(created);
+
+      const req = mockReq({
+        body: { date: "2026-02-28", fromTime: "09:00", toTime: "17:00" },
+      });
+      const res = mockRes();
+
+      await createSlot(req, res);
+
+      expect(AvailabilitySlot.create).toHaveBeenCalledWith(
+        expect.objectContaining({ date: "2026-02-28" }),
+      );
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
+
     test("takes guardId from the token, never from the request body", async () => {
       AvailabilitySlot.create.mockResolvedValue({ _id: SLOT_ID });
 
@@ -266,6 +304,19 @@ describe("AvailabilitySlot Controller", () => {
       await getMySlots(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
+      expect(AvailabilitySlot.find).not.toHaveBeenCalled();
+    });
+
+    test("400 when startDate is an impossible calendar date (2026-04-31)", async () => {
+      const req = mockReq({ query: { startDate: "2026-04-31" } });
+      const res = mockRes();
+
+      await getMySlots(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'startDate "2026-04-31" is not a valid calendar date.',
+      });
       expect(AvailabilitySlot.find).not.toHaveBeenCalled();
     });
 
