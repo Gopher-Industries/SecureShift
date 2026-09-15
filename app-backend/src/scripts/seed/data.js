@@ -485,7 +485,7 @@ export const buildSeedData = (now = new Date()) => {
       {
         _id: SEED_IDS.notifications.application,
         userId: SEED_IDS.users.employerOperations,
-        createdBy: SEED_IDS.users.guardPending,
+        createdBy: SEED_IDS.users.employerOperations,
         type: "SHIFT_APPLIED",
         title: "New shift application",
         message: "Noah Williams applied for Warehouse Gate Security.",
