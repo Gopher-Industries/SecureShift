@@ -201,6 +201,86 @@ describe("Shift Controller API Tests", () => {
     expect(res.body.shift.title).toBe("Updated Shift");
   });
 
+  test("Update shift rejects non-string text field", async () => {
+    const res = await request(app)
+      .patch(`/api/v1/shifts/${shiftId}`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({
+        title: 12345,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe(
+      "Invalid type for 'title': expected string",
+    );
+  });
+
+  test("Update shift rejects location: null", async () => {
+    const res = await request(app)
+      .patch(`/api/v1/shifts/${shiftId}`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({
+        location: null,
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe(
+      "Invalid type for 'location': expected object",
+    );
+  });
+
+  test("Update shift rejects location as an array", async () => {
+    const res = await request(app)
+      .patch(`/api/v1/shifts/${shiftId}`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({
+        location: ["Main St"],
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe(
+      "Invalid type for 'location': expected object",
+    );
+  });
+
+  test("Update shift rejects non-string location.street", async () => {
+    const res = await request(app)
+      .patch(`/api/v1/shifts/${shiftId}`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({
+        location: { street: 123, suburb: "CBD", state: "VIC" },
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe(
+      "Invalid type for 'street': expected string",
+    );
+  });
+
+  test("Update shift accepts a valid partial location update", async () => {
+    const res = await request(app)
+      .patch(`/api/v1/shifts/${shiftId}`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({
+        location: { suburb: "Docklands" },
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.shift.location.suburb).toBe("Docklands");
+    expect(res.body.shift.location.street).toBe("Main St");
+    expect(res.body.shift.title).toBe("Updated Shift");
+  });
+
   /* ---------------- APPLY SHIFT ---------------- */
   test("Guard applies for shift", async () => {
     const res = await request(app)
