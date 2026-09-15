@@ -1,10 +1,12 @@
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
+import { checkIn } from '../api/attendance';
+import LocationVerificationModal from '../components/modal/LocationVerificationModal';
 
 type ResultRouteProp = RouteProp<RootStackParamList, 'ScanResult'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ScanResult'>;
@@ -14,7 +16,71 @@ export default function ScanResultScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { colors } = useAppTheme();
 
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   const { data } = route.params;
+
+  const shiftId = useMemo(() => {
+    try {
+      const parsed = JSON.parse(data);
+      return typeof parsed?.shiftId === 'string' ? parsed.shiftId.trim() : '';
+    } catch {
+      return '';
+    }
+  }, [data]);
+  const handleTriggerAction = () => {
+    if (!shiftId) {
+      Alert.alert('Invalid QR Code', 'This QR code does not contain a valid shift ID.');
+      return;
+    }
+    if (isExpired) {
+      Alert.alert('Expired QR Code', 'This QR code has expired. Please scan a valid code.');
+      return;
+    }
+    setLocationModalVisible(true);
+  };
+
+  const isExpired = useMemo(() => {
+    try {
+      const parsed = JSON.parse(data);
+
+      if (!parsed?.expiresAt) return false;
+
+      const expiresAt = new Date(parsed.expiresAt).getTime();
+
+      return Number.isFinite(expiresAt) && expiresAt < Date.now();
+    } catch {
+      return false;
+    }
+  }, [data]);
+
+  const handleLocationVerified = async (loc: {
+    latitude: number;
+    longitude: number;
+    timestamp: number;
+  }) => {
+    setLocationModalVisible(false);
+
+    if (submitting) return;
+
+    try {
+      setSubmitting(true);
+
+      const res = await checkIn(shiftId, loc);
+
+      Alert.alert(
+        'Check-in Successful',
+        res.message || 'Your QR check-in was recorded successfully.',
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to complete QR check-in.';
+
+      Alert.alert('Check-in Failed', message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const { formattedData, isJson } = useMemo(() => {
     try {
@@ -49,13 +115,7 @@ export default function ScanResultScreen() {
       >
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.primary }]}
-          onPress={() => {
-            Alert.alert(
-              'Action Triggered',
-              `Triggered action with these payload:\n\n${formattedData}`,
-              [{ text: 'Close', style: 'cancel' }],
-            );
-          }}
+          onPress={handleTriggerAction}
         >
           <Text style={styles.buttonText}>Trigger Action</Text>
         </TouchableOpacity>
@@ -76,6 +136,11 @@ export default function ScanResultScreen() {
           <Text style={[styles.buttonText, { color: colors.text }]}>Close</Text>
         </TouchableOpacity>
       </View>
+      <LocationVerificationModal
+        visible={locationModalVisible}
+        onClose={() => setLocationModalVisible(false)}
+        onVerified={handleLocationVerified}
+      />
     </View>
   );
 }
