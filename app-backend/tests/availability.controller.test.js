@@ -1,11 +1,17 @@
-import {
-  createOrUpdateAvailability,
-  getAvailability,
-} from "../src/controllers/availability.controller.js";
+import { jest } from "@jest/globals";
 
-import Availability from "../src/models/Availability.js";
+jest.unstable_mockModule("../src/models/Availability.js", () => ({
+  default: {
+    findOneAndUpdate: jest.fn(),
+    findOne: jest.fn(),
+  },
+}));
 
-jest.mock("../src/models/Availability.js");
+const { default: Availability } = await import("../src/models/Availability.js");
+
+const { createOrUpdateAvailability, getAvailability } = await import(
+  "../src/controllers/availability.controller.js"
+);
 
 const mockRes = () => {
   const res = {};
@@ -56,6 +62,36 @@ describe("Availability Controller", () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
+  test("should return 400 for an invalid hour", async () => {
+    const req = mockReq({
+      body: {
+        days: ["Monday"],
+        timeSlots: ["25:00-26:00"],
+      },
+    });
+    const res = mockRes();
+
+    await createOrUpdateAvailability(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(Availability.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  test("should return 400 for an invalid minute", async () => {
+    const req = mockReq({
+      body: {
+        days: ["Monday"],
+        timeSlots: ["09:60-10:00"],
+      },
+    });
+    const res = mockRes();
+
+    await createOrUpdateAvailability(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(Availability.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
   test("should return 400 when start time is after end time", async () => {
     const req = mockReq({
       body: {
@@ -68,6 +104,7 @@ describe("Availability Controller", () => {
     await createOrUpdateAvailability(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+    expect(Availability.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   test("should create/update availability successfully", async () => {
@@ -79,6 +116,7 @@ describe("Availability Controller", () => {
     };
 
     const mockPopulate = jest.fn().mockResolvedValue(mockAvailability);
+
     Availability.findOneAndUpdate.mockReturnValue({
       populate: mockPopulate,
     });
@@ -104,6 +142,7 @@ describe("Availability Controller", () => {
     };
 
     const mockPopulate = jest.fn().mockResolvedValue(mockAvailability);
+
     Availability.findOneAndUpdate.mockReturnValue({
       populate: mockPopulate,
     });
@@ -142,8 +181,13 @@ describe("Availability Controller", () => {
 
   test("should return 403 when accessing another user", async () => {
     const req = mockReq({
-      user: { id: "507f1f77bcf86cd799439011", role: "user" },
-      params: { userId: "507f1f77bcf86cd799439012" },
+      user: {
+        id: "507f1f77bcf86cd799439011",
+        role: "user",
+      },
+      params: {
+        userId: "507f1f77bcf86cd799439012",
+      },
     });
 
     const res = mockRes();
@@ -154,14 +198,18 @@ describe("Availability Controller", () => {
   });
 
   test("should return 404 if availability not found", async () => {
-    const mockData = null;
     Availability.findOne.mockReturnValue({
       populate: jest.fn().mockResolvedValue(null),
     });
 
     const req = mockReq({
-      user: { id: "507f1f77bcf86cd799439011", role: "user" },
-      params: { userId: "507f1f77bcf86cd799439011" },
+      user: {
+        id: "507f1f77bcf86cd799439011",
+        role: "user",
+      },
+      params: {
+        userId: "507f1f77bcf86cd799439011",
+      },
     });
 
     const res = mockRes();
@@ -174,7 +222,7 @@ describe("Availability Controller", () => {
   test("should return availability successfully", async () => {
     const mockData = {
       _id: "avail123",
-      user: "user123",
+      user: "507f1f77bcf86cd799439011",
     };
 
     Availability.findOne.mockReturnValue({
@@ -182,8 +230,13 @@ describe("Availability Controller", () => {
     });
 
     const req = mockReq({
-      user: { id: "507f1f77bcf86cd799439011", role: "admin" },
-      params: { userId: "507f1f77bcf86cd799439011" },
+      user: {
+        id: "507f1f77bcf86cd799439011",
+        role: "admin",
+      },
+      params: {
+        userId: "507f1f77bcf86cd799439011",
+      },
     });
 
     const res = mockRes();
@@ -192,7 +245,9 @@ describe("Availability Controller", () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ availability: mockData }),
+      expect.objectContaining({
+        availability: mockData,
+      }),
     );
   });
 });

@@ -14,7 +14,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const timeSlotRegex = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
+const timeSlotRegex = /^(?:[01]\d|2[0-3]):[0-5]\d-(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 const VALID_DAYS = [
   "Monday",
