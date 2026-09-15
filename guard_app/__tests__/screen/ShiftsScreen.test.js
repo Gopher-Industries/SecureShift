@@ -16,7 +16,7 @@ jest.mock('../../src/api/auth', () => ({
 
 jest.mock('../../src/api/shifts', () => ({
   listShifts: jest.fn(),
-  myShifts: jest.fn().mockResolvedValue([]),
+  myShifts: jest.fn().mockResolvedValue({ items: [], page: 1, limit: 20, total: 20 }),
   applyToShift: jest.fn(),
 }));
 
