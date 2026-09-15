@@ -22,6 +22,22 @@ const sendMessage = async (req, res, next) => {
     const { receiverId, content } = req.body;
     const senderId = req.user.id;
 
+    // Validate message content
+    const trimmedContent =
+      typeof content === "string" ? content.trim() : "";
+
+    if (
+      typeof content !== "string" ||
+      trimmedContent.length < 1 ||
+      trimmedContent.length > 1000
+    ) {
+      const error = new Error(
+        "Message content must be a string between 1 and 1000 characters",
+      );
+      error.status = 400;
+      throw error;
+    }
+
     // Prevent sending message to self
     if (senderId === receiverId) {
       const error = new Error("Cannot send message to yourself");
@@ -59,7 +75,7 @@ const sendMessage = async (req, res, next) => {
     const message = new Message({
       sender: senderId,
       receiver: receiverId,
-      content: content.trim(),
+      content: trimmedContent,
     });
 
     await message.save();
@@ -69,10 +85,11 @@ const sendMessage = async (req, res, next) => {
       { path: "sender", select: "email name role" },
       { path: "receiver", select: "email name role" },
     ]);
+
     await req.audit.log(req.user.id, ACTIONS.MESSAGE_SENT, {
       messageId: message._id,
       receiverId: receiverId,
-      contentSnippet: message.content.slice(0, 50), // optional short preview
+      contentSnippet: message.content.slice(0, 50),
     });
 
     res.status(201).json({
@@ -131,7 +148,7 @@ const getSentMessages = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // Get messages sent by the user
+    // Get messages sent by the logged-in user
     const messages = await Message.find({ sender: userId })
       .populate("sender", "email name role")
       .populate("receiver", "email name role")
@@ -168,7 +185,10 @@ const getConversation = async (req, res, next) => {
     }
 
     // Get conversation messages
-    const messages = await Message.getConversation(currentUserId, otherUserId);
+    const messages = await Message.getConversation(
+      currentUserId,
+      otherUserId,
+    );
 
     // Mark messages as read (messages received by current user from other user)
     await Message.markAsRead(currentUserId, otherUserId);
@@ -183,7 +203,7 @@ const getConversation = async (req, res, next) => {
             name: otherUser.name,
             email: otherUser.email,
           },
-          messages: messages.reverse(), // Reverse to show oldest first
+          messages: messages.reverse(),
         },
       },
     });
