@@ -7,16 +7,23 @@ jest.unstable_mockModule("../src/models/User.js", () => ({
 }));
 
 jest.unstable_mockModule("../src/models/Message.js", () => ({
-  default: jest.fn().mockImplementation(function Message(data) {
-    Object.assign(this, {
-      _id: "message-123",
-      timestamp: new Date("2026-04-27T00:00:00.000Z"),
-      isRead: false,
-      ...data,
-      save: jest.fn().mockResolvedValue(undefined),
-      populate: jest.fn().mockResolvedValue(undefined),
-    });
-  }),
+  default: Object.assign(
+    jest.fn().mockImplementation(function Message(data) {
+      Object.assign(this, {
+        _id: "507f1f77bcf86cd799439013",
+        timestamp: new Date("2026-04-27T00:00:00.000Z"),
+        isRead: false,
+        ...data,
+        save: jest.fn().mockResolvedValue(undefined),
+        populate: jest.fn().mockResolvedValue(undefined),
+      });
+    }),
+    {
+      findById: jest.fn(),
+      getConversation: jest.fn(),
+      markAsRead: jest.fn(),
+    },
+  ),
 }));
 
 jest.unstable_mockModule("express-validator", () => ({
@@ -27,19 +34,25 @@ const { default: User } = await import("../src/models/User.js");
 const { default: Message } = await import("../src/models/Message.js");
 const { validationResult } = await import("express-validator");
 
-const { sendMessage } =
-  await import("../src/controllers/message.controller.js");
+const { sendMessage, getConversation, markMessageAsRead } = await import(
+  "../src/controllers/message.controller.js"
+);
+
+const VALID_RECEIVER_ID = "507f1f77bcf86cd799439011";
+const VALID_OTHER_USER_ID = "507f1f77bcf86cd799439012";
+const VALID_MESSAGE_ID = "507f1f77bcf86cd799439013";
 
 const createReq = ({
-  senderId = "guard-1",
+  senderId = "507f1f77bcf86cd799439014",
   senderRole = "guard",
-  receiverId = "guard-2",
+  receiverId = VALID_RECEIVER_ID,
   content = " Hello from SecureShift ",
 } = {}) => ({
   body: {
     receiverId,
     content,
   },
+  params: {},
   user: {
     id: senderId,
     role: senderRole,
@@ -71,7 +84,7 @@ beforeEach(() => {
 
 test("sendMessage rejects missing message content", async () => {
   User.findById.mockResolvedValue({
-    _id: "guard-2",
+    _id: VALID_RECEIVER_ID,
     role: "guard",
     email: "guard2@example.com",
     name: "Guard Two",
@@ -149,7 +162,7 @@ test("sendMessage rejects message content over 1000 characters", async () => {
 
 test("sendMessage trims valid message content before saving", async () => {
   User.findById.mockResolvedValue({
-    _id: "guard-2",
+    _id: VALID_RECEIVER_ID,
     role: "guard",
     email: "guard2@example.com",
     name: "Guard Two",
@@ -166,8 +179,8 @@ test("sendMessage trims valid message content before saving", async () => {
 
   expect(Message).toHaveBeenCalledWith(
     expect.objectContaining({
-      sender: "guard-1",
-      receiver: "guard-2",
+      sender: "507f1f77bcf86cd799439014",
+      receiver: VALID_RECEIVER_ID,
       content: "Valid message",
     }),
   );
@@ -178,12 +191,153 @@ test("sendMessage trims valid message content before saving", async () => {
 });
 
 // --------------------------------------------------
+// BE-062 MALFORMED ID VALIDATION
+// --------------------------------------------------
+
+test("sendMessage rejects malformed receiver ID", async () => {
+  const req = createReq({
+    receiverId: "not-a-valid-object-id",
+  });
+
+  const res = createRes();
+  const next = jest.fn();
+
+  await sendMessage(req, res, next);
+
+  expect(User.findById).not.toHaveBeenCalled();
+  expect(Message).not.toHaveBeenCalled();
+
+  expect(next).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 400,
+      message: "Invalid receiver ID",
+    }),
+  );
+});
+
+test("getConversation rejects malformed user ID", async () => {
+  const req = createReq();
+  req.params = {
+    userId: "not-a-valid-object-id",
+  };
+
+  const res = createRes();
+  const next = jest.fn();
+
+  await getConversation(req, res, next);
+
+  expect(User.findById).not.toHaveBeenCalled();
+  expect(Message.getConversation).not.toHaveBeenCalled();
+
+  expect(next).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 400,
+      message: "Invalid user ID",
+    }),
+  );
+});
+
+test("markMessageAsRead rejects malformed message ID", async () => {
+  const req = createReq();
+  req.params = {
+    messageId: "not-a-valid-object-id",
+  };
+
+  const res = createRes();
+  const next = jest.fn();
+
+  await markMessageAsRead(req, res, next);
+
+  expect(Message.findById).not.toHaveBeenCalled();
+
+  expect(next).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 400,
+      message: "Invalid message ID",
+    }),
+  );
+});
+
+// --------------------------------------------------
+// BE-062 VALID NONEXISTENT IDs KEEP 404 BEHAVIOUR
+// --------------------------------------------------
+
+test("sendMessage preserves 404 for a valid but nonexistent receiver ID", async () => {
+  User.findById.mockResolvedValue(null);
+
+  const req = createReq({
+    receiverId: VALID_RECEIVER_ID,
+  });
+
+  const res = createRes();
+  const next = jest.fn();
+
+  await sendMessage(req, res, next);
+
+  expect(User.findById).toHaveBeenCalledWith(VALID_RECEIVER_ID);
+  expect(Message).not.toHaveBeenCalled();
+
+  expect(next).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 404,
+    }),
+  );
+});
+
+test("getConversation preserves 404 for a valid but nonexistent user ID", async () => {
+  User.findById.mockResolvedValue(null);
+
+  const req = createReq();
+  req.params = {
+    userId: VALID_OTHER_USER_ID,
+  };
+
+  const res = createRes();
+  const next = jest.fn();
+
+  await getConversation(req, res, next);
+
+  expect(User.findById).toHaveBeenCalledWith(VALID_OTHER_USER_ID);
+  expect(Message.getConversation).not.toHaveBeenCalled();
+
+  expect(next).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 404,
+      message: "User not found",
+    }),
+  );
+});
+
+test("markMessageAsRead preserves 404 for a valid but nonexistent message ID", async () => {
+  Message.findById.mockResolvedValue(null);
+
+  const req = createReq();
+  req.params = {
+    messageId: VALID_MESSAGE_ID,
+  };
+
+  const res = createRes();
+  const next = jest.fn();
+
+  await markMessageAsRead(req, res, next);
+
+  expect(Message.findById).toHaveBeenCalledWith(VALID_MESSAGE_ID);
+
+  expect(next).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 404,
+      message: "Message not found",
+    }),
+  );
+});
+
+// --------------------------------------------------
 // EXISTING MESSAGE BEHAVIOUR
 // --------------------------------------------------
 
 test("sendMessage allows guard-to-guard messaging", async () => {
   User.findById.mockResolvedValue({
-    _id: "guard-2",
+    _id: VALID_RECEIVER_ID,
     role: "guard",
     email: "guard2@example.com",
     name: "Guard Two",
@@ -196,8 +350,8 @@ test("sendMessage allows guard-to-guard messaging", async () => {
   await sendMessage(req, res, next);
 
   expect(Message).toHaveBeenCalledWith({
-    sender: "guard-1",
-    receiver: "guard-2",
+    sender: "507f1f77bcf86cd799439014",
+    receiver: VALID_RECEIVER_ID,
     content: "Hello from SecureShift",
   });
 
@@ -209,7 +363,7 @@ test("sendMessage allows guard-to-guard messaging", async () => {
     expect.objectContaining({
       success: true,
       data: expect.objectContaining({
-        messageId: "message-123",
+        messageId: "507f1f77bcf86cd799439013",
         content: "Hello from SecureShift",
       }),
     }),
@@ -220,16 +374,16 @@ test("sendMessage allows guard-to-guard messaging", async () => {
 
 test("sendMessage still blocks employer-to-employer messaging", async () => {
   User.findById.mockResolvedValue({
-    _id: "employer-2",
+    _id: VALID_RECEIVER_ID,
     role: "employer",
     email: "employer2@example.com",
     name: "Employer Two",
   });
 
   const req = createReq({
-    senderId: "employer-1",
+    senderId: "507f1f77bcf86cd799439014",
     senderRole: "employer",
-    receiverId: "employer-2",
+    receiverId: VALID_RECEIVER_ID,
   });
 
   const res = createRes();
@@ -250,16 +404,16 @@ test("sendMessage still blocks employer-to-employer messaging", async () => {
 
 test("sendMessage still blocks admin messaging", async () => {
   User.findById.mockResolvedValue({
-    _id: "guard-2",
+    _id: VALID_RECEIVER_ID,
     role: "guard",
     email: "guard2@example.com",
     name: "Guard Two",
   });
 
   const req = createReq({
-    senderId: "admin-1",
+    senderId: "507f1f77bcf86cd799439014",
     senderRole: "admin",
-    receiverId: "guard-2",
+    receiverId: VALID_RECEIVER_ID,
   });
 
   const res = createRes();

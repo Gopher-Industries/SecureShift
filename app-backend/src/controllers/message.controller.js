@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import Message from "../models/Message.js";
 import { validationResult } from "express-validator";
@@ -10,7 +11,6 @@ import { ACTIONS } from "../middleware/logger.js";
  */
 const sendMessage = async (req, res, next) => {
   try {
-    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       const error = new Error("Validation errors");
@@ -22,9 +22,15 @@ const sendMessage = async (req, res, next) => {
     const { receiverId, content } = req.body;
     const senderId = req.user.id;
 
-    // Validate message content
-    const trimmedContent =
-      typeof content === "string" ? content.trim() : "";
+    // Reject malformed receiver IDs before querying MongoDB.
+    if (!mongoose.isValidObjectId(receiverId)) {
+      const error = new Error("Invalid receiver ID");
+      error.status = 400;
+      throw error;
+    }
+
+    // Validate message content.
+    const trimmedContent = typeof content === "string" ? content.trim() : "";
 
     if (
       typeof content !== "string" ||
@@ -38,14 +44,14 @@ const sendMessage = async (req, res, next) => {
       throw error;
     }
 
-    // Prevent sending message to self
+    // Prevent sending message to self.
     if (senderId === receiverId) {
       const error = new Error("Cannot send message to yourself");
       error.status = 400;
       throw error;
     }
 
-    // Validate receiver exists
+    // Validate receiver exists.
     const receiver = await User.findById(receiverId);
     if (!receiver) {
       const error = new Error("Receiver not found " + receiverId);
@@ -71,7 +77,7 @@ const sendMessage = async (req, res, next) => {
       throw error;
     }
 
-    // Create and save the message
+    // Create and save the message.
     const message = new Message({
       sender: senderId,
       receiver: receiverId,
@@ -80,7 +86,7 @@ const sendMessage = async (req, res, next) => {
 
     await message.save();
 
-    // Populate sender and receiver details for response
+    // Populate sender and receiver details for response.
     await message.populate([
       { path: "sender", select: "email name role" },
       { path: "receiver", select: "email name role" },
@@ -88,7 +94,7 @@ const sendMessage = async (req, res, next) => {
 
     await req.audit.log(req.user.id, ACTIONS.MESSAGE_SENT, {
       messageId: message._id,
-      receiverId: receiverId,
+      receiverId,
       contentSnippet: message.content.slice(0, 50),
     });
 
@@ -110,20 +116,18 @@ const sendMessage = async (req, res, next) => {
 };
 
 /**
- * Get inbox messages (received by logged-in user)
+ * Get inbox messages
  * @route GET /api/v1/messages/inbox
  */
 const getInboxMessages = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // Get messages received by the user
     const messages = await Message.find({ receiver: userId })
       .populate("sender", "email name role")
       .populate("receiver", "email name role")
       .sort({ timestamp: -1 });
 
-    // Get unread count
     const unreadCount = await Message.getUnreadCount(userId);
 
     res.status(200).json({
@@ -141,14 +145,13 @@ const getInboxMessages = async (req, res, next) => {
 };
 
 /**
- * Get sent messages (sent by logged-in user)
+ * Get sent messages
  * @route GET /api/v1/messages/sent
  */
 const getSentMessages = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // Get messages sent by the logged-in user
     const messages = await Message.find({ sender: userId })
       .populate("sender", "email name role")
       .populate("receiver", "email name role")
@@ -176,7 +179,14 @@ const getConversation = async (req, res, next) => {
     const currentUserId = req.user.id;
     const otherUserId = req.params.userId;
 
-    // Validate other user exists
+    // Reject malformed user IDs before querying MongoDB.
+    if (!mongoose.isValidObjectId(otherUserId)) {
+      const error = new Error("Invalid user ID");
+      error.status = 400;
+      throw error;
+    }
+
+    // Validate other user exists.
     const otherUser = await User.findById(otherUserId);
     if (!otherUser) {
       const error = new Error("User not found");
@@ -184,13 +194,8 @@ const getConversation = async (req, res, next) => {
       throw error;
     }
 
-    // Get conversation messages
-    const messages = await Message.getConversation(
-      currentUserId,
-      otherUserId,
-    );
+    const messages = await Message.getConversation(currentUserId, otherUserId);
 
-    // Mark messages as read (messages received by current user from other user)
     await Message.markAsRead(currentUserId, otherUserId);
 
     res.status(200).json({
@@ -221,6 +226,13 @@ const markMessageAsRead = async (req, res, next) => {
     const messageId = req.params.messageId;
     const userId = req.user.id;
 
+    // Reject malformed message IDs before querying MongoDB.
+    if (!mongoose.isValidObjectId(messageId)) {
+      const error = new Error("Invalid message ID");
+      error.status = 400;
+      throw error;
+    }
+
     const message = await Message.findById(messageId);
     if (!message) {
       const error = new Error("Message not found");
@@ -228,7 +240,7 @@ const markMessageAsRead = async (req, res, next) => {
       throw error;
     }
 
-    // Only receiver can mark message as read
+    // Only receiver can mark message as read.
     if (message.receiver.toString() !== userId) {
       const error = new Error("Unauthorized to mark this message as read");
       error.status = 403;
