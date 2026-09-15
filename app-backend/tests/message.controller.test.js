@@ -217,6 +217,7 @@ test("sendMessage rejects malformed receiver ID", async () => {
 
 test("getConversation rejects malformed user ID", async () => {
   const req = createReq();
+
   req.params = {
     userId: "not-a-valid-object-id",
   };
@@ -239,6 +240,7 @@ test("getConversation rejects malformed user ID", async () => {
 
 test("markMessageAsRead rejects malformed message ID", async () => {
   const req = createReq();
+
   req.params = {
     messageId: "not-a-valid-object-id",
   };
@@ -288,6 +290,7 @@ test("getConversation preserves 404 for a valid but nonexistent user ID", async 
   User.findById.mockResolvedValue(null);
 
   const req = createReq();
+
   req.params = {
     userId: VALID_OTHER_USER_ID,
   };
@@ -312,6 +315,7 @@ test("markMessageAsRead preserves 404 for a valid but nonexistent message ID", a
   Message.findById.mockResolvedValue(null);
 
   const req = createReq();
+
   req.params = {
     messageId: VALID_MESSAGE_ID,
   };
@@ -329,6 +333,91 @@ test("markMessageAsRead preserves 404 for a valid but nonexistent message ID", a
       message: "Message not found",
     }),
   );
+});
+
+// --------------------------------------------------
+// BE-063 SOFT-DELETED RECIPIENTS
+// --------------------------------------------------
+
+test("sendMessage rejects messages to soft-deleted recipients", async () => {
+  User.findById.mockResolvedValue({
+    _id: VALID_RECEIVER_ID,
+    role: "guard",
+    email: "deleted@example.com",
+    name: "Deleted Guard",
+    isDeleted: true,
+  });
+
+  const req = createReq();
+  const res = createRes();
+  const next = jest.fn();
+
+  await sendMessage(req, res, next);
+
+  expect(User.findById).toHaveBeenCalledWith(VALID_RECEIVER_ID);
+  expect(Message).not.toHaveBeenCalled();
+
+  expect(next).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 404,
+      message: "Receiver not found",
+    }),
+  );
+});
+
+test("sendMessage allows messages to active recipients", async () => {
+  User.findById.mockResolvedValue({
+    _id: VALID_RECEIVER_ID,
+    role: "guard",
+    email: "guard2@example.com",
+    name: "Guard Two",
+    isDeleted: false,
+  });
+
+  const req = createReq();
+  const res = createRes();
+  const next = jest.fn();
+
+  await sendMessage(req, res, next);
+
+  expect(Message).toHaveBeenCalledWith(
+    expect.objectContaining({
+      sender: "507f1f77bcf86cd799439014",
+      receiver: VALID_RECEIVER_ID,
+      content: "Hello from SecureShift",
+    }),
+  );
+
+  expect(Message.mock.instances[0].save).toHaveBeenCalled();
+  expect(res.status).toHaveBeenCalledWith(201);
+  expect(next).not.toHaveBeenCalled();
+});
+
+test("sendMessage preserves messaging for legacy recipients without isDeleted", async () => {
+  User.findById.mockResolvedValue({
+    _id: VALID_RECEIVER_ID,
+    role: "guard",
+    email: "legacy@example.com",
+    name: "Legacy Guard",
+  });
+
+  const req = createReq();
+  const res = createRes();
+  const next = jest.fn();
+
+  await sendMessage(req, res, next);
+
+  expect(Message).toHaveBeenCalledWith(
+    expect.objectContaining({
+      sender: "507f1f77bcf86cd799439014",
+      receiver: VALID_RECEIVER_ID,
+      content: "Hello from SecureShift",
+    }),
+  );
+
+  expect(Message.mock.instances[0].save).toHaveBeenCalled();
+  expect(res.status).toHaveBeenCalledWith(201);
+  expect(next).not.toHaveBeenCalled();
 });
 
 // --------------------------------------------------

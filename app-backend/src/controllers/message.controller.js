@@ -53,8 +53,17 @@ const sendMessage = async (req, res, next) => {
 
     // Validate receiver exists.
     const receiver = await User.findById(receiverId);
+
     if (!receiver) {
       const error = new Error("Receiver not found " + receiverId);
+      error.status = 404;
+      throw error;
+    }
+
+    // Reject messages to soft-deleted users.
+    // Legacy users without isDeleted are still treated as active.
+    if (receiver.isDeleted === true) {
+      const error = new Error("Receiver not found");
       error.status = 404;
       throw error;
     }
@@ -188,6 +197,7 @@ const getConversation = async (req, res, next) => {
 
     // Validate other user exists.
     const otherUser = await User.findById(otherUserId);
+
     if (!otherUser) {
       const error = new Error("User not found");
       error.status = 404;
@@ -234,6 +244,7 @@ const markMessageAsRead = async (req, res, next) => {
     }
 
     const message = await Message.findById(messageId);
+
     if (!message) {
       const error = new Error("Message not found");
       error.status = 404;
