@@ -185,6 +185,14 @@ export const calculateAttendanceHours = (attendance) => {
 
   return roundHours(hours);
 };
+//Calculate payable hours by deducting the shift break time from the actual hours worked. If actual hours are not provided, return null.
+export const calculatePayableHours = (shift, actualHours) => {
+  if (actualHours == null) {
+    return null;
+  }
+  const breakMinutes = Number.isFinite(shift?.breakTime) ? shift.breakTime : 0;
+  return roundHours(actualHours - breakMinutes / 60);
+};
 
 const buildShiftQuery = (query, userContext, range) => {
   const { guardId, department } = query;
@@ -408,7 +416,10 @@ const buildComputedEntries = (shifts, attendanceRecords) => {
       ),
       scheduledHours,
       actualHours: roundHours(actualHours ?? scheduledHours),
-      payableHours: roundHours(actualHours ?? scheduledHours),
+      payableHours:
+        actualHours != null
+          ? calculatePayableHours(shift, actualHours)
+          : scheduledHours,
       attendanceBased: actualHours != null,
     });
   }
