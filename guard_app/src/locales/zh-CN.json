@@ -58,7 +58,9 @@
     "crashMessage": "此页面出现问题，你可以重试。"
   },
   "net": {
-    "offline": "没有网络连接"
+    "offline": "没有网络连接",
+    "syncing": "正在同步 {{count}} 条考勤更新…",
+    "pendingSync": "{{count}} 条考勤更新待同步"
   },
   "home": {
     "welcome": "欢迎回来，{{name}}！",

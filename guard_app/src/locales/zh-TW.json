@@ -58,7 +58,9 @@
     "crashMessage": "此頁面發生問題，你可以重試。"
   },
   "net": {
-    "offline": "沒有網路連線"
+    "offline": "沒有網路連線",
+    "syncing": "正在同步 {{count}} 筆考勤更新…",
+    "pendingSync": "{{count}} 筆考勤更新待同步"
   },
   "home": {
     "welcome": "歡迎回來，{{name}}！",

@@ -11,6 +11,7 @@ import { StyleSheet, View } from 'react-native';
 import './src/i18n'; // Initialize i18n
 import ErrorBoundary from './src/components/ErrorBoundary';
 import OfflineBanner from './src/components/OfflineBanner';
+import SyncStatusBanner from './src/components/SyncStatusBanner';
 import AppLockProvider from './src/context/AppLockProvider';
 import { attach401Handler } from './src/lib/http';
 import {
@@ -75,6 +76,7 @@ function AppContent() {
   return (
     <View style={styles.root}>
       <OfflineBanner />
+      <SyncStatusBanner />
       <NavigationContainer theme={navigationTheme} ref={navigationRef}>
         <AppNavigator />
       </NavigationContainer>
