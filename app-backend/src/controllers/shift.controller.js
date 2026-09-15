@@ -294,7 +294,11 @@ export const updateShift = async (req, res) => {
     if (requirements !== undefined) updates.requirements = requirements.trim();
 
     if (location !== undefined) {
-      if (location === null || typeof location !== "object" || Array.isArray(location)) {
+      if (
+        location === null ||
+        typeof location !== "object" ||
+        Array.isArray(location)
+      ) {
         return res.status(400).json({
           message: "Invalid type for 'location': expected object",
         });
