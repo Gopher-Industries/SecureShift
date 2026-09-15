@@ -277,6 +277,7 @@ describe("Shift Controller API Tests", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.shift.location.suburb).toBe("Docklands");
+    expect(res.body.shift.location.street).toBe("Main St");
     expect(res.body.shift.title).toBe("Updated Shift");
   });
 
