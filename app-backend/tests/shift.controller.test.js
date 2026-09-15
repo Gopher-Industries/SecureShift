@@ -223,9 +223,7 @@ describe("Shift Controller API Tests", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.shift.status).toBe("open");
-    expect(new Date(res.body.shift.date).toISOString()).toContain(
-      "2026-01-15",
-    );
+    expect(new Date(res.body.shift.date).toISOString()).toContain("2026-01-15");
   });
 
   test("New shift with a past date is still rejected", async () => {
@@ -252,9 +250,9 @@ describe("Shift Controller API Tests", () => {
       });
 
     expect(res.statusCode).toBe(500);
-  expect(res.body.message).toContain(
-    "Shift date must be today or in the future",
-  );
+    expect(res.body.message).toContain(
+      "Shift date must be today or in the future",
+    );
   });
 
   test("Existing shift cannot be changed to a past date", async () => {
@@ -367,9 +365,7 @@ describe("Shift Controller API Tests", () => {
       .set("x-user-role", "employer");
 
     expect(res.statusCode).toBe(200);
-    expect(
-      res.body.items.every((shift) => shift.status === "open"),
-    ).toBe(true);
+    expect(res.body.items.every((shift) => shift.status === "open")).toBe(true);
   });
 
   test("myshifts supports legacy past status filter", async () => {
@@ -380,9 +376,9 @@ describe("Shift Controller API Tests", () => {
       .set("x-user-role", "employer");
 
     expect(res.statusCode).toBe(200);
-    expect(
-      res.body.items.every((shift) => shift.status === "completed"),
-    ).toBe(true);
+    expect(res.body.items.every((shift) => shift.status === "completed")).toBe(
+      true,
+    );
   });
 
   test("myshifts rejects invalid page", async () => {
@@ -506,9 +502,7 @@ describe("Shift Controller API Tests", () => {
     expect(res.body.message).toBe("Shift duplicated successfully");
     expect(res.body.shift).toHaveProperty("_id");
     expect(res.body.shift.status).toBe("draft");
-    expect(res.body.shift.createdBy.toString()).toBe(
-      employer._id.toString(),
-    );
+    expect(res.body.shift.createdBy.toString()).toBe(employer._id.toString());
     expect(new Date(res.body.shift.date).toISOString()).toContain(newDate);
   });
 
@@ -533,9 +527,7 @@ describe("Shift Controller API Tests", () => {
       .send({ date: "2026-12-16" });
 
     expect(res.statusCode).toBe(403);
-    expect(res.body.message).toBe(
-      "You can only duplicate your own shifts",
-    );
+    expect(res.body.message).toBe("You can only duplicate your own shifts");
   });
 
   test("Duplicate shift resets lifecycle data", async () => {
@@ -556,5 +548,4 @@ describe("Shift Controller API Tests", () => {
     expect(duplicatedShift.ratedByGuard).toBe(false);
     expect(duplicatedShift.ratedByEmployer).toBe(false);
   });
-
 });
