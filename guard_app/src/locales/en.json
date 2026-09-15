@@ -58,7 +58,9 @@
     "crashMessage": "The app had a problem on this screen. You can try again."
   },
   "net": {
-    "offline": "No internet connection"
+    "offline": "No internet connection",
+    "syncing": "Syncing {{count}} attendance update(s)…",
+    "pendingSync": "{{count}} attendance update(s) waiting to sync"
   },
   "home": {
     "welcome": "Welcome back, {{name}}!",
