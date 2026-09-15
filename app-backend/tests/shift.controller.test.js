@@ -44,31 +44,17 @@ const { default: app } = await import("../src/app.js");
 const { default: Shift } = await import("../src/models/Shift.js");
 const { default: User } = await import("../src/models/User.js");
 const { default: Branch } = await import("../src/models/Branch.js");
-const { default: Admin } = await import("../src/models/Admin.js");
-const { default: Employer } = await import("../src/models/Employer.js");
-const { default: Guard } = await import("../src/models/Guard.js");
-
-let mongoServer;
 
 describe("Shift Controller API Tests", () => {
   let employerToken;
   let guardToken;
-  let adminToken;
   let employer;
   let guard;
   let branch;
   let shiftId;
-  let admin;
 
   beforeAll(async () => {
     await startTestDatabase();
-
-    admin = await User.create({
-      name: "Admin",
-      email: "admin@test.com",
-      password: "Password123!",
-      role: "admin",
-    });
 
     employer = await User.create({
       name: "Employer",
@@ -101,12 +87,6 @@ describe("Shift Controller API Tests", () => {
 
     guardToken = jwt.sign(
       { id: guard._id, role: guard.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" },
-    );
-
-    adminToken = jwt.sign(
-      { id: admin._id, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: "15m" },
     );
