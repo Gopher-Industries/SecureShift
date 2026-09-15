@@ -1,31 +1,17 @@
 import express from "express";
 import auth from "../middleware/auth.js";
+import { authorizeRoles } from "../middleware/rbac.js";
 import {
   approvePayroll,
   downloadPayrollExport,
   downloadPayrollCsv,
   downloadPayrollPdf,
   getPayroll,
+  getPayrollSummary,
   processPayroll,
 } from "../controllers/payroll.controller.js";
 
 const router = express.Router();
-
-const authorizeRole =
-  (...allowedRoles) =>
-  (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    if (!allowedRoles.includes(req.user.role)) {
-      return res
-        .status(403)
-        .json({ message: "Forbidden: insufficient permissions" });
-    }
-
-    next();
-  };
 
 /**
  * @swagger
@@ -84,7 +70,62 @@ const authorizeRole =
  *       403:
  *         description: Forbidden
  */
-router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayroll);
+
+router.get("/", auth, authorizeRoles("admin", "employer", "guard"), getPayroll);
+
+/**
+ * @swagger
+ * /api/v1/payroll/summary:
+ *   get:
+ *     summary: Get a payroll summary for a date range
+ *     description: Read-only. Reads existing payroll records and does not create or update any payroll data.
+ *     tags: [Payroll]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date in YYYY-MM-DD format
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date in YYYY-MM-DD format
+ *       - in: query
+ *         name: periodType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [daily, weekly, monthly]
+ *       - in: query
+ *         name: guardId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional guard filter. Guards may only use their own id.
+ *     responses:
+ *       200:
+ *         description: Payroll summary returned successfully
+ *       400:
+ *         description: Invalid query parameters
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+  "/summary",
+  auth,
+  authorizeRoles("admin", "employer", "guard"),
+  getPayrollSummary,
+);
+
 /**
  * @swagger
  * /api/v1/payroll/export:
@@ -142,19 +183,19 @@ router.get("/", auth, authorizeRole("admin", "employer", "guard"), getPayroll);
 router.get(
   "/export",
   auth,
-  authorizeRole("admin", "employer", "guard"),
+  authorizeRoles("admin", "employer", "guard"),
   downloadPayrollExport,
 );
 router.get(
   "/export/csv",
   auth,
-  authorizeRole("admin", "employer", "guard"),
+  authorizeRoles("admin", "employer", "guard"),
   downloadPayrollCsv,
 );
 router.get(
   "/export/pdf",
   auth,
-  authorizeRole("admin", "employer", "guard"),
+  authorizeRoles("admin", "employer", "guard"),
   downloadPayrollPdf,
 );
 /**
@@ -192,7 +233,7 @@ router.get(
 router.post(
   "/approve",
   auth,
-  authorizeRole("admin", "employer"),
+  authorizeRoles("admin", "employer"),
   approvePayroll,
 );
 /**
@@ -230,7 +271,7 @@ router.post(
 router.post(
   "/process",
   auth,
-  authorizeRole("admin", "employer"),
+  authorizeRoles("admin", "employer"),
   processPayroll,
 );
 

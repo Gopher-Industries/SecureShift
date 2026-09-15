@@ -44,11 +44,24 @@ export const triggerSOS = async (req, res) => {
 
 export const getSOSHistory = async (req, res) => {
   try {
-    const data = await listSOS(req.user);
+    const page = Number.parseInt(req.query.page, 10);
+    const limit = Number.parseInt(req.query.limit, 10);
+
+    const data = await listSOS(req.user, {
+      ...req.query,
+      page: Number.isInteger(page) && page > 0 ? page : 1,
+      limit: Number.isInteger(limit) && limit > 0 ? Math.min(limit, 100) : 20,
+    });
     return res.status(200).json({
-      count: data.length,
-      data,
-      sos: data.map(serializeSOS),
+      count: data.data.length,
+      data: data.data,
+      sos: data.data.map(serializeSOS),
+      pagination: {
+        page: data.page,
+        limit: data.limit,
+        total: data.total,
+        hasNext: data.page * data.limit < data.total,
+      },
     });
   } catch (error) {
     return handleError(res, error);
