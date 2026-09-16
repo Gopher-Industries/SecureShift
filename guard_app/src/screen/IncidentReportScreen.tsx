@@ -18,6 +18,7 @@ import {
 
 import EmptyState from '../components/EmptyState';
 import ErrorMessageBox from '../components/ErrorMessageBox';
+import IncidentAssistantModal from '../components/IncidentAssistantModal';
 import LoadingState from '../components/LoadingState';
 import http from '../lib/http';
 import { useAppTheme } from '../theme';
@@ -111,6 +112,7 @@ export default function IncidentReportScreen() {
 
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<Severity | null>(null);
+  const [showAssistant, setShowAssistant] = useState(false);
   const [files, setFiles] = useState<PickedFile[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [dateTime] = useState(getNowDateTime());
@@ -363,6 +365,14 @@ export default function IncidentReportScreen() {
           style={s.textArea}
         />
 
+        <TouchableOpacity
+          style={s.assistantBtn}
+          onPress={() => setShowAssistant(true)}
+          accessibilityLabel={t('aiIncident.title')}
+        >
+          <Text style={s.assistantBtnText}>✨ {t('aiIncident.openButton')}</Text>
+        </TouchableOpacity>
+
         <Text style={s.label}>
           {t('incidentReport.date')} &amp; {t('incidentReport.time')}
         </Text>
@@ -464,6 +474,16 @@ export default function IncidentReportScreen() {
         message={errorState?.message}
         onClose={closeErrorBox}
       />
+
+      <IncidentAssistantModal
+        visible={showAssistant}
+        description={description}
+        shiftTitle={selectedShift?.title}
+        dateTime={dateTime}
+        onApplyDraft={(text) => setDescription(text)}
+        onApplySeverity={(sev) => setSeverity(sev)}
+        onClose={() => setShowAssistant(false)}
+      />
     </>
   );
 }
@@ -554,6 +574,18 @@ const getStyles = (colors: AppColors) =>
       padding: 12,
       textAlignVertical: 'top',
       color: colors.text,
+    },
+    assistantBtn: {
+      alignItems: 'center',
+      backgroundColor: colors.primarySoft,
+      borderRadius: 10,
+      marginTop: 10,
+      paddingVertical: 12,
+    },
+    assistantBtnText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: '700',
     },
     readOnly: {
       backgroundColor: colors.primarySoft,

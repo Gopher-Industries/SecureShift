@@ -1,10 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import Button from './Button';
 import Modal from './Modal';
 import Pagination from './Pagination';
 import colors from '../theme/colors';
+
+// Header "select all" checkbox that shows an indeterminate state when only some
+// of the current page's rows are selected.
+function SelectAllCheckbox({ checked, indeterminate, onChange, label }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      aria-label={label}
+      style={{ cursor: 'pointer' }}
+    />
+  );
+}
 
 /**
  * Internal pagination:
@@ -45,9 +64,15 @@ export default function DataTable({
   pagination = null,
   pageResetTrigger = null,
   fileName = 'Data',
+  // --- Bulk actions / multi-select (opt-in) ---
+  selectable = false,
+  getRowId = (row, index) => row._id ?? row.id ?? index,
+  bulkActions = [],
+  onSelectionChange = null,
 }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [internalPage, setInternalPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
   const isExternalPagination = pagination?.type === 'external';
 
   const [openExport, setOpenExport] = useState(false);
@@ -151,6 +176,65 @@ export default function DataTable({
     }
   }, [isExternalPagination]);
 
+  // ---- Selection ----
+  const rowIdOf = useCallback((row, index) => String(getRowId(row, index)), [getRowId]);
+
+  const selectedRows = useMemo(
+    () => rows.filter((r, i) => selectedIds.has(rowIdOf(r, i))),
+    [rows, selectedIds, rowIdOf]
+  );
+
+  // Drop selected ids that are no longer present in the data.
+  useEffect(() => {
+    if (!selectable) return;
+    setSelectedIds((prev) => {
+      const present = new Set(rows.map((r, i) => rowIdOf(r, i)));
+      let changed = false;
+      const next = new Set();
+      prev.forEach((id) => {
+        if (present.has(id)) next.add(id);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [rows, selectable, rowIdOf]);
+
+  // Notify parent when the selection changes.
+  useEffect(() => {
+    if (selectable && onSelectionChange) onSelectionChange(selectedRows);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIds]);
+
+  const toggleRow = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const pageIds = displayedRows.map((r, i) => rowIdOf(r, i));
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const somePageSelected = pageIds.some((id) => selectedIds.has(id));
+
+  const toggleAllOnPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  const runBulkAction = (action) => {
+    if (action.confirm && !window.confirm(action.confirm)) return;
+    action.onClick(selectedRows);
+    if (action.clearAfter !== false) clearSelection();
+  };
+
   if (!rows.length) return <p style={{ color: colors.muted }}>{empty}</p>;
 
   // For CSV/PDF
@@ -246,9 +330,79 @@ export default function DataTable({
 
   return (
     <>
+      {selectable && selectedRows.length > 0 && (
+        <div
+          role="toolbar"
+          aria-label="Bulk actions"
+          style={{
+            alignItems: 'center',
+            background: colors.tableHead,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 8,
+            display: 'flex',
+            gap: 12,
+            marginBottom: 10,
+            padding: '8px 12px',
+          }}
+        >
+          <span style={{ color: colors.text, fontWeight: 600 }}>
+            {selectedRows.length} selected
+          </span>
+          <button
+            type="button"
+            onClick={clearSelection}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: colors.primary,
+              cursor: 'pointer',
+              font: 'inherit',
+              padding: 0,
+            }}
+          >
+            Clear
+          </button>
+          <span style={{ flex: 1 }} />
+          {bulkActions.map((action) => (
+            <button
+              key={action.key ?? action.label}
+              type="button"
+              onClick={() => runBulkAction(action)}
+              style={{
+                background: action.variant === 'danger' ? colors.danger : colors.primary,
+                border: 'none',
+                borderRadius: 6,
+                color: colors.white,
+                cursor: 'pointer',
+                fontWeight: 600,
+                padding: '6px 12px',
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
       <table style={{ width: '100%', borderCollapse: 'collapse', background: colors.card }}>
         <thead>
           <tr>
+            {selectable && (
+              <th
+                style={{
+                  padding: '10px 12px',
+                  borderBottom: `2px solid ${colors.border}`,
+                  background: colors.tableHead,
+                  width: 40,
+                }}
+              >
+                <SelectAllCheckbox
+                  checked={allPageSelected}
+                  indeterminate={!allPageSelected && somePageSelected}
+                  onChange={toggleAllOnPage}
+                  label="Select all rows on this page"
+                />
+              </th>
+            )}
             {columns.map((c) => {
               const isSorted = sortConfig.key === c.key;
               return (
@@ -297,18 +451,36 @@ export default function DataTable({
           </tr>
         </thead>
         <tbody>
-          {displayedRows.map((r, i) => (
-            <tr key={r._id || i}>
-              {columns.map((c) => (
-                <td
-                  key={c.key}
-                  style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}
-                >
-                  {c.render ? c.render(r) : r[c.key]}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {displayedRows.map((r, i) => {
+            const id = rowIdOf(r, i);
+            const isSelected = selectedIds.has(id);
+            return (
+              <tr
+                key={r._id || i}
+                style={isSelected ? { background: colors.tableHead } : undefined}
+              >
+                {selectable && (
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleRow(id)}
+                      aria-label={`Select row ${i + 1}`}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </td>
+                )}
+                {columns.map((c) => (
+                  <td
+                    key={c.key}
+                    style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}
+                  >
+                    {c.render ? c.render(r) : r[c.key]}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <div

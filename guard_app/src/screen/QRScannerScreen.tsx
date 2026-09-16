@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useState, useEffect } from 'react';
@@ -8,11 +8,13 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'QRScanner'>;
+type ScannerRoute = RouteProp<RootStackParamList, 'QRScanner'>;
 
 export default function QRScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<ScannerRoute>();
   const { colors } = useAppTheme();
 
   useEffect(() => {
@@ -43,11 +45,22 @@ export default function QRScannerScreen() {
     );
   }
 
-  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
-    if (!scanned) {
-      setScanned(true);
-      navigation.navigate('ScanResult', { data });
+  const handleBarCodeScanned = ({ data }: { type: string; data: string }) => {
+    if (scanned) return;
+    setScanned(true);
+
+    // Patrol mode: hand the scanned code back to the Guard Tour screen for
+    // QR + GPS verification instead of the generic scan-result view.
+    if (route.params?.returnTo === 'PatrolTour' && route.params?.shiftId) {
+      navigation.navigate('PatrolTour', {
+        shift: { _id: route.params.shiftId },
+        scannedCode: data,
+        scanNonce: Date.now(),
+      });
+      return;
     }
+
+    navigation.navigate('ScanResult', { data });
   };
 
   return (
