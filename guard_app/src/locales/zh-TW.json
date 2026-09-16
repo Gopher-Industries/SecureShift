@@ -458,5 +458,29 @@
     "error": "無法載入表現資料。",
     "retry": "重試",
     "viewDetails": "查看詳情"
+  },
+  "patrol": {
+    "title": "巡邏路線",
+    "progress": "{{total}} 個檢查點中的 {{done}} 個",
+    "scanButton": "掃描檢查點",
+    "scanCta": "在每個檢查點掃描 QR 碼",
+    "complete": "巡邏完成",
+    "completeBody": "已巡查所有檢查點。做得好！",
+    "pending": "{{count}} 個掃描待同步",
+    "offlineSaved": "已離線儲存",
+    "offlineSavedBody": "已記錄「{{name}}」。恢復網路後將自動同步。",
+    "scannedAt": "{{time}} 掃描",
+    "notStarted": "未巡查",
+    "empty": "此班次沒有檢查點。",
+    "successTitle": "檢查點已驗證",
+    "successBody": "已完成「{{name}}」。",
+    "unknownTitle": "未知檢查點",
+    "unknownBody": "此 QR 碼與本次巡邏的檢查點不符。",
+    "alreadyTitle": "已巡查",
+    "alreadyBody": "「{{name}}」已完成。",
+    "tooFarTitle": "距檢查點太遠",
+    "tooFarBody": "您距「{{name}}」還有 {{distance}}。請靠近後重試。",
+    "locationErrorTitle": "需要定位",
+    "serverErrorTitle": "掃描失敗"
   }
 }

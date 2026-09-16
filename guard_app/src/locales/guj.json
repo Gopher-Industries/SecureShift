@@ -457,5 +457,29 @@
     "error": "પ્રદર્શન લોડ થઈ શક્યું નહીં.",
     "retry": "ફરી પ્રયત્ન કરો",
     "viewDetails": "વિગતો જુઓ"
+  },
+  "patrol": {
+    "title": "ગાર્ડ ટૂર",
+    "progress": "{{total}} માંથી {{done}} ચેકપોઇન્ટ",
+    "scanButton": "ચેકપોઇન્ટ સ્કેન કરો",
+    "scanCta": "દરેક ચેકપોઇન્ટ પર QR કોડ સ્કેન કરો",
+    "complete": "પેટ્રોલ પૂર્ણ",
+    "completeBody": "બધા ચેકપોઇન્ટ જોવાયા. સરસ કામ!",
+    "pending": "{{count}} સ્કેન સિંક થવાના બાકી છે",
+    "offlineSaved": "ઓફલાઇન સાચવ્યું",
+    "offlineSavedBody": "\"{{name}}\" નોંધાયું. તમે ઓનલાઇન થશો ત્યારે તે સિંક થશે.",
+    "scannedAt": "{{time}} વાગ્યે સ્કેન કર્યું",
+    "notStarted": "જોવાયું નથી",
+    "empty": "આ શિફ્ટ માટે કોઈ ચેકપોઇન્ટ નથી.",
+    "successTitle": "ચેકપોઇન્ટ ચકાસાયું",
+    "successBody": "\"{{name}}\" પૂર્ણ થયું.",
+    "unknownTitle": "અજ્ઞાત ચેકપોઇન્ટ",
+    "unknownBody": "આ QR કોડ આ ટૂરના કોઈ ચેકપોઇન્ટ સાથે મેળ ખાતો નથી.",
+    "alreadyTitle": "પહેલેથી જોવાયું",
+    "alreadyBody": "\"{{name}}\" પહેલેથી પૂર્ણ થઈ ગયું છે.",
+    "tooFarTitle": "ચેકપોઇન્ટથી ખૂબ દૂર",
+    "tooFarBody": "તમે \"{{name}}\" થી {{distance}} દૂર છો. નજીક જઈને ફરી પ્રયાસ કરો.",
+    "locationErrorTitle": "સ્થાન જરૂરી છે",
+    "serverErrorTitle": "સ્કેન નિષ્ફળ"
   }
 }

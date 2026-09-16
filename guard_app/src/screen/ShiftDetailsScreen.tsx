@@ -647,6 +647,15 @@ export default function ShiftDetailsScreen() {
           ) : null}
 
           {hasCheckedIn && !hasCheckedOut ? (
+            <TouchableOpacity
+              style={[s.btn, { backgroundColor: colors.primary }]}
+              onPress={() => navigation.navigate('PatrolTour', { shift })}
+            >
+              <Text style={s.btnText}>Start Guard Tour</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {hasCheckedIn && !hasCheckedOut ? (
             <View style={s.handoverSection}>
               <Text style={s.handoverTitle}>Handover Note</Text>
 
