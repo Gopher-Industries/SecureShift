@@ -488,5 +488,30 @@
     "locationUnavailable": "તમારું સ્થાન નક્કી કરી શકાયું નથી",
     "locationGeneric": "તમારું સ્થાન મેળવી શકાયું નથી",
     "serverRejected": "ચેકપોઇન્ટ સ્કેન નકારાયું"
+  },
+  "aiIncident": {
+    "openButton": "એઆઈ સહાયક",
+    "title": "એઆઈ ઘટના સહાયક",
+    "improveTab": "રિપોર્ટ સુધારો",
+    "askTab": "પ્રશ્ન પૂછો",
+    "improveCta": "મારી રિપોર્ટ સુધારો",
+    "draftHeading": "સૂચવેલ રિપોર્ટ",
+    "severityHeading": "સૂચવેલ ગંભીરતા",
+    "missingHeading": "કદાચ ખૂટે છે",
+    "nothingMissing": "પૂર્ણ લાગે છે",
+    "useDraft": "આ ડ્રાફ્ટ વાપરો",
+    "applySeverity": "ગંભીરતા લાગુ કરો: {{level}}",
+    "noDescription": "પહેલા થોડી નોંધ લખો, પછી સુધારો દબાવો.",
+    "askPlaceholder": "શું કરવું તે પૂછો…",
+    "askCta": "પૂછો",
+    "answerHeading": "માર્ગદર્શન",
+    "error": "સહાયક હાલમાં ઉપલબ્ધ નથી. કૃપા કરીને ફરી પ્રયાસ કરો.",
+    "close": "બંધ કરો",
+    "missingFields": {
+      "time": "ઘટનાનો સમય",
+      "location": "સ્થાન",
+      "people": "સામેલ લોકો",
+      "action": "લેવાયેલ પગલાં"
+    }
   }
 }

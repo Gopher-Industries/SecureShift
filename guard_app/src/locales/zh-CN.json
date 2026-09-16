@@ -489,5 +489,30 @@
     "locationUnavailable": "无法确定您的位置",
     "locationGeneric": "无法获取您的位置",
     "serverRejected": "检查点扫描被拒绝"
+  },
+  "aiIncident": {
+    "openButton": "AI 助手",
+    "title": "AI 事件助手",
+    "improveTab": "改进报告",
+    "askTab": "提问",
+    "improveCta": "改进我的报告",
+    "draftHeading": "建议的报告",
+    "severityHeading": "建议的严重程度",
+    "missingHeading": "可能缺少",
+    "nothingMissing": "看起来完整",
+    "useDraft": "使用此草稿",
+    "applySeverity": "应用严重程度：{{level}}",
+    "noDescription": "请先写几点说明，然后点击改进。",
+    "askPlaceholder": "询问该怎么做…",
+    "askCta": "提问",
+    "answerHeading": "指导",
+    "error": "助手当前不可用，请重试。",
+    "close": "关闭",
+    "missingFields": {
+      "time": "事件时间",
+      "location": "地点",
+      "people": "涉及人员",
+      "action": "已采取的行动"
+    }
   }
 }

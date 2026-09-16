@@ -488,5 +488,30 @@
     "locationUnavailable": "Unable to determine your location",
     "locationGeneric": "Could not get your location",
     "serverRejected": "Checkpoint scan was rejected"
+  },
+  "aiIncident": {
+    "openButton": "AI Assistant",
+    "title": "AI Incident Assistant",
+    "improveTab": "Improve report",
+    "askTab": "Ask a question",
+    "improveCta": "Improve my report",
+    "draftHeading": "Suggested report",
+    "severityHeading": "Suggested severity",
+    "missingHeading": "Might be missing",
+    "nothingMissing": "Looks complete",
+    "useDraft": "Use this draft",
+    "applySeverity": "Apply severity: {{level}}",
+    "noDescription": "Write a few notes first, then tap Improve.",
+    "askPlaceholder": "Ask what to do…",
+    "askCta": "Ask",
+    "answerHeading": "Guidance",
+    "error": "The assistant is unavailable right now. Please try again.",
+    "close": "Close",
+    "missingFields": {
+      "time": "Time of incident",
+      "location": "Location",
+      "people": "People involved",
+      "action": "Action taken"
+    }
   }
 }
