@@ -3,6 +3,8 @@
 // position if a fresh fix times out.
 import * as Location from 'expo-location';
 
+import i18n from '../i18n';
+
 import type { LocationPayload } from '../api/attendance';
 
 export class LocationError extends Error {
@@ -19,7 +21,7 @@ const FIX_TIMEOUT_MS = 8000;
 export async function getCurrentLocation(): Promise<LocationPayload> {
   const { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
-    throw new LocationError('Location permission denied');
+    throw new LocationError(i18n.t('patrol.locationDenied'));
   }
 
   let fix: Location.LocationObject | null = null;
@@ -27,7 +29,10 @@ export async function getCurrentLocation(): Promise<LocationPayload> {
     fix = await Promise.race<Location.LocationObject>([
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
       new Promise<Location.LocationObject>((_, reject) =>
-        setTimeout(() => reject(new LocationError('Timed out getting location')), FIX_TIMEOUT_MS),
+        setTimeout(
+          () => reject(new LocationError(i18n.t('patrol.locationTimeout'))),
+          FIX_TIMEOUT_MS,
+        ),
       ),
     ]);
   } catch {
@@ -35,7 +40,7 @@ export async function getCurrentLocation(): Promise<LocationPayload> {
   }
 
   if (!fix) {
-    throw new LocationError('Unable to determine your location');
+    throw new LocationError(i18n.t('patrol.locationUnavailable'));
   }
 
   return {

@@ -12,6 +12,7 @@ import {
   type Checkpoint,
   type CheckpointScan,
 } from '../api/patrol';
+import i18n from '../i18n';
 import { getCurrentLocation, LocationError } from '../lib/currentLocation';
 import { getIsConnected, useNetworkStatus } from '../lib/networkStatus';
 import { enqueueScan, getPendingForShift } from '../lib/patrolQueue';
@@ -48,7 +49,7 @@ export function usePatrolTour(shiftId: string) {
       setCheckpoints(cps);
       setProgress(prog);
     } catch {
-      setError('Could not load checkpoints. Pull to retry.');
+      setError(i18n.t('patrol.loadError'));
     } finally {
       setLoading(false);
       await refreshPending();
@@ -90,7 +91,7 @@ export function usePatrolTour(shiftId: string) {
       try {
         loc = await getCurrentLocation();
       } catch (e) {
-        const message = e instanceof LocationError ? e.message : 'Could not get your location';
+        const message = e instanceof LocationError ? e.message : i18n.t('patrol.locationGeneric');
         return { status: 'location-error', message };
       }
 
@@ -139,7 +140,7 @@ export function usePatrolTour(shiftId: string) {
         } catch (e) {
           // Server received and rejected it -> surface the error.
           if (axios.isAxiosError(e) && e.response) {
-            const message = e.response?.data?.message ?? 'Checkpoint scan was rejected';
+            const message = e.response?.data?.message ?? i18n.t('patrol.serverRejected');
             return { status: 'server-error', message };
           }
           // Connectivity failure -> queue and optimistically mark done.

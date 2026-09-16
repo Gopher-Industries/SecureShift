@@ -480,6 +480,13 @@
     "tooFarTitle": "Too far from checkpoint",
     "tooFarBody": "You're {{distance}} from \"{{name}}\". Move closer and try again.",
     "locationErrorTitle": "Location needed",
-    "serverErrorTitle": "Scan failed"
+    "serverErrorTitle": "Scan failed",
+    "startButton": "Start Guard Tour",
+    "loadError": "Could not load checkpoints. Pull to retry.",
+    "locationDenied": "Location permission denied",
+    "locationTimeout": "Timed out getting your location",
+    "locationUnavailable": "Unable to determine your location",
+    "locationGeneric": "Could not get your location",
+    "serverRejected": "Checkpoint scan was rejected"
   }
 }

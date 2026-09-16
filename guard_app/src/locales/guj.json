@@ -480,6 +480,13 @@
     "tooFarTitle": "ચેકપોઇન્ટથી ખૂબ દૂર",
     "tooFarBody": "તમે \"{{name}}\" થી {{distance}} દૂર છો. નજીક જઈને ફરી પ્રયાસ કરો.",
     "locationErrorTitle": "સ્થાન જરૂરી છે",
-    "serverErrorTitle": "સ્કેન નિષ્ફળ"
+    "serverErrorTitle": "સ્કેન નિષ્ફળ",
+    "startButton": "ગાર્ડ ટૂર શરૂ કરો",
+    "loadError": "ચેકપોઇન્ટ લોડ થઈ શક્યા નથી. ફરી પ્રયાસ કરવા ખેંચો.",
+    "locationDenied": "સ્થાનની પરવાનગી નકારી",
+    "locationTimeout": "સ્થાન મેળવવામાં સમય સમાપ્ત",
+    "locationUnavailable": "તમારું સ્થાન નક્કી કરી શકાયું નથી",
+    "locationGeneric": "તમારું સ્થાન મેળવી શકાયું નથી",
+    "serverRejected": "ચેકપોઇન્ટ સ્કેન નકારાયું"
   }
 }

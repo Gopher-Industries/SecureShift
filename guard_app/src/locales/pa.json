@@ -400,6 +400,13 @@
     "tooFarTitle": "ਚੈਕਪੌਇੰਟ ਤੋਂ ਬਹੁਤ ਦੂਰ",
     "tooFarBody": "ਤੁਸੀਂ \"{{name}}\" ਤੋਂ {{distance}} ਦੂਰ ਹੋ। ਨੇੜੇ ਜਾ ਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     "locationErrorTitle": "ਟਿਕਾਣਾ ਲੋੜੀਂਦਾ ਹੈ",
-    "serverErrorTitle": "ਸਕੈਨ ਅਸਫਲ"
+    "serverErrorTitle": "ਸਕੈਨ ਅਸਫਲ",
+    "startButton": "ਗਾਰਡ ਟੂਰ ਸ਼ੁਰੂ ਕਰੋ",
+    "loadError": "ਚੈਕਪੌਇੰਟ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ। ਮੁੜ ਕੋਸ਼ਿਸ਼ ਲਈ ਖਿੱਚੋ।",
+    "locationDenied": "ਟਿਕਾਣੇ ਦੀ ਇਜਾਜ਼ਤ ਰੱਦ",
+    "locationTimeout": "ਟਿਕਾਣਾ ਲੈਣ ਵਿੱਚ ਸਮਾਂ ਸਮਾਪਤ",
+    "locationUnavailable": "ਤੁਹਾਡਾ ਟਿਕਾਣਾ ਪਤਾ ਨਹੀਂ ਲੱਗ ਸਕਿਆ",
+    "locationGeneric": "ਤੁਹਾਡਾ ਟਿਕਾਣਾ ਪ੍ਰਾਪਤ ਨਹੀਂ ਹੋ ਸਕਿਆ",
+    "serverRejected": "ਚੈਕਪੌਇੰਟ ਸਕੈਨ ਰੱਦ"
   }
 }

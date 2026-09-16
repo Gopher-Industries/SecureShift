@@ -481,6 +481,13 @@
     "tooFarTitle": "距检查点太远",
     "tooFarBody": "您距“{{name}}”还有 {{distance}}。请靠近后重试。",
     "locationErrorTitle": "需要定位",
-    "serverErrorTitle": "扫描失败"
+    "serverErrorTitle": "扫描失败",
+    "startButton": "开始巡逻",
+    "loadError": "无法加载检查点。下拉重试。",
+    "locationDenied": "定位权限被拒绝",
+    "locationTimeout": "获取定位超时",
+    "locationUnavailable": "无法确定您的位置",
+    "locationGeneric": "无法获取您的位置",
+    "serverRejected": "检查点扫描被拒绝"
   }
 }
