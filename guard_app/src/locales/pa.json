@@ -408,5 +408,30 @@
     "locationUnavailable": "ਤੁਹਾਡਾ ਟਿਕਾਣਾ ਪਤਾ ਨਹੀਂ ਲੱਗ ਸਕਿਆ",
     "locationGeneric": "ਤੁਹਾਡਾ ਟਿਕਾਣਾ ਪ੍ਰਾਪਤ ਨਹੀਂ ਹੋ ਸਕਿਆ",
     "serverRejected": "ਚੈਕਪੌਇੰਟ ਸਕੈਨ ਰੱਦ"
+  },
+  "aiIncident": {
+    "openButton": "ਏਆਈ ਸਹਾਇਕ",
+    "title": "ਏਆਈ ਘਟਨਾ ਸਹਾਇਕ",
+    "improveTab": "ਰਿਪੋਰਟ ਸੁਧਾਰੋ",
+    "askTab": "ਸਵਾਲ ਪੁੱਛੋ",
+    "improveCta": "ਮੇਰੀ ਰਿਪੋਰਟ ਸੁਧਾਰੋ",
+    "draftHeading": "ਸੁਝਾਈ ਰਿਪੋਰਟ",
+    "severityHeading": "ਸੁਝਾਈ ਗੰਭੀਰਤਾ",
+    "missingHeading": "ਸ਼ਾਇਦ ਗੁੰਮ ਹੈ",
+    "nothingMissing": "ਪੂਰਾ ਲੱਗਦਾ ਹੈ",
+    "useDraft": "ਇਹ ਡਰਾਫਟ ਵਰਤੋ",
+    "applySeverity": "ਗੰਭੀਰਤਾ ਲਾਗੂ ਕਰੋ: {{level}}",
+    "noDescription": "ਪਹਿਲਾਂ ਕੁਝ ਨੋਟ ਲਿਖੋ, ਫਿਰ ਸੁਧਾਰੋ ਦਬਾਓ।",
+    "askPlaceholder": "ਪੁੱਛੋ ਕੀ ਕਰਨਾ ਹੈ…",
+    "askCta": "ਪੁੱਛੋ",
+    "answerHeading": "ਮਾਰਗਦਰਸ਼ਨ",
+    "error": "ਸਹਾਇਕ ਇਸ ਵੇਲੇ ਉਪਲਬਧ ਨਹੀਂ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    "close": "ਬੰਦ ਕਰੋ",
+    "missingFields": {
+      "time": "ਘਟਨਾ ਦਾ ਸਮਾਂ",
+      "location": "ਟਿਕਾਣਾ",
+      "people": "ਸ਼ਾਮਲ ਲੋਕ",
+      "action": "ਕੀਤੀ ਕਾਰਵਾਈ"
+    }
   }
 }

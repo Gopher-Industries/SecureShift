@@ -489,5 +489,30 @@
     "locationUnavailable": "無法確定您的位置",
     "locationGeneric": "無法取得您的位置",
     "serverRejected": "檢查點掃描被拒絕"
+  },
+  "aiIncident": {
+    "openButton": "AI 助手",
+    "title": "AI 事件助手",
+    "improveTab": "改進報告",
+    "askTab": "提問",
+    "improveCta": "改進我的報告",
+    "draftHeading": "建議的報告",
+    "severityHeading": "建議的嚴重程度",
+    "missingHeading": "可能缺少",
+    "nothingMissing": "看起來完整",
+    "useDraft": "使用此草稿",
+    "applySeverity": "套用嚴重程度：{{level}}",
+    "noDescription": "請先寫幾點說明，然後點選改進。",
+    "askPlaceholder": "詢問該怎麼做…",
+    "askCta": "提問",
+    "answerHeading": "指導",
+    "error": "助手目前無法使用，請重試。",
+    "close": "關閉",
+    "missingFields": {
+      "time": "事件時間",
+      "location": "地點",
+      "people": "涉及人員",
+      "action": "已採取的行動"
+    }
   }
 }

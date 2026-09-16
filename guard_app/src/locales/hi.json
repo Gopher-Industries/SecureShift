@@ -494,5 +494,30 @@
     "locationUnavailable": "आपका स्थान निर्धारित नहीं हो सका",
     "locationGeneric": "आपका स्थान प्राप्त नहीं हो सका",
     "serverRejected": "चेकपॉइंट स्कैन अस्वीकृत"
+  },
+  "aiIncident": {
+    "openButton": "एआई सहायक",
+    "title": "एआई घटना सहायक",
+    "improveTab": "रिपोर्ट सुधारें",
+    "askTab": "प्रश्न पूछें",
+    "improveCta": "मेरी रिपोर्ट सुधारें",
+    "draftHeading": "सुझाई गई रिपोर्ट",
+    "severityHeading": "सुझाई गई गंभीरता",
+    "missingHeading": "शायद छूट रहा है",
+    "nothingMissing": "पूर्ण लगता है",
+    "useDraft": "यह ड्राफ्ट उपयोग करें",
+    "applySeverity": "गंभीरता लागू करें: {{level}}",
+    "noDescription": "पहले कुछ नोट लिखें, फिर सुधारें दबाएं।",
+    "askPlaceholder": "पूछें क्या करना है…",
+    "askCta": "पूछें",
+    "answerHeading": "मार्गदर्शन",
+    "error": "सहायक अभी उपलब्ध नहीं है। कृपया पुनः प्रयास करें।",
+    "close": "बंद करें",
+    "missingFields": {
+      "time": "घटना का समय",
+      "location": "स्थान",
+      "people": "शामिल लोग",
+      "action": "की गई कार्रवाई"
+    }
   }
 }
