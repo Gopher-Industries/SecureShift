@@ -179,11 +179,29 @@ const RolesIcon = ({ size = 24, color = 'currentColor' }) => (
   </svg>
 );
 
+const PayrollIcon = ({ size = 24, color = 'currentColor' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2" y="5" width="20" height="14" rx="2" />
+    <circle cx="12" cy="12" r="3" />
+    <path d="M6 12h.01M18 12h.01" />
+  </svg>
+);
+
 const items = [
   ['/dashboard', 'Dashboard', DashboardIcon],
   ['/users', 'Users', UsersIcon],
   ['/guard-verification', 'Guard Verification', GuardIcon],
   ['/shifts', 'Shifts', ShiftIcon],
+  ['/payroll', 'Payroll & Timesheets', PayrollIcon],
   ['/incidents', 'Incident Oversight', IncidentIcon],
   ['/roles', 'Roles & Permissions', RolesIcon],
   ['/audit-logs', 'Audit Logs', AuditIcon],
