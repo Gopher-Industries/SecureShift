@@ -6,7 +6,9 @@
   "scripts": {
     "start": "expo start",
     "test": "jest",
+    "test:ci": "jest --ci",
     "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
     "android": "expo start --go --android",
     "ios": "expo start --go --ios",
     "web": "expo start --web",
