@@ -58,7 +58,9 @@
     "crashMessage": "The app had a problem on this screen. You can try again."
   },
   "net": {
-    "offline": "No internet connection"
+    "offline": "No internet connection",
+    "syncing": "Syncing {{count}} attendance update(s)…",
+    "pendingSync": "{{count}} attendance update(s) waiting to sync"
   },
   "home": {
     "welcome": "Welcome back, {{name}}!",
@@ -219,6 +221,7 @@
     "profile": "Profile"
   },
   "nav": {
+    "myPerformance": "My Performance",
     "settings": "Settings",
     "privacyPolicy": "Privacy Policy",
     "messages": "Messages",
@@ -436,5 +439,85 @@
     "unlock": "Unlock",
     "settingsLabel": "App lock (Face ID / PIN)",
     "unavailable": "Unavailable"
+  },
+  "performance": {
+    "title": "My Performance",
+    "scoreLabel": "Guard score",
+    "outOf": "out of {{total}}",
+    "breakdown": "Score breakdown",
+    "punctuality": "Punctuality",
+    "punctualityDetail": "{{onTime}} of {{total}} check-ins on time",
+    "shiftCompletion": "Shift completion",
+    "shiftCompletionDetail": "{{completed}} of {{total}} shifts completed",
+    "incidents": "Incidents",
+    "incidentsDetail": "{{high}} high, {{medium}} medium, {{low}} low",
+    "streaks": "Streaks",
+    "currentStreak": "Current streak",
+    "bestStreak": "Best streak",
+    "onTimeThisMonth": "On time this month",
+    "trend": "Recent trend",
+    "sampleData": "Sample data",
+    "sampleNote": "Streaks and trend are sample data. They will use real values once the API sends them.",
+    "empty": "No score yet",
+    "emptyMessage": "Your score will show here after you work some shifts.",
+    "error": "Could not load your performance.",
+    "retry": "Try again",
+    "viewDetails": "View details"
+  },
+  "patrol": {
+    "title": "Guard Tour",
+    "progress": "{{done}} of {{total}} checkpoints",
+    "scanButton": "Scan checkpoint",
+    "scanCta": "Scan the QR code at each checkpoint",
+    "complete": "Patrol complete",
+    "completeBody": "All checkpoints visited. Great work!",
+    "pending": "{{count}} scan(s) waiting to sync",
+    "offlineSaved": "Saved offline",
+    "offlineSavedBody": "\"{{name}}\" recorded. It will sync when you're back online.",
+    "scannedAt": "Scanned {{time}}",
+    "notStarted": "Not visited",
+    "empty": "No checkpoints for this shift.",
+    "successTitle": "Checkpoint verified",
+    "successBody": "\"{{name}}\" checked off.",
+    "unknownTitle": "Unknown checkpoint",
+    "unknownBody": "That QR code doesn't match a checkpoint on this tour.",
+    "alreadyTitle": "Already visited",
+    "alreadyBody": "\"{{name}}\" is already checked off.",
+    "tooFarTitle": "Too far from checkpoint",
+    "tooFarBody": "You're {{distance}} from \"{{name}}\". Move closer and try again.",
+    "locationErrorTitle": "Location needed",
+    "serverErrorTitle": "Scan failed",
+    "startButton": "Start Guard Tour",
+    "loadError": "Could not load checkpoints. Pull to retry.",
+    "locationDenied": "Location permission denied",
+    "locationTimeout": "Timed out getting your location",
+    "locationUnavailable": "Unable to determine your location",
+    "locationGeneric": "Could not get your location",
+    "serverRejected": "Checkpoint scan was rejected"
+  },
+  "aiIncident": {
+    "openButton": "AI Assistant",
+    "title": "AI Incident Assistant",
+    "improveTab": "Improve report",
+    "askTab": "Ask a question",
+    "improveCta": "Improve my report",
+    "draftHeading": "Suggested report",
+    "severityHeading": "Suggested severity",
+    "missingHeading": "Might be missing",
+    "nothingMissing": "Looks complete",
+    "useDraft": "Use this draft",
+    "applySeverity": "Apply severity: {{level}}",
+    "noDescription": "Write a few notes first, then tap Improve.",
+    "askPlaceholder": "Ask what to do…",
+    "askCta": "Ask",
+    "answerHeading": "Guidance",
+    "error": "The assistant is unavailable right now. Please try again.",
+    "close": "Close",
+    "missingFields": {
+      "time": "Time of incident",
+      "location": "Location",
+      "people": "People involved",
+      "action": "Action taken"
+    }
   }
 }

@@ -199,9 +199,15 @@ export const recheckVerification = async (req, res) => {
           .status(400)
           .json({ message: "Manual verification id not found" });
 
-      await ManualVerification.findByIdAndUpdate(manualId, {
+      const manual = await ManualVerification.findByIdAndUpdate(manualId, {
         status: "in_review",
       });
+      if (!manual) {
+        return res
+          .status(404)
+          .json({ message: "Manual verification record not found" });
+      }
+
       return res
         .status(200)
         .json({ message: "Manual verification set to in_review", manualId });

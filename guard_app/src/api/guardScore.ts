@@ -1,13 +1,23 @@
 import axios from 'axios';
 import http from '../lib/http';
 
-type ApiGuardScore = {
-  guardId: string;
+type ScorePart = {
   score: number;
-  breakdown: unknown; // exists in API, not in use
+  maxPoints: number;
 };
 
-export type GuardScore = Pick<ApiGuardScore, 'guardId' | 'score'>;
+export type GuardScoreBreakdown = {
+  punctuality: ScorePart & { onTimeCheckins: number; totalCheckins: number };
+  shiftCompletion: ScorePart & { completedShifts: number; totalAssignedShifts: number };
+  incidents: ScorePart & { high: number; medium: number; low: number; deduction: number };
+};
+
+// score and breakdown are missing when the guard has no shifts yet
+export type GuardScore = {
+  guardId: string;
+  score: number | null;
+  breakdown?: GuardScoreBreakdown;
+};
 
 export async function getGuardScore(guardId: string): Promise<GuardScore> {
   if (!guardId || guardId === 'undefined' || guardId === 'null') {
@@ -17,7 +27,7 @@ export async function getGuardScore(guardId: string): Promise<GuardScore> {
   try {
     const response = await http.get<{
       success: boolean;
-      data: ApiGuardScore;
+      data: GuardScore;
     }>(`/users/guards/${guardId}/score`);
 
     return response.data.data;

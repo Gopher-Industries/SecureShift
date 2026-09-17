@@ -38,7 +38,8 @@
       [
         "expo-local-authentication",
         { "faceIDPermission": "Allow SecureShift to unlock the app with Face ID." }
-      ]
+      ],
+      "@sentry/react-native/expo"
     ]
   }
 }

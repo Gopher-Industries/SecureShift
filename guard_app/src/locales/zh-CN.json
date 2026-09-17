@@ -58,7 +58,9 @@
     "crashMessage": "此页面出现问题，你可以重试。"
   },
   "net": {
-    "offline": "没有网络连接"
+    "offline": "没有网络连接",
+    "syncing": "正在同步 {{count}} 条考勤更新…",
+    "pendingSync": "{{count}} 条考勤更新待同步"
   },
   "home": {
     "welcome": "欢迎回来，{{name}}！",
@@ -220,6 +222,7 @@
     "profile": "我的"
   },
   "nav": {
+    "myPerformance": "我的表现",
     "settings": "设置",
     "privacyPolicy": "隐私政策",
     "messages": "消息",
@@ -437,5 +440,85 @@
     "unlock": "解锁",
     "settingsLabel": "应用锁（Face ID / PIN）",
     "unavailable": "不可用"
+  },
+  "performance": {
+    "title": "我的表现",
+    "scoreLabel": "保安评分",
+    "outOf": "满分 {{total}}",
+    "breakdown": "评分明细",
+    "punctuality": "准时率",
+    "punctualityDetail": "{{total}} 次签到中有 {{onTime}} 次准时",
+    "shiftCompletion": "排班完成率",
+    "shiftCompletionDetail": "{{total}} 个排班中完成 {{completed}} 个",
+    "incidents": "事件",
+    "incidentsDetail": "{{high}} 高，{{medium}} 中，{{low}} 低",
+    "streaks": "连续记录",
+    "currentStreak": "当前连续",
+    "bestStreak": "最佳连续",
+    "onTimeThisMonth": "本月准时",
+    "trend": "近期趋势",
+    "sampleData": "示例数据",
+    "sampleNote": "连续记录和趋势为示例数据，API 提供后会显示真实数值。",
+    "empty": "暂无评分",
+    "emptyMessage": "完成一些排班后，你的评分会显示在这里。",
+    "error": "无法加载表现数据。",
+    "retry": "重试",
+    "viewDetails": "查看详情"
+  },
+  "patrol": {
+    "title": "巡逻路线",
+    "progress": "{{total}} 个检查点中的 {{done}} 个",
+    "scanButton": "扫描检查点",
+    "scanCta": "在每个检查点扫描二维码",
+    "complete": "巡逻完成",
+    "completeBody": "已巡查所有检查点。干得好！",
+    "pending": "{{count}} 个扫描待同步",
+    "offlineSaved": "已离线保存",
+    "offlineSavedBody": "已记录“{{name}}”。恢复网络后将自动同步。",
+    "scannedAt": "{{time}} 扫描",
+    "notStarted": "未巡查",
+    "empty": "此班次没有检查点。",
+    "successTitle": "检查点已验证",
+    "successBody": "已完成“{{name}}”。",
+    "unknownTitle": "未知检查点",
+    "unknownBody": "该二维码与本次巡逻的检查点不匹配。",
+    "alreadyTitle": "已巡查",
+    "alreadyBody": "“{{name}}”已完成。",
+    "tooFarTitle": "距检查点太远",
+    "tooFarBody": "您距“{{name}}”还有 {{distance}}。请靠近后重试。",
+    "locationErrorTitle": "需要定位",
+    "serverErrorTitle": "扫描失败",
+    "startButton": "开始巡逻",
+    "loadError": "无法加载检查点。下拉重试。",
+    "locationDenied": "定位权限被拒绝",
+    "locationTimeout": "获取定位超时",
+    "locationUnavailable": "无法确定您的位置",
+    "locationGeneric": "无法获取您的位置",
+    "serverRejected": "检查点扫描被拒绝"
+  },
+  "aiIncident": {
+    "openButton": "AI 助手",
+    "title": "AI 事件助手",
+    "improveTab": "改进报告",
+    "askTab": "提问",
+    "improveCta": "改进我的报告",
+    "draftHeading": "建议的报告",
+    "severityHeading": "建议的严重程度",
+    "missingHeading": "可能缺少",
+    "nothingMissing": "看起来完整",
+    "useDraft": "使用此草稿",
+    "applySeverity": "应用严重程度：{{level}}",
+    "noDescription": "请先写几点说明，然后点击改进。",
+    "askPlaceholder": "询问该怎么做…",
+    "askCta": "提问",
+    "answerHeading": "指导",
+    "error": "助手当前不可用，请重试。",
+    "close": "关闭",
+    "missingFields": {
+      "time": "事件时间",
+      "location": "地点",
+      "people": "涉及人员",
+      "action": "已采取的行动"
+    }
   }
 }
