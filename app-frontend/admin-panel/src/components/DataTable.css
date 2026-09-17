@@ -1,0 +1,27 @@
+.dt-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dt-scroll-wrapper table {
+  min-width: 600px;
+}
+
+@media (max-width: 768px) {
+  .dt-sort-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 4px;
+  }
+
+  .dt-checkbox {
+    width: 20px;
+    height: 20px;
+  }
+
+  .pagination-btn {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+}

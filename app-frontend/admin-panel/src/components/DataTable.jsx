@@ -1,3 +1,4 @@
+import './DataTable.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
@@ -20,6 +21,7 @@ function SelectAllCheckbox({ checked, indeterminate, onChange, label }) {
       checked={checked}
       onChange={onChange}
       aria-label={label}
+      className="dt-checkbox"
       style={{ cursor: 'pointer' }}
     />
   );
@@ -383,106 +385,112 @@ export default function DataTable({
           ))}
         </div>
       )}
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: colors.card }}>
-        <thead>
-          <tr>
-            {selectable && (
-              <th
-                style={{
-                  padding: '10px 12px',
-                  borderBottom: `2px solid ${colors.border}`,
-                  background: colors.tableHead,
-                  width: 40,
-                }}
-              >
-                <SelectAllCheckbox
-                  checked={allPageSelected}
-                  indeterminate={!allPageSelected && somePageSelected}
-                  onChange={toggleAllOnPage}
-                  label="Select all rows on this page"
-                />
-              </th>
-            )}
-            {columns.map((c) => {
-              const isSorted = sortConfig.key === c.key;
-              return (
+      <div className="dt-scroll-wrapper">
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: colors.card }}>
+          <thead>
+            <tr>
+              {selectable && (
                 <th
-                  key={c.key}
-                  aria-sort={
-                    c.header
-                      ? isSorted
-                        ? sortConfig.direction === 'asc'
-                          ? 'ascending'
-                          : 'descending'
-                        : 'none'
-                      : undefined
-                  }
                   style={{
-                    textAlign: 'left',
                     padding: '10px 12px',
                     borderBottom: `2px solid ${colors.border}`,
                     background: colors.tableHead,
+                    width: 40,
                   }}
                 >
-                  {c.header && (
-                    <button
-                      type="button"
-                      onClick={() => handleSort(c.key)}
-                      style={{
-                        border: 'none',
-                        background: 'none',
-                        padding: 0,
-                        font: 'inherit',
-                        fontWeight: 'inherit',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {c.header}
-                      {isSorted && (
-                        <span aria-hidden="true" style={{ marginLeft: 6 }}>
-                          {sortConfig.direction === 'asc' ? '▲' : '▼'}
-                        </span>
-                      )}
-                    </button>
-                  )}
+                  <SelectAllCheckbox
+                    checked={allPageSelected}
+                    indeterminate={!allPageSelected && somePageSelected}
+                    onChange={toggleAllOnPage}
+                    label="Select all rows on this page"
+                  />
                 </th>
+              )}
+              {columns.map((c) => {
+                const isSorted = sortConfig.key === c.key;
+                return (
+                  <th
+                    key={c.key}
+                    aria-sort={
+                      c.header
+                        ? isSorted
+                          ? sortConfig.direction === 'asc'
+                            ? 'ascending'
+                            : 'descending'
+                          : 'none'
+                        : undefined
+                    }
+                    style={{
+                      textAlign: 'left',
+                      padding: '10px 12px',
+                      borderBottom: `2px solid ${colors.border}`,
+                      background: colors.tableHead,
+                    }}
+                  >
+                    {c.header && (
+                      <button
+                        type="button"
+                        onClick={() => handleSort(c.key)}
+                        className="dt-sort-btn"
+                        style={{
+                          border: 'none',
+                          background: 'none',
+                          padding: 0,
+                          font: 'inherit',
+                          fontWeight: 'inherit',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {c.header}
+                        {isSorted && (
+                          <span aria-hidden="true" style={{ marginLeft: 6 }}>
+                            {sortConfig.direction === 'asc' ? '▲' : '▼'}
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {displayedRows.map((r, i) => {
+              const id = rowIdOf(r, i);
+              const isSelected = selectedIds.has(id);
+              return (
+                <tr
+                  key={r._id || i}
+                  style={isSelected ? { background: colors.tableHead } : undefined}
+                >
+                  {selectable && (
+                    <td
+                      style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleRow(id)}
+                        aria-label={`Select row ${i + 1}`}
+                        className="dt-checkbox"
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </td>
+                  )}
+                  {columns.map((c) => (
+                    <td
+                      key={c.key}
+                      style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}
+                    >
+                      {c.render ? c.render(r) : r[c.key]}
+                    </td>
+                  ))}
+                </tr>
               );
             })}
-          </tr>
-        </thead>
-        <tbody>
-          {displayedRows.map((r, i) => {
-            const id = rowIdOf(r, i);
-            const isSelected = selectedIds.has(id);
-            return (
-              <tr
-                key={r._id || i}
-                style={isSelected ? { background: colors.tableHead } : undefined}
-              >
-                {selectable && (
-                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}>
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleRow(id)}
-                      aria-label={`Select row ${i + 1}`}
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </td>
-                )}
-                {columns.map((c) => (
-                  <td
-                    key={c.key}
-                    style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}
-                  >
-                    {c.render ? c.render(r) : r[c.key]}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
       <div
         style={{
           display: 'flex',
@@ -606,3 +614,4 @@ export default function DataTable({
     </>
   );
 }
+  
