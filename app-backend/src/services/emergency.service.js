@@ -250,12 +250,80 @@ export const createSOS = async (user, body) => {
   return sos;
 };
 
-export const listSOS = async (user) => {
-  const query = await buildScopedEmergencyQuery(user);
-  return Emergency.find(query)
-    .populate("guardId", "name email")
-    .populate("shiftId", "title date createdBy")
-    .sort({ createdAt: -1 });
+export const listSOS = async (
+  user,
+  { page = 1, limit = 20, status, from, to } = {},
+) => {
+  const filters = {};
+
+  if (status !== undefined) {
+    const normalizedStatus = normalizeStatus(status);
+
+    if (!SOS_STATUSES.includes(normalizedStatus)) {
+      throw new EmergencyServiceError(400, "Invalid status");
+    }
+
+    filters.status = normalizedStatus;
+  }
+
+  if (from !== undefined) {
+    const fromDate = new Date(from);
+
+    if (Number.isNaN(fromDate.getTime())) {
+      throw new EmergencyServiceError(400, "from must be a valid date");
+    }
+
+    filters.createdAt = {
+      ...(filters.createdAt || {}),
+      $gte: fromDate,
+    };
+  }
+
+  if (to !== undefined) {
+    const toDate = new Date(to);
+
+    if (Number.isNaN(toDate.getTime())) {
+      throw new EmergencyServiceError(400, "to must be a valid date");
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      toDate.setHours(23, 59, 59, 999);
+    }
+
+    filters.createdAt = {
+      ...(filters.createdAt || {}),
+      $lte: toDate,
+    };
+  }
+
+  if (
+    filters.createdAt?.$gte &&
+    filters.createdAt?.$lte &&
+    filters.createdAt.$gte > filters.createdAt.$lte
+  ) {
+    throw new EmergencyServiceError(400, "from must be before or equal to to");
+  }
+
+  const query = await buildScopedEmergencyQuery(user, filters);
+
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    Emergency.find(query)
+      .populate("guardId", "name email")
+      .populate("shiftId", "title date createdBy")
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(skip)
+      .limit(limit),
+    Emergency.countDocuments(query),
+  ]);
+
+  return {
+    data,
+    total,
+    page,
+    limit,
+  };
 };
 
 export const getActiveSOSForUser = async (user) => {

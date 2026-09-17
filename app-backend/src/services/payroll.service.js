@@ -185,6 +185,14 @@ export const calculateAttendanceHours = (attendance) => {
 
   return roundHours(hours);
 };
+//Calculate payable hours by deducting the shift break time from the actual hours worked. If actual hours are not provided, return null.
+export const calculatePayableHours = (shift, actualHours) => {
+  if (actualHours == null) {
+    return null;
+  }
+  const breakMinutes = Number.isFinite(shift?.breakTime) ? shift.breakTime : 0;
+  return roundHours(actualHours - breakMinutes / 60);
+};
 
 const buildShiftQuery = (query, userContext, range) => {
   const { guardId, department } = query;
@@ -408,7 +416,10 @@ const buildComputedEntries = (shifts, attendanceRecords) => {
       ),
       scheduledHours,
       actualHours: roundHours(actualHours ?? scheduledHours),
-      payableHours: roundHours(actualHours ?? scheduledHours),
+      payableHours:
+        actualHours != null
+          ? calculatePayableHours(shift, actualHours)
+          : scheduledHours,
       attendanceBased: actualHours != null,
     });
   }
@@ -834,6 +845,61 @@ export const getPayrollRecords = async (query, user, options = {}) => {
     },
     summary: buildSummary(payrollDocs),
     payroll: payrollDocs.map(serializePayroll),
+  };
+};
+
+// Read-only: reads existing payroll records and never creates or updates them.
+export const getPayrollSummaryRecords = async (query, user) => {
+  const { userId, role } = getUserContext(user);
+  const range = parseDateRange(query);
+
+  const payrollQuery = {
+    periodType: query.periodType,
+    periodStart: { $gte: range.start },
+    periodEnd: { $lte: range.end },
+  };
+
+  if (role === "guard") {
+    if (query.guardId && String(query.guardId) !== String(userId)) {
+      throw createHttpError(403, "Guards can only access their own payroll");
+    }
+    payrollQuery.guardId = userId;
+  } else if (role === "employer") {
+    payrollQuery.employerId = userId;
+    if (query.guardId) {
+      payrollQuery.guardId = query.guardId;
+    }
+  } else if (role === "admin") {
+    if (query.guardId) {
+      payrollQuery.guardId = query.guardId;
+    }
+  } else {
+    throw createHttpError(403, "Forbidden: unsupported role");
+  }
+
+  const payrollDocs = await Payroll.find(payrollQuery).lean();
+
+  const statusCounts = { PENDING: 0, APPROVED: 0, PROCESSED: 0 };
+  for (const doc of payrollDocs) {
+    if (statusCounts[doc.status] !== undefined) {
+      statusCounts[doc.status] += 1;
+    }
+  }
+
+  const summary = buildSummary(payrollDocs);
+
+  return {
+    filters: {
+      startDate: query.startDate,
+      endDate: query.endDate,
+      periodType: query.periodType,
+      guardId: query.guardId || null,
+    },
+    totalPayableHours: summary.totalPayableHours,
+    totalOrdinaryHours: summary.totalOrdinaryHours,
+    totalOvertimeHours: summary.totalOvertimeHours,
+    totalEarnings: summary.totalAmount,
+    statusCounts,
   };
 };
 

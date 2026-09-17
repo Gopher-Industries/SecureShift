@@ -9,4 +9,6 @@ docker-compose.override.yml
 *.json
 *.xml
 *.json
+!app-backend/knowledge-base/vectors/
+!app-backend/knowledge-base/vectors/*.json
 **/.DS_Store
