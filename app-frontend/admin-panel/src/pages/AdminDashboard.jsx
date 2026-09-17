@@ -121,61 +121,55 @@ export default function AdminDashboard() {
   const [trendsLoading, setTrendsLoading] = useState(true);
   const [trendsError, setTrendsError] = useState('');
 
-  const loadDashboard = useCallback(
-    async (manualRefresh = false, silentRefresh = false) => {
-      if (manualRefresh) setRefreshing(true);
-      else if (!silentRefresh) setLoading(true);
+  const loadDashboard = useCallback(async (manualRefresh = false, silentRefresh = false) => {
+    if (manualRefresh) setRefreshing(true);
+    else if (!silentRefresh) setLoading(true);
 
-      const results = await Promise.allSettled([
-        getUsers({ page: 1, limit: 1 }),
-        getPendingGuards({ status: 'pending' }),
-        getShifts(),
-        getMessages({ page: 1, limit: 1 }),
-        getAuditLogs({ page: 1, limit: 8 }),
-      ]);
+    const results = await Promise.allSettled([
+      getUsers({ page: 1, limit: 1 }),
+      getPendingGuards({ status: 'pending' }),
+      getShifts(),
+      getMessages({ page: 1, limit: 1 }),
+      getAuditLogs({ page: 1, limit: 8 }),
+    ]);
 
-      if (!mountedRef.current) return;
+    if (!mountedRef.current) return;
 
-      const [usersResult, guardsResult, shiftsResult, messagesResult, activityResult] = results;
-      const failures = [];
+    const [usersResult, guardsResult, shiftsResult, messagesResult, activityResult] = results;
+    const failures = [];
 
-      if (!requestSucceeded(usersResult)) failures.push('Total users');
-      if (!requestSucceeded(guardsResult)) failures.push('Pending guard reviews');
-      if (!requestSucceeded(shiftsResult)) failures.push('Total shifts');
-      if (!requestSucceeded(messagesResult)) failures.push('Messages');
-      if (!requestSucceeded(activityResult)) failures.push('Recent activity');
+    if (!requestSucceeded(usersResult)) failures.push('Total users');
+    if (!requestSucceeded(guardsResult)) failures.push('Pending guard reviews');
+    if (!requestSucceeded(shiftsResult)) failures.push('Total shifts');
+    if (!requestSucceeded(messagesResult)) failures.push('Messages');
+    if (!requestSucceeded(activityResult)) failures.push('Recent activity');
 
-      setStats((current) => ({
-        users: requestSucceeded(usersResult) ? getUserTotal(usersResult.value) : current.users,
-        pendingGuards: requestSucceeded(guardsResult)
-          ? getPendingGuardTotal(guardsResult.value)
-          : current.pendingGuards,
-        shifts: requestSucceeded(shiftsResult)
-          ? getShiftTotal(shiftsResult.value)
-          : current.shifts,
-        messages: requestSucceeded(messagesResult)
-          ? getMessageTotal(messagesResult.value)
-          : current.messages,
-      }));
+    setStats((current) => ({
+      users: requestSucceeded(usersResult) ? getUserTotal(usersResult.value) : current.users,
+      pendingGuards: requestSucceeded(guardsResult)
+        ? getPendingGuardTotal(guardsResult.value)
+        : current.pendingGuards,
+      shifts: requestSucceeded(shiftsResult) ? getShiftTotal(shiftsResult.value) : current.shifts,
+      messages: requestSucceeded(messagesResult)
+        ? getMessageTotal(messagesResult.value)
+        : current.messages,
+    }));
 
-      if (requestSucceeded(activityResult)) {
-        setActivities(getActivityLogs(activityResult.value));
-      }
+    if (requestSucceeded(activityResult)) {
+      setActivities(getActivityLogs(activityResult.value));
+    }
 
-      setFailedSections(failures);
+    setFailedSections(failures);
 
-      if (failures.length < results.length) {
-        setLastUpdated(new Date());
-      }
+    if (failures.length < results.length) {
+      setLastUpdated(new Date());
+    }
 
-      if (!silentRefresh) setLoading(false);
-      if (manualRefresh) setRefreshing(false);
-    },
-    []
-  );
+    if (!silentRefresh) setLoading(false);
+    if (manualRefresh) setRefreshing(false);
+  }, []);
 
   useAutoRefresh(() => loadDashboard(false, true), 30000);
-
   useEffect(() => {
     mountedRef.current = true;
     loadDashboard();
@@ -187,7 +181,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       try {
         const data = await getDashboardMetrics();
@@ -198,7 +191,6 @@ export default function AdminDashboard() {
         if (mounted) setTrendsLoading(false);
       }
     })();
-
     return () => {
       mounted = false;
     };
@@ -221,13 +213,9 @@ export default function AdminDashboard() {
           {lastUpdated && (
             <span className="admin-dashboard__updated">
               Last updated{' '}
-              {lastUpdated.toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: '2-digit',
-              })}
+              {lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
             </span>
           )}
-
           <Button
             type="button"
             variant="secondary"
@@ -251,7 +239,6 @@ export default function AdminDashboard() {
                 : ` Could not load: ${failedSections.join(', ')}.`}
             </span>
           </div>
-
           <Button type="button" variant="secondary" onClick={() => loadDashboard(true)}>
             Retry
           </Button>
@@ -276,11 +263,9 @@ export default function AdminDashboard() {
             >
               <Card style={{ height: '100%' }}>
                 <span className="admin-dashboard__stat-label">{card.label}</span>
-
                 <strong className="admin-dashboard__stat-value">
                   {loading ? '...' : (stats[card.key] ?? 'Unavailable')}
                 </strong>
-
                 <span className="admin-dashboard__stat-description">{card.description}</span>
                 <span className="admin-dashboard__stat-action">View details</span>
               </Card>
@@ -296,7 +281,6 @@ export default function AdminDashboard() {
               <h2 id="dashboard-activity-heading">Recent activity</h2>
               <p>Latest events recorded by the Admin audit log.</p>
             </div>
-
             <Link to="/audit-logs" className="admin-dashboard__activity-link">
               View all audit logs
             </Link>
@@ -317,16 +301,13 @@ export default function AdminDashboard() {
               {activities.map((activity, index) => (
                 <li key={activity._id || `${activity.timestamp}-${index}`}>
                   <span className="admin-dashboard__activity-marker" aria-hidden="true" />
-
                   <div className="admin-dashboard__activity-copy">
                     <strong>{formatAction(activity.action)}</strong>
-
                     <span>
                       {activity.user?.name || activity.user?.email || 'System'}
-                      {activity.user?.role ? ` · ${activity.user.role}` : ''}
+                      {activity.user?.role ? ` � ${activity.user.role}` : ''}
                     </span>
                   </div>
-
                   <time dateTime={activity.timestamp || undefined}>
                     {formatTimestamp(activity.timestamp)}
                   </time>
@@ -341,16 +322,14 @@ export default function AdminDashboard() {
         <div className="admin-dashboard__section-heading">
           <div>
             <h2 id="dashboard-trends-heading">Trends</h2>
-
             <p style={{ color: colors.muted, fontSize: 14 }}>
-              Weekly activity across the platform (mock data — will switch to live metrics once the
-              backend endpoint is available).
+              Weekly activity across the platform (mock data Ã¢â‚¬â€ will switch to live metrics
+              once the backend endpoint is available).
             </p>
           </div>
         </div>
 
-        {trendsLoading && <p role="status">Loading trends...</p>}
-
+        {trendsLoading && <p role="status">Loading trendsÃ¢â‚¬Â¦</p>}
         {trendsError && (
           <p role="alert" style={{ color: colors.danger }}>
             {trendsError}
@@ -360,13 +339,11 @@ export default function AdminDashboard() {
         {trendMetrics && (
           <div style={trendGridStyle}>
             <TrendChart title="Sign-ups" data={trendMetrics.signups} color={colors.primary} />
-
             <TrendChart
               title="Shifts Filled"
               data={trendMetrics.shiftsFilled}
               color={colors.success}
             />
-
             <TrendChart
               title="Verification Backlog"
               data={trendMetrics.verificationBacklog}
