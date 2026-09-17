@@ -13,6 +13,7 @@ import {
 import TrendChart from '../components/TrendChart';
 import colors from '../theme/colors';
 import './AdminDashboard.css';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 
 const EMPTY_STATS = {
   users: null,
@@ -120,9 +121,9 @@ export default function AdminDashboard() {
   const [trendsLoading, setTrendsLoading] = useState(true);
   const [trendsError, setTrendsError] = useState('');
 
-  const loadDashboard = useCallback(async (manualRefresh = false) => {
+  const loadDashboard = useCallback(async (manualRefresh = false, silentRefresh = false) => {
     if (manualRefresh) setRefreshing(true);
-    else setLoading(true);
+    else if (!silentRefresh) setLoading(true);
 
     const results = await Promise.allSettled([
       getUsers({ page: 1, limit: 1 }),
@@ -143,23 +144,36 @@ export default function AdminDashboard() {
     if (!requestSucceeded(messagesResult)) failures.push('Messages');
     if (!requestSucceeded(activityResult)) failures.push('Recent activity');
 
-    setStats({
-      users: requestSucceeded(usersResult) ? getUserTotal(usersResult.value) : null,
+    setStats((current) => ({
+      users: requestSucceeded(usersResult)
+        ? getUserTotal(usersResult.value)
+        : current.users,
       pendingGuards: requestSucceeded(guardsResult)
         ? getPendingGuardTotal(guardsResult.value)
-        : null,
-      shifts: requestSucceeded(shiftsResult) ? getShiftTotal(shiftsResult.value) : null,
-      messages: requestSucceeded(messagesResult) ? getMessageTotal(messagesResult.value) : null,
-    });
-    setActivities(requestSucceeded(activityResult) ? getActivityLogs(activityResult.value) : []);
+        : current.pendingGuards,
+      shifts: requestSucceeded(shiftsResult)
+        ? getShiftTotal(shiftsResult.value)
+        : current.shifts,
+      messages: requestSucceeded(messagesResult)
+        ? getMessageTotal(messagesResult.value)
+        : current.messages,
+    }));
+
+    if (requestSucceeded(activityResult)) {
+      setActivities(getActivityLogs(activityResult.value));
+    }
+
     setFailedSections(failures);
 
-    if (failures.length < results.length) setLastUpdated(new Date());
+    if (failures.length < results.length) {
+      setLastUpdated(new Date());
+    }
 
-    setLoading(false);
-    setRefreshing(false);
+    if (!silentRefresh) setLoading(false);
+    if (manualRefresh) setRefreshing(false);
   }, []);
 
+  useAutoRefresh(() => loadDashboard(false, true), 30000);
   useEffect(() => {
     mountedRef.current = true;
     loadDashboard();
@@ -212,7 +226,7 @@ export default function AdminDashboard() {
             onClick={() => loadDashboard(true)}
             disabled={loading || refreshing}
           >
-            {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
+            {refreshing ? 'RefreshingÃ¢â‚¬Â¦' : 'Refresh dashboard'}
           </Button>
         </div>
       </header>
@@ -254,10 +268,10 @@ export default function AdminDashboard() {
               <Card style={{ height: '100%' }}>
                 <span className="admin-dashboard__stat-label">{card.label}</span>
                 <strong className="admin-dashboard__stat-value">
-                  {loading ? '…' : (stats[card.key] ?? 'Unavailable')}
+                  {loading ? 'Ã¢â‚¬Â¦' : (stats[card.key] ?? 'Unavailable')}
                 </strong>
                 <span className="admin-dashboard__stat-description">{card.description}</span>
-                <span className="admin-dashboard__stat-action">View details →</span>
+                <span className="admin-dashboard__stat-action">View details Ã¢â€ â€™</span>
               </Card>
             </Link>
           ))}
@@ -278,7 +292,7 @@ export default function AdminDashboard() {
 
           {loading ? (
             <p className="admin-dashboard__state" role="status">
-              Loading dashboard data…
+              Loading dashboard dataÃ¢â‚¬Â¦
             </p>
           ) : failedSections.includes('Recent activity') ? (
             <p className="admin-dashboard__state admin-dashboard__state--error">
@@ -295,7 +309,7 @@ export default function AdminDashboard() {
                     <strong>{formatAction(activity.action)}</strong>
                     <span>
                       {activity.user?.name || activity.user?.email || 'System'}
-                      {activity.user?.role ? ` · ${activity.user.role}` : ''}
+                      {activity.user?.role ? ` Ã‚Â· ${activity.user.role}` : ''}
                     </span>
                   </div>
                   <time dateTime={activity.timestamp || undefined}>
@@ -313,13 +327,13 @@ export default function AdminDashboard() {
           <div>
             <h2 id="dashboard-trends-heading">Trends</h2>
             <p style={{ color: colors.muted, fontSize: 14 }}>
-              Weekly activity across the platform (mock data — will switch to live metrics once the
+              Weekly activity across the platform (mock data Ã¢â‚¬â€ will switch to live metrics once the
               backend endpoint is available).
             </p>
           </div>
         </div>
 
-        {trendsLoading && <p role="status">Loading trends…</p>}
+        {trendsLoading && <p role="status">Loading trendsÃ¢â‚¬Â¦</p>}
         {trendsError && (
           <p role="alert" style={{ color: colors.danger }}>
             {trendsError}
