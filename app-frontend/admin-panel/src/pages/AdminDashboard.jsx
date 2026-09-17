@@ -145,15 +145,11 @@ export default function AdminDashboard() {
     if (!requestSucceeded(activityResult)) failures.push('Recent activity');
 
     setStats((current) => ({
-      users: requestSucceeded(usersResult)
-        ? getUserTotal(usersResult.value)
-        : current.users,
+      users: requestSucceeded(usersResult) ? getUserTotal(usersResult.value) : current.users,
       pendingGuards: requestSucceeded(guardsResult)
         ? getPendingGuardTotal(guardsResult.value)
         : current.pendingGuards,
-      shifts: requestSucceeded(shiftsResult)
-        ? getShiftTotal(shiftsResult.value)
-        : current.shifts,
+      shifts: requestSucceeded(shiftsResult) ? getShiftTotal(shiftsResult.value) : current.shifts,
       messages: requestSucceeded(messagesResult)
         ? getMessageTotal(messagesResult.value)
         : current.messages,
@@ -327,8 +323,8 @@ export default function AdminDashboard() {
           <div>
             <h2 id="dashboard-trends-heading">Trends</h2>
             <p style={{ color: colors.muted, fontSize: 14 }}>
-              Weekly activity across the platform (mock data Ã¢â‚¬â€ will switch to live metrics once the
-              backend endpoint is available).
+              Weekly activity across the platform (mock data Ã¢â‚¬â€ will switch to live metrics
+              once the backend endpoint is available).
             </p>
           </div>
         </div>

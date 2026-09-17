@@ -1,4 +1,3 @@
-```jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getMessages, deleteMessage, getUsers } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
@@ -23,9 +22,10 @@ function personLabel(person) {
 
 // Shorten long message so they fit neatly in the table
 function previewContent(content) {
-  if (!content) return '\u2014';
+  if (!content) return '�';
+
   return content.length > CONTENT_PREVIEW_LENGTH
-    ? `${content.slice(0, CONTENT_PREVIEW_LENGTH)}\u2026`
+    ? content.slice(0, CONTENT_PREVIEW_LENGTH) + '�'
     : content;
 }
 
@@ -278,7 +278,9 @@ export default function Messages() {
           limit: PAGE_SIZE,
           ...(appliedFilters.senderId ? { sender: appliedFilters.senderId } : {}),
           ...(appliedFilters.receiverId ? { receiver: appliedFilters.receiverId } : {}),
-          ...(appliedFilters.conversationId ? { conversationId: appliedFilters.conversationId } : {}),
+          ...(appliedFilters.conversationId
+            ? { conversationId: appliedFilters.conversationId }
+            : {}),
           ...(appliedFilters.from ? { from: appliedFilters.from } : {}),
           ...(appliedFilters.to ? { to: appliedFilters.to } : {}),
           ...(appliedFilters.includeDeleted ? { includeDeleted: 'true' } : {}),
@@ -739,4 +741,3 @@ export default function Messages() {
     </div>
   );
 }
-```

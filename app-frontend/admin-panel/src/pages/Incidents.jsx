@@ -132,17 +132,34 @@ export default function Incidents() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
         <h1>Incident Oversight</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           {lastUpdated && (
             <span style={{ fontSize: 13, color: colors.muted }}>
-              Last updated {lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+              Last updated{' '}
+              {lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
             </span>
           )}
           <button
-            type='button'
-            style={{ border: '1px solid ' + colors.border, borderRadius: 4, padding: '8px 14px', fontSize: 14, background: colors.white, color: colors.text, cursor: 'pointer' }}
+            type="button"
+            style={{
+              border: '1px solid ' + colors.border,
+              borderRadius: 4,
+              padding: '8px 14px',
+              fontSize: 14,
+              background: colors.white,
+              color: colors.text,
+              cursor: 'pointer',
+            }}
             onClick={() => fetchIncidents(true)}
             disabled={loading || refreshing}
           >
