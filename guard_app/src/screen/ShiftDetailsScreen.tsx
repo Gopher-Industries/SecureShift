@@ -3,6 +3,7 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   ScrollView,
@@ -136,6 +137,7 @@ export default function ShiftDetailsScreen() {
   const route = useRoute<ScreenRouteProp>();
   const navigation = useNavigation<Nav>();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const s = getStyles(colors);
 
   const [shift] = useState<ShiftDto>(route.params.shift);
@@ -643,6 +645,15 @@ export default function ShiftDetailsScreen() {
               onPress={() => openModalFor('check-out')}
             >
               <Text style={s.btnText}>Check Out</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {hasCheckedIn && !hasCheckedOut ? (
+            <TouchableOpacity
+              style={[s.btn, { backgroundColor: colors.primary }]}
+              onPress={() => navigation.navigate('PatrolTour', { shift })}
+            >
+              <Text style={s.btnText}>{t('patrol.startButton')}</Text>
             </TouchableOpacity>
           ) : null}
 
