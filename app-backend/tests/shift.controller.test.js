@@ -1,40 +1,19 @@
-jest.mock("mongodb", () => {
-  const actual = jest.requireActual("mongodb");
-  return {
-    ...actual,
-    GridFSBucket: jest.fn().mockImplementation(() => ({
-      openUploadStream: jest.fn().mockReturnValue({
-        end: jest.fn(),
-        on: jest.fn(),
-      }),
-    })),
-  };
-});
-
-// Mock crypto to avoid environment variable check
-jest.mock("../src/utils/crypto.js", () => ({
-  encryptLicence: jest.fn().mockReturnValue("encrypted"),
-  decryptLicence: jest.fn().mockReturnValue("decrypted"),
-}));
-
+import { jest } from "@jest/globals";
 import jwt from "jsonwebtoken";
 import request from "supertest";
-import app from "../src/app.js"; // your Express app
 import mongoose from "mongoose";
 import {
   startTestDatabase,
   clearDatabase,
   closeTestDatabase,
 } from "./db-helper.js";
-import Shift from "../src/models/Shift.js";
-import User from "../src/models/User.js";
-import Branch from "../src/models/Branch.js";
-import Admin from "../src/models/Admin.js";
-import Employer from "../src/models/Employer.js";
-import Guard from "../src/models/Guard.js";
 
-// Mock audit logger middleware (if needed globally)
-jest.mock("../src/middleware/logger.js", () => ({
+jest.unstable_mockModule("../src/utils/crypto.js", () => ({
+  encryptLicence: jest.fn().mockReturnValue("encrypted"),
+  decryptLicence: jest.fn().mockReturnValue("decrypted"),
+}));
+
+jest.unstable_mockModule("../src/middleware/logger.js", () => ({
   ACTIONS: {
     SHIFT_CREATED: "SHIFT_CREATED",
     SHIFT_UPDATED: "SHIFT_UPDATED",
@@ -49,8 +28,7 @@ jest.mock("../src/middleware/logger.js", () => ({
   },
 }));
 
-// Mock auth middleware to bypass JWT validation
-jest.mock("../src/middleware/auth.js", () => ({
+jest.unstable_mockModule("../src/middleware/auth.js", () => ({
   __esModule: true,
   default: (req, res, next) => {
     req.user = {
@@ -62,27 +40,21 @@ jest.mock("../src/middleware/auth.js", () => ({
   },
 }));
 
-let mongoServer;
+const { default: app } = await import("../src/app.js");
+const { default: Shift } = await import("../src/models/Shift.js");
+const { default: User } = await import("../src/models/User.js");
+const { default: Branch } = await import("../src/models/Branch.js");
 
 describe("Shift Controller API Tests", () => {
   let employerToken;
   let guardToken;
-  let adminToken;
   let employer;
   let guard;
   let branch;
   let shiftId;
-  let admin;
 
   beforeAll(async () => {
     await startTestDatabase();
-
-    admin = await User.create({
-      name: "Admin",
-      email: "admin@test.com",
-      password: "Password123!",
-      role: "admin",
-    });
 
     employer = await User.create({
       name: "Employer",
@@ -115,12 +87,6 @@ describe("Shift Controller API Tests", () => {
 
     guardToken = jwt.sign(
       { id: guard._id, role: guard.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" },
-    );
-
-    adminToken = jwt.sign(
-      { id: admin._id, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: "15m" },
     );
@@ -281,6 +247,108 @@ describe("Shift Controller API Tests", () => {
     expect(res.body.shift.title).toBe("Updated Shift");
   });
 
+  /* ---------------- BE-070 HISTORICAL SHIFT VALIDATION ---------------- */
+
+  test("Existing historical shift allows unrelated lifecycle update", async () => {
+    const historicalShift = {
+      _id: new mongoose.Types.ObjectId(),
+      title: "Historical Shift",
+      date: new Date("2026-01-15"),
+      startTime: "09:00",
+      endTime: "17:00",
+      location: {
+        street: "Main St",
+        suburb: "CBD",
+        state: "VIC",
+        postcode: "3000",
+      },
+      payRate: 25,
+      shiftType: "Day",
+      siteId: branch._id,
+      createdBy: employer._id,
+      status: "draft",
+    };
+
+    // Simulate an existing historical record directly in MongoDB.
+    await Shift.collection.insertOne(historicalShift);
+
+    const res = await request(app)
+      .patch(`/api/v1/shifts/${historicalShift._id}`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({
+        status: "open",
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.shift.status).toBe("open");
+    expect(new Date(res.body.shift.date).toISOString()).toContain("2026-01-15");
+  });
+
+  test("New shift with a past date is still rejected", async () => {
+    const res = await request(app)
+      .post("/api/v1/shifts")
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({
+        title: "Past Shift",
+        date: "2026-01-15",
+        startTime: "09:00",
+        endTime: "17:00",
+        location: {
+          street: "Main St",
+          suburb: "CBD",
+          state: "VIC",
+          postcode: "3000",
+        },
+        payRate: 25,
+        shiftType: "Day",
+        siteId: branch._id,
+        status: "draft",
+      });
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.message).toContain(
+      "Shift date must be today or in the future",
+    );
+  });
+
+  test("Existing shift cannot be changed to a past date", async () => {
+    const futureShift = await Shift.create({
+      title: "Future Shift",
+      date: new Date("2026-12-20"),
+      startTime: "09:00",
+      endTime: "17:00",
+      location: {
+        street: "Main St",
+        suburb: "CBD",
+        state: "VIC",
+        postcode: "3000",
+      },
+      payRate: 25,
+      shiftType: "Day",
+      siteId: branch._id,
+      createdBy: employer._id,
+      status: "draft",
+    });
+
+    const res = await request(app)
+      .patch(`/api/v1/shifts/${futureShift._id}`)
+      .set("Authorization", employerToken)
+      .set("x-user-id", employer._id.toString())
+      .set("x-user-role", "employer")
+      .send({
+        date: "2026-01-15",
+      });
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.message).toContain(
+      "Shift date must be today or in the future",
+    );
+  });
+
   /* ---------------- APPLY SHIFT ---------------- */
   test("Guard applies for shift", async () => {
     const res = await request(app)
@@ -357,9 +425,7 @@ describe("Shift Controller API Tests", () => {
       .set("x-user-role", "employer");
 
     expect(res.statusCode).toBe(200);
-    expect(
-      res.body.items.every((shift) => shift.status === "open"),
-    ).toBe(true);
+    expect(res.body.items.every((shift) => shift.status === "open")).toBe(true);
   });
 
   test("myshifts supports legacy past status filter", async () => {
@@ -370,9 +436,9 @@ describe("Shift Controller API Tests", () => {
       .set("x-user-role", "employer");
 
     expect(res.statusCode).toBe(200);
-    expect(
-      res.body.items.every((shift) => shift.status === "completed"),
-    ).toBe(true);
+    expect(res.body.items.every((shift) => shift.status === "completed")).toBe(
+      true,
+    );
   });
 
   test("myshifts rejects invalid page", async () => {
@@ -496,9 +562,7 @@ describe("Shift Controller API Tests", () => {
     expect(res.body.message).toBe("Shift duplicated successfully");
     expect(res.body.shift).toHaveProperty("_id");
     expect(res.body.shift.status).toBe("draft");
-    expect(res.body.shift.createdBy.toString()).toBe(
-      employer._id.toString(),
-    );
+    expect(res.body.shift.createdBy.toString()).toBe(employer._id.toString());
     expect(new Date(res.body.shift.date).toISOString()).toContain(newDate);
   });
 
@@ -523,9 +587,7 @@ describe("Shift Controller API Tests", () => {
       .send({ date: "2026-12-16" });
 
     expect(res.statusCode).toBe(403);
-    expect(res.body.message).toBe(
-      "You can only duplicate your own shifts",
-    );
+    expect(res.body.message).toBe("You can only duplicate your own shifts");
   });
 
   test("Duplicate shift resets lifecycle data", async () => {
@@ -546,5 +608,4 @@ describe("Shift Controller API Tests", () => {
     expect(duplicatedShift.ratedByGuard).toBe(false);
     expect(duplicatedShift.ratedByEmployer).toBe(false);
   });
-
 });

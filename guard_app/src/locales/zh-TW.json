@@ -58,7 +58,9 @@
     "crashMessage": "此頁面發生問題，你可以重試。"
   },
   "net": {
-    "offline": "沒有網路連線"
+    "offline": "沒有網路連線",
+    "syncing": "正在同步 {{count}} 筆考勤更新…",
+    "pendingSync": "{{count}} 筆考勤更新待同步"
   },
   "home": {
     "welcome": "歡迎回來，{{name}}！",
@@ -220,6 +222,7 @@
     "profile": "我的"
   },
   "nav": {
+    "myPerformance": "我的表現",
     "settings": "設定",
     "privacyPolicy": "隱私權政策",
     "messages": "訊息",
@@ -431,5 +434,85 @@
     "unlock": "解鎖",
     "settingsLabel": "應用程式鎖（Face ID / PIN）",
     "unavailable": "無法使用"
+  },
+  "performance": {
+    "title": "我的表現",
+    "scoreLabel": "保全評分",
+    "outOf": "滿分 {{total}}",
+    "breakdown": "評分明細",
+    "punctuality": "準時率",
+    "punctualityDetail": "{{total}} 次簽到中有 {{onTime}} 次準時",
+    "shiftCompletion": "排班完成率",
+    "shiftCompletionDetail": "{{total}} 個排班中完成 {{completed}} 個",
+    "incidents": "事件",
+    "incidentsDetail": "{{high}} 高，{{medium}} 中，{{low}} 低",
+    "streaks": "連續紀錄",
+    "currentStreak": "目前連續",
+    "bestStreak": "最佳連續",
+    "onTimeThisMonth": "本月準時",
+    "trend": "近期趨勢",
+    "sampleData": "範例資料",
+    "sampleNote": "連續紀錄和趨勢為範例資料，API 提供後會顯示真實數值。",
+    "empty": "尚無評分",
+    "emptyMessage": "完成一些排班後，你的評分會顯示在這裡。",
+    "error": "無法載入表現資料。",
+    "retry": "重試",
+    "viewDetails": "查看詳情"
+  },
+  "patrol": {
+    "title": "巡邏路線",
+    "progress": "{{total}} 個檢查點中的 {{done}} 個",
+    "scanButton": "掃描檢查點",
+    "scanCta": "在每個檢查點掃描 QR 碼",
+    "complete": "巡邏完成",
+    "completeBody": "已巡查所有檢查點。做得好！",
+    "pending": "{{count}} 個掃描待同步",
+    "offlineSaved": "已離線儲存",
+    "offlineSavedBody": "已記錄「{{name}}」。恢復網路後將自動同步。",
+    "scannedAt": "{{time}} 掃描",
+    "notStarted": "未巡查",
+    "empty": "此班次沒有檢查點。",
+    "successTitle": "檢查點已驗證",
+    "successBody": "已完成「{{name}}」。",
+    "unknownTitle": "未知檢查點",
+    "unknownBody": "此 QR 碼與本次巡邏的檢查點不符。",
+    "alreadyTitle": "已巡查",
+    "alreadyBody": "「{{name}}」已完成。",
+    "tooFarTitle": "距檢查點太遠",
+    "tooFarBody": "您距「{{name}}」還有 {{distance}}。請靠近後重試。",
+    "locationErrorTitle": "需要定位",
+    "serverErrorTitle": "掃描失敗",
+    "startButton": "開始巡邏",
+    "loadError": "無法載入檢查點。下拉重試。",
+    "locationDenied": "定位權限被拒絕",
+    "locationTimeout": "取得定位逾時",
+    "locationUnavailable": "無法確定您的位置",
+    "locationGeneric": "無法取得您的位置",
+    "serverRejected": "檢查點掃描被拒絕"
+  },
+  "aiIncident": {
+    "openButton": "AI 助手",
+    "title": "AI 事件助手",
+    "improveTab": "改進報告",
+    "askTab": "提問",
+    "improveCta": "改進我的報告",
+    "draftHeading": "建議的報告",
+    "severityHeading": "建議的嚴重程度",
+    "missingHeading": "可能缺少",
+    "nothingMissing": "看起來完整",
+    "useDraft": "使用此草稿",
+    "applySeverity": "套用嚴重程度：{{level}}",
+    "noDescription": "請先寫幾點說明，然後點選改進。",
+    "askPlaceholder": "詢問該怎麼做…",
+    "askCta": "提問",
+    "answerHeading": "指導",
+    "error": "助手目前無法使用，請重試。",
+    "close": "關閉",
+    "missingFields": {
+      "time": "事件時間",
+      "location": "地點",
+      "people": "涉及人員",
+      "action": "已採取的行動"
+    }
   }
 }

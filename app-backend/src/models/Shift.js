@@ -39,9 +39,16 @@ const shiftSchema = new Schema(
       type: Date,
       required: true,
       validate: {
-        validator: (v) => {
+        validator: function (v) {
+          // Allow existing historical shifts when the date itself
+          // has not been modified.
+          if (!this.isNew && !this.isModified("date")) {
+            return true;
+          }
+
           const today = new Date();
           today.setHours(0, 0, 0, 0);
+
           return v >= today;
         },
         message: "Shift date must be today or in the future",
