@@ -264,10 +264,10 @@ export default function AdminDashboard() {
               <Card style={{ height: '100%' }}>
                 <span className="admin-dashboard__stat-label">{card.label}</span>
                 <strong className="admin-dashboard__stat-value">
-                  {loading ? 'Ã¢â‚¬Â¦' : (stats[card.key] ?? 'Unavailable')}
+                  {loading ? '...' : (stats[card.key] ?? 'Unavailable')}
                 </strong>
                 <span className="admin-dashboard__stat-description">{card.description}</span>
-                <span className="admin-dashboard__stat-action">View details Ã¢â€ â€™</span>
+                <span className="admin-dashboard__stat-action">View details</span>
               </Card>
             </Link>
           ))}
