@@ -67,9 +67,7 @@ export default function Incidents() {
   const [error, setError] = useState('');
 
   const [query, setQuery] = useState(() => searchParams.get('q') || '');
-  const [severityFilter, setSeverityFilter] = useState(
-    () => searchParams.get('severity') || ''
-  );
+  const [severityFilter, setSeverityFilter] = useState(() => searchParams.get('severity') || '');
   const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || '');
   const [sortConfig, setSortConfig] = useState(() => parseSort(searchParams));
   const [page, setPage] = useState(() => parsePage(searchParams.get('page')));

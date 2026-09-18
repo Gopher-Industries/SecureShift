@@ -180,9 +180,7 @@ export default function DataTable({
     const startIndex = (currentPage - 1) * pageSize;
     displayedRows = sortedRows.slice(startIndex, startIndex + pageSize);
 
-    handlePageChange = isPageControlled
-      ? (nextPage) => onPageChange?.(nextPage)
-      : setInternalPage;
+    handlePageChange = isPageControlled ? (nextPage) => onPageChange?.(nextPage) : setInternalPage;
   }
 
   useEffect(() => {
@@ -193,13 +191,7 @@ export default function DataTable({
     } else {
       setInternalPage(totalPages);
     }
-  }, [
-    currentPage,
-    totalPages,
-    isExternalPagination,
-    isPageControlled,
-    onPageChange,
-  ]);
+  }, [currentPage, totalPages, isExternalPagination, isPageControlled, onPageChange]);
 
   useEffect(() => {
     if (!isExternalPagination && !isPageControlled) {
