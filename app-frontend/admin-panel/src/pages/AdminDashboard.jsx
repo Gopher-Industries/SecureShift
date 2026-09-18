@@ -121,55 +121,59 @@ export default function AdminDashboard() {
   const [trendsLoading, setTrendsLoading] = useState(true);
   const [trendsError, setTrendsError] = useState('');
 
-  const loadDashboard = useCallback(async (manualRefresh = false, silentRefresh = false) => {
-    if (manualRefresh) setRefreshing(true);
-    else if (!silentRefresh) setLoading(true);
+  const loadDashboard = useCallback(
+    async (manualRefresh = false, silentRefresh = false) => {
+      if (manualRefresh) setRefreshing(true);
+      else if (!silentRefresh) setLoading(true);
 
-    const results = await Promise.allSettled([
-      getUsers({ page: 1, limit: 1 }),
-      getPendingGuards({ status: 'pending' }),
-      getShifts(),
-      getMessages({ page: 1, limit: 1 }),
-      getAuditLogs({ page: 1, limit: 8 }),
-    ]);
+      const results = await Promise.allSettled([
+        getUsers({ page: 1, limit: 1 }),
+        getPendingGuards({ status: 'pending' }),
+        getShifts(),
+        getMessages({ page: 1, limit: 1 }),
+        getAuditLogs({ page: 1, limit: 8 }),
+      ]);
 
-    if (!mountedRef.current) return;
+      if (!mountedRef.current) return;
 
-    const [usersResult, guardsResult, shiftsResult, messagesResult, activityResult] = results;
-    const failures = [];
+      const [usersResult, guardsResult, shiftsResult, messagesResult, activityResult] = results;
+      const failures = [];
 
-    if (!requestSucceeded(usersResult)) failures.push('Total users');
-    if (!requestSucceeded(guardsResult)) failures.push('Pending guard reviews');
-    if (!requestSucceeded(shiftsResult)) failures.push('Total shifts');
-    if (!requestSucceeded(messagesResult)) failures.push('Messages');
-    if (!requestSucceeded(activityResult)) failures.push('Recent activity');
+      if (!requestSucceeded(usersResult)) failures.push('Total users');
+      if (!requestSucceeded(guardsResult)) failures.push('Pending guard reviews');
+      if (!requestSucceeded(shiftsResult)) failures.push('Total shifts');
+      if (!requestSucceeded(messagesResult)) failures.push('Messages');
+      if (!requestSucceeded(activityResult)) failures.push('Recent activity');
 
-    setStats((current) => ({
-      users: requestSucceeded(usersResult) ? getUserTotal(usersResult.value) : current.users,
-      pendingGuards: requestSucceeded(guardsResult)
-        ? getPendingGuardTotal(guardsResult.value)
-        : current.pendingGuards,
-      shifts: requestSucceeded(shiftsResult) ? getShiftTotal(shiftsResult.value) : current.shifts,
-      messages: requestSucceeded(messagesResult)
-        ? getMessageTotal(messagesResult.value)
-        : current.messages,
-    }));
+      setStats((current) => ({
+        users: requestSucceeded(usersResult) ? getUserTotal(usersResult.value) : current.users,
+        pendingGuards: requestSucceeded(guardsResult)
+          ? getPendingGuardTotal(guardsResult.value)
+          : current.pendingGuards,
+        shifts: requestSucceeded(shiftsResult) ? getShiftTotal(shiftsResult.value) : current.shifts,
+        messages: requestSucceeded(messagesResult)
+          ? getMessageTotal(messagesResult.value)
+          : current.messages,
+      }));
 
-    if (requestSucceeded(activityResult)) {
-      setActivities(getActivityLogs(activityResult.value));
-    }
+      if (requestSucceeded(activityResult)) {
+        setActivities(getActivityLogs(activityResult.value));
+      }
 
-    setFailedSections(failures);
+      setFailedSections(failures);
 
-    if (failures.length < results.length) {
-      setLastUpdated(new Date());
-    }
+      if (failures.length < results.length) {
+        setLastUpdated(new Date());
+      }
 
-    if (!silentRefresh) setLoading(false);
-    if (manualRefresh) setRefreshing(false);
-  }, []);
+      if (!silentRefresh) setLoading(false);
+      if (manualRefresh) setRefreshing(false);
+    },
+    []
+  );
 
   useAutoRefresh(() => loadDashboard(false, true), 30000);
+
   useEffect(() => {
     mountedRef.current = true;
     loadDashboard();
@@ -181,6 +185,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         const data = await getDashboardMetrics();
@@ -191,6 +196,7 @@ export default function AdminDashboard() {
         if (mounted) setTrendsLoading(false);
       }
     })();
+
     return () => {
       mounted = false;
     };
@@ -305,7 +311,7 @@ export default function AdminDashboard() {
                     <strong>{formatAction(activity.action)}</strong>
                     <span>
                       {activity.user?.name || activity.user?.email || 'System'}
-                      {activity.user?.role ? ` � ${activity.user.role}` : ''}
+                      {activity.user?.role ? ` · ${activity.user.role}` : ''}
                     </span>
                   </div>
                   <time dateTime={activity.timestamp || undefined}>
@@ -323,13 +329,13 @@ export default function AdminDashboard() {
           <div>
             <h2 id="dashboard-trends-heading">Trends</h2>
             <p style={{ color: colors.muted, fontSize: 14 }}>
-              Weekly activity across the platform (mock data Ã¢â‚¬â€ will switch to live metrics
-              once the backend endpoint is available).
+              Weekly activity across the platform (mock data — will switch to live metrics once the
+              backend endpoint is available).
             </p>
           </div>
         </div>
 
-        {trendsLoading && <p role="status">Loading trendsÃ¢â‚¬Â¦</p>}
+        {trendsLoading && <p role="status">Loading trends…</p>}
         {trendsError && (
           <p role="alert" style={{ color: colors.danger }}>
             {trendsError}
