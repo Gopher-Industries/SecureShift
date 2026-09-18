@@ -101,7 +101,10 @@ const getInboxMessages = async (req, res, next) => {
     const userId = req.user.id;
 
     // Get messages received by the user
-    const messages = await Message.find({ receiver: userId })
+    const messages = await Message.find({
+      receiver: userId,
+      isDeleted: { $ne: true },
+    })
       .populate("sender", "email name role")
       .populate("receiver", "email name role")
       .sort({ timestamp: -1 });
@@ -132,7 +135,10 @@ const getSentMessages = async (req, res, next) => {
     const userId = req.user.id;
 
     // Get messages sent by the user
-    const messages = await Message.find({ sender: userId })
+    const messages = await Message.find({
+      sender: userId,
+      isDeleted: { $ne: true },
+    })
       .populate("sender", "email name role")
       .populate("receiver", "email name role")
       .sort({ timestamp: -1 });

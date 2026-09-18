@@ -146,9 +146,9 @@ const parseAddress = (address) => {
 
   // 3. If any field is missing, set sensible defaults to avoid backend error
   if (!street) street = 'Unknown';
-  if (!suburb) suburb = street; // fallback
-  if (!state) state = 'VIC'; // fallback
-  if (!postcode) postcode = '3000'; // fallback
+  if (!suburb) suburb = street;
+  if (!state) state = 'VIC';
+  if (!postcode) postcode = '3000';
 
   return { street, suburb, state, postcode };
 };

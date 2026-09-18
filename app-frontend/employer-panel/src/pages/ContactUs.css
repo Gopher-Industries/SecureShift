@@ -337,6 +337,10 @@
    ========================= */
 
 @media (max-width: 900px) {
+  .contact-page {
+    padding: 20px 24px 28px;
+  }
+
   .contact-content {
     grid-template-columns: 1fr;
   }

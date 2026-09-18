@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import Branch from "../models/Branch.js";
+import Shift from "../models/Shift.js";
+import { timeToMinutes, normalizeEnd } from "../utils/timeUtils.js";
 import { ACTIONS } from "../middleware/logger.js";
 
 /**
@@ -10,6 +12,7 @@ import { ACTIONS } from "../middleware/logger.js";
 export const createSite = async (req, res) => {
   try {
     const { name, code, location } = req.body;
+
     const existing = await Branch.findOne({
       code,
       employerId: req.user.id,
@@ -36,13 +39,20 @@ export const createSite = async (req, res) => {
     });
 
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_CREATED, {
       siteId: site._id,
     });
 
     res.status(201).json(site);
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to create site", error: err.message });
   }
@@ -62,11 +72,153 @@ export const getAllSites = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    res.status(200).json({ count: sites.length, sites });
+    res.status(200).json({
+      count: sites.length,
+      sites,
+    });
   } catch (err) {
-    res
+    return res
       .status(500)
       .json({ message: "Failed to fetch sites", error: err.message });
+  }
+};
+
+/**
+ * @desc    Get site utilisation report for logged-in employer
+ * @route   GET /api/v1/branch/site/utilisation
+ * @access  Employer only
+ */
+export const getSiteUtilisation = async (req, res) => {
+  try {
+    const { from, to } = req.query;
+
+    if (!from || !to) {
+      return res.status(400).json({
+        message: "Both from and to dates are required",
+      });
+    }
+
+    const fromDate = new Date(`${from}T00:00:00.000Z`);
+    const toDate = new Date(`${to}T23:59:59.999Z`);
+
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+      return res.status(400).json({
+        message: "Invalid date range",
+      });
+    }
+
+    if (fromDate > toDate) {
+      return res.status(400).json({
+        message: "From date must be before or equal to to date",
+      });
+    }
+
+    const sites = await Branch.find({
+      employerId: req.user.id,
+    })
+      .select("_id name code isActive")
+      .lean();
+
+    const siteIds = sites.map((site) => site._id);
+
+    const shifts = await Shift.find({
+      createdBy: req.user.id,
+      date: {
+        $gte: fromDate,
+        $lte: toDate,
+      },
+      $or: [
+        { siteId: { $in: siteIds } },
+        { siteId: null },
+        { siteId: { $exists: false } },
+      ],
+    })
+      .select(
+        "siteId status acceptedBy startTime endTime breakTime spansMidnight",
+      )
+      .lean();
+
+    const siteMap = new Map(
+      sites.map((site) => [
+        site._id.toString(),
+        {
+          siteId: site._id,
+          name: site.name,
+          code: site.code,
+          isActive: site.isActive,
+          shiftCounts: {
+            draft: 0,
+            open: 0,
+            applied: 0,
+            assigned: 0,
+            completed: 0,
+          },
+          assignedShiftCount: 0,
+          unassignedShiftCount: 0,
+          scheduledHours: 0,
+        },
+      ]),
+    );
+
+    const unassignedSite = {
+      shiftCounts: {
+        draft: 0,
+        open: 0,
+        applied: 0,
+        assigned: 0,
+        completed: 0,
+      },
+      assignedShiftCount: 0,
+      unassignedShiftCount: 0,
+      scheduledHours: 0,
+    };
+
+    for (const shift of shifts) {
+      const report = shift.siteId ? siteMap.get(shift.siteId.toString()) : null;
+
+      const target = report || unassignedSite;
+
+      if (target.shiftCounts[shift.status] !== undefined) {
+        target.shiftCounts[shift.status] += 1;
+      }
+
+      if (shift.acceptedBy) {
+        target.assignedShiftCount += 1;
+      } else {
+        target.unassignedShiftCount += 1;
+      }
+
+      if (shift.startTime && shift.endTime) {
+        const start = timeToMinutes(shift.startTime);
+        const end = normalizeEnd(shift.startTime, shift.endTime);
+        const breakTime = Number(shift.breakTime || 0);
+
+        const durationMinutes = Math.max(0, end - start - breakTime);
+
+        target.scheduledHours += durationMinutes / 60;
+      }
+    }
+
+    const reportSites = Array.from(siteMap.values()).map((site) => ({
+      ...site,
+      scheduledHours: Number(site.scheduledHours.toFixed(2)),
+    }));
+
+    unassignedSite.scheduledHours = Number(
+      unassignedSite.scheduledHours.toFixed(2),
+    );
+
+    res.status(200).json({
+      from,
+      to,
+      sites: reportSites,
+      withoutSite: unassignedSite,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to generate site utilisation report",
+      error: err.message,
+    });
   }
 };
 
@@ -78,9 +230,11 @@ export const getAllSites = async (req, res) => {
 export const updateSite = async (req, res) => {
   try {
     const { id } = req.params;
+
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({ message: "Invalid site ID" });
     }
+
     const site = await Branch.findOne({
       _id: id,
       employerId: req.user.id,
@@ -92,20 +246,42 @@ export const updateSite = async (req, res) => {
     }
 
     const { name, code, location } = req.body;
-    if (name) site.name = name;
-    if (code) site.code = code;
-    if (location) {
-      site.location = {
-        line1: location.line1 || site.location.line1,
-        line2: location.line2 || site.location.line2,
-        city: location.city || site.location.city,
-        state: location.state || site.location.state,
-        postcode: location.postcode || site.location.postcode,
-        country: location.country || site.location.country,
-      };
+
+    if (name !== undefined) {
+      site.name = name;
     }
 
+    if (code !== undefined) {
+      site.code = code;
+    }
+
+    if (location !== undefined) {
+      if (location.line1 !== undefined) {
+        site.location.line1 = location.line1;
+      }
+
+      if (location.line2 !== undefined) {
+        site.location.line2 = location.line2;
+      }
+
+      if (location.city !== undefined) {
+        site.location.city = location.city;
+      }
+
+      if (location.state !== undefined) {
+        site.location.state = location.state;
+      }
+
+      if (location.postcode !== undefined) {
+        site.location.postcode = location.postcode;
+      }
+
+      if (location.country !== undefined) {
+        site.location.country = location.country;
+      }
+    }
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_UPDATED, {
       siteId: id,
       updatedFields: Object.keys(req.body),
@@ -113,7 +289,13 @@ export const updateSite = async (req, res) => {
 
     res.status(200).json(site);
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to update site", error: err.message });
   }
@@ -127,9 +309,11 @@ export const updateSite = async (req, res) => {
 export const deleteSite = async (req, res) => {
   try {
     const { id } = req.params;
+
     if (!mongoose.isValidObjectId(id)) {
       return res.status(400).json({ message: "Invalid site ID" });
     }
+
     const site = await Branch.findOne({
       _id: id,
       employerId: req.user.id,
@@ -141,14 +325,24 @@ export const deleteSite = async (req, res) => {
     }
 
     site.isActive = false;
+
     await site.save();
+
     await req.audit?.log(req.user.id, ACTIONS.SITE_DELETED, {
       siteId: id,
     });
 
-    res.status(200).json({ message: "Site deleted successfully" });
+    res.status(200).json({
+      message: "Site deleted successfully",
+    });
   } catch (err) {
-    res
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid site data", error: err.message });
+    }
+
+    return res
       .status(500)
       .json({ message: "Failed to delete site", error: err.message });
   }

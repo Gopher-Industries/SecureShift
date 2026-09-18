@@ -58,7 +58,9 @@
     "crashMessage": "इस स्क्रीन में कोई समस्या आ गई। आप फिर से कोशिश कर सकते हैं।"
   },
   "net": {
-    "offline": "इंटरनेट कनेक्शन नहीं है"
+    "offline": "इंटरनेट कनेक्शन नहीं है",
+    "syncing": "{{count}} उपस्थिति अपडेट सिंक हो रहे हैं…",
+    "pendingSync": "{{count}} उपस्थिति अपडेट सिंक होने बाकी हैं"
   },
   "home": {
     "welcome": "वापसी पर स्वागत है, {{name}}!",
@@ -222,6 +224,7 @@
     "profile": "प्रोफ़ाइल"
   },
   "nav": {
+    "myPerformance": "मेरा प्रदर्शन",
     "settings": "सेटिंग्स",
     "privacyPolicy": "गोपनीयता नीति",
     "messages": "संदेश",
@@ -328,7 +331,13 @@
     "selectDate": "तारीख चुनें",
     "startTime": "शुरू समय",
     "endTime": "समाप्ति समय",
-    "missingInfoMsg": "कृपया तारीख, शुरू समय और समाप्ति समय चुनें।"
+    "missingInfoMsg": "कृपया तारीख, शुरू समय और समाप्ति समय चुनें।",
+    "hoursToday": "आज काम के घंटे",
+    "hoursWeek": "इस सप्ताह के घंटे",
+    "shiftsWeek": "इस सप्ताह की शिफ्ट",
+    "dayHourWarn": "आज तय काम के घंटे से ज़्यादा हो गए। कृपया आज आराम करें।",
+    "weekShiftWarn": "इस हफ़्ते शिफ्ट के बताए गए घंटों से ज़्यादा काम हो गया। कृपया इस हफ़्ते आराम करें।",
+    "weekHourWarn": "इस हफ़्ते बताए गए काम के घंटे पार हो गए। कृपया इस हफ़्ते आराम करें।"
   },
   "editProfile": {
     "title": "अपनी प्रोफ़ाइल संपादित करें",
@@ -436,5 +445,102 @@
     "unlock": "अनलॉक करें",
     "settingsLabel": "ऐप लॉक (Face ID / PIN)",
     "unavailable": "अनुपलब्ध"
+  },
+  "performance": {
+    "title": "मेरा प्रदर्शन",
+    "scoreLabel": "गार्ड स्कोर",
+    "outOf": "{{total}} में से",
+    "breakdown": "स्कोर विवरण",
+    "punctuality": "समय की पाबंदी",
+    "punctualityDetail": "{{total}} में से {{onTime}} चेक-इन समय पर",
+    "shiftCompletion": "शिफ्ट पूर्णता",
+    "shiftCompletionDetail": "{{total}} में से {{completed}} शिफ्ट पूरी",
+    "incidents": "घटनाएँ",
+    "incidentsDetail": "{{high}} उच्च, {{medium}} मध्यम, {{low}} निम्न",
+    "streaks": "निरंतरता",
+    "currentStreak": "वर्तमान निरंतरता",
+    "bestStreak": "सर्वश्रेष्ठ निरंतरता",
+    "onTimeThisMonth": "इस महीने समय पर",
+    "trend": "हाल का रुझान",
+    "sampleData": "नमूना डेटा",
+    "sampleNote": "निरंतरता और रुझान नमूना डेटा हैं। API भेजने पर असली मान दिखेंगे।",
+    "empty": "अभी कोई स्कोर नहीं",
+    "emptyMessage": "कुछ शिफ्ट करने के बाद आपका स्कोर यहाँ दिखेगा।",
+    "error": "प्रदर्शन लोड नहीं हो सका।",
+    "retry": "फिर कोशिश करें",
+    "viewDetails": "विवरण देखें"
+  },
+  "patrol": {
+    "title": "गार्ड टूर",
+    "progress": "{{total}} में से {{done}} चेकपॉइंट",
+    "scanButton": "चेकपॉइंट स्कैन करें",
+    "scanCta": "हर चेकपॉइंट पर QR कोड स्कैन करें",
+    "complete": "गश्त पूरी हुई",
+    "completeBody": "सभी चेकपॉइंट देखे गए। बढ़िया काम!",
+    "pending": "{{count}} स्कैन सिंक होने बाकी हैं",
+    "offlineSaved": "ऑफ़लाइन सहेजा गया",
+    "offlineSavedBody": "\"{{name}}\" दर्ज किया गया। ऑनलाइन होने पर यह सिंक हो जाएगा।",
+    "scannedAt": "{{time}} पर स्कैन किया",
+    "notStarted": "नहीं देखा गया",
+    "empty": "इस शिफ्ट के लिए कोई चेकपॉइंट नहीं।",
+    "successTitle": "चेकपॉइंट सत्यापित",
+    "successBody": "\"{{name}}\" पूरा हुआ।",
+    "unknownTitle": "अज्ञात चेकपॉइंट",
+    "unknownBody": "यह QR कोड इस टूर के किसी चेकपॉइंट से मेल नहीं खाता।",
+    "alreadyTitle": "पहले ही देखा गया",
+    "alreadyBody": "\"{{name}}\" पहले ही पूरा हो चुका है।",
+    "tooFarTitle": "चेकपॉइंट से बहुत दूर",
+    "tooFarBody": "आप \"{{name}}\" से {{distance}} दूर हैं। पास जाकर पुनः प्रयास करें।",
+    "locationErrorTitle": "स्थान आवश्यक है",
+    "serverErrorTitle": "स्कैन विफल",
+    "startButton": "गार्ड टूर शुरू करें",
+    "loadError": "चेकपॉइंट लोड नहीं हो सके। पुनः प्रयास के लिए खींचें।",
+    "locationDenied": "स्थान की अनुमति अस्वीकृत",
+    "locationTimeout": "स्थान प्राप्त करने में समय समाप्त",
+    "locationUnavailable": "आपका स्थान निर्धारित नहीं हो सका",
+    "locationGeneric": "आपका स्थान प्राप्त नहीं हो सका",
+    "serverRejected": "चेकपॉइंट स्कैन अस्वीकृत"
+  },
+  "aiIncident": {
+    "openButton": "एआई सहायक",
+    "title": "एआई घटना सहायक",
+    "improveTab": "रिपोर्ट सुधारें",
+    "askTab": "प्रश्न पूछें",
+    "improveCta": "मेरी रिपोर्ट सुधारें",
+    "draftHeading": "सुझाई गई रिपोर्ट",
+    "severityHeading": "सुझाई गई गंभीरता",
+    "missingHeading": "शायद छूट रहा है",
+    "nothingMissing": "पूर्ण लगता है",
+    "useDraft": "यह ड्राफ्ट उपयोग करें",
+    "applySeverity": "गंभीरता लागू करें: {{level}}",
+    "noDescription": "पहले कुछ नोट लिखें, फिर सुधारें दबाएं।",
+    "askPlaceholder": "पूछें क्या करना है…",
+    "askCta": "पूछें",
+    "answerHeading": "मार्गदर्शन",
+    "error": "सहायक अभी उपलब्ध नहीं है। कृपया पुनः प्रयास करें।",
+    "close": "बंद करें",
+    "missingFields": {
+      "time": "घटना का समय",
+      "location": "स्थान",
+      "people": "शामिल लोग",
+      "action": "की गई कार्रवाई"
+    }
+  },
+  "onboarding": {
+    "welcomeTitle": "SecureShift में आपका स्वागत है",
+    "welcomeBody": "ज़रूरी बातों का एक झटपट परिचय। इसमें एक मिनट से भी कम समय लगेगा — आप कभी भी छोड़ सकते हैं।",
+    "shiftsTitle": "शिफ्ट खोजें और आवेदन करें",
+    "shiftsBody": "शिफ्ट टैब से खुली शिफ्ट देखें और एक टैप में आवेदन करें।",
+    "attendanceTitle": "चेक-इन और चेक-आउट",
+    "attendanceBody": "पहुँचने पर चेक-इन और जाते समय चेक-आउट के लिए साइट का QR कोड स्कैन करें।",
+    "sosTitle": "आपातकालीन SOS",
+    "sosBody": "आपात स्थिति में तुरंत अलर्ट भेजने के लिए SOS बटन दबाएँ।",
+    "exploreTitle": "सब कुछ एक ही जगह",
+    "exploreBody": "आपकी शिफ्ट, उपलब्धता, टाइमशीट और प्रोफ़ाइल सभी नीचे टैब में हैं।",
+    "skip": "छोड़ें",
+    "back": "पीछे",
+    "next": "आगे",
+    "done": "शुरू करें",
+    "replaySetting": "ऐप टूर फिर से देखें"
   }
 }
