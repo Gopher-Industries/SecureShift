@@ -7,7 +7,7 @@ import { useToast } from '../components/Toast';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
-import Modal from '../components/Modal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import colors from '../theme/colors';
 
 // First working admin data view — end-to-end integration with GET /admin/users.
@@ -142,6 +142,11 @@ export default function Users() {
     }
   };
 
+  const closeDeleteConfirm = () => {
+    if (deleting) return;
+    setDel(null);
+  };
+
   const handleCreate = async (form) => {
     try {
       setCreating(true);
@@ -237,40 +242,23 @@ export default function Users() {
         onSubmit={() => {}}
       />
 
-      <Modal open={del} title="Confirm Delete" onClose={() => setDel(null)}>
-        <p
-          style={{
-            margin: '4px 0',
-          }}
-        >
+      <ConfirmDialog
+        open={Boolean(del)}
+        title="Delete this user?"
+        confirmLabel={deleting ? 'Deleting…' : 'Delete'}
+        cancelLabel="Cancel"
+        danger
+        onConfirm={handleDelete}
+        onCancel={closeDeleteConfirm}
+        confirmDisabled={deleting}
+        cancelDisabled={deleting}
+      >
+        <p style={{ margin: '4px 0' }}>
           <strong>{del?.name}</strong> — {del?.email}
         </p>
-
-        <p
-          style={{
-            margin: '4px 0',
-          }}
-        >
-          Role: {del?.role}
-        </p>
-
-        <p>Are you sure you want to delete this user?</p>
-
-        <Button
-          variant="danger"
-          onClick={handleDelete}
-          disabled={deleting}
-          style={{
-            marginRight: 8,
-          }}
-        >
-          {deleting ? 'Deleting…' : 'Delete'}
-        </Button>
-
-        <Button variant="secondary" onClick={() => setDel(null)} disabled={deleting}>
-          Cancel
-        </Button>
-      </Modal>
+        <p style={{ margin: '4px 0' }}>Role: {del?.role}</p>
+        <p style={{ margin: '4px 0 20px' }}>Are you sure you want to delete this user?</p>
+      </ConfirmDialog>
     </div>
   );
 }
