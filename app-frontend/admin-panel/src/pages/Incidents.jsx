@@ -54,7 +54,7 @@ export default function Incidents() {
       try {
         if (manualRefresh) {
           setRefreshing(true);
-        } else if (!silentRefresh && incidents.length === 0) {
+        } else if (!silentRefresh) {
           setLoading(true);
         }
 
@@ -76,7 +76,7 @@ export default function Incidents() {
         setRefreshing(false);
       }
     },
-    [severityFilter, statusFilter, incidents.length]
+    [severityFilter, statusFilter]
   );
 
   useEffect(() => {
