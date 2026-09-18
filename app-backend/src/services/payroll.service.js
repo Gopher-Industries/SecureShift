@@ -69,7 +69,7 @@ const getUserContext = (user) => {
   return { userId, role };
 };
 
-const getWeekStart = (dateValue) => {
+export const getWeekStart = (dateValue) => {
   const date = new Date(dateValue);
   const day = date.getUTCDay();
   const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1);
@@ -79,7 +79,7 @@ const getWeekStart = (dateValue) => {
   return date;
 };
 
-const getPeriodBoundsForDate = (dateValue, periodType) => {
+export const getPeriodBoundsForDate = (dateValue, periodType) => {
   const date = new Date(dateValue);
   date.setUTCHours(0, 0, 0, 0);
 
@@ -184,6 +184,14 @@ export const calculateAttendanceHours = (attendance) => {
   }
 
   return roundHours(hours);
+};
+//Calculate payable hours by deducting the shift break time from the actual hours worked. If actual hours are not provided, return null.
+export const calculatePayableHours = (shift, actualHours) => {
+  if (actualHours == null) {
+    return null;
+  }
+  const breakMinutes = Number.isFinite(shift?.breakTime) ? shift.breakTime : 0;
+  return roundHours(actualHours - breakMinutes / 60);
 };
 
 const buildShiftQuery = (query, userContext, range) => {
@@ -408,7 +416,10 @@ const buildComputedEntries = (shifts, attendanceRecords) => {
       ),
       scheduledHours,
       actualHours: roundHours(actualHours ?? scheduledHours),
-      payableHours: roundHours(actualHours ?? scheduledHours),
+      payableHours:
+        actualHours != null
+          ? calculatePayableHours(shift, actualHours)
+          : scheduledHours,
       attendanceBased: actualHours != null,
     });
   }
@@ -504,8 +515,87 @@ const buildPayrollGroups = (records, periodType) => {
 const syncPayrollDocuments = async (groups) => {
   if (!groups.length) return [];
 
+  const groupKeys = groups.map((group) => ({
+    guardId: group.guardId,
+    employerId: group.employerId,
+    periodType: group.periodType,
+    periodStart: group.periodStart,
+    periodEnd: group.periodEnd,
+  }));
+
+  const existingRecords = await Payroll.find({
+    $or: groupKeys.map((key) => ({
+      guardId: key.guardId,
+      employerId: key.employerId,
+      periodType: key.periodType,
+      periodStart: key.periodStart,
+      periodEnd: key.periodEnd,
+    })),
+  })
+    .select(
+      "guardId employerId periodType periodStart periodEnd status totalAmount",
+    )
+    .lean();
+
+  const finalisedKeys = new Set();
+  existingRecords.forEach((record) => {
+    if (["APPROVED", "PROCESSED"].includes(record.status)) {
+      const key = `${record.guardId}:${record.employerId}:${record.periodType}:${record.periodStart.toISOString()}:${record.periodEnd.toISOString()}`;
+      finalisedKeys.add(key);
+    }
+  });
+
+  const groupsToSync = groups.filter((group) => {
+    const key = `${group.guardId}:${group.employerId}:${group.periodType}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
+    return !finalisedKeys.has(key);
+  });
+
+  if (groupsToSync.length === 0) {
+    return Payroll.find({
+      $or: groups.map((group) => ({
+        guardId: group.guardId,
+        employerId: group.employerId,
+        periodType: group.periodType,
+        periodStart: group.periodStart,
+        periodEnd: group.periodEnd,
+      })),
+    })
+      .populate("guardId", "name")
+      .populate("employerId", "name")
+      .sort({ periodStart: 1, createdAt: 1 });
+  }
+
+  for (const group of groups) {
+    const key = `${group.guardId}:${group.employerId}:${group.periodType}:${group.periodStart.toISOString()}:${group.periodEnd.toISOString()}`;
+    if (finalisedKeys.has(key)) {
+      const existing = existingRecords.find(
+        (record) =>
+          String(record.guardId) === String(group.guardId) &&
+          String(record.employerId) === String(group.employerId) &&
+          record.periodType === group.periodType &&
+          record.periodStart.toISOString() ===
+            group.periodStart.toISOString() &&
+          record.periodEnd.toISOString() === group.periodEnd.toISOString(),
+      );
+      if (existing) {
+        const amountDiff = Math.abs(existing.totalAmount - group.totalAmount);
+        if (amountDiff > 0.01) {
+          console.warn(
+            `⚠️ Finalised payroll record conflicts with recalculated data: ` +
+              `guardId=${group.guardId}, ` +
+              `periodStart=${group.periodStart.toISOString()}, ` +
+              `periodEnd=${group.periodEnd.toISOString()}, ` +
+              `stored total=${existing.totalAmount}, ` +
+              `calculated total=${group.totalAmount}, ` +
+              `difference=${amountDiff.toFixed(2)}`,
+          );
+        }
+      }
+    }
+  }
+
   await Payroll.bulkWrite(
-    groups.map((group) => ({
+    groupsToSync.map((group) => ({
       updateOne: {
         filter: {
           guardId: group.guardId,
@@ -664,10 +754,59 @@ export const syncPayrollForShiftIds = async ({ shiftIds, periodType }) => {
   return syncPayrollDocuments(groups);
 };
 
-export const getPayrollRecords = async (query, user) => {
+// add new function to build payroll searching condiction
+const buildPayrollQuery = (query, userContext, range) => {
+  const { userId, role } = userContext;
+  const { guardId } = query;
+
+  const payrollQuery = {
+    periodStart: { $gte: range.start },
+    periodEnd: { $lte: range.end },
+  };
+
+  if (role === "guard") {
+    if (guardId && String(guardId) !== String(userId)) {
+      throw createHttpError(403, "Guards can only access their own payroll");
+    }
+    payrollQuery.guardId = userId;
+  } else if (role === "employer") {
+    payrollQuery.employerId = userId;
+    if (guardId) payrollQuery.guardId = guardId;
+  } else if (role === "admin") {
+    if (guardId) payrollQuery.guardId = guardId;
+  } else {
+    throw createHttpError(403, "Forbidden: unsupported role");
+  }
+
+  return payrollQuery;
+};
+
+export const getPayrollRecords = async (query, user, options = {}) => {
   const userContext = getUserContext(user);
   const range = parseDateRange(query);
   const shiftQuery = buildShiftQuery(query, userContext, range);
+  const { readOnly = false } = options;
+
+  // read only mode
+  if (readOnly) {
+    const payrollQuery = buildPayrollQuery(query, userContext, range);
+    const payrollDocs = await Payroll.find(payrollQuery)
+      .populate("guardId", "name")
+      .populate("employerId", "name")
+      .sort({ periodStart: 1, createdAt: 1 });
+
+    return {
+      filters: {
+        startDate: query.startDate,
+        endDate: query.endDate,
+        periodType: query.periodType,
+        guardId: query.guardId || null,
+        department: query.department || null,
+      },
+      summary: buildSummary(payrollDocs),
+      payroll: payrollDocs.map(serializePayroll),
+    };
+  }
 
   const shifts = await Shift.find(shiftQuery)
     .populate("acceptedBy", "name")
@@ -706,6 +845,61 @@ export const getPayrollRecords = async (query, user) => {
     },
     summary: buildSummary(payrollDocs),
     payroll: payrollDocs.map(serializePayroll),
+  };
+};
+
+// Read-only: reads existing payroll records and never creates or updates them.
+export const getPayrollSummaryRecords = async (query, user) => {
+  const { userId, role } = getUserContext(user);
+  const range = parseDateRange(query);
+
+  const payrollQuery = {
+    periodType: query.periodType,
+    periodStart: { $gte: range.start },
+    periodEnd: { $lte: range.end },
+  };
+
+  if (role === "guard") {
+    if (query.guardId && String(query.guardId) !== String(userId)) {
+      throw createHttpError(403, "Guards can only access their own payroll");
+    }
+    payrollQuery.guardId = userId;
+  } else if (role === "employer") {
+    payrollQuery.employerId = userId;
+    if (query.guardId) {
+      payrollQuery.guardId = query.guardId;
+    }
+  } else if (role === "admin") {
+    if (query.guardId) {
+      payrollQuery.guardId = query.guardId;
+    }
+  } else {
+    throw createHttpError(403, "Forbidden: unsupported role");
+  }
+
+  const payrollDocs = await Payroll.find(payrollQuery).lean();
+
+  const statusCounts = { PENDING: 0, APPROVED: 0, PROCESSED: 0 };
+  for (const doc of payrollDocs) {
+    if (statusCounts[doc.status] !== undefined) {
+      statusCounts[doc.status] += 1;
+    }
+  }
+
+  const summary = buildSummary(payrollDocs);
+
+  return {
+    filters: {
+      startDate: query.startDate,
+      endDate: query.endDate,
+      periodType: query.periodType,
+      guardId: query.guardId || null,
+    },
+    totalPayableHours: summary.totalPayableHours,
+    totalOrdinaryHours: summary.totalOrdinaryHours,
+    totalOvertimeHours: summary.totalOvertimeHours,
+    totalEarnings: summary.totalAmount,
+    statusCounts,
   };
 };
 
@@ -778,7 +972,7 @@ export const processPayrollRecords = async (payrollIds, user) => {
 };
 
 export const exportPayrollCsv = async (query, user) => {
-  const result = await getPayrollRecords(query, user);
+  const result = await getPayrollRecords(query, user, { readOnly: true });
   const rows = [
     [
       "payrollId",
@@ -831,7 +1025,7 @@ export const exportPayrollCsv = async (query, user) => {
 };
 
 export const exportPayrollPdf = async (query, user) => {
-  const result = await getPayrollRecords(query, user);
+  const result = await getPayrollRecords(query, user, { readOnly: true });
   const doc = new PDFDocument({ margin: 40, size: "A4" });
   const buffers = [];
 

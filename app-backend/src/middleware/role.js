@@ -12,18 +12,23 @@
  * @param  {...string} allowedRoles - Roles allowed for the route
  * @returns middleware function
  */
-export const allowRoles = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res
-        .status(403)
-        .json({ message: "Forbidden: Access denied for your role." });
-    }
-    next();
-  };
-};
 
-// Shorthand exports for common roles
-export const guardOnly = allowRoles("guard");
-export const employerOnly = allowRoles("employer");
-export const adminOnly = allowRoles("admin");
+/**
+ * @deprecated This file is deprecated and will be removed in a future PR.
+ * Please import from middleware/rbac.js instead.
+ *
+ * @usage
+ * // Instead of:
+ * import { allowRoles, adminOnly, employerOnly, guardOnly } from "../middleware/role.js";
+ *
+ * // Use:
+ * import { allowRoles, adminOnly, employerOnly, guardOnly } from "../middleware/rbac.js";
+ *
+ * All functions are now exported from middleware/rbac.js.
+ */
+
+/**
+ * Re-export from rbac.js for backward compatibility during migration.
+ * These will be removed once all route files are migrated.
+ */
+export { allowRoles, adminOnly, employerOnly, guardOnly } from "./rbac.js";

@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 import Shift from "../models/Shift.js";
 import Branch from "../models/Branch.js";
+import {
+  getEndOfWeek,
+  getStartOfWeek,
+  assessCurrentGuardFatigue,
+} from "../services/fatigue.service.js";
 import { ACTIONS } from "../middleware/logger.js";
 
 import {
@@ -268,6 +273,16 @@ export const updateShift = async (req, res) => {
       status,
     } = req.body;
 
+    const textFields = { title, field, description, requirements };
+
+    for (const [key, value] of Object.entries(textFields)) {
+      if (value !== undefined && typeof value !== "string") {
+        return res.status(400).json({
+          message: `Invalid type for '${key}': expected string`,
+        });
+      }
+    }
+
     if (title !== undefined) updates.title = title.trim();
     if (date !== undefined) updates.date = new Date(date);
     if (startTime !== undefined) updates.startTime = startTime;
@@ -279,13 +294,35 @@ export const updateShift = async (req, res) => {
     if (requirements !== undefined) updates.requirements = requirements.trim();
 
     if (location !== undefined) {
+      if (
+        location === null ||
+        typeof location !== "object" ||
+        Array.isArray(location)
+      ) {
+        return res.status(400).json({
+          message: "Invalid type for 'location': expected object",
+        });
+      }
+
       const loc = { ...shift.location?.toObject?.() };
-      const { street, suburb, state, postcode } = location;
+      const { street, suburb, state, postcode, latitude, longitude } = location;
+
+      const locationTextFields = { street, suburb, state };
+
+      for (const [key, value] of Object.entries(locationTextFields)) {
+        if (value !== undefined && typeof value !== "string") {
+          return res.status(400).json({
+            message: `Invalid type for '${key}': expected string`,
+          });
+        }
+      }
 
       if (street !== undefined) loc.street = street.trim();
       if (suburb !== undefined) loc.suburb = suburb.trim();
       if (state !== undefined) loc.state = state.trim();
       if (postcode !== undefined) loc.postcode = postcode;
+      if (latitude !== undefined) loc.latitude = Number(latitude);
+      if (longitude !== undefined) loc.longitude = Number(longitude);
 
       updates.location = loc;
     }
@@ -875,7 +912,89 @@ export const getShiftHistory = async (req, res) => {
   }
 };
 /**
- * POST /api/v1/shifts/:id/duplicate
+ * GET /api/v1/shifts/fatigue
+ */
+export const getEmployerFatigueDashboard = async (req, res) => {
+  try {
+    // 1. Get logged-in employer ID
+    const uid = req.user._id;
+    // 2. Set the reference date to today
+    const referenceDate = new Date();
+    // 3. Find employer's assigned/completed shifts for the current week
+    const weekStart = getStartOfWeek(referenceDate);
+    const weekEnd = getEndOfWeek(referenceDate);
+    // 4. Extract acceptedBy from each shift
+    const shifts = await Shift.find({
+      createdBy: uid,
+      acceptedBy: { $ne: null },
+      status: { $in: ["assigned", "completed"] },
+      date: {
+        $gte: weekStart,
+        $lte: weekEnd,
+      },
+    });
+    // 5. Remove duplicate guard IDs
+    const guardIds = shifts.map((shift) => {
+      return shift.acceptedBy.toString();
+    });
+
+    const uniqueGuardIds = [...new Set(guardIds)];
+    // 6. Call assessCurrentGuardFatigue for each unique guard
+    const assessmentPromises = uniqueGuardIds.map((guardId) => {
+      return assessCurrentGuardFatigue(guardId, referenceDate);
+    });
+
+    const guardAssessments = await Promise.all(assessmentPromises);
+    // 7. Build the dashboard response
+    const guardResults = uniqueGuardIds.map((guardId, index) => {
+      const assessment = guardAssessments[index];
+
+      return {
+        guardId: guardId,
+        fatigueScore: assessment.fatigueScore,
+        warnings: assessment.warnings,
+        isFatigued: assessment.isFatigued,
+        metrics: {
+          shiftsThisWeek: assessment.metrics.shiftsThisWeek,
+          hoursThisDay: assessment.metrics.hoursThisDay,
+          hoursThisWeek: assessment.metrics.hoursThisWeek,
+        },
+      };
+    });
+
+    const guardsMonitored = uniqueGuardIds.length;
+
+    const fatiguedGuards = guardResults.filter((guard) => {
+      return guard.isFatigued === true;
+    }).length;
+
+    const totalFatigueScore = guardResults.reduce((total, guard) => {
+      return total + guard.fatigueScore;
+    }, 0);
+
+    const averageFatigueScore =
+      guardsMonitored === 0
+        ? 0
+        : Math.round(totalFatigueScore / guardsMonitored);
+
+    const dashboardResponse = {
+      referenceDate: referenceDate,
+      summary: {
+        guardsMonitored: guardsMonitored,
+        fatiguedGuards: fatiguedGuards,
+        averageFatigueScore: averageFatigueScore,
+      },
+      guards: guardResults,
+    };
+    // 8. Return 200
+    return res.status(200).json({
+      dashboard: dashboardResponse,
+    });
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+/** POST /api/v1/shifts/:id/duplicate
  * Employer only - duplicates their own shift as a new draft.
  */
 export const duplicateShift = async (req, res) => {

@@ -1,4 +1,5 @@
 import http from '../lib/http';
+import mockDashboardMetrics from '../data/mockDashboardMetrics';
 
 // ---- Admin API inventory (all under /api/v1/admin) ----
 // Auth
@@ -26,12 +27,22 @@ export const getMessages = (params) => http.get('/admin/messages', { params }).t
 export const deleteMessage = (id, body) =>
   http.delete(`/admin/messages/${id}`, { data: body }).then((r) => r.data);
 
+// Incident oversight
+export const getIncidents = (params) => http.get('/incidents', { params }).then((r) => r.data);
+export const getIncident = (id) => http.get(`/incidents/${id}`).then((r) => r.data);
+export const updateIncident = (id, body) =>
+  http.patch(`/incidents/${id}`, body).then((r) => r.data);
+
 // System configuration
 export const getSmtpSettings = () => http.get('/admin/smtp-settings').then((r) => r.data);
 export const updateSmtpSettings = (body) =>
   http.put('/admin/smtp-settings', body).then((r) => r.data);
 export const testSmtpSettings = (body) =>
   http.post('/admin/smtp-settings/test', body).then((r) => r.data);
+
+// Dashboard trend metrics
+// Currently mock for now, real endpoint TODO
+export const getDashboardMetrics = (/* params */) => Promise.resolve(mockDashboardMetrics);
 
 // Interim AP-033 create flow.
 // The current backend /auth/register endpoint supports Employer creation only.

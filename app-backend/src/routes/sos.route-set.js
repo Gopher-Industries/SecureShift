@@ -6,7 +6,7 @@ import {
   updateSOSLocation,
 } from "../controllers/emergency.controller.js";
 import auth from "../middleware/auth.js";
-import { allowRoles } from "../middleware/role.js";
+import { allowRoles } from "../middleware/rbac.js";
 
 export const registerSOSInteractionRoutes = (router, basePath = "") => {
   router.get(

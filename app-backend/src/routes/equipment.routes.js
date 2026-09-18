@@ -1,6 +1,7 @@
 import express from "express";
 import * as equipmentController from "../controllers/equipment.controller.js";
 import auth from "../middleware/auth.js";
+import { authorizeRoles } from "../middleware/rbac.js";
 
 const router = express.Router();
 
@@ -50,7 +51,12 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post("/", auth, equipmentController.createEquipment);
+router.post(
+  "/",
+  auth,
+  authorizeRoles("guard", "admin"),
+  equipmentController.createEquipment,
+);
 
 /**
  * @swagger
@@ -92,7 +98,12 @@ router.post("/", auth, equipmentController.createEquipment);
  *       404:
  *         description: Equipment not found
  */
-router.patch("/:id/assign", auth, equipmentController.assignEquipment);
+router.patch(
+  "/:id/assign",
+  auth,
+  authorizeRoles("guard", "admin"),
+  equipmentController.assignEquipment,
+);
 
 /**
  * @swagger
@@ -135,14 +146,19 @@ router.patch("/:id/assign", auth, equipmentController.assignEquipment);
  *       404:
  *         description: Equipment not found
  */
-router.patch("/:id/report", auth, equipmentController.reportEquipment);
+router.patch(
+  "/:id/report",
+  auth,
+  authorizeRoles("guard", "admin"),
+  equipmentController.reportEquipment,
+);
 
 /**
  * @swagger
  * /api/v1/equipment/guard/{guardId}:
  *   get:
  *     summary: Get all equipment assigned to a guard
- *     description: Retrieve a list of all equipment currently assigned to a specific guard.
+ *     description: Retrieve a list of all equipment currently assigned to a specific guard. Guards may only view their own equipment. Admins may view any guard's equipment.
  *     tags: [Equipment]
  *     security:
  *       - bearerAuth: []
@@ -161,7 +177,14 @@ router.patch("/:id/report", auth, equipmentController.reportEquipment);
  *         description: Invalid guard ID
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  */
-router.get("/guard/:guardId", auth, equipmentController.getEquipmentByGuard);
+router.get(
+  "/guard/:guardId",
+  auth,
+  authorizeRoles("guard", "admin"),
+  equipmentController.getEquipmentByGuard,
+);
 
 export default router;

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import http from "../lib/http";
 import "./Timesheet.css";
 import translations from "../i18n/translations";
+import RefreshButton from "../components/RefreshButton";
 
 const LATE_GRACE_MINUTES = 5;
 const PAGE_SIZE = 10;
@@ -103,48 +104,45 @@ export default function Timesheet({ language }) {
   const [sortBy, setSortBy] = useState(Sort.DateDesc);
   const [page, setPage] = useState(1);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+
+  const fetchTimesheets = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    }
+    try {
+      const { data } = await http.get("/shifts/myshifts");
+      const list = Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(data)
+          ? data
+          : [];
+      const assignedShifts = list.filter((s) => s.acceptedBy);
+      const attendanceLists = await Promise.all(
+        assignedShifts.map((s) =>
+          http
+            .get(`/payroll/attendance/${s._id}`)
+            .then((r) => r.data)
+            .catch(() => ({ records: [] }))
+        )
+      );
+      setRows(buildRows(assignedShifts, attendanceLists));
+      setLastRefreshed(new Date());
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err.message ||
+          "Failed to load timesheets"
+      );
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const { data } = await http.get("/shifts/myshifts");
-
-        const list = Array.isArray(data?.items)
-          ? data.items
-          : Array.isArray(data)
-            ? data
-            : [];
-
-        const assignedShifts = list.filter((s) => s.acceptedBy);
-
-        const attendanceLists = await Promise.all(
-          assignedShifts.map((s) =>
-            http
-              .get(`/payroll/attendance/${s._id}`)
-              .then((r) => r.data)
-              .catch(() => ({ records: [] }))
-          )
-        );
-
-        if (cancelled) return;
-        setRows(buildRows(assignedShifts, attendanceLists));
-      } catch (err) {
-        if (cancelled) return;
-
-        setError(
-          err?.response?.data?.message ||
-            err.message ||
-            "Failed to load timesheets"
-        );
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    fetchTimesheets();
   }, []);
 
   const summary = useMemo(() => {
@@ -198,7 +196,14 @@ export default function Timesheet({ language }) {
   return (
     <div className="timesheet-page">
       <div className="timesheet-container">
-        <h1 className="timesheet-title">{t.timesheets}</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h1 className="timesheet-title" style={{ margin: 0 }}>{t.timesheets}</h1>
+          <RefreshButton
+            onRefresh={() => fetchTimesheets(true)}
+            isRefreshing={isRefreshing}
+            lastRefreshed={lastRefreshed}
+          />
+        </div>
 
         <div className="summary-cards">
           {summary.map((card) => (
@@ -352,5 +357,3 @@ const sortSelectStyle = {
   color: "#666",
   cursor: "pointer",
 };
-
-

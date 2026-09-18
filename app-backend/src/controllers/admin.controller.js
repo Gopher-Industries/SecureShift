@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import Shift from "../models/Shift.js";
 import AuditLog from "../models/AuditLogs.js";
@@ -675,6 +676,10 @@ export const verifyGuardLicense = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+
     // Ensure it's a guard record
     const guard = await Guard.findById(id);
     if (!guard) return res.status(404).json({ message: "Guard not found" });
@@ -707,6 +712,10 @@ export const rejectGuardLicense = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body || {};
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
 
     const guard = await Guard.findById(id);
     if (!guard) return res.status(404).json({ message: "Guard not found" });

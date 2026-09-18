@@ -8,7 +8,10 @@ import {
   getPendingGuards,
   getShifts,
   getUsers,
+  getDashboardMetrics,
 } from '../service/adminAPI';
+import TrendChart from '../components/TrendChart';
+import colors from '../theme/colors';
 import './AdminDashboard.css';
 
 const EMPTY_STATS = {
@@ -48,6 +51,13 @@ const STAT_CARDS = [
     tone: 'purple',
   },
 ];
+
+const trendGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+  gap: 16,
+  marginTop: 20,
+};
 
 const requestSucceeded = (result) => result.status === 'fulfilled';
 
@@ -106,6 +116,10 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  const [trendMetrics, setTrendMetrics] = useState(null);
+  const [trendsLoading, setTrendsLoading] = useState(true);
+  const [trendsError, setTrendsError] = useState('');
+
   const loadDashboard = useCallback(async (manualRefresh = false) => {
     if (manualRefresh) setRefreshing(true);
     else setLoading(true);
@@ -154,6 +168,23 @@ export default function AdminDashboard() {
       mountedRef.current = false;
     };
   }, [loadDashboard]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getDashboardMetrics();
+        if (mounted) setTrendMetrics(data);
+      } catch {
+        if (mounted) setTrendsError('Unable to load dashboard trends right now.');
+      } finally {
+        if (mounted) setTrendsLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const allSourcesFailed = failedSections.length === 5;
 
@@ -275,6 +306,41 @@ export default function AdminDashboard() {
             </ul>
           )}
         </Card>
+      </section>
+
+      <section aria-labelledby="dashboard-trends-heading">
+        <div className="admin-dashboard__section-heading">
+          <div>
+            <h2 id="dashboard-trends-heading">Trends</h2>
+            <p style={{ color: colors.muted, fontSize: 14 }}>
+              Weekly activity across the platform (mock data — will switch to live metrics once the
+              backend endpoint is available).
+            </p>
+          </div>
+        </div>
+
+        {trendsLoading && <p role="status">Loading trends…</p>}
+        {trendsError && (
+          <p role="alert" style={{ color: colors.danger }}>
+            {trendsError}
+          </p>
+        )}
+
+        {trendMetrics && (
+          <div style={trendGridStyle}>
+            <TrendChart title="Sign-ups" data={trendMetrics.signups} color={colors.primary} />
+            <TrendChart
+              title="Shifts Filled"
+              data={trendMetrics.shiftsFilled}
+              color={colors.success}
+            />
+            <TrendChart
+              title="Verification Backlog"
+              data={trendMetrics.verificationBacklog}
+              color={colors.warning}
+            />
+          </div>
+        )}
       </section>
     </div>
   );

@@ -1,18 +1,37 @@
-import {
+import { jest } from "@jest/globals";
+globalThis.jest = jest;
+
+// mock models
+jest.unstable_mockModule("../src/models/User.js", () => ({
+  default: {
+    findById: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule("../src/models/Message.js", () => {
+  const Message = jest.fn();
+
+  Message.find = jest.fn();
+  Message.findById = jest.fn();
+  Message.countDocuments = jest.fn();
+  Message.getUnreadCount = jest.fn();
+  Message.getConversation = jest.fn();
+  Message.markAsRead = jest.fn();
+
+  return { default: Message };
+});
+
+const {
   sendMessage,
   getInboxMessages,
   getSentMessages,
   getConversation,
   markMessageAsRead,
   getMessageStats,
-} from "../src/controllers/message.controller.js";
+} = await import("../src/controllers/message.controller.js");
 
-import User from "../src/models/User.js";
-import Message from "../src/models/Message.js";
-
-// mock models
-jest.mock("../src/models/User.js");
-jest.mock("../src/models/Message.js");
+const User = (await import("../src/models/User.js")).default;
+const Message = (await import("../src/models/Message.js")).default;
 
 describe("Message Controller", () => {
   let req, res, next;
@@ -91,6 +110,22 @@ describe("Message Controller", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalled();
     });
+
+    it("should exclude soft-deleted messages from inbox", async () => {
+      Message.find.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockResolvedValue([]),
+      });
+
+      Message.getUnreadCount = jest.fn().mockResolvedValue(0);
+
+      await getInboxMessages(req, res, next);
+
+      expect(Message.find).toHaveBeenCalledWith({
+        receiver: req.user.id,
+        isDeleted: { $ne: true },
+      });
+    });
   });
 
   // ---------------- SENT ----------------
@@ -104,6 +139,20 @@ describe("Message Controller", () => {
       await getSentMessages(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should exclude soft-deleted messages from sent", async () => {
+      Message.find.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockResolvedValue([]),
+      });
+
+      await getSentMessages(req, res, next);
+
+      expect(Message.find).toHaveBeenCalledWith({
+        sender: req.user.id,
+        isDeleted: { $ne: true },
+      });
     });
   });
 

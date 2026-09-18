@@ -233,6 +233,10 @@ export const addFavouriteGuard = async (req, res) => {
 
     const { guardId } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(guardId)) {
+      return res.status(400).json({ message: "Invalid guard ID" });
+    }
+
     const guard = await User.findById(guardId);
     if (!guard || guard.role !== "guard") {
       return res.status(404).json({ message: "Guard not found" });
