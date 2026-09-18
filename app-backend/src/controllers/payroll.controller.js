@@ -9,9 +9,20 @@ import {
 } from "../services/payroll.service.js";
 
 const sendError = (res, error, fallbackMessage) => {
-  return res.status(error.statusCode || 500).json({
+  const statusCode = error.statusCode || 500;
+  const response = {
     message: error.message || fallbackMessage,
-  });
+  };
+
+  if (error.statusCode && error.code) {
+    response.code = error.code;
+  }
+
+  if (error.statusCode && error.details) {
+    response.details = error.details;
+  }
+
+  return res.status(statusCode).json(response);
 };
 
 export const getPayroll = async (req, res) => {
