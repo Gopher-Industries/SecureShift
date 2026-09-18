@@ -68,9 +68,7 @@ function ContactUs() {
     <div className="contact-page">
       <div className="contact-header">
         <h1>Contact Us</h1>
-        <p>
-          Have a question or need assistance? We&apos;d love to hear from you.
-        </p>
+        <p>Have a question or need assistance? We&apos;d love to hear from you.</p>
       </div>
 
       <div className="contact-content">
@@ -95,9 +93,7 @@ function ContactUs() {
 
             <div className="info-item-body">
               <h3>Email</h3>
-              <a href="mailto:support@secureshift.com">
-                support@secureshift.com
-              </a>
+              <a href="mailto:support@secureshift.com">support@secureshift.com</a>
             </div>
           </div>
 
@@ -118,16 +114,10 @@ function ContactUs() {
           </div>
         </section>
 
-        <section
-          className="contact-form-section"
-          aria-labelledby="contact-form-title"
-        >
+        <section className="contact-form-section" aria-labelledby="contact-form-title">
           <h2 id="contact-form-title">Send Us a Message</h2>
 
-          <ContactForm
-            onSubmit={handleContactSubmit}
-            submitButtonText="Send Message"
-          />
+          <ContactForm onSubmit={handleContactSubmit} submitButtonText="Send Message" />
         </section>
       </div>
     </div>

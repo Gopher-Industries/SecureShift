@@ -1,0 +1,207 @@
+/* =========================
+   Expression of Interest Page
+   ========================= */
+
+.eoi-page {
+  font-family: 'Poppins', sans-serif;
+  background: var(--background);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.3s ease;
+}
+
+.eoi-body {
+  flex: 1;
+  display: flex;
+}
+
+/* ── Left panel / form ── */
+
+.eoi-form-panel {
+  width: 50%;
+  background: var(--surface);
+  padding: 40px 60px;
+  transition: background-color 0.3s ease;
+}
+
+.eoi-title {
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.eoi-intro {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+.eoi-field {
+  margin-bottom: 18px;
+}
+
+.eoi-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.eoi-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 25px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.eoi-textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.eoi-upload-instructions {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+/* ── File upload box ── */
+
+.eoi-upload-box {
+  border: 2px dashed var(--border);
+  padding: 20px;
+  text-align: center;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.eoi-upload-heading {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.eoi-upload-subtext {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.eoi-selected-file {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #274b93;
+}
+
+.eoi-select-file-button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #274b93;
+  background: var(--surface);
+  color: #274b93;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.eoi-hidden-file-input {
+  display: none;
+}
+
+/* ── Confirm checkbox ── */
+
+.eoi-confirm-row {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.eoi-confirm-checkbox {
+  margin-right: 8px;
+}
+
+/* ── Submit / login link ── */
+
+.eoi-submit-button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 25px;
+  background: #072261;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.eoi-login-link-row {
+  margin-top: 10px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.eoi-login-link {
+  color: #aa0028;
+  text-decoration: none;
+}
+
+/* ── Right panel / branding ── */
+
+.eoi-brand-panel {
+  width: 50%;
+  background: #072261;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.eoi-brand-logo {
+  width: 400px;
+  height: auto;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 900px) {
+  .eoi-body {
+    flex-direction: column;
+  }
+
+  .eoi-form-panel,
+  .eoi-brand-panel {
+    width: 100%;
+  }
+
+  .eoi-form-panel {
+    padding: 32px 24px;
+  }
+
+  .eoi-brand-panel {
+    padding: 32px 0;
+  }
+
+  .eoi-brand-logo {
+    width: 220px;
+  }
+}
+
+@media (max-width: 480px) {
+  .eoi-form-panel {
+    padding: 24px 16px;
+  }
+
+  .eoi-title {
+    font-size: 26px;
+  }
+}

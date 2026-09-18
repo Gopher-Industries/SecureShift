@@ -1,24 +1,33 @@
+/* =========================
+   FAQ Item
+   ========================= */
+
 .faq-item {
   overflow: hidden;
-  border: 1px solid #d6dfed;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background-color: #ffffff;
+  background-color: var(--surface);
   transition:
     border-color 0.25s ease,
     box-shadow 0.25s ease,
-    transform 0.25s ease;
+    transform 0.25s ease,
+    background-color 0.3s ease;
 }
 
 .faq-item:hover {
-  border-color: #274b93;
-  box-shadow: 0 5px 16px rgba(39, 75, 147, 0.12);
+  border-color: var(--primary-light);
+  box-shadow: 0 5px 16px var(--shadow);
   transform: translateY(-1px);
 }
 
 .faq-item--open {
-  border-color: #274b93;
-  box-shadow: 0 5px 16px rgba(39, 75, 147, 0.12);
+  border-color: var(--primary-light);
+  box-shadow: 0 5px 16px var(--shadow);
 }
+
+/* =========================
+   FAQ Question
+   ========================= */
 
 .faq-question {
   width: 100%;
@@ -26,7 +35,7 @@
   padding: 18px 20px;
   border: none;
   background-color: transparent;
-  color: #072261;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -34,15 +43,17 @@
   font-family: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.3s ease;
 }
 
 .faq-question:hover {
-  background-color: #f7f9fd;
+  background-color: var(--surface-secondary);
 }
 
 .faq-question:focus-visible {
-  outline: 3px solid rgba(39, 75, 147, 0.35);
+  outline: 3px solid rgba(52, 91, 168, 0.35);
   outline-offset: -3px;
 }
 
@@ -54,14 +65,20 @@
 
 .faq-chevron {
   flex-shrink: 0;
-  color: #123b84;
+  color: var(--primary-light);
   font-size: 15px;
-  transition: transform 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease;
 }
 
 .faq-chevron--open {
   transform: rotate(180deg);
 }
+
+/* =========================
+   FAQ Answer
+   ========================= */
 
 .faq-answer-wrapper {
   display: grid;
@@ -84,10 +101,14 @@
 .faq-answer p {
   margin: 0;
   padding: 0 20px 20px;
-  color: #4d5562;
+  color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.7;
 }
+
+/* =========================
+   Responsive
+   ========================= */
 
 @media (max-width: 768px) {
   .faq-question {

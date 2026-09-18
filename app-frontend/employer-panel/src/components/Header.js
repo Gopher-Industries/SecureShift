@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+
 import CompanyLogo from './company_logo.svg';
 import ProfilePicPlaceHolder from './ProfilePicPlaceHolder.svg';
+
 import NotificationsPopup from '../pages/NotificationsPopup';
-import { useTranslation } from "react-i18next";
-import i18n from "i18next";
+
+import { useTranslation } from 'react-i18next';
+
 import Logo from '../pages/logo.png';
 
-export default function Header() {
+export default function Header({ theme, setTheme }) {
   const { t, i18n } = useTranslation();
+
+  console.log('Language:', i18n.language);
+  console.log('Home translation:', t('home'));
+
   const navigate = useNavigate();
+
   const [showMenu, setShowMenu] = useState(false);
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
@@ -80,6 +88,7 @@ export default function Header() {
 
   const handleHomeClick = () => {
     const token = localStorage.getItem('token');
+
     navigate(token ? '/employer-dashboard' : '/login');
     setShowMobileNav(false);
   };
@@ -87,13 +96,22 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
+
     navigate('/login');
   };
 
   const changeLanguage = (language) => {
     i18n.changeLanguage(language);
+
     localStorage.setItem('language', language);
+
     window.location.reload();
+  };
+
+  const changeTheme = (selectedTheme) => {
+    setTheme(selectedTheme);
+
+    localStorage.setItem('theme', selectedTheme);
   };
 
   const navLinks = [
@@ -112,13 +130,21 @@ export default function Header() {
   return (
     <div style={headerStyle}>
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <img
-          src={CompanyLogo}
-          alt="Company Logo"
-          style={{ height: '56px', maxHeight: '66px' }}
-        />
-        <div style={{ fontWeight: '600', fontSize: '20px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+        }}
+      >
+        <img src={CompanyLogo} alt="Company Logo" style={{ height: '66px' }} />
+
+        <div
+          style={{
+            fontWeight: '600',
+            fontSize: '24px',
+          }}
+        >
           Secure Shift
         </div>
       </div>
@@ -146,6 +172,8 @@ export default function Header() {
             navigate={navigate}
             handleLogout={handleLogout}
             changeLanguage={changeLanguage}
+            changeTheme={changeTheme}
+            theme={theme}
             i18n={i18n}
             t={t}
           />
@@ -163,6 +191,8 @@ export default function Header() {
             navigate={navigate}
             handleLogout={handleLogout}
             changeLanguage={changeLanguage}
+            changeTheme={changeTheme}
+            theme={theme}
             i18n={i18n}
             t={t}
           />
@@ -219,7 +249,7 @@ export default function Header() {
   );
 }
 
-function ProfileMenu({ showMenu, setShowMenu, navigate, handleLogout, changeLanguage, i18n, t }) {
+function ProfileMenu({ showMenu, setShowMenu, navigate, handleLogout, changeLanguage, changeTheme, theme, i18n, t }) {
   return (
     <div style={{ position: 'relative' }}>
       <div onClick={() => setShowMenu(!showMenu)} style={{ cursor: 'pointer' }}>
@@ -237,13 +267,15 @@ function ProfileMenu({ showMenu, setShowMenu, navigate, handleLogout, changeLang
             right: 0,
             top: '58px',
             width: '220px',
-            background: '#fff',
+            background: 'var(--surface)',
+            color: 'var(--text-primary)',
             borderRadius: '16px',
-            boxShadow: '0 6px 18px rgba(0,0,0,0.15)',
+            boxShadow: '0 6px 18px var(--shadow)',
             overflow: 'hidden',
             zIndex: 1000,
           }}
         >
+          {/* Profile Section */}
           <div
             onClick={() => {
               navigate('/company-profile');
@@ -254,7 +286,7 @@ function ProfileMenu({ showMenu, setShowMenu, navigate, handleLogout, changeLang
               alignItems: 'center',
               gap: '12px',
               padding: '16px',
-              borderBottom: '1px solid #eee',
+              borderBottom: '1px solid var(--border)',
               backgroundColor: '#072261',
               cursor: 'pointer',
             }}
@@ -271,19 +303,45 @@ function ProfileMenu({ showMenu, setShowMenu, navigate, handleLogout, changeLang
                 padding: '4px',
               }}
             />
+
             <div>
-              <div style={{ fontWeight: '700', fontSize: '15px', color: '#fff' }}>
+              <div
+                style={{
+                  fontWeight: '700',
+                  fontSize: '15px',
+                  color: '#fff',
+                }}
+              >
                 ABC Security
               </div>
-              <div style={{ fontSize: '13px', color: '#dbeafe' }}>
+
+              <div
+                style={{
+                  fontSize: '13px',
+                  color: '#dbeafe',
+                }}
+              >
                 {localStorage.getItem('email') || 'User'}
               </div>
             </div>
           </div>
 
-          <div style={{ padding: '14px 16px' }}>
-            <div style={{ fontWeight: '600', fontSize: '13px', marginBottom: '10px', color: '#111' }}>
-              🌐 {t("language")}
+          {/* Language */}
+          <div
+            style={{
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: '600',
+                fontSize: '13px',
+                marginBottom: '10px',
+                color: 'var(--text-primary)',
+              }}
+            >
+              🌐 {t('language')}
             </div>
 
             {[
@@ -299,7 +357,7 @@ function ProfileMenu({ showMenu, setShowMenu, navigate, handleLogout, changeLang
                   padding: '7px 0',
                   cursor: 'pointer',
                   fontSize: '14px',
-                  color: i18n.language === item.code ? '#274B93' : '#333',
+                  color: i18n.language === item.code ? '#274B93' : 'var(--text-primary)',
                   fontWeight: i18n.language === item.code ? '700' : '400',
                   borderBottom: i18n.language === item.code ? '2px solid #274B93' : 'none',
                 }}
@@ -309,17 +367,64 @@ function ProfileMenu({ showMenu, setShowMenu, navigate, handleLogout, changeLang
             ))}
           </div>
 
+          {/* Appearance */}
+          <div
+            style={{
+              padding: '14px 16px',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: '600',
+                fontSize: '13px',
+                marginBottom: '10px',
+                color: 'var(--text-primary)',
+              }}
+            >
+              🎨 Appearance
+            </div>
+
+            <div
+              onClick={() => changeTheme('light')}
+              style={{
+                padding: '7px 0',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: theme === 'light' ? '#274B93' : 'var(--text-primary)',
+                fontWeight: theme === 'light' ? '700' : '400',
+                borderBottom: theme === 'light' ? '2px solid #274B93' : 'none',
+              }}
+            >
+              Light Mode
+            </div>
+
+            <div
+              onClick={() => changeTheme('dark')}
+              style={{
+                padding: '7px 0',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: theme === 'dark' ? '#274B93' : 'var(--text-primary)',
+                fontWeight: theme === 'dark' ? '700' : '400',
+                borderBottom: theme === 'dark' ? '2px solid #274B93' : 'none',
+              }}
+            >
+              Dark Mode
+            </div>
+          </div>
+
           <div
             onClick={handleLogout}
             style={{
               padding: '14px 16px',
-              borderTop: '1px solid #eee',
+              borderTop: '1px solid var(--border)',
               cursor: 'pointer',
-              color: 'red',
+              color: 'var(--danger)',
               fontWeight: '600',
             }}
           >
-            {t("logout")}
+            {t('logout')}
           </div>
         </div>
       )}
