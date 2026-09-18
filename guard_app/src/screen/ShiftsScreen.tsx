@@ -595,14 +595,7 @@ function AppliedTab({ navigation }: Props) {
             keyExtractor={(i) => i.id}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
-              <ShiftCard
-                shift={item}
-                onPress={() => setSelectedShift(item)}
-                colors={colors}
-                showApply
-                onApply={() => handleApply(item.id)}
-                applying={applyingId === item.id}
-              />
+              <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
             )}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListEmptyComponent={
