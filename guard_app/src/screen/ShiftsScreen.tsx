@@ -26,6 +26,7 @@ import LoadingState from '../components/LoadingState';
 import ShiftDetailsModal from '../components/modal/ShiftDetailsModal';
 import ViewToggle from '../components/toggle/ViewToggle';
 import { useAppTheme } from '../theme';
+import { getRecommendedShifts } from '../utils/shiftRecommendations';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
@@ -293,6 +294,7 @@ function AllTab({ navigation }: Props) {
 
       return sortOption === 'payAsc' ? payA - payB : payB - payA;
     });
+  const recommended = getRecommendedShifts(rows);
 
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
@@ -412,6 +414,38 @@ function AllTab({ navigation }: Props) {
           data={filtered}
           keyExtractor={(i) => i.id}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <>
+              {recommended.length > 0 && (
+                <View style={s.recommendedSection}>
+                  <Text style={s.recommendedTitle}>Recommended for you</Text>
+
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={s.recommendedRow}
+                  >
+                    {recommended.map((shift) => (
+                      <View key={shift.id} style={s.recommendedCard}>
+                        <ShiftCard
+                          shift={shift}
+                          onPress={() => setSelectedShift(shift)}
+                          colors={colors}
+                          showApply
+                          onApply={() => handleApply(shift.id)}
+                          applying={applyingId === shift.id}
+                        />
+
+                        <Text style={s.recommendationReason}>{shift.recommendationReason}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              <Text style={s.allShiftsTitle}>All shifts</Text>
+            </>
+          }
           renderItem={({ item }) => (
             <ShiftCard
               shift={item}
@@ -512,16 +546,27 @@ function AppliedTab({ navigation }: Props) {
       {view === 'calendar' ? (
         <CalendarView shifts={filtered} onShiftPress={setSelectedShift} colors={colors} />
       ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(i) => i.id}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
-          )}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<EmptyState icon="briefcase-outline" title={t('shifts.noShifts')} />}
-        />
+        <>
+          <FlatList
+            data={filtered}
+            keyExtractor={(i) => i.id}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <ShiftCard
+                shift={item}
+                onPress={() => setSelectedShift(item)}
+                colors={colors}
+                showApply
+                onApply={() => handleApply(item.id)}
+                applying={applyingId === item.id}
+              />
+            )}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListEmptyComponent={
+              <EmptyState icon="briefcase-outline" title={t('shifts.noShifts')} />
+            }
+          />
+        </>
       )}
 
       <ShiftDetailsModal
@@ -791,5 +836,39 @@ const getStyles = (colors: AppColors) =>
     retryButtonText: {
       color: colors.white,
       fontWeight: '700',
+    },
+    recommendedSection: {
+      marginBottom: 16,
+    },
+
+    recommendedTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 10,
+    },
+
+    recommendedRow: {
+      gap: 12,
+      paddingBottom: 10,
+    },
+
+    recommendedCard: {
+      width: 300,
+    },
+
+    recommendationReason: {
+      fontSize: 12,
+      color: colors.muted,
+      marginTop: 6,
+      marginBottom: 6,
+    },
+
+    allShiftsTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginTop: 8,
+      marginBottom: 10,
     },
   });
