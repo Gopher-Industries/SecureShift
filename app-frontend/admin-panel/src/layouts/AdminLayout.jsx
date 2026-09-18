@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminNavbar from '../components/AdminNavbar';
+import ViewAsBanner from '../components/ViewAsBanner';
 import './AdminLayout.css';
 
 export default function AdminLayout() {
@@ -12,6 +13,7 @@ export default function AdminLayout() {
       <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <AdminNavbar onMenuClick={() => setSidebarOpen((prev) => !prev)} />
+        <ViewAsBanner />
         <main
           style={{
             padding: 24,

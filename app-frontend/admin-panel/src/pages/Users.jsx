@@ -9,6 +9,8 @@ import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
 import Modal from '../components/Modal';
 import colors from '../theme/colors';
+import { useViewAs } from '../context/ViewAsContext';
+import { useNavigate } from 'react-router-dom';
 
 // First working admin data view — end-to-end integration with GET /admin/users.
 const ui = {
@@ -34,6 +36,14 @@ const ui = {
 export default function Users() {
   const { showToast } = useToast();
 
+  const { startViewAs } = useViewAs();
+  const navigate = useNavigate();
+
+  const handleViewAs = (user) => {
+    startViewAs({ id: user._id, name: user.name, role: user.role });
+    showToast(`Now viewing as ${user.name} (${user.role}) — read-only.`, 'info');
+    navigate(`/users/${user._id}`);
+  };
   const [addOpen, setAddOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -114,6 +124,10 @@ export default function Users() {
             flexWrap: 'wrap',
           }}
         >
+          <Button variant="secondary" onClick={() => handleViewAs(r)}>
+            View As
+          </Button>
+
           <Button variant="secondary" onClick={() => setEditUser(r)}>
             Edit
           </Button>
