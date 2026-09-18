@@ -32,10 +32,13 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import FAQs from './pages/FAQs';
 import ContactUs from './pages/ContactUs';
+import AIAssistant from './pages/AIAssistant';
+import AllReviews from './pages/AllReviews';
+
 import Sidebar from './components/Sidebar';
 import { NotificationProvider } from './components/NotificationContext';
-
 import i18n from './i18n';
+import AIChatWidget from "./components/AIChatWidget";
 function TaskRoute() {
   return (
     <Routes>
@@ -85,6 +88,7 @@ function ProtectedLayout({ children, language, setLanguage }) {
         </div>
 
         <Footer language={language} />
+        <AIChatWidget/>
       </div>
     </ProtectedRoute>
   );
@@ -120,6 +124,8 @@ function AppRoutes({ language, setLanguage }) {
         <Route path="/terms-and-condition" element={<TermsAndConditions />} />
 
         <Route path="/contact-us" element={<ContactUs />} /> 
+        <Route path="/ai-assistant" element={<AIAssistant />}/>
+
         {/* PROTECTED ROUTES */}
         <Route
           path="/employer-dashboard"
@@ -160,6 +166,22 @@ function AppRoutes({ language, setLanguage }) {
         <Route
           path="/payroll"
           element={protectedLayout(<Payroll language={language} />)}
+        />
+        <Route
+          path="/privacy-policy"
+          element={protectedLayout(<PrivacyPolicy />)}
+        />
+        <Route
+          path="/terms-and-condition"
+          element={protectedLayout(<TermsAndConditions />)}
+        />
+        <Route
+          path="/contact-us"
+          element={protectedLayout(<ContactUs />)}
+        />
+        <Route
+          path="/all-reviews"
+          element={protectedLayout(<AllReviews />)}
         />
         <Route
           path="/faqs"

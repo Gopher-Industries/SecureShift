@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import useAdminAuth from '../hooks/useAdminAuth';
+import GlobalSearch from './GlobalSearch';
 
 export default function AdminNavbar({ onMenuClick }) {
   const navigate = useNavigate();
@@ -37,6 +38,8 @@ export default function AdminNavbar({ onMenuClick }) {
       >
         ☰
       </button>
+
+      <GlobalSearch />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
         <span style={{ color: '#555' }}>Signed in as {role || 'admin'}</span>

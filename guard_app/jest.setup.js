@@ -1,6 +1,13 @@
 /* eslint-env jest */
 
+import { configure } from '@testing-library/react-native';
 import mockAsyncStorage from '@react-native-async-storage/async-storage/jest/async-storage-mock';
+
+// CI runners are slower and cold-start each Jest worker, so async queries
+// (findBy*/waitFor) that resolve in well under 100ms locally can occasionally
+// exceed the 1000ms default under load. Give them more headroom so the suite
+// is stable in CI without changing any individual test.
+configure({ asyncUtilTimeout: 5000 });
 
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 

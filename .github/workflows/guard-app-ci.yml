@@ -1,0 +1,41 @@
+name: Guard App CI
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'guard_app/**'
+      - '.github/workflows/guard-app-ci.yml'
+  push:
+    branches:
+      - '**'          # run on pushes to any branch in your fork
+    paths:
+      - 'guard_app/**'
+      - '.github/workflows/guard-app-ci.yml'
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+jobs:
+  test-and-typecheck:
+    name: Test & Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: guard_app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: guard_app/package-lock.json
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+      - name: Type check (tsc --noEmit)
+        run: npm run typecheck
+      - name: Run tests (Jest)
+        run: npm run test:ci

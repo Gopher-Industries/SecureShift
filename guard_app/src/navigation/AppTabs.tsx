@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import FloatingSOSButton from '../components/FloatingSOSButton';
+import OnboardingTour from '../components/OnboardingTour';
+import { useOnboardingTour } from '../hooks/useOnboardingTour';
 import AvailabilityScreen from '../screen/AvailabilityScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
 import HomeScreen from '../screen/HomeScreen';
@@ -27,6 +29,7 @@ const Tab = createBottomTabNavigator<AppTabParamList>();
 export default function AppTabs() {
   const { colors } = useAppTheme();
   const { t } = useTranslation();
+  const tour = useOnboardingTour();
 
   return (
     <View style={styles.root}>
@@ -96,6 +99,7 @@ export default function AppTabs() {
         />
       </Tab.Navigator>
       <FloatingSOSButton />
+      <OnboardingTour visible={tour.visible} onFinish={tour.finish} />
     </View>
   );
 }

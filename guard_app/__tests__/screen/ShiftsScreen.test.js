@@ -16,7 +16,7 @@ jest.mock('../../src/api/auth', () => ({
 
 jest.mock('../../src/api/shifts', () => ({
   listShifts: jest.fn(),
-  myShifts: jest.fn().mockResolvedValue([]),
+  myShifts: jest.fn().mockResolvedValue({ items: [], page: 1, limit: 20, total: 20 }),
   applyToShift: jest.fn(),
 }));
 
@@ -47,13 +47,17 @@ function renderShiftsScreen() {
   );
 }
 
-// Simulates the user pressing the "Apply" action in the OS confirmation Alert
-// that ShiftsScreen raises before calling the (mocked) API.
-async function confirmApplyAlert() {
-  const call = Alert.alert.mock.calls.find(([title]) => title === 'Confirm Application');
-  const applyButton = call[2].find((button) => button.text === 'Apply');
+async function acknowledgeAndApply(screen) {
+  const acknowledgementCheckbox = await screen.findByText(
+    'I have read and acknowledge the shift terms and site instructions.',
+  );
+
+  fireEvent.press(acknowledgementCheckbox);
+
+  const acknowledgeButton = await screen.findByText('Acknowledge & Apply');
+
   await act(async () => {
-    applyButton.onPress();
+    fireEvent.press(acknowledgeButton);
   });
 }
 
@@ -78,24 +82,18 @@ describe('ShiftsScreen - All tab (API mocked)', () => {
     expect((await findAllByText('shifts.apply')).length).toBeGreaterThan(0);
   });
 
-  it('applies to a shift after confirmation and shows a success alert', async () => {
+  it('applies to a shift after acknowledgement and shows a success alert', async () => {
     listShifts.mockResolvedValue({ items: [openShift], page: 1, limit: 50, total: 1 });
     applyToShift.mockResolvedValue({ message: 'ok' });
 
-    const { findAllByText } = renderShiftsScreen();
+    const screen = renderShiftsScreen();
 
-    const applyButtons = await findAllByText('shifts.apply');
+    const applyButtons = await screen.findAllByText('shifts.apply');
     fireEvent.press(applyButtons[0]);
 
-    await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Confirm Application',
-        expect.any(String),
-        expect.any(Array),
-      );
-    });
+    expect(await screen.findByText('Shift Acknowledgement')).toBeTruthy();
 
-    await confirmApplyAlert();
+    await acknowledgeAndApply(screen);
 
     await waitFor(() => {
       expect(applyToShift).toHaveBeenCalledWith('shift-1');
@@ -110,18 +108,14 @@ describe('ShiftsScreen - All tab (API mocked)', () => {
     listShifts.mockResolvedValue({ items: [openShift], page: 1, limit: 50, total: 1 });
     applyToShift.mockRejectedValue({ response: { data: { message: 'Already applied' } } });
 
-    const { findAllByText } = renderShiftsScreen();
+    const screen = renderShiftsScreen();
 
-    const applyButtons = await findAllByText('shifts.apply');
+    const applyButtons = await screen.findAllByText('shifts.apply');
     fireEvent.press(applyButtons[0]);
-    await waitFor(() =>
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Confirm Application',
-        expect.any(String),
-        expect.any(Array),
-      ),
-    );
-    await confirmApplyAlert();
+
+    expect(await screen.findByText('Shift Acknowledgement')).toBeTruthy();
+
+    await acknowledgeAndApply(screen);
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(

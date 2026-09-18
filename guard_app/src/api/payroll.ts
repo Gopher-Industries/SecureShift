@@ -14,35 +14,67 @@ export type PayrollSummaryParams = {
   periodType: PayrollPeriodType;
 };
 
+export type PayrollStatus = 'PENDING' | 'APPROVED' | 'PROCESSED';
+
 export type PayrollSummary = {
-  totalCompletedShifts: number;
-  totalAttendanceRecords: number;
-  totalGuards: number;
-  totalHours: number;
+  count: number;
+  totalScheduledHours: number;
+  totalActualHours: number;
+  totalPayableHours: number;
+  totalOrdinaryHours: number;
   totalOvertimeHours: number;
-  totalPendingApproval: number;
+  totalOrdinaryAmount: number;
+  totalOvertimeAmount: number;
+  totalAmount: number;
+};
+
+export type PayrollEntry = {
+  shiftId: string;
+  shiftDate: string;
+  department: string | null;
+  hourlyRate: number;
+  scheduledHours: number;
+  actualHours: number;
+  payableHours: number;
+  ordinaryHours: number;
+  overtimeHours: number;
+  ordinaryAmount: number;
+  overtimeAmount: number;
+  totalAmount: number;
+  attendanceBased: boolean;
+};
+
+export type PayrollRecord = {
+  id: string;
+  guard: { id: string; name: string | null } | null;
+  employer: { id: string; name: string | null } | null;
+  periodType: PayrollPeriodType;
+  periodStart: string;
+  periodEnd: string;
+  totalScheduledHours: number;
+  totalActualHours: number;
+  totalPayableHours: number;
+  totalOrdinaryHours: number;
+  totalOvertimeHours: number;
+  totalOrdinaryAmount: number;
+  totalOvertimeAmount: number;
+  totalAmount: number;
+  status: PayrollStatus;
+  approvedAt: string | null;
+  processedAt: string | null;
+  entries: PayrollEntry[];
 };
 
 export type PayrollResponse = {
-  message: string;
-  summary: PayrollSummary;
-  guards: {
+  filters: {
+    startDate: string;
+    endDate: string;
+    periodType: PayrollPeriodType;
     guardId: string | null;
-    guardName: string | null;
-    totalShifts: number;
-    totalHours: number;
-    overtimeHours: number;
-    underworkedShifts: number;
-    pendingApproval: number;
-  }[];
-  periods: {
-    periodLabel: string;
-    totalShifts: number;
-    totalHours: number;
-    overtimeHours: number;
-    underworkedShifts: number;
-    pendingApproval: number;
-  }[];
+    department: string | null;
+  };
+  summary: PayrollSummary;
+  payroll: PayrollRecord[];
 };
 
 export async function getPayrollSummary(params: PayrollSummaryParams) {
