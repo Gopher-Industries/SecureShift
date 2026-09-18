@@ -326,7 +326,13 @@
     "selectDate": "选择日期",
     "startTime": "开始时间",
     "endTime": "结束时间",
-    "missingInfoMsg": "请选择日期，开始时间和结束时间。"
+    "missingInfoMsg": "请选择日期，开始时间和结束时间。",
+    "hoursToday": "今日工作时长",
+    "hoursWeek": "本周工作时长",
+    "shiftsWeek": "本周轮班情况",
+    "dayHourWarn": "今天工作时间已超过建议时长，请休息一天。",
+    "weekShiftWarn": "本周轮班次数已超过建议次数，请休息一周。",
+    "weekHourWarn": "本周工作时长已超过建议时长，请休息一周。"
   },
   "editProfile": {
     "title": "编辑您的个人信息",
@@ -514,5 +520,22 @@
       "people": "涉及人员",
       "action": "已采取的行动"
     }
+  },
+  "onboarding": {
+    "welcomeTitle": "欢迎使用 SecureShift",
+    "welcomeBody": "快速了解基本功能，不到一分钟即可完成——随时可以跳过。",
+    "shiftsTitle": "查找并申请班次",
+    "shiftsBody": "在“班次”标签中浏览开放班次，轻点即可申请。",
+    "attendanceTitle": "签到与签退",
+    "attendanceBody": "到达时扫描现场二维码签到，离开时签退。",
+    "sosTitle": "紧急求助 SOS",
+    "sosBody": "紧急情况下，按下 SOS 按钮可快速发出警报。",
+    "exploreTitle": "一切尽在一处",
+    "exploreBody": "您的班次、可用时间、工时单和个人资料都在下方标签中。",
+    "skip": "跳过",
+    "back": "上一步",
+    "next": "下一步",
+    "done": "开始使用",
+    "replaySetting": "重新观看应用导览"
   }
 }

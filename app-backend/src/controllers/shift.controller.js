@@ -273,6 +273,16 @@ export const updateShift = async (req, res) => {
       status,
     } = req.body;
 
+    const textFields = { title, field, description, requirements };
+
+    for (const [key, value] of Object.entries(textFields)) {
+      if (value !== undefined && typeof value !== "string") {
+        return res.status(400).json({
+          message: `Invalid type for '${key}': expected string`,
+        });
+      }
+    }
+
     if (title !== undefined) updates.title = title.trim();
     if (date !== undefined) updates.date = new Date(date);
     if (startTime !== undefined) updates.startTime = startTime;
@@ -284,8 +294,28 @@ export const updateShift = async (req, res) => {
     if (requirements !== undefined) updates.requirements = requirements.trim();
 
     if (location !== undefined) {
+      if (
+        location === null ||
+        typeof location !== "object" ||
+        Array.isArray(location)
+      ) {
+        return res.status(400).json({
+          message: "Invalid type for 'location': expected object",
+        });
+      }
+
       const loc = { ...shift.location?.toObject?.() };
       const { street, suburb, state, postcode, latitude, longitude } = location;
+
+      const locationTextFields = { street, suburb, state };
+
+      for (const [key, value] of Object.entries(locationTextFields)) {
+        if (value !== undefined && typeof value !== "string") {
+          return res.status(400).json({
+            message: `Invalid type for '${key}': expected string`,
+          });
+        }
+      }
 
       if (street !== undefined) loc.street = street.trim();
       if (suburb !== undefined) loc.suburb = suburb.trim();

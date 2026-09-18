@@ -325,7 +325,13 @@
     "selectDate": "Select date",
     "startTime": "Start time",
     "endTime": "End time",
-    "missingInfoMsg": "Please select a date, start time, and end time."
+    "missingInfoMsg": "Please select a date, start time, and end time.",
+    "hoursToday": "Hours worked Today",
+    "hoursWeek": "Hours this Week",
+    "shiftsWeek": "Shifts this Week",
+    "dayHourWarn": "Exceeded number of recommended work hours today. Please rest for the day.",
+    "weekShiftWarn": "Exceeded number of recommended shifts this week. Please rest for the week.",
+    "weekHourWarn": "Exceeded number of recommended work hours this week. Please rest for the week."
   },
   "editProfile": {
     "title": "Edit Your Profile",
@@ -513,5 +519,22 @@
       "people": "People involved",
       "action": "Action taken"
     }
+  },
+  "onboarding": {
+    "welcomeTitle": "Welcome to SecureShift",
+    "welcomeBody": "A quick tour of the essentials. It takes less than a minute — you can skip anytime.",
+    "shiftsTitle": "Find & apply for shifts",
+    "shiftsBody": "Browse open shifts and apply in a tap from the Shifts tab.",
+    "attendanceTitle": "Check in & out",
+    "attendanceBody": "Scan the site QR code to check in when you arrive and out when you leave.",
+    "sosTitle": "Emergency SOS",
+    "sosBody": "In an emergency, press the SOS button to raise an alert fast.",
+    "exploreTitle": "Everything in one place",
+    "exploreBody": "Your shifts, availability, timesheets and profile all live in the tabs below.",
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "done": "Get started",
+    "replaySetting": "Replay app tour"
   }
 }
