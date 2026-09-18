@@ -2,7 +2,11 @@ import { useEffect, useRef } from 'react';
 
 const DEFAULT_INTERVAL = 30000;
 
-export default function useAutoRefresh(refreshFunction, interval = DEFAULT_INTERVAL) {
+export default function useAutoRefresh(
+  refreshFunction,
+  interval = DEFAULT_INTERVAL,
+  enabled = true
+) {
   const refreshRef = useRef(refreshFunction);
 
   useEffect(() => {
@@ -22,13 +26,13 @@ export default function useAutoRefresh(refreshFunction, interval = DEFAULT_INTER
     const startPolling = () => {
       stopPolling();
 
-      if (document.visibilityState === 'hidden') {
+      if (!enabled || document.visibilityState === 'hidden') {
         return;
       }
 
       intervalId = window.setInterval(() => {
         if (document.visibilityState === 'visible') {
-          refreshRef.current();
+          void refreshRef.current();
         }
       }, interval);
     };
@@ -36,8 +40,8 @@ export default function useAutoRefresh(refreshFunction, interval = DEFAULT_INTER
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         stopPolling();
-      } else {
-        refreshRef.current();
+      } else if (enabled) {
+        void refreshRef.current();
         startPolling();
       }
     };
@@ -49,5 +53,5 @@ export default function useAutoRefresh(refreshFunction, interval = DEFAULT_INTER
       stopPolling();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [interval]);
+  }, [interval, enabled]);
 }
