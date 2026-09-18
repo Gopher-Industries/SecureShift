@@ -36,19 +36,12 @@ const allGuardIds = [...employerAGuardIds, ...employerBGuardIds];
 const ANALYTICS_USER_IDS = [...employerIds, ...allGuardIds];
 
 const employerAWorkload = [
-  40, 36, 32, 28,
-  16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
-  8, 8, 8, 8, 8, 8,
+  40, 36, 32, 28, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 8, 8, 8, 8, 8, 8,
 ];
 
 const employerBWorkload = [10, 10, 10, 10, 10, 10];
 
-const weekdayPattern = [
-  5, 5, 6, 6,
-  4, 5, 6,
-  3, 4,
-  2, 1, 0,
-];
+const weekdayPattern = [5, 5, 6, 6, 4, 5, 6, 3, 4, 2, 1, 0];
 
 const referenceMonday = new Date("2026-07-20T00:00:00.000Z");
 
@@ -59,9 +52,7 @@ const dateForSequence = (sequence) => {
   const weekdayOffset = weekdayPattern[sequence % weekdayPattern.length];
 
   const date = new Date(referenceMonday);
-  date.setUTCDate(
-    referenceMonday.getUTCDate() + week * 7 + weekdayOffset,
-  );
+  date.setUTCDate(referenceMonday.getUTCDate() + week * 7 + weekdayOffset);
 
   return date;
 };
@@ -110,12 +101,7 @@ const buildGuard = ({ id, index, employerLabel }) => ({
   isDeleted: false,
 });
 
-const buildTimesheets = ({
-  employerId,
-  guardIds,
-  workload,
-  employerLabel,
-}) => {
+const buildTimesheets = ({ employerId, guardIds, workload, employerLabel }) => {
   const records = [];
   let sequence = 0;
 
@@ -289,9 +275,7 @@ const main = async () => {
 
   await mongoose.connect(mongoUri);
 
-  const result = reset
-    ? await resetAnalyticsData()
-    : await seedAnalyticsData();
+  const result = reset ? await resetAnalyticsData() : await seedAnalyticsData();
 
   console.log(JSON.stringify(result, null, 2));
 };

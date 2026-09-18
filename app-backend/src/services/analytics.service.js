@@ -88,11 +88,7 @@ const buildDateFilter = ({ startDate, endDate } = {}) => {
     shiftDate.$lte = end;
   }
 
-  if (
-    shiftDate.$gte &&
-    shiftDate.$lte &&
-    shiftDate.$gte > shiftDate.$lte
-  ) {
+  if (shiftDate.$gte && shiftDate.$lte && shiftDate.$gte > shiftDate.$lte) {
     const error = new Error("startDate must be on or before endDate");
     error.statusCode = 400;
     throw error;
@@ -155,10 +151,10 @@ export const getEmployerWorkforceAnalytics = async ({
     guard.actualHours += hours;
     guard.timesheetCount += 1;
 
-    const weekday = new Date(timesheet.shiftDate).toLocaleDateString(
-      "en-AU",
-      { weekday: "long", timeZone: "UTC" },
-    );
+    const weekday = new Date(timesheet.shiftDate).toLocaleDateString("en-AU", {
+      weekday: "long",
+      timeZone: "UTC",
+    });
 
     if (weekdayMap.has(weekday)) {
       weekdayMap.set(weekday, weekdayMap.get(weekday) + hours);
