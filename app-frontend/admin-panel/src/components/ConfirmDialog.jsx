@@ -4,7 +4,7 @@ import colors from '../theme/colors';
 const styles = {
   message: { color: colors.text, fontSize: 14, margin: '4px 0 20px' },
   actions: { display: 'flex', justifyContent: 'flex-end', gap: 10 },
-  cancelButton: {
+  cancelButton: (disabled) => ({
     background: colors.white,
     color: colors.text,
     border: `1px solid ${colors.border}`,
@@ -12,9 +12,10 @@ const styles = {
     padding: '8px 16px',
     fontSize: 14,
     fontWeight: 600,
-    cursor: 'pointer',
-  },
-  confirmButton: (danger) => ({
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
+  }),
+  confirmButton: (danger, disabled) => ({
     background: danger ? colors.danger : colors.primary,
     color: colors.white,
     border: 'none',
@@ -22,7 +23,8 @@ const styles = {
     padding: '8px 16px',
     fontSize: 14,
     fontWeight: 600,
-    cursor: 'pointer',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
   }),
 };
 
@@ -40,15 +42,29 @@ export default function ConfirmDialog({
   danger = false,
   onConfirm,
   onCancel,
+  confirmDisabled = false,
+  cancelDisabled = false,
+  children,
 }) {
   return (
     <Modal open={open} title={title} onClose={onCancel}>
       {message && <p style={styles.message}>{message}</p>}
+      {children}
       <div style={styles.actions}>
-        <button type="button" style={styles.cancelButton} onClick={onCancel}>
+        <button
+          type="button"
+          style={styles.cancelButton(cancelDisabled)}
+          onClick={onCancel}
+          disabled={cancelDisabled}
+        >
           {cancelLabel}
         </button>
-        <button type="button" style={styles.confirmButton(danger)} onClick={onConfirm}>
+        <button
+          type="button"
+          style={styles.confirmButton(danger, confirmDisabled)}
+          onClick={onConfirm}
+          disabled={confirmDisabled}
+        >
           {confirmLabel}
         </button>
       </div>

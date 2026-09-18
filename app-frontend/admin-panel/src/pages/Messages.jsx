@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getMessages, deleteMessage, getUsers } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
-import Modal from '../components/Modal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const PAGE_SIZE = 20;
 const CONTENT_PREVIEW_LENGTH = 80;
@@ -141,13 +141,7 @@ const EMPTY_FILTERS = {
 };
 
 // Keyboard shortcuts helper
-function useKeyboardShortcuts({
-  searchInputRef,
-  onClearFilters,
-  onApplyFilters,
-  onCloseModal,
-  isModalOpen,
-}) {
+function useKeyboardShortcuts({ searchInputRef, onClearFilters, onApplyFilters }) {
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Do not trigger shortcuts while typing in form fields.
@@ -161,13 +155,6 @@ function useKeyboardShortcuts({
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
         e.preventDefault();
         searchInputRef.current?.focus();
-        return;
-      }
-
-      // Escape closes the delete confirmation modal.
-      if (e.key === 'Escape' && isModalOpen) {
-        e.preventDefault();
-        onCloseModal();
         return;
       }
 
@@ -190,7 +177,7 @@ function useKeyboardShortcuts({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [searchInputRef, onClearFilters, onApplyFilters, onCloseModal, isModalOpen]);
+  }, [searchInputRef, onClearFilters, onApplyFilters]);
 }
 
 // Keyboard shortcuts indicator component
@@ -404,8 +391,6 @@ export default function Messages() {
     searchInputRef,
     onClearFilters: handleClearFilters,
     onApplyFilters: handleApplyFilters,
-    onCloseModal: closeDeleteConfirm,
-    isModalOpen: !!confirmTarget,
   });
 
   return (
@@ -614,7 +599,17 @@ export default function Messages() {
         </>
       )}
 
-      <Modal open={!!confirmTarget} title="Delete this message?" onClose={closeDeleteConfirm}>
+      <ConfirmDialog
+        open={!!confirmTarget}
+        title="Delete this message?"
+        confirmLabel={deleting ? 'Deleting\u2026' : 'Delete message'}
+        cancelLabel="Cancel"
+        danger
+        onConfirm={confirmDelete}
+        onCancel={closeDeleteConfirm}
+        confirmDisabled={deleting}
+        cancelDisabled={deleting}
+      >
         {confirmTarget && (
           <div
             style={{
@@ -662,25 +657,9 @@ export default function Messages() {
             </label>
 
             {deleteError && <p style={{ color: '#c00', margin: 0 }}>{deleteError}</p>}
-
-            <div
-              style={{
-                display: 'flex',
-                gap: 8,
-                justifyContent: 'flex-end',
-              }}
-            >
-              <button type="button" onClick={closeDeleteConfirm} disabled={deleting}>
-                Cancel
-              </button>
-
-              <button type="button" onClick={confirmDelete} disabled={deleting}>
-                {deleting ? 'Deleting\u2026' : 'Delete message'}
-              </button>
-            </div>
           </div>
         )}
-      </Modal>
+      </ConfirmDialog>
     </div>
   );
 }
