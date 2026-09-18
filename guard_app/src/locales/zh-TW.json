@@ -520,5 +520,22 @@
       "people": "涉及人員",
       "action": "已採取的行動"
     }
+  },
+  "onboarding": {
+    "welcomeTitle": "歡迎使用 SecureShift",
+    "welcomeBody": "快速了解基本功能，不到一分鐘即可完成——隨時可以略過。",
+    "shiftsTitle": "尋找並申請班次",
+    "shiftsBody": "在「班次」分頁中瀏覽開放班次，輕點即可申請。",
+    "attendanceTitle": "簽到與簽退",
+    "attendanceBody": "抵達時掃描現場 QR 碼簽到，離開時簽退。",
+    "sosTitle": "緊急求助 SOS",
+    "sosBody": "緊急情況下，按下 SOS 按鈕可快速發出警報。",
+    "exploreTitle": "一切盡在一處",
+    "exploreBody": "您的班次、可用時間、工時單與個人資料都在下方分頁中。",
+    "skip": "略過",
+    "back": "上一步",
+    "next": "下一步",
+    "done": "開始使用",
+    "replaySetting": "重新觀看應用程式導覽"
   }
 }
