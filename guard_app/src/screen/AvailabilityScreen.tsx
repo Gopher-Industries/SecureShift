@@ -6,14 +6,14 @@ import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 
 import { getMe } from '../api/auth';
 import { getAvailability, upsertAvailability, type AvailabilityData } from '../api/availability';
-import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
+import AvailabilityCalendarModal from '../components/calendar/AvailabilityCalendarModal';
+import LoadingState from '../components/LoadingState';
+import AvailabilityViewToggle from '../components/toggle/AvailabilityViewToggle';
+import AvailabilityMonthlyView from '../components/view/AvailabilityMonthlyView';
 import AvailabilitySimpleView from '../components/view/AvailabilitySimpleView';
 import AvailabilityWeeklyView from '../components/view/AvailabilityWeeklyView';
-import AvailabilityMonthlyView from '../components/view/AvailabilityMonthlyView';
-import AvailabilityCalendarModal from '../components/calendar/AvailabilityCalendarModal';
-import AvailabilityViewToggle from '../components/toggle/AvailabilityViewToggle';
-import LoadingState from '../components/LoadingState';
+import { useAppTheme } from '../theme';
+import { AppColors } from '../theme/colors';
 
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

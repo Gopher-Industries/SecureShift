@@ -15,6 +15,22 @@ jest.mock("../src/config/audit.js", () => ({
   default: true,
 }));
 
+// Mock AI-related modules to avoid import.meta.url issue in vectorSearch.js
+jest.mock("../src/ai/retrieval/vectorSearch.js", () => ({
+  semanticSearch: jest.fn().mockResolvedValue([]),
+}));
+
+jest.mock("../src/ai/services/ollamaService.js", () => ({
+  askOllama: jest.fn().mockResolvedValue(""),
+}));
+
+jest.mock("ollama", () => ({
+  Ollama: jest.fn().mockImplementation(() => ({
+    chat: jest.fn().mockResolvedValue({ message: { content: "" } }),
+    generate: jest.fn().mockResolvedValue({ response: "" }),
+  })),
+}));
+
 import {
   jest,
   describe,
