@@ -27,6 +27,11 @@ export const getMessages = (params) => http.get('/admin/messages', { params }).t
 export const deleteMessage = (id, body) =>
   http.delete(`/admin/messages/${id}`, { data: body }).then((r) => r.data);
 
+// AP-051 — admin's own unread message count, from the non-admin-prefixed
+// /messages/stats route (the admin sees themselves as a normal recipient here,
+// distinct from /admin/messages which is the moderation view of all messages).
+export const getMessageStats = () => http.get('/messages/stats').then((r) => r.data);
+
 // Incident oversight
 export const getIncidents = (params) => http.get('/incidents', { params }).then((r) => r.data);
 export const getIncident = (id) => http.get(`/incidents/${id}`).then((r) => r.data);
