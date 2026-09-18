@@ -29,18 +29,6 @@ export default function ScanResultScreen() {
       return '';
     }
   }, [data]);
-  const handleTriggerAction = () => {
-    if (!shiftId) {
-      Alert.alert('Invalid QR Code', 'This QR code does not contain a valid shift ID.');
-      return;
-    }
-    if (isExpired) {
-      Alert.alert('Expired QR Code', 'This QR code has expired. Please scan a valid code.');
-      return;
-    }
-    setLocationModalVisible(true);
-  };
-
   const isExpired = useMemo(() => {
     try {
       const parsed = JSON.parse(data);
@@ -54,6 +42,17 @@ export default function ScanResultScreen() {
       return false;
     }
   }, [data]);
+  const handleTriggerAction = () => {
+    if (!shiftId) {
+      Alert.alert('Invalid QR Code', 'This QR code does not contain a valid shift ID.');
+      return;
+    }
+    if (isExpired) {
+      Alert.alert('Expired QR Code', 'This QR code has expired. Please scan a valid code.');
+      return;
+    }
+    setLocationModalVisible(true);
+  };
 
   const handleLocationVerified = async (loc: {
     latitude: number;
