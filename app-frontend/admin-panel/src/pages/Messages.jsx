@@ -22,10 +22,10 @@ function personLabel(person) {
 
 // Shorten long message so they fit neatly in the table
 function previewContent(content) {
-  if (!content) return '�';
+  if (!content) return '—';
 
   return content.length > CONTENT_PREVIEW_LENGTH
-    ? content.slice(0, CONTENT_PREVIEW_LENGTH) + '�'
+    ? content.slice(0, CONTENT_PREVIEW_LENGTH) + '…'
     : content;
 }
 
