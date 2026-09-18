@@ -10,9 +10,11 @@ import colors from '../theme/colors';
 // of the current page's rows are selected.
 function SelectAllCheckbox({ checked, indeterminate, onChange, label }) {
   const ref = useRef(null);
+
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = indeterminate;
   }, [indeterminate]);
+
   return (
     <input
       ref={ref}
@@ -64,16 +66,27 @@ export default function DataTable({
   pagination = null,
   pageResetTrigger = null,
   fileName = 'Data',
+  controlledSortConfig = null,
+  onSortChange = null,
+  controlledPage = null,
+  onPageChange = null,
   // --- Bulk actions / multi-select (opt-in) ---
   selectable = false,
   getRowId = (row, index) => row._id ?? row.id ?? index,
   bulkActions = [],
   onSelectionChange = null,
 }) {
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [internalSortConfig, setInternalSortConfig] = useState({
+    key: null,
+    direction: 'asc',
+  });
   const [internalPage, setInternalPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const isExternalPagination = pagination?.type === 'external';
+  const isSortControlled = controlledSortConfig !== null;
+  const isPageControlled = controlledPage !== null;
+
+  const sortConfig = isSortControlled ? controlledSortConfig : internalSortConfig;
 
   const [openExport, setOpenExport] = useState(false);
   const [wholeOrPage, setWholeOrPage] = useState('current');
@@ -103,11 +116,22 @@ export default function DataTable({
 
   // Changes the selected sort column or reverses the current sort direction
   const handleSort = (key) => {
-    setSortConfig((current) => {
-      if (current.key === key)
-        return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
-      return { key, direction: 'asc' };
-    });
+    const next =
+      sortConfig.key === key
+        ? {
+            key,
+            direction: sortConfig.direction === 'asc' ? 'desc' : 'asc',
+          }
+        : {
+            key,
+            direction: 'asc',
+          };
+
+    if (isSortControlled) {
+      onSortChange?.(next);
+    } else {
+      setInternalSortConfig(next);
+    }
   };
 
   // Create a copy of the rows and sort them based on sortConfig
@@ -150,25 +174,30 @@ export default function DataTable({
     handlePageChange = pagination.onPageChange;
   } else {
     // Internal pagination
-    currentPage = internalPage;
+    currentPage = isPageControlled ? controlledPage : internalPage;
     totalItems = sortedRows.length;
     totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     const startIndex = (currentPage - 1) * pageSize;
     displayedRows = sortedRows.slice(startIndex, startIndex + pageSize);
-    handlePageChange = setInternalPage;
+
+    handlePageChange = isPageControlled ? (nextPage) => onPageChange?.(nextPage) : setInternalPage;
   }
 
   useEffect(() => {
-    if (!isExternalPagination && internalPage > totalPages) {
+    if (isExternalPagination || currentPage <= totalPages) return;
+
+    if (isPageControlled) {
+      onPageChange?.(totalPages);
+    } else {
       setInternalPage(totalPages);
     }
-  }, [internalPage, totalPages, isExternalPagination]);
+  }, [currentPage, totalPages, isExternalPagination, isPageControlled, onPageChange]);
 
   useEffect(() => {
-    if (!isExternalPagination) {
+    if (!isExternalPagination && !isPageControlled) {
       setInternalPage(1);
     }
-  }, [pageResetTrigger, isExternalPagination]);
+  }, [pageResetTrigger, isExternalPagination, isPageControlled]);
 
   useEffect(() => {
     if (isExternalPagination) {
@@ -187,14 +216,17 @@ export default function DataTable({
   // Drop selected ids that are no longer present in the data.
   useEffect(() => {
     if (!selectable) return;
+
     setSelectedIds((prev) => {
       const present = new Set(rows.map((r, i) => rowIdOf(r, i)));
       let changed = false;
       const next = new Set();
+
       prev.forEach((id) => {
         if (present.has(id)) next.add(id);
         else changed = true;
       });
+
       return changed ? next : prev;
     });
   }, [rows, selectable, rowIdOf]);
@@ -208,8 +240,10 @@ export default function DataTable({
   const toggleRow = (id) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
+
       if (next.has(id)) next.delete(id);
       else next.add(id);
+
       return next;
     });
   };
@@ -223,15 +257,19 @@ export default function DataTable({
   const toggleAllOnPage = () => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
+
       if (allPageSelected) pageIds.forEach((id) => next.delete(id));
       else pageIds.forEach((id) => next.add(id));
+
       return next;
     });
   };
 
   const runBulkAction = (action) => {
     if (action.confirm && !window.confirm(action.confirm)) return;
+
     action.onClick(selectedRows);
+
     if (action.clearAfter !== false) clearSelection();
   };
 
@@ -278,8 +316,10 @@ export default function DataTable({
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+
     link.href = url;
     link.download = `${fileName || 'Data'}.csv`;
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -383,6 +423,7 @@ export default function DataTable({
           ))}
         </div>
       )}
+
       <table style={{ width: '100%', borderCollapse: 'collapse', background: colors.card }}>
         <thead>
           <tr>
@@ -403,8 +444,10 @@ export default function DataTable({
                 />
               </th>
             )}
+
             {columns.map((c) => {
               const isSorted = sortConfig.key === c.key;
+
               return (
                 <th
                   key={c.key}
@@ -438,6 +481,7 @@ export default function DataTable({
                       }}
                     >
                       {c.header}
+
                       {isSorted && (
                         <span aria-hidden="true" style={{ marginLeft: 6 }}>
                           {sortConfig.direction === 'asc' ? '▲' : '▼'}
@@ -450,17 +494,24 @@ export default function DataTable({
             })}
           </tr>
         </thead>
+
         <tbody>
           {displayedRows.map((r, i) => {
             const id = rowIdOf(r, i);
             const isSelected = selectedIds.has(id);
+
             return (
               <tr
                 key={r._id || i}
                 style={isSelected ? { background: colors.tableHead } : undefined}
               >
                 {selectable && (
-                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}>
+                  <td
+                    style={{
+                      padding: '10px 12px',
+                      borderBottom: `1px solid ${colors.border}`,
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={isSelected}
@@ -470,10 +521,14 @@ export default function DataTable({
                     />
                   </td>
                 )}
+
                 {columns.map((c) => (
                   <td
                     key={c.key}
-                    style={{ padding: '10px 12px', borderBottom: `1px solid ${colors.border}` }}
+                    style={{
+                      padding: '10px 12px',
+                      borderBottom: `1px solid ${colors.border}`,
+                    }}
                   >
                     {c.render ? c.render(r) : r[c.key]}
                   </td>
@@ -483,6 +538,7 @@ export default function DataTable({
           })}
         </tbody>
       </table>
+
       <div
         style={{
           display: 'flex',
@@ -492,6 +548,7 @@ export default function DataTable({
         <Button onClick={() => setOpenExport(true)} style={{ marginTop: 8 }}>
           Export
         </Button>
+
         <Pagination
           page={currentPage}
           totalPages={totalPages}
@@ -596,6 +653,7 @@ export default function DataTable({
               <Button onClick={closeExportModal} disabled={isExporting}>
                 Cancel
               </Button>
+
               <Button onClick={handleExport} disabled={isExporting}>
                 Export
               </Button>
