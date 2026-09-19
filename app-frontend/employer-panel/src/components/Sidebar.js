@@ -125,6 +125,19 @@ const EmailIcon = () => (
   </svg>
 );
 
+const SwapIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M7 4 3 8l4 4M3 8h13M17 20l4-4-4-4M21 16H8"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export default function Sidebar({ collapsed, onToggle }) {
   const { t } = useTranslation();
 
@@ -143,6 +156,11 @@ export default function Sidebar({ collapsed, onToggle }) {
       label: t('guard'),
       path: '/guard-profiles',
       icon: <GuardIcon />,
+    },
+    {
+      label: t('shiftRequests'),
+      path: '/shift-requests',
+      icon: <SwapIcon />,
     },
     {
       label: t('timesheet'),

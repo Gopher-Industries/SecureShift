@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import EmployerDashboard from './pages/EmployerDashboard';
 import CreateShift from './pages/createShift';
 import ManageShift from './pages/ManageShift';
+import ShiftRequests from './pages/ShiftRequests';
 import GuardProfiles from './pages/GuardProfile';
 import GuardProfilePage from './pages/GuardProfilePage';
 
@@ -142,6 +143,10 @@ function AppRoutes({ language, setLanguage }) {
         <Route
           path="/manage-shift"
           element={protectedLayout(<ManageShift language={language} />)}
+        />
+        <Route
+          path="/shift-requests"
+          element={protectedLayout(<ShiftRequests language={language} />)}
         />
         <Route
           path="/guard-profiles"
