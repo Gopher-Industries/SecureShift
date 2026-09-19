@@ -100,15 +100,15 @@
 }
 
 .admin-dashboard__stat-link--amber > div::before {
-  background: var(--amber-acent);;
+  background: var(--amber-acent);
 }
 
 .admin-dashboard__stat-link--green > div::before {
-  background: var(--green-acent);;
+  background: var(--green-acent);
 }
 
 .admin-dashboard__stat-link--purple > div::before {
-  background: var(--purple-acent);;
+  background: var(--purple-acent);
 }
 
 .admin-dashboard__stat-link:hover > div,
