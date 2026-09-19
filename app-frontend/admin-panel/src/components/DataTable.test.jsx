@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DataTable from './DataTable';
 
@@ -30,7 +30,9 @@ describe('DataTable bulk actions / multi-select', () => {
     await userEvent.click(screen.getByLabelText('Select row 1'));
     expect(screen.getByText('1 selected')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Export' }));
+    const toolbar = screen.getByRole('toolbar', { name: 'Bulk actions' });
+
+    await userEvent.click(within(toolbar).getByRole('button', { name: 'Export' }));
     expect(onExport).toHaveBeenCalledTimes(1);
     expect(onExport).toHaveBeenCalledWith([{ _id: '1', name: 'Alice' }]);
   });
