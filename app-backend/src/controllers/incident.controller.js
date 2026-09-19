@@ -206,7 +206,14 @@ export const getIncidents = async (req, res, next) => {
       const shifts = await Shift.find({ createdBy: req.user._id }).select(
         "_id",
       );
-      query.shiftId = { $in: shifts.map((s) => s._id) };
+      const employerShiftIds = shifts.map((shift) => shift._id);
+      if (shiftId) {
+        query.shiftId = {
+          $in: employerShiftIds.filter((id) => String(id) === String(shiftId)),
+        };
+      } else {
+        query.shiftId = { $in: employerShiftIds };
+      }
     }
 
     const incidents = await Incident.find(query)
