@@ -1,12 +1,16 @@
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AxiosError } from 'axios';
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { useAppTheme } from '../theme';
 import { checkIn } from '../api/attendance';
 import LocationVerificationModal from '../components/modal/LocationVerificationModal';
+import { enqueueAttendance } from '../lib/attendanceQueue';
+import { setAttendanceForShift } from '../lib/attendancestore';
+import { getIsConnected } from '../lib/networkStatus';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { useAppTheme } from '../theme';
 
 type ResultRouteProp = RouteProp<RootStackParamList, 'ScanResult'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ScanResult'>;
@@ -20,28 +24,24 @@ export default function ScanResultScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const { data } = route.params;
-
-  const shiftId = useMemo(() => {
+  const parsedData = useMemo(() => {
     try {
-      const parsed = JSON.parse(data);
-      return typeof parsed?.shiftId === 'string' ? parsed.shiftId.trim() : '';
+      return JSON.parse(data);
     } catch {
-      return '';
+      return null;
     }
   }, [data]);
+  const shiftId = useMemo(
+    () => (typeof parsedData?.shiftId === 'string' ? parsedData.shiftId.trim() : ''),
+    [parsedData],
+  );
   const isExpired = useMemo(() => {
-    try {
-      const parsed = JSON.parse(data);
+    if (!parsedData?.expiresAt) return false;
 
-      if (!parsed?.expiresAt) return false;
+    const expiresAt = new Date(parsedData.expiresAt).getTime();
 
-      const expiresAt = new Date(parsed.expiresAt).getTime();
-
-      return Number.isFinite(expiresAt) && expiresAt < Date.now();
-    } catch {
-      return false;
-    }
-  }, [data]);
+    return Number.isFinite(expiresAt) && expiresAt < Date.now();
+  }, [parsedData]);
   const handleTriggerAction = () => {
     if (!shiftId) {
       Alert.alert('Invalid QR Code', 'This QR code does not contain a valid shift ID.');
@@ -53,7 +53,29 @@ export default function ScanResultScreen() {
     }
     setLocationModalVisible(true);
   };
+  const saveCheckInOffline = async (loc: {
+    latitude: number;
+    longitude: number;
+    timestamp: number;
+  }) => {
+    await enqueueAttendance({
+      shiftId,
+      type: 'check-in',
+      location: loc,
+    });
 
+    const next = {
+      checkInTime: new Date(loc.timestamp).toISOString(),
+      checkOutTime: undefined,
+    };
+
+    await setAttendanceForShift(shiftId, next);
+
+    Alert.alert(
+      'Saved offline',
+      'Your check-in was saved and will sync automatically when you are back online.',
+    );
+  };
   const handleLocationVerified = async (loc: {
     latitude: number;
     longitude: number;
@@ -65,14 +87,27 @@ export default function ScanResultScreen() {
 
     try {
       setSubmitting(true);
-
+      if (!(await getIsConnected())) {
+        await saveCheckInOffline(loc);
+        return;
+      }
       const res = await checkIn(shiftId, loc);
+      const next = {
+        checkInTime: res.attendance?.checkInTime ?? new Date().toISOString(),
+        checkOutTime: res.attendance?.checkOutTime ?? undefined,
+      };
 
+      await setAttendanceForShift(shiftId, next);
       Alert.alert(
         'Check-in Successful',
         res.message || 'Your QR check-in was recorded successfully.',
       );
     } catch (error: unknown) {
+      if (error instanceof AxiosError && !error.response) {
+        await saveCheckInOffline(loc);
+        return;
+      }
+
       const message = error instanceof Error ? error.message : 'Unable to complete QR check-in.';
 
       Alert.alert('Check-in Failed', message);
@@ -82,19 +117,18 @@ export default function ScanResultScreen() {
   };
 
   const { formattedData, isJson } = useMemo(() => {
-    try {
-      const parsed = JSON.parse(data);
+    if (parsedData !== null) {
       return {
-        formattedData: JSON.stringify(parsed, null, 2),
+        formattedData: JSON.stringify(parsedData, null, 2),
         isJson: true,
       };
-    } catch {
-      return {
-        formattedData: data,
-        isJson: false,
-      };
     }
-  }, [data]);
+
+    return {
+      formattedData: data,
+      isJson: false,
+    };
+  }, [data, parsedData]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
