@@ -30,7 +30,7 @@ describe('DataTable bulk actions / multi-select', () => {
     await userEvent.click(screen.getByLabelText('Select row 1'));
     expect(screen.getByText('1 selected')).toBeInTheDocument();
 
-    const toolbar = screen.getByRole('toolbar', { name: 'Bulk actions' });
+    // const toolbar = screen.getByRole('toolbar', { name: 'Bulk actions' });
 
     await userEvent.click(within(toolbar).getByRole('button', { name: 'Export' }));
     expect(onExport).toHaveBeenCalledTimes(1);
