@@ -1,8 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import useAdminAuth from '../hooks/useAdminAuth';
 import GlobalSearch from './GlobalSearch';
+import { useTheme } from '../theme/ThemeProvider';
 
 export default function AdminNavbar({ onMenuClick }) {
+  const { colors } = useTheme();
+
   const navigate = useNavigate();
   const { logout, role } = useAdminAuth();
 
@@ -19,8 +22,8 @@ export default function AdminNavbar({ onMenuClick }) {
         alignItems: 'center',
         gap: 12,
         padding: '10px 24px',
-        background: '#fff',
-        borderBottom: '1px solid #e5e7eb',
+        background: colors.card,
+        borderBottom: `1px solid ${colors.border}`,
       }}
     >
       <button
@@ -33,7 +36,7 @@ export default function AdminNavbar({ onMenuClick }) {
           fontSize: 24,
           cursor: 'pointer',
           padding: 4,
-          color: '#18284f',
+          color: colors.primaryDark,
         }}
       >
         ☰
@@ -42,13 +45,13 @@ export default function AdminNavbar({ onMenuClick }) {
       <GlobalSearch />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
-        <span style={{ color: '#555' }}>Signed in as {role || 'admin'}</span>
+        <span style={{ color: colors.mutedDark }}>Signed in as {role || 'admin'}</span>
         <button
           onClick={onLogout}
           style={{
             padding: '6px 14px',
-            background: '#274b93',
-            color: '#fff',
+            background: colors.primary,
+            color: colors.white,
             border: 'none',
             borderRadius: 4,
             cursor: 'pointer',

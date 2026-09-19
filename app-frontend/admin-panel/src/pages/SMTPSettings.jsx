@@ -3,47 +3,7 @@ import { getSmtpSettings, updateSmtpSettings, testSmtpSettings } from '../servic
 import LoadingComponent from '../components/LoadingComponent';
 import FormField from '../components/FormField';
 import { useToast } from '../components/Toast';
-import colors from '../theme/colors';
-
-const styles = {
-  page: { maxWidth: 960 },
-  header: { marginBottom: 24 },
-  title: { color: colors.primary, fontSize: 28, fontWeight: 700, margin: 0 },
-  subtitle: { color: colors.muted, marginTop: 4 },
-  row: { display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' },
-  card: {
-    background: colors.card,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    padding: 24,
-    flex: '1 1 420px',
-    minWidth: 320,
-  },
-  cardTitle: { color: colors.text, fontSize: 18, fontWeight: 600, margin: '0 0 4px' },
-  cardSubtitle: { color: colors.muted, fontSize: 13, margin: '0 0 20px' },
-  button: {
-    background: colors.primary,
-    color: colors.white,
-    border: 'none',
-    borderRadius: 6,
-    padding: '9px 18px',
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  buttonDisabled: { opacity: 0.6, cursor: 'not-allowed' },
-  message: (ok) => ({
-    marginTop: 16,
-    marginBottom: 0,
-    padding: '8px 12px',
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 600,
-    color: ok ? colors.success : colors.danger,
-    background: ok ? '#dcfce7' : '#fde2e2',
-    display: 'inline-block',
-  }),
-};
+import { useTheme } from '../theme/ThemeProvider';
 
 const EMPTY_SETTINGS = {
   SMTP_HOST: '',
@@ -63,6 +23,48 @@ const EMPTY_SETTINGS = {
 // of a page-local success banner — demonstrating the reusable component
 // library on a real, already-working page.
 export default function SMTPSettings() {
+  const { colors } = useTheme();
+
+  const styles = {
+    page: { maxWidth: 960 },
+    header: { marginBottom: 24 },
+    title: { color: colors.primary, fontSize: 28, fontWeight: 700, margin: 0 },
+    subtitle: { color: colors.muted, marginTop: 4 },
+    row: { display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' },
+    card: {
+      background: colors.card,
+      border: `1px solid ${colors.border}`,
+      borderRadius: 8,
+      padding: 24,
+      flex: '1 1 420px',
+      minWidth: 320,
+    },
+    cardTitle: { color: colors.text, fontSize: 18, fontWeight: 600, margin: '0 0 4px' },
+    cardSubtitle: { color: colors.muted, fontSize: 13, margin: '0 0 20px' },
+    button: {
+      background: colors.primary,
+      color: colors.white,
+      border: 'none',
+      borderRadius: 6,
+      padding: '9px 18px',
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: 'pointer',
+    },
+    buttonDisabled: { opacity: 0.6, cursor: 'not-allowed' },
+    message: (ok) => ({
+      marginTop: 16,
+      marginBottom: 0,
+      padding: '8px 12px',
+      borderRadius: 6,
+      fontSize: 13,
+      fontWeight: 600,
+      color: ok ? colors.success : colors.danger,
+      background: ok ? colors.successBg : colors.dangerBg,
+      display: 'inline-block',
+    }),
+  };
+
   const { showToast } = useToast();
   const [settings, setSettings] = useState(EMPTY_SETTINGS);
   const [loading, setLoading] = useState(true);

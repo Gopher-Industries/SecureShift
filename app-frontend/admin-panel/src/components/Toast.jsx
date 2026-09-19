@@ -1,30 +1,7 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 const ToastContext = createContext(null);
-
-const styles = {
-  viewport: {
-    position: 'fixed',
-    top: 16,
-    right: 16,
-    zIndex: 1000,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    maxWidth: 320,
-  },
-  toast: (type) => ({
-    padding: '10px 14px',
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 600,
-    color: type === 'error' ? colors.danger : type === 'success' ? colors.success : colors.text,
-    background: type === 'error' ? '#fde2e2' : type === 'success' ? '#dcfce7' : colors.card,
-    border: `1px solid ${colors.border}`,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  }),
-};
 
 // Wrap the app (once, at the root layout) so any page can call
 // useToast().showToast(...) to pop a temporary notification.
@@ -39,6 +16,31 @@ const styles = {
 //   showToast('Settings saved.', 'success');
 //   showToast('Failed to save settings', 'error');
 export function ToastProvider({ children, duration = 3000 }) {
+  const { colors } = useTheme();
+  const styles = {
+    viewport: {
+      position: 'fixed',
+      top: 16,
+      right: 16,
+      zIndex: 1000,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      maxWidth: 320,
+    },
+    toast: (type) => ({
+      padding: '10px 14px',
+      borderRadius: 6,
+      fontSize: 13,
+      fontWeight: 600,
+      color: type === 'error' ? colors.danger : type === 'success' ? colors.success : colors.text,
+      background:
+        type === 'error' ? colors.dangerBg : type === 'success' ? colors.successBg : colors.card,
+      border: `1px solid ${colors.border}`,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    }),
+  };
+
   const [toasts, setToasts] = useState([]);
   const nextId = useRef(0);
 

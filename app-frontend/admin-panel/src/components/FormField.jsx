@@ -1,30 +1,4 @@
-import colors from '../theme/colors';
-
-const styles = {
-  field: { marginBottom: 16 },
-  label: {
-    display: 'block',
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: 600,
-    marginBottom: 6,
-  },
-  input: {
-    width: '100%',
-    boxSizing: 'border-box',
-    padding: '8px 10px',
-    fontSize: 14,
-    color: colors.text,
-    background: colors.white,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 6,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  hint: { color: colors.muted, fontSize: 12, marginTop: 4 },
-  error: { color: colors.danger, fontSize: 12, marginTop: 4 },
-};
+import { useTheme } from '../theme/ThemeProvider';
 
 // Reusable label + input + hint/error combo, used across admin-panel forms
 // (login, SMTP settings, branch/user forms, etc.) so field markup stays
@@ -53,6 +27,33 @@ export default function FormField({
   children, // <option> elements when as="select"
   ...rest
 }) {
+  const { colors } = useTheme();
+  const styles = {
+    field: { marginBottom: 16 },
+    label: {
+      display: 'block',
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: 600,
+      marginBottom: 6,
+    },
+    input: {
+      width: '100%',
+      boxSizing: 'border-box',
+      padding: '8px 10px',
+      fontSize: 14,
+      color: colors.black,
+      background: colors.white,
+      border: `1px solid ${colors.border}`,
+      borderRadius: 6,
+    },
+    inputError: {
+      borderColor: colors.danger,
+    },
+    hint: { color: colors.muted, fontSize: 12, marginTop: 4 },
+    error: { color: colors.danger, fontSize: 12, marginTop: 4 },
+  };
+
   const inputStyle = { ...styles.input, ...(error ? styles.inputError : {}) };
 
   return (

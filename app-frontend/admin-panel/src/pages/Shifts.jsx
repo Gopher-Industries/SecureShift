@@ -4,6 +4,7 @@ import { getShifts } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
+import { useTheme } from '../theme/ThemeProvider';
 
 // List of status options for the filter
 const STATUS_OPTIONS = ['draft', 'open', 'applied', 'assigned', 'completed'];
@@ -32,6 +33,8 @@ function personLabel(person) {
 
 // Read-only admin oversight of all shifts
 export default function Shifts() {
+  const { colors } = useTheme();
+
   const [searchParams] = useSearchParams();
   const [shifts, setShifts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +100,7 @@ export default function Shifts() {
   return (
     <div>
       <h1>Shifts</h1>
-      <p style={{ color: '#777', marginTop: -8 }}>Read-only oversight of all shifts.</p>
+      <p style={{ color: colors.muted, marginTop: -8 }}>Read-only oversight of all shifts.</p>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <SearchFilter
@@ -110,9 +113,13 @@ export default function Shifts() {
           onChange={(e) => setStatus(e.target.value)}
           style={{
             padding: '8px 12px',
-            border: '1px solid #ccc',
+            border: `1px solid ${colors.border}`,
             borderRadius: 4,
             marginBottom: 16,
+            fontSize: 14,
+            background: colors.card,
+            color: colors.text,
+            cursor: 'pointer',
           }}
         >
           <option value="">All statuses</option>
@@ -125,14 +132,14 @@ export default function Shifts() {
       </div>
 
       {/*NEW: Show result count */}
-      <p style={{ color: '#666', fontSize: '0.9rem', marginTop: 8 }}>
+      <p style={{ color: colors.muted, fontSize: '0.9rem', marginTop: 8 }}>
         Showing {filtered.length} {filtered.length === 1 ? 'shift' : 'shifts'}
       </p>
 
       {loading ? (
         <LoadingComponent label={'Loading shifts…'} />
       ) : error ? (
-        <p style={{ color: '#c00' }}>{error}</p>
+        <p style={{ color: colors.error }}>{error}</p>
       ) : (
         <DataTable
           columns={columns}

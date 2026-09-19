@@ -3,8 +3,11 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import http from '../lib/http';
 import Modal from '../components/Modal';
+import { useTheme } from '../theme/ThemeProvider';
 
 export default function AuditLogs() {
+  const { colors } = useTheme();
+
   const [logs, setLogs] = useState([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
@@ -230,8 +233,8 @@ export default function AuditLogs() {
         <button
           onClick={handleApplyFilters}
           style={{
-            backgroundColor: '#28a745',
-            color: 'white',
+            backgroundColor: colors.success,
+            color: colors.white,
             border: 'none',
             padding: '8px 14px',
             borderRadius: '4px',
@@ -244,8 +247,8 @@ export default function AuditLogs() {
         <button
           onClick={handleClearFilters}
           style={{
-            backgroundColor: '#dc3545',
-            color: 'white',
+            backgroundColor: colors.error,
+            color: colors.white,
             border: 'none',
             padding: '8px 14px',
             borderRadius: '4px',
@@ -258,8 +261,8 @@ export default function AuditLogs() {
         <button
           onClick={handleExportExcel}
           style={{
-            backgroundColor: '#007bff',
-            color: 'white',
+            backgroundColor: colors.blue,
+            color: colors.white,
             border: 'none',
             padding: '8px 14px',
             borderRadius: '4px',
@@ -278,12 +281,12 @@ export default function AuditLogs() {
           gap: '10px',
           marginBottom: '16px',
           padding: '10px',
-          border: '1px solid #e0a0a0',
+          border: `1px solid ${colors.dangerBorder}`,
           borderRadius: '4px',
-          backgroundColor: '#fff5f5',
+          backgroundColor: colors.dangerBg,
         }}
       >
-        <label>
+        <label style={{ color: colors.black }}>
           Purge logs older than{' '}
           <input
             type="number"
@@ -299,8 +302,8 @@ export default function AuditLogs() {
           onClick={() => setShowPurgeConfirm(true)}
           disabled={purging}
           style={{
-            backgroundColor: '#d9534f',
-            color: 'white',
+            backgroundColor: colors.danger,
+            color: colors.white,
             border: 'none',
             padding: '6px 12px',
             borderRadius: '4px',
@@ -411,7 +414,7 @@ export default function AuditLogs() {
                 style={{
                   textAlign: 'center',
                   padding: '20px',
-                  color: '#d9534f',
+                  color: colors.error,
                 }}
               >
                 {error}{' '}
@@ -427,7 +430,7 @@ export default function AuditLogs() {
                 style={{
                   textAlign: 'center',
                   padding: '20px',
-                  color: '#777',
+                  color: colors.muted,
                 }}
               >
                 No audit logs match the current filters.
@@ -441,7 +444,7 @@ export default function AuditLogs() {
                 style={{
                   cursor: 'pointer',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.card)}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <td>{new Date(log.timestamp).toLocaleString()}</td>
@@ -492,7 +495,7 @@ export default function AuditLogs() {
 
           <pre
             style={{
-              backgroundColor: '#f5f5f5',
+              backgroundColor: colors.tableHead,
               padding: '10px',
               borderRadius: '4px',
               overflowX: 'auto',
@@ -508,7 +511,7 @@ export default function AuditLogs() {
       {/* Purge Confirmation Modal */}
       {showPurgeConfirm && (
         <Modal open={true}>
-          <h2 style={{ color: '#d9534f' }}>⚠️ Confirm Purge</h2>
+          <h2 style={{ color: colors.error }}>⚠️ Confirm Purge</h2>
 
           <p>
             This will <strong>permanently delete</strong> all audit logs older than{' '}
@@ -528,8 +531,8 @@ export default function AuditLogs() {
               onClick={handlePurgeConfirmed}
               disabled={purging}
               style={{
-                backgroundColor: '#d9534f',
-                color: 'white',
+                backgroundColor: colors.danger,
+                color: colors.white,
                 border: 'none',
                 padding: '8px 16px',
                 borderRadius: '4px',

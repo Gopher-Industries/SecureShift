@@ -10,8 +10,7 @@ body {
     Helvetica,
     Arial,
     sans-serif;
-  color: #222;
 }
 h1 {
-  color: #274b93;
+  color: var(--h1-color);
 }

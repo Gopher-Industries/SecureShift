@@ -2,99 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getPendingGuards, verifyGuardLicense, rejectGuardLicense } from '../service/adminAPI';
 import LoadingComponent from '../components/LoadingComponent';
 import Modal from '../components/Modal';
-import colors from '../theme/colors';
-
-// Employer/Admin-panel shared visual language (matches employer-panel Payroll/Dashboard).
-const ui = {
-  page: { color: colors.text },
-  subtitle: { color: colors.muted, marginTop: -6, marginBottom: 18 },
-  toolbar: { display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 },
-  input: {
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    padding: '9px 14px',
-    fontSize: 14,
-    width: 280,
-    outline: 'none',
-  },
-  select: {
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    padding: '9px 14px',
-    fontSize: 14,
-    background: colors.white,
-    color: colors.text,
-    cursor: 'pointer',
-  },
-  card: {
-    background: colors.card,
-    borderRadius: 12,
-    boxShadow: '0 1px 3px rgba(16,24,40,0.08)',
-    overflow: 'hidden',
-    border: `1px solid ${colors.border}`,
-  },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: {
-    textAlign: 'left',
-    padding: '12px 16px',
-    fontSize: 12,
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-    color: '#4a5568',
-    fontWeight: 600,
-    background: '#f7fafc',
-    borderBottom: `1px solid ${colors.border}`,
-  },
-  td: { padding: '13px 16px', color: '#2d3748', borderBottom: `1px solid #eef0f3`, fontSize: 14 },
-  btn: {
-    border: 'none',
-    borderRadius: 8,
-    padding: '7px 14px',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  btnPrimary: { background: colors.primary, color: colors.white },
-  btnGhost: {
-    background: colors.white,
-    color: colors.primary,
-    border: `1px solid ${colors.primary}`,
-  },
-  btnDanger: {
-    background: colors.white,
-    color: colors.danger,
-    border: `1px solid ${colors.danger}`,
-  },
-  btnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
-};
-
-const STATUS_STYLES = {
-  pending: { bg: '#fef3c7', fg: '#854f0b' },
-  verified: { bg: '#dcfce7', fg: '#166534' },
-  rejected: { bg: '#fee2e2', fg: '#991b1b' },
-  expired: { bg: '#e5e7eb', fg: '#374151' },
-  none: { bg: '#e5e7eb', fg: '#374151' },
-};
-
-function StatusBadge({ status }) {
-  const s = STATUS_STYLES[status] || STATUS_STYLES.none;
-  return (
-    <span
-      style={{
-        display: 'inline-block',
-        padding: '3px 10px',
-        borderRadius: 999,
-        fontSize: 12,
-        fontWeight: 600,
-        textTransform: 'capitalize',
-        background: s.bg,
-        color: s.fg,
-      }}
-    >
-      {status || 'none'}
-    </span>
-  );
-}
+import { useTheme } from '../theme/ThemeProvider';
 
 // The pending endpoint returns each guard's license under `documents` (type === 'license').
 function licenseOf(guard) {
@@ -103,6 +11,104 @@ function licenseOf(guard) {
 }
 
 export default function GuardVerification() {
+  const { colors } = useTheme();
+  // Employer/Admin-panel shared visual language (matches employer-panel Payroll/Dashboard).
+  const ui = {
+    page: { color: colors.text },
+    subtitle: { color: colors.muted, marginTop: -6, marginBottom: 18 },
+    toolbar: { display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 },
+    input: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: 8,
+      padding: '9px 14px',
+      fontSize: 14,
+      width: 280,
+      outline: 'none',
+    },
+    select: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: 8,
+      padding: '9px 14px',
+      fontSize: 14,
+      background: colors.card,
+      color: colors.text,
+      cursor: 'pointer',
+    },
+    card: {
+      background: colors.card,
+      borderRadius: 12,
+      boxShadow: '0 1px 3px rgba(16,24,40,0.08)',
+      overflow: 'hidden',
+      border: `1px solid ${colors.border}`,
+    },
+    table: { width: '100%', borderCollapse: 'collapse' },
+    th: {
+      textAlign: 'left',
+      padding: '12px 16px',
+      fontSize: 12,
+      letterSpacing: 0.3,
+      textTransform: 'uppercase',
+      color: colors.muted,
+      fontWeight: 600,
+      background: colors.tableHead,
+      borderBottom: `1px solid ${colors.border}`,
+    },
+    td: {
+      padding: '13px 16px',
+      color: colors.text,
+      borderBottom: `1px solid ${colors.border}`,
+      fontSize: 14,
+    },
+    btn: {
+      border: 'none',
+      borderRadius: 8,
+      padding: '7px 14px',
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: 'pointer',
+    },
+    btnPrimary: { background: colors.primary, color: colors.card },
+    btnGhost: {
+      background: colors.card,
+      color: colors.primary,
+      border: `1px solid ${colors.primary}`,
+    },
+    btnDanger: {
+      background: colors.dangerBg,
+      color: colors.danger,
+      border: `1px solid ${colors.danger}`,
+    },
+    btnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
+  };
+
+  const STATUS_STYLES = {
+    pending: { bg: colors.warningBg, fg: colors.warning },
+    verified: { bg: colors.successBg, fg: colors.success },
+    rejected: { bg: colors.dangerBg, fg: colors.danger },
+    expired: { bg: colors.expiredBg, fg: colors.expired },
+    none: { bg: colors.expiredBg, fg: colors.expired },
+  };
+
+  function StatusBadge({ status }) {
+    const s = STATUS_STYLES[status] || STATUS_STYLES.none;
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          padding: '3px 10px',
+          borderRadius: 999,
+          fontSize: 12,
+          fontWeight: 600,
+          textTransform: 'capitalize',
+          background: s.bg,
+          color: s.fg,
+        }}
+      >
+        {status || 'none'}
+      </span>
+    );
+  }
+
   const [guards, setGuards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -216,8 +222,8 @@ export default function GuardVerification() {
             padding: '10px 14px',
             borderRadius: 8,
             fontSize: 14,
-            background: feedback.type === 'success' ? '#dcfce7' : '#fee2e2',
-            color: feedback.type === 'success' ? '#166534' : '#991b1b',
+            background: feedback.type === 'success' ? colors.successBg : colors.dangerBg,
+            color: feedback.type === 'success' ? colors.success : colors.danger,
           }}
         >
           {feedback.text}
@@ -227,7 +233,7 @@ export default function GuardVerification() {
       {loading ? (
         <LoadingComponent label="Loading pending guards…" />
       ) : error ? (
-        <p style={{ color: colors.danger }}>{error}</p>
+        <p style={{ color: colors.error }}>{error}</p>
       ) : filtered.length === 0 ? (
         <p style={{ color: colors.muted }}>No guards awaiting verification.</p>
       ) : (

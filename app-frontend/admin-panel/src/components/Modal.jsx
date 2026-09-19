@@ -1,6 +1,9 @@
 import { useEffect, useId, useRef } from 'react';
+import { useTheme } from '../theme/ThemeProvider';
 
 export default function Modal({ open, title, children, onClose }) {
+  const { colors } = useTheme();
+
   const titleId = useId();
   const modalRef = useRef(null);
   const prevFocusRef = useRef(null);
@@ -92,7 +95,7 @@ export default function Modal({ open, title, children, onClose }) {
         aria-labelledby={titleId}
         tabIndex="-1"
         style={{
-          background: '#fff',
+          background: colors.card,
           padding: 24,
           borderRadius: 8,
           minWidth: 360,

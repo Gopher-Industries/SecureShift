@@ -5,6 +5,7 @@ import FormField from '../components/FormField';
 import { required, isEmail, composeValidators, validateForm, isValid } from '../utils/validation';
 import './AdminLogin.css';
 import logo from '../logo.png';
+import { useTheme } from '../theme/ThemeProvider';
 
 const EMPLOYER_LOGIN_URL =
   process.env.REACT_APP_EMPLOYER_LOGIN_URL || 'http://localhost:3000/login';
@@ -16,6 +17,8 @@ const rules = {
 };
 
 export default function AdminLogin() {
+  const { colors } = useTheme();
+
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAdminAuth();
@@ -61,17 +64,27 @@ export default function AdminLogin() {
 
   return (
     <div className="loginContainer">
-      <div className="loginFormSection">
+      <div className="loginFormSection" style={{ backgroundColor: colors.card }}>
         <div className="formContainer">
           <div className="headerSection">
-            <p className="adminText">Admin</p>
-            <h1 className="loginTitle">Log In</h1>
-            <p className="welcomeText">Welcome Back!</p>
+            <p className="adminText" style={{ color: colors.muted }}>
+              Admin
+            </p>
+            <h1 className="loginTitle" style={{ color: colors.text }}>
+              Log In
+            </h1>
+            <p className="welcomeText" style={{ color: colors.mutedDark }}>
+              Welcome Back!
+            </p>
           </div>
 
           <form onSubmit={onSubmit} noValidate className="loginForm">
             {sessionExpired && (
-              <p role="status" className="sessionExpiredMessage">
+              <p
+                role="status"
+                className="sessionExpiredMessage"
+                style={{ color: colors.warning, background: colors.warningBg }}
+              >
                 Your session has expired. Please log in again.
               </p>
             )}
@@ -99,20 +112,39 @@ export default function AdminLogin() {
               />
             </div>
 
-            {error && <p className="errorMessage">{error}</p>}
+            {error && (
+              <p
+                className="errorMessage"
+                style={{
+                  color: colors.danger,
+                  backgroundColor: colors.dangerBg,
+                  border: `1px solid ${colors.dangerBorder}`,
+                }}
+              >
+                {error}
+              </p>
+            )}
 
-            <button type="submit" disabled={loading} className="loginButton">
+            <button
+              type="submit"
+              disabled={loading}
+              className="loginButton"
+              style={{ backgroundColor: colors.primaryDeep, color: colors.white }}
+            >
               {loading ? 'Logging in…' : 'Log In'}
             </button>
           </form>
 
           <div className="employerSignInSection">
-            <span className="employerSignInPrompt">SecureShift employer?</span>
+            <span className="employerSignInPrompt" style={{ color: colors.muted }}>
+              SecureShift employer?
+            </span>
 
             <a
               href={EMPLOYER_LOGIN_URL}
               className="employerSignInLink"
               aria-label="Go to SecureShift Employer sign-in"
+              style={{ color: colors.primaryDeep, '--focus-color': colors.primaryDeep }}
             >
               Employer sign-in
             </a>
@@ -120,7 +152,7 @@ export default function AdminLogin() {
         </div>
       </div>
 
-      <div className="brandSection">
+      <div className="brandSection" style={{ background: colors.loginBg }}>
         <div className="logoContainer">
           <img src={logo} alt="Secure Shift Logo" className="logoImage" />
         </div>
