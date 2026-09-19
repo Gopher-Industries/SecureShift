@@ -59,3 +59,22 @@ export const createEmployer = (body) =>
       role: 'employer',
     })
     .then((r) => r.data);
+
+// ---- Payroll & timesheet oversight (AP-060) ----
+// GET /payroll -> { query, summary, payroll: [ { id, guard, status, ... } ] }
+export const getPayroll = (params) => http.get('/payroll', { params }).then((r) => r.data);
+
+// POST /payroll/approve { payrollIds } (admin/employer)
+export const approvePayroll = (payrollIds) =>
+  http.post('/payroll/approve', { payrollIds }).then((r) => r.data);
+
+// POST /payroll/process { payrollIds } (admin/employer)
+export const processPayroll = (payrollIds) =>
+  http.post('/payroll/process', { payrollIds }).then((r) => r.data);
+
+// CSV / PDF export (returns a Blob for download).
+export const exportPayroll = (format, params) =>
+  http.get(`/payroll/export/${format}`, { params, responseType: 'blob' }).then((r) => r.data);
+
+// GET /timesheets -> list of timesheets
+export const getTimesheets = (params) => http.get('/timesheets', { params }).then((r) => r.data);
