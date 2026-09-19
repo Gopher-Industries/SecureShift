@@ -3,8 +3,11 @@ import { Outlet } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminNavbar from '../components/AdminNavbar';
 import './AdminLayout.css';
+import { useTheme } from '../theme/ThemeProvider';
 
 export default function AdminLayout() {
+  const { colors } = useTheme();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -15,7 +18,7 @@ export default function AdminLayout() {
         <main
           style={{
             padding: 24,
-            background: '#f3f4f6',
+            background: colors.bg,
             flex: 1,
             overflowX: 'auto',
           }}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import Button from './Button';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 const EMPTY_FORM = {
   name: '',
@@ -15,58 +15,6 @@ const EMPTY_FORM = {
     suburb: '',
     state: '',
     postcode: '',
-  },
-};
-
-const styles = {
-  form: {
-    width: '100%',
-    maxWidth: 520,
-  },
-  row: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 12,
-  },
-  field: {
-    marginBottom: 14,
-  },
-  label: {
-    display: 'block',
-    marginBottom: 5,
-    fontSize: 13,
-    fontWeight: 600,
-    color: colors.text,
-  },
-  input: {
-    width: '100%',
-    boxSizing: 'border-box',
-    padding: '9px 10px',
-    border: `1px solid ${colors.border}`,
-    borderRadius: 6,
-    fontSize: 14,
-    background: colors.white,
-    color: colors.text,
-  },
-  error: {
-    margin: '4px 0 0',
-    color: colors.danger,
-    fontSize: 12,
-  },
-  notice: {
-    padding: 12,
-    marginBottom: 16,
-    borderRadius: 6,
-    background: '#fff7ed',
-    border: '1px solid #fed7aa',
-    color: colors.warning,
-    fontSize: 13,
-    lineHeight: 1.5,
-  },
-  actions: {
-    display: 'flex',
-    gap: 8,
-    marginTop: 20,
   },
 };
 
@@ -149,6 +97,59 @@ export default function UserFormModal({
   onClose,
   onSubmit,
 }) {
+  const { colors } = useTheme();
+  const styles = {
+    form: {
+      width: '100%',
+      maxWidth: 520,
+    },
+    row: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 12,
+    },
+    field: {
+      marginBottom: 14,
+    },
+    label: {
+      display: 'block',
+      marginBottom: 5,
+      fontSize: 13,
+      fontWeight: 600,
+      color: colors.text,
+    },
+    input: {
+      width: '100%',
+      boxSizing: 'border-box',
+      padding: '9px 10px',
+      border: `1px solid ${colors.border}`,
+      borderRadius: 6,
+      fontSize: 14,
+      background: colors.white,
+      color: colors.black,
+    },
+    error: {
+      margin: '4px 0 0',
+      color: colors.error,
+      fontSize: 12,
+    },
+    notice: {
+      padding: 12,
+      marginBottom: 16,
+      borderRadius: 6,
+      background: colors.warningBg,
+      border: `1px solid ${colors.warningBorder}`,
+      color: colors.warning,
+      fontSize: 13,
+      lineHeight: 1.5,
+    },
+    actions: {
+      display: 'flex',
+      gap: 8,
+      marginTop: 20,
+    },
+  };
+
   const [form, setForm] = useState(getInitialForm(initialUser));
   const [errors, setErrors] = useState({});
 

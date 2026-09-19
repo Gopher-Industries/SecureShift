@@ -4,7 +4,7 @@ import { getIncident, updateIncident } from '../service/adminAPI';
 import { useToast } from '../components/Toast';
 import Button from '../components/Button';
 import LoadingComponent from '../components/LoadingComponent';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleString() : '—';
@@ -22,15 +22,16 @@ const statusLabel = {
   RESOLVED: 'Resolved',
 };
 
-const row = {
-  display: 'flex',
-  gap: 8,
-  padding: '10px 0',
-  borderBottom: `1px solid ${colors.border}`,
-};
-const label = { width: 140, color: colors.muted, fontWeight: 600 };
-
 export default function IncidentDetails() {
+  const { colors } = useTheme();
+  const row = {
+    display: 'flex',
+    gap: 8,
+    padding: '10px 0',
+    borderBottom: `1px solid ${colors.border}`,
+  };
+  const label = { width: 140, color: colors.muted, fontWeight: 600 };
+
   const { id } = useParams();
   const { showToast } = useToast();
 
@@ -99,7 +100,7 @@ export default function IncidentDetails() {
         <p style={{ color: colors.danger }}>Incident not found.</p>
       ) : (
         <>
-          {error ? <p style={{ color: colors.danger }}>{error}</p> : null}
+          {error ? <p style={{ color: colors.error }}>{error}</p> : null}
           {incident ? (
             <div
               style={{

@@ -7,27 +7,29 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 import Card from './Card';
-
-const titleStyle = {
-  margin: 0,
-  marginBottom: 4,
-  fontSize: 15,
-  fontWeight: 600,
-  color: colors.text,
-};
-
-const summaryStyle = {
-  margin: 0,
-  marginBottom: 12,
-  fontSize: 13,
-  color: colors.muted,
-};
 
 // Renders one trend line chart ina card with a text summary and
 // a hidden data table for accessibility.
-export default function TrendChart({ title, data, color = colors.primary, summary }) {
+export default function TrendChart({ title, data, color, summary }) {
+  const { colors } = useTheme();
+  const strokeColor = color ?? colors.primary;
+  const titleStyle = {
+    margin: 0,
+    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: 600,
+    color: colors.text,
+  };
+
+  const summaryStyle = {
+    margin: 0,
+    marginBottom: 12,
+    fontSize: 13,
+    color: colors.muted,
+  };
+
   const first = data?.[0]?.value;
   const last = data?.[data.length - 1]?.value;
   const trendLabel =
@@ -71,7 +73,7 @@ export default function TrendChart({ title, data, color = colors.primary, summar
             <Line
               type="monotone"
               dataKey="value"
-              stroke={color}
+              stroke={strokeColor}
               strokeWidth={2}
               dot={{ r: 3 }}
               activeDot={{ r: 5 }}

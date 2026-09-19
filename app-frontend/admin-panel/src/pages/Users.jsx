@@ -8,30 +8,31 @@ import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
 import Modal from '../components/Modal';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 // First working admin data view — end-to-end integration with GET /admin/users.
-const ui = {
-  toolbar: {
-    display: 'flex',
-    gap: 12,
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  select: {
-    border: `1px solid ${colors.border}`,
-    borderRadius: 4,
-    padding: '8px 12px',
-    fontSize: 14,
-    background: colors.white,
-    color: colors.text,
-    cursor: 'pointer',
-    marginBottom: 16,
-  },
-};
-
 export default function Users() {
+  const { colors } = useTheme();
+  const ui = {
+    toolbar: {
+      display: 'flex',
+      gap: 12,
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    select: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: 4,
+      padding: '8px 12px',
+      fontSize: 14,
+      background: colors.card,
+      color: colors.text,
+      cursor: 'pointer',
+      marginBottom: 16,
+    },
+  };
+
   const { showToast } = useToast();
 
   const [addOpen, setAddOpen] = useState(false);
@@ -255,7 +256,7 @@ export default function Users() {
       ) : error ? (
         <p
           style={{
-            color: colors.danger,
+            color: colors.error,
           }}
         >
           {error}

@@ -8,7 +8,6 @@
 
 .loginFormSection {
   width: 60%;
-  background-color: #f9fafb;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -25,7 +24,6 @@
 }
 
 .adminText {
-  color: #6b7280;
   font-size: 2rem;
   margin: 0;
 }
@@ -33,12 +31,7 @@
 .loginTitle {
   font-size: 3.5rem;
   font-weight: bold;
-  color: #000000;
   margin: 0;
-}
-
-.welcomeText {
-  color: #374151;
 }
 
 .loginForm {
@@ -52,35 +45,13 @@
   flex-direction: column;
 }
 
-.inputLabel {
-  color: #374151;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.formInput {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background-color: #d1d5db;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  outline: none;
-  font-size: 1rem;
-}
-
 .errorMessage {
-  color: #ef4444;
   font-size: 0.875rem;
-  background-color: #fef2f2;
   padding: 0.75rem;
   border-radius: 0.5rem;
-  border: 1px solid #fecaca;
 }
 
 .sessionExpiredMessage {
-  color: #8a6100;
-  background: #fff6e0;
   padding: 8px 10px;
   border-radius: 4px;
 }
@@ -89,8 +60,6 @@
   width: 35%;
   min-width: 120px;
   max-width: 200px;
-  background-color: #072261;
-  color: white;
   padding: 1rem 1.5rem;
   border: none;
   border-radius: 80px;
@@ -103,7 +72,6 @@
 
 .brandSection {
   width: 40%;
-  background: #072261;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,7 +120,6 @@
     width: 100%;
     padding: 1rem 0;
     min-height: 40vh;
-    background: #072261;
     justify-content: center;
     align-items: center;
   }
@@ -221,12 +188,10 @@
 }
 
 .employerSignInPrompt {
-  color: #6b7280;
   margin-right: 0.35rem;
 }
 
 .employerSignInLink {
-  color: #072261;
   font-weight: 600;
   text-decoration: none;
 }
@@ -236,7 +201,7 @@
 }
 
 .employerSignInLink:focus-visible {
-  outline: 2px solid #072261;
+  outline: 2px solid var(--focus-color);
   outline-offset: 3px;
   border-radius: 2px;
 }

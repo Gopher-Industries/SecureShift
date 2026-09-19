@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 const MenuIcon = ({ size = 24, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 512 512">
@@ -179,6 +179,28 @@ const RolesIcon = ({ size = 24, color = 'currentColor' }) => (
   </svg>
 );
 
+const DarkModeIcon = ({ size = 12, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M21 12.8A9 9 0 1 1 11.2 3
+          7 7 0 0 0 21 12.8Z"
+      fill={color}
+    />
+  </svg>
+);
+
+const LightModeIcon = ({ size = 12, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="4" fill={color} />
+    <path
+      d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const items = [
   ['/dashboard', 'Dashboard', DashboardIcon],
   ['/users', 'Users', UsersIcon],
@@ -193,6 +215,9 @@ const items = [
 ];
 
 export default function AdminSidebar({ isOpen, onClose }) {
+  const { colors } = useTheme();
+  const { darkMode, toggleTheme } = useTheme();
+
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed');
     return saved !== null ? JSON.parse(saved) : true;
@@ -261,11 +286,10 @@ export default function AdminSidebar({ isOpen, onClose }) {
             style={{
               fontWeight: 700,
               fontSize: 18,
-              opacity: showLabels ? 1 : 0,
               whiteSpace: 'nowrap',
             }}
           >
-            SecureShift Admin
+            {showLabels ? 'SecureShift Admin' : ''}
           </span>
         </div>
         <nav>
@@ -277,7 +301,13 @@ export default function AdminSidebar({ isOpen, onClose }) {
               style={({ isActive }) => ({
                 display: 'block',
                 padding: '10px 20px',
-                color: isActive ? colors.primaryDark : colors.white,
+                color: isActive
+                  ? !darkMode
+                    ? colors.primaryDark
+                    : colors.text
+                  : !darkMode
+                    ? colors.white
+                    : colors.mutedLight,
                 textDecoration: 'none',
                 background: isActive ? colors.bg : 'transparent',
               })}
@@ -286,11 +316,82 @@ export default function AdminSidebar({ isOpen, onClose }) {
                 <div style={{ flexShrink: 0, display: 'flex' }}>
                   <Icon />
                 </div>
-                <span style={{ opacity: showLabels ? 1 : 0, whiteSpace: 'nowrap' }}>{label}</span>
+                <span style={{ whiteSpace: 'nowrap' }}>{showLabels ? label : ''}</span>
               </div>
             </NavLink>
           ))}
         </nav>
+
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+            padding: '10px 20px',
+            border: 'none',
+            background: 'transparent',
+            color: darkMode ? colors.mutedLight : colors.white,
+            cursor: 'pointer',
+          }}
+        >
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <span
+              style={{
+                width: 34,
+                height: 24,
+                borderRadius: 20,
+                background: darkMode ? colors.primary : colors.muted,
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  position: 'absolute',
+                  left: darkMode ? 13 : 3,
+                  top: 3,
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: colors.white,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'left 0.2s ease',
+                }}
+              >
+                {darkMode ? (
+                  <DarkModeIcon color={colors.black} />
+                ) : (
+                  <LightModeIcon color={colors.black} />
+                )}
+              </span>
+            </span>
+          </div>
+
+          <span
+            style={{
+              marginLeft: 16,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {showLabels ? (darkMode ? 'Dark Mode' : 'Light Mode') : ''}
+          </span>
+        </button>
       </aside>
     </>
   );

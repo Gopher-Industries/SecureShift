@@ -1,19 +1,19 @@
 import { Component } from 'react';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
-const styles = {
+const getStyles = (colors) => ({
   wrapper: {
     minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    background: colors.background || '#f7f8fa',
+    background: colors.background,
   },
   card: {
     maxWidth: 420,
     width: '100%',
-    background: colors.card || '#fff',
+    background: colors.card,
     border: `1px solid ${colors.border}`,
     borderRadius: 8,
     padding: 32,
@@ -23,7 +23,7 @@ const styles = {
   title: {
     fontSize: 18,
     fontWeight: 700,
-    color: colors.text || '#1a1a1a',
+    color: colors.text,
     marginBottom: 8,
   },
   message: {
@@ -34,7 +34,7 @@ const styles = {
   },
   button: {
     background: colors.primary,
-    color: '#fff',
+    color: colors.white,
     border: 'none',
     borderRadius: 6,
     padding: '10px 20px',
@@ -42,7 +42,7 @@ const styles = {
     fontWeight: 600,
     cursor: 'pointer',
   },
-};
+});
 
 // Catches render errors anywhere in the child tree and shows a friendly
 // fallback instead of a blank white screen.
@@ -74,6 +74,8 @@ class ErrorBoundary extends Component {
   };
 
   render() {
+    const styles = getStyles(this.props.colors);
+
     if (this.state.hasError) {
       return (
         <div style={styles.wrapper}>
@@ -95,4 +97,8 @@ class ErrorBoundary extends Component {
   }
 }
 
-export default ErrorBoundary;
+export default function ThemedErrorBoundary({ children }) {
+  const { colors } = useTheme();
+
+  return <ErrorBoundary colors={colors}>{children}</ErrorBoundary>;
+}
