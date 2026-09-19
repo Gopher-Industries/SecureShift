@@ -2,7 +2,6 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
-  color: #111827;
 }
 
 .admin-dashboard__header {
@@ -20,7 +19,6 @@
 
 .admin-dashboard__eyebrow {
   margin: 0 0 6px;
-  color: #274b93;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -31,7 +29,6 @@
 .admin-dashboard__section-heading p,
 .admin-dashboard__activity-header p {
   margin: 6px 0 0;
-  color: #6b7280;
 }
 
 .admin-dashboard__refresh {
@@ -43,7 +40,6 @@
 }
 
 .admin-dashboard__updated {
-  color: #6b7280;
   font-size: 13px;
 }
 
@@ -53,10 +49,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  border: 1px solid #f1c66d;
   border-radius: 8px;
-  background: #fff8e7;
-  color: #6b4608;
 }
 
 .admin-dashboard__warning span {
@@ -102,20 +95,20 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 4px;
-  background: #274b93;
+  background: var(--default-acent);
   content: '';
 }
 
 .admin-dashboard__stat-link--amber > div::before {
-  background: #d28b0b;
+  background: var(--amber-acent);;
 }
 
 .admin-dashboard__stat-link--green > div::before {
-  background: #16834b;
+  background: var(--green-acent);;
 }
 
 .admin-dashboard__stat-link--purple > div::before {
-  background: #7656b5;
+  background: var(--purple-acent);;
 }
 
 .admin-dashboard__stat-link:hover > div,
@@ -131,20 +124,17 @@
 }
 
 .admin-dashboard__stat-label {
-  color: #4b5563;
   font-size: 14px;
   font-weight: 600;
 }
 
 .admin-dashboard__stat-value {
   margin: 12px 0 8px;
-  color: #18284f;
   font-size: clamp(28px, 4vw, 42px);
   line-height: 1;
 }
 
 .admin-dashboard__stat-description {
-  color: #6b7280;
   font-size: 13px;
   line-height: 1.45;
 }
@@ -152,18 +142,15 @@
 .admin-dashboard__stat-action {
   margin-top: auto;
   padding-top: 14px;
-  color: #274b93;
   font-size: 13px;
   font-weight: 700;
 }
 
 .admin-dashboard__activity-header {
   padding: 20px;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .admin-dashboard__activity-link {
-  color: #274b93;
   font-size: 14px;
   font-weight: 700;
   text-decoration: none;
@@ -177,12 +164,7 @@
 .admin-dashboard__state {
   margin: 0;
   padding: 34px 20px;
-  color: #6b7280;
   text-align: center;
-}
-
-.admin-dashboard__state--error {
-  color: #b00020;
 }
 
 .admin-dashboard__activity-list {
@@ -197,7 +179,6 @@
   align-items: center;
   gap: 12px;
   padding: 15px 20px;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .admin-dashboard__activity-list li:last-child {
@@ -207,9 +188,7 @@
 .admin-dashboard__activity-marker {
   width: 10px;
   height: 10px;
-  border: 3px solid #dbe5f8;
   border-radius: 50%;
-  background: #274b93;
   box-sizing: content-box;
 }
 
@@ -228,7 +207,6 @@
 
 .admin-dashboard__activity-copy span,
 .admin-dashboard__activity-list time {
-  color: #6b7280;
   font-size: 13px;
 }
 

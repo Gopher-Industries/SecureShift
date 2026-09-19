@@ -1,9 +1,11 @@
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 // Reusable card container — consistent white surface, border, and radius
 // for grouping content (forms, panels, summary blocks) across the admin panel.
 
 export default function Card({ children, style, ...rest }) {
+  const { colors } = useTheme();
+
   return (
     <div
       style={{

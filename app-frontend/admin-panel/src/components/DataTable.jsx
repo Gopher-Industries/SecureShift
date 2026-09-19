@@ -5,7 +5,7 @@ import { autoTable } from 'jspdf-autotable';
 import Button from './Button';
 import Modal from './Modal';
 import Pagination from './Pagination';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 // Header "select all" checkbox that shows an indeterminate state when only some
 // of the current page's rows are selected.
@@ -78,6 +78,7 @@ export default function DataTable({
   bulkActions = [],
   onSelectionChange = null,
 }) {
+  const { colors } = useTheme();
   const [internalSortConfig, setInternalSortConfig] = useState({
     key: null,
     direction: 'asc',

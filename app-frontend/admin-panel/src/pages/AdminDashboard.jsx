@@ -11,7 +11,7 @@ import {
   getDashboardMetrics,
 } from '../service/adminAPI';
 import TrendChart from '../components/TrendChart';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 import './AdminDashboard.css';
 import useAutoRefresh from '../hooks/useAutoRefresh';
 
@@ -109,6 +109,8 @@ const formatTimestamp = (timestamp) => {
 };
 
 export default function AdminDashboard() {
+  const { colors } = useTheme();
+
   const mountedRef = useRef(true);
   const [stats, setStats] = useState(EMPTY_STATS);
   const [activities, setActivities] = useState([]);
@@ -202,19 +204,21 @@ export default function AdminDashboard() {
   const allSourcesFailed = failedSections.length === 5;
 
   return (
-    <div className="admin-dashboard">
+    <div className="admin-dashboard" style={{ color: colors.text }}>
       <header className="admin-dashboard__header">
         <div>
-          <p className="admin-dashboard__eyebrow">Platform overview</p>
+          <p className="admin-dashboard__eyebrow" style={{ color: colors.primary }}>
+            Platform overview
+          </p>
           <h1>Admin Dashboard</h1>
-          <p className="admin-dashboard__intro">
+          <p className="admin-dashboard__intro" style={{ color: colors.muted }}>
             Live operational counts and recent activity derived from the current Admin APIs.
           </p>
         </div>
 
         <div className="admin-dashboard__refresh">
           {lastUpdated && (
-            <span className="admin-dashboard__updated">
+            <span className="admin-dashboard__updated" style={{ color: colors.muted }}>
               Last updated{' '}
               {lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
             </span>
@@ -231,7 +235,15 @@ export default function AdminDashboard() {
       </header>
 
       {failedSections.length > 0 && !loading && (
-        <div className="admin-dashboard__warning" role="alert">
+        <div
+          className="admin-dashboard__warning"
+          role="alert"
+          style={{
+            border: `1px solid ${colors.warningBorder}`,
+            background: colors.warningBg,
+            color: colors.warning,
+          }}
+        >
           <div>
             <strong>
               {allSourcesFailed ? 'Dashboard data is unavailable.' : 'Some data is unavailable.'}
@@ -252,7 +264,9 @@ export default function AdminDashboard() {
         <div className="admin-dashboard__section-heading">
           <div>
             <h2 id="dashboard-statistics-heading">Platform statistics</h2>
-            <p>Counts are calculated from live SecureShift records.</p>
+            <p style={{ color: colors.muted }}>
+              Counts are calculated from live SecureShift records.
+            </p>
           </div>
         </div>
 
@@ -263,14 +277,29 @@ export default function AdminDashboard() {
               to={card.href}
               className={`admin-dashboard__stat-link admin-dashboard__stat-link--${card.tone}`}
               aria-label={`View ${card.label}`}
+              style={{
+                '--default-acent': colors.primary,
+                '--amber-acent': colors.amber,
+                '--green-acent': colors.success,
+                '--purple-acent': colors.purple,
+              }}
             >
               <Card style={{ height: '100%' }}>
-                <span className="admin-dashboard__stat-label">{card.label}</span>
-                <strong className="admin-dashboard__stat-value">
+                <span className="admin-dashboard__stat-label" style={{ color: colors.mutedDark }}>
+                  {card.label}
+                </span>
+                <strong
+                  className="admin-dashboard__stat-value"
+                  style={{ color: colors.primaryDeep }}
+                >
                   {loading ? '...' : (stats[card.key] ?? 'Unavailable')}
                 </strong>
-                <span className="admin-dashboard__stat-description">{card.description}</span>
-                <span className="admin-dashboard__stat-action">View details</span>
+                <span className="admin-dashboard__stat-description" style={{ color: colors.muted }}>
+                  {card.description}
+                </span>
+                <span className="admin-dashboard__stat-action" style={{ color: colors.primary }}>
+                  View details →
+                </span>
               </Card>
             </Link>
           ))}
@@ -279,22 +308,32 @@ export default function AdminDashboard() {
 
       <section aria-labelledby="dashboard-activity-heading">
         <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <div className="admin-dashboard__activity-header">
+          <div
+            className="admin-dashboard__activity-header"
+            style={{ borderBottom: `1px solid ${colors.border}` }}
+          >
             <div>
               <h2 id="dashboard-activity-heading">Recent activity</h2>
-              <p>Latest events recorded by the Admin audit log.</p>
+              <p style={{ color: colors.muted }}>Latest events recorded by the Admin audit log.</p>
             </div>
-            <Link to="/audit-logs" className="admin-dashboard__activity-link">
+            <Link
+              to="/audit-logs"
+              className="admin-dashboard__activity-link"
+              style={{ color: colors.primary }}
+            >
               View all audit logs
             </Link>
           </div>
 
           {loading ? (
-            <p className="admin-dashboard__state" role="status">
+            <p className="admin-dashboard__state" role="status" style={{ color: colors.muted }}>
               Loading dashboard data…
             </p>
           ) : failedSections.includes('Recent activity') ? (
-            <p className="admin-dashboard__state admin-dashboard__state--error">
+            <p
+              className="admin-dashboard__state admin-dashboard__state--error"
+              style={{ color: colors.warning }}
+            >
               Recent activity could not be loaded. Use Retry to try again.
             </p>
           ) : activities.length === 0 ? (
@@ -302,16 +341,23 @@ export default function AdminDashboard() {
           ) : (
             <ul className="admin-dashboard__activity-list">
               {activities.map((activity, index) => (
-                <li key={activity._id || `${activity.timestamp}-${index}`}>
-                  <span className="admin-dashboard__activity-marker" aria-hidden="true" />
+                <li
+                  key={activity._id || `${activity.timestamp}-${index}`}
+                  style={{ borderBottom: `1px solid ${colors.border}` }}
+                >
+                  <span
+                    className="admin-dashboard__activity-marker"
+                    aria-hidden="true"
+                    style={{ border: `3px solid ${colors.card}`, background: colors.primary }}
+                  />
                   <div className="admin-dashboard__activity-copy">
                     <strong>{formatAction(activity.action)}</strong>
-                    <span>
+                    <span style={{ color: colors.muted }}>
                       {activity.user?.name || activity.user?.email || 'System'}
                       {activity.user?.role ? ` · ${activity.user.role}` : ''}
                     </span>
                   </div>
-                  <time dateTime={activity.timestamp || undefined}>
+                  <time dateTime={activity.timestamp || undefined} style={{ color: colors.muted }}>
                     {formatTimestamp(activity.timestamp)}
                   </time>
                 </li>
@@ -334,7 +380,7 @@ export default function AdminDashboard() {
 
         {trendsLoading && <p role="status">Loading trends…</p>}
         {trendsError && (
-          <p role="alert" style={{ color: colors.danger }}>
+          <p role="alert" style={{ color: colors.error }}>
             {trendsError}
           </p>
         )}

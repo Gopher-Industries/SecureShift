@@ -11,97 +11,7 @@ import {
   labelFor,
   updateRolePermissions,
 } from '../service/rolesAPI';
-import colors from '../theme/colors';
-
-const ui = {
-  header: {
-    marginBottom: 20,
-  },
-  intro: {
-    margin: '6px 0 0',
-    color: colors.muted,
-  },
-  notice: {
-    display: 'flex',
-    gap: 10,
-    padding: '12px 14px',
-    margin: '0 0 20px',
-    borderRadius: 8,
-    background: '#fff8e7',
-    border: '1px solid #f1c66d',
-    color: colors.warning,
-    fontSize: 13,
-    lineHeight: 1.5,
-  },
-  tag: {
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 600,
-    background: colors.tableHead,
-    color: colors.muted,
-    border: `1px solid ${colors.border}`,
-  },
-  full: {
-    color: colors.primary,
-    fontWeight: 600,
-  },
-  group: {
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    padding: '12px 14px',
-    marginBottom: 12,
-  },
-  groupTitle: {
-    margin: '0 0 10px',
-    fontSize: 13,
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: colors.muted,
-  },
-  permGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-    gap: 8,
-  },
-  permRow: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  permLabel: {
-    display: 'flex',
-    flexDirection: 'column',
-    lineHeight: 1.3,
-    color: colors.text,
-    cursor: 'pointer',
-  },
-  permName: {
-    fontSize: 14,
-    color: colors.text,
-  },
-  permCode: {
-    fontSize: 11,
-    color: colors.muted,
-    fontFamily: 'monospace',
-  },
-  dialogNotice: {
-    padding: 12,
-    marginBottom: 14,
-    borderRadius: 6,
-    background: colors.tableHead,
-    color: colors.muted,
-    fontSize: 13,
-    lineHeight: 1.5,
-  },
-  actions: {
-    display: 'flex',
-    gap: 8,
-    marginTop: 20,
-  },
-};
+import { useTheme } from '../theme/ThemeProvider';
 
 // super_admin -> "Super Admin"
 const formatRoleName = (name) =>
@@ -113,6 +23,98 @@ const formatRoleName = (name) =>
 const isWildcardRole = (role) => role.permissions.includes(WILDCARD);
 
 export default function Roles() {
+  const { colors } = useTheme();
+
+  const ui = {
+    header: {
+      marginBottom: 20,
+    },
+    intro: {
+      margin: '6px 0 0',
+      color: colors.muted,
+    },
+    notice: {
+      display: 'flex',
+      gap: 10,
+      padding: '12px 14px',
+      margin: '0 0 20px',
+      borderRadius: 8,
+      background: colors.warningBg,
+      border: `1px solid ${colors.warningBorder}`,
+      color: colors.warning,
+      fontSize: 13,
+      lineHeight: 1.5,
+    },
+    tag: {
+      display: 'inline-block',
+      padding: '2px 8px',
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 600,
+      background: colors.expiredBg,
+      color: colors.expired,
+      border: `1px solid ${colors.border}`,
+    },
+    full: {
+      color: colors.primary,
+      fontWeight: 600,
+    },
+    group: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: 8,
+      padding: '12px 14px',
+      marginBottom: 12,
+    },
+    groupTitle: {
+      margin: '0 0 10px',
+      fontSize: 13,
+      fontWeight: 700,
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      color: colors.muted,
+    },
+    permGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+      gap: 8,
+    },
+    permRow: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 8,
+    },
+    permLabel: {
+      display: 'flex',
+      flexDirection: 'column',
+      lineHeight: 1.3,
+      color: colors.text,
+      cursor: 'pointer',
+    },
+    permName: {
+      fontSize: 14,
+      color: colors.text,
+    },
+    permCode: {
+      fontSize: 11,
+      color: colors.muted,
+      fontFamily: 'monospace',
+    },
+    dialogNotice: {
+      padding: 12,
+      marginBottom: 14,
+      borderRadius: 6,
+      background: colors.tableHead,
+      color: colors.muted,
+      fontSize: 13,
+      lineHeight: 1.5,
+    },
+    actions: {
+      display: 'flex',
+      gap: 8,
+      marginTop: 20,
+    },
+  };
+
   const { showToast } = useToast();
 
   const [roles, setRoles] = useState([]);
@@ -213,7 +215,7 @@ export default function Roles() {
         ),
       },
     ],
-    []
+    [ui.tag, ui.full]
   );
 
   return (
@@ -234,7 +236,7 @@ export default function Roles() {
       {loading ? (
         <LoadingComponent />
       ) : error ? (
-        <p style={{ color: colors.danger }}>{error}</p>
+        <p style={{ color: colors.error }}>{error}</p>
       ) : (
         <DataTable columns={columns} rows={roles} empty="No roles found" />
       )}

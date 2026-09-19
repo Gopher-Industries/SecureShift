@@ -4,6 +4,7 @@ import AppRoutes from './routes/adminRoutes';
 import { ToastProvider, useToast } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import { attach401Handler, attachErrorToastHandler } from './lib/http';
+import { ThemeProvider } from './theme/ThemeProvider';
 
 // Auto-logout on 401 responses
 attach401Handler(() => {
@@ -22,13 +23,15 @@ function ErrorToastBridge() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <ToastProvider>
-        <ErrorToastBridge />
-        <ErrorBoundary>
-          <AppRoutes />
-        </ErrorBoundary>
-      </ToastProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <ToastProvider>
+          <ErrorToastBridge />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
+        </ToastProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

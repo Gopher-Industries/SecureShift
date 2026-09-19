@@ -4,34 +4,8 @@ import { getIncidents } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 import useAutoRefresh from '../hooks/useAutoRefresh';
-
-const ui = {
-  toolbar: {
-    display: 'flex',
-    gap: 12,
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  select: {
-    border: `1px solid ${colors.border}`,
-    borderRadius: 4,
-    padding: '8px 12px',
-    fontSize: 14,
-    background: colors.white,
-    color: colors.text,
-    cursor: 'pointer',
-    marginBottom: 16,
-  },
-};
-
-const severityBadge = {
-  low: colors.success,
-  medium: colors.warning,
-  high: colors.danger,
-};
 
 const statusLabel = {
   SUBMITTED: 'Submitted',
@@ -61,8 +35,34 @@ function parseSort(searchParams) {
 }
 
 export default function Incidents() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { colors } = useTheme();
+  const ui = {
+    toolbar: {
+      display: 'flex',
+      gap: 12,
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    select: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: 4,
+      padding: '8px 12px',
+      fontSize: 14,
+      background: colors.card,
+      color: colors.text,
+      cursor: 'pointer',
+      marginBottom: 16,
+    },
+  };
 
+  const severityBadge = {
+    low: colors.success,
+    medium: colors.warning,
+    high: colors.danger,
+  };
+
+  const [searchParams, setSearchParams] = useSearchParams();
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -290,7 +290,7 @@ export default function Incidents() {
       {loading ? (
         <LoadingComponent />
       ) : error ? (
-        <p style={{ color: colors.danger }}>{error}</p>
+        <p style={{ color: colors.error }}>{error}</p>
       ) : (
         <DataTable
           columns={columns}

@@ -1,4 +1,4 @@
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 // Reusable button matching the Employer Panel's pill-shaped button style
 // (see app-frontend/employer-panel/src/pages/Login.css — .loginButton / .secondaryButton).
@@ -18,24 +18,6 @@ const base = {
   transition: 'opacity 0.15s',
 };
 
-const variants = {
-  primary: {
-    background: colors.primaryDeep,
-    color: colors.white,
-    border: 'none',
-  },
-  secondary: {
-    background: 'transparent',
-    color: colors.primaryDeep,
-    border: `1px solid ${colors.primaryDeep}`,
-  },
-  danger: {
-    background: colors.danger,
-    color: colors.white,
-    border: 'none',
-  },
-};
-
 export default function Button({
   children,
   variant = 'primary',
@@ -43,6 +25,25 @@ export default function Button({
   style,
   ...rest
 }) {
+  const { colors } = useTheme();
+  const variants = {
+    primary: {
+      background: colors.primaryDeep,
+      color: colors.white,
+      border: 'none',
+    },
+    secondary: {
+      background: 'transparent',
+      color: colors.primaryDeep,
+      border: `1px solid ${colors.primaryDeep}`,
+    },
+    danger: {
+      background: colors.danger,
+      color: colors.white,
+      border: 'none',
+    },
+  };
+
   return (
     <button
       style={{
