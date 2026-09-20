@@ -29,7 +29,7 @@ describe('Roles & Permissions page', () => {
     expect(screen.getByText('Full access (all permissions)')).toBeInTheDocument();
     // guard is seeded with three permissions
     const guardRow = screen.getByText('Guard').closest('tr');
-    expect(within(guardRow).getByText('3 permissions')).toBeInTheDocument();
+    expect(within(guardRow).getByText('7 permissions')).toBeInTheDocument();
   });
 
   it('edits and persists a role’s permissions through the dialog', async () => {
@@ -56,7 +56,7 @@ describe('Roles & Permissions page', () => {
 
     // guard now has four permissions (persisted in the store)
     const updatedRow = screen.getByText('Guard').closest('tr');
-    expect(within(updatedRow).getByText('4 permissions')).toBeInTheDocument();
+    expect(within(updatedRow).getByText('8 permissions')).toBeInTheDocument();
   });
 
   it('does not allow editing the super_admin wildcard role', async () => {

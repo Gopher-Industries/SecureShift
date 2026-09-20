@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 import {
   getAuditLogs,
+  getDashboardMetrics,
   getMessages,
   getPendingGuards,
   getShifts,
@@ -19,6 +20,12 @@ const renderDashboard = () =>
   );
 
 const mockSuccessfulDashboard = () => {
+  getDashboardMetrics.mockResolvedValue({
+    signups: [],
+    shiftsFilled: [],
+    verificationBacklog: [],
+  });
+
   getUsers.mockResolvedValue({ total: 24, users: [] });
   getPendingGuards.mockResolvedValue({ count: 3, guards: [] });
   getShifts.mockResolvedValue({ shifts: [{ _id: 'shift-1' }, { _id: 'shift-2' }] });
@@ -45,7 +52,7 @@ describe('AdminDashboard', () => {
 
     renderDashboard();
 
-    expect(screen.getByText('Loading dashboard data…')).toBeInTheDocument();
+    expect(screen.getByText('Loading dashboard data...')).toBeInTheDocument();
 
     expect(await screen.findByText('24')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
