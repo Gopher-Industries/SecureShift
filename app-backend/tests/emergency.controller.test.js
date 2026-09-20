@@ -479,6 +479,61 @@ describe("Emergency SOS routes", () => {
     expect(Emergency.findOne).not.toHaveBeenCalled();
   });
 
+  test("missing and null coordinates are rejected before SOS creation", async () => {
+    for (const body of [
+      { longitude: 138.5 },
+      { latitude: null, longitude: 138.5 },
+    ]) {
+      const res = await request(createApp())
+        .post("/api/v1/sos/trigger")
+        .set(auth("guard"))
+        .send(body);
+      expect(res.statusCode).toBe(400);
+    }
+    expect(Emergency.findOne).not.toHaveBeenCalled();
+    expect(Emergency.create).not.toHaveBeenCalled();
+  });
+
+  test("blank coordinate strings are rejected on location update", async () => {
+    const sosId = new mongoose.Types.ObjectId().toString();
+    for (const latitude of ["", "   "]) {
+      const res = await request(createApp())
+        .post(`/api/v1/sos/${sosId}/location`)
+        .set(auth("guard"))
+        .send({ latitude, longitude: 138.5 });
+      expect(res.statusCode).toBe(400);
+    }
+    expect(Emergency.findOne).not.toHaveBeenCalled();
+  });
+
+  test("non-numeric coordinate types are rejected", async () => {
+    for (const longitude of [false, [], {}, "not-a-number"]) {
+      const res = await request(createApp())
+        .post("/api/v1/sos/trigger")
+        .set(auth("guard"))
+        .send({ latitude: 0, longitude });
+      expect(res.statusCode).toBe(400);
+    }
+    expect(Emergency.create).not.toHaveBeenCalled();
+  });
+
+  test("numeric zero and numeric strings are preserved", async () => {
+    Emergency.findOne
+      .mockReturnValueOnce(chainSort(null))
+      .mockReturnValueOnce(chainSort(null));
+    Emergency.create.mockImplementation(async (values) => buildSOS(values));
+
+    const res = await request(createApp())
+      .post("/api/v1/sos/trigger")
+      .set(auth("guard"))
+      .send({ latitude: 0, longitude: "138.5" });
+
+    expect(res.statusCode).toBe(201);
+    expect(Emergency.create).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 0, longitude: 138.5 }),
+    );
+  });
+
   test("guard adds valid note", async () => {
     const guardId = new mongoose.Types.ObjectId().toString();
     const sosId = new mongoose.Types.ObjectId().toString();
