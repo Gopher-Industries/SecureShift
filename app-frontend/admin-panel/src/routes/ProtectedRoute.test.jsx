@@ -7,6 +7,8 @@ jest.mock('../utils/authentication', () => ({
   getToken: jest.fn(),
   isAuthenticated: jest.fn(),
   isAdmin: jest.fn(),
+  hasExpiredToken: jest.fn(),
+  clearSession: jest.fn(),
 }));
 
 function renderProtectedRoute() {

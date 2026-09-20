@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getIncidents } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
 import colors from '../theme/colors';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 
 const ui = {
   toolbar: {
@@ -64,6 +65,8 @@ export default function Incidents() {
 
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState('');
 
   const [query, setQuery] = useState(() => searchParams.get('q') || '');
@@ -80,12 +83,15 @@ export default function Incidents() {
     setPage(parsePage(searchParams.get('page')));
   }, [searchParams]);
 
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
+  const fetchIncidents = useCallback(
+    async (manualRefresh = false, silentRefresh = false) => {
       try {
-        setLoading(true);
+        if (manualRefresh) {
+          setRefreshing(true);
+        } else if (!silentRefresh) {
+          setLoading(true);
+        }
+
         setError('');
 
         const params = {};
@@ -96,18 +102,23 @@ export default function Incidents() {
         const data = await getIncidents(params);
         const list = Array.isArray(data) ? data : data.data || data.incidents || [];
 
-        if (mounted) setIncidents(list);
+        setIncidents(list);
+        setLastUpdated(new Date());
       } catch (err) {
-        if (mounted) setError(err?.response?.data?.message || 'Failed to load incidents');
+        setError(err?.response?.data?.message || 'Failed to load incidents');
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
+        setRefreshing(false);
       }
-    })();
+    },
+    [severityFilter, statusFilter]
+  );
 
-    return () => {
-      mounted = false;
-    };
-  }, [severityFilter, statusFilter]);
+  useEffect(() => {
+    fetchIncidents();
+  }, [fetchIncidents]);
+
+  useAutoRefresh(() => fetchIncidents(false, true), 30000);
 
   const updateTableUrl = (updates) => {
     setSearchParams(
@@ -182,7 +193,41 @@ export default function Incidents() {
 
   return (
     <div>
-      <h1>Incident Oversight</h1>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <h1>Incident Oversight</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          {lastUpdated && (
+            <span style={{ fontSize: 13, color: colors.muted }}>
+              Last updated{' '}
+              {lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            </span>
+          )}
+          <button
+            type="button"
+            style={{
+              border: '1px solid ' + colors.border,
+              borderRadius: 4,
+              padding: '8px 14px',
+              fontSize: 14,
+              background: colors.white,
+              color: colors.text,
+              cursor: 'pointer',
+            }}
+            onClick={() => fetchIncidents(true)}
+            disabled={loading || refreshing}
+          >
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      </div>
 
       <div style={{ ...ui.toolbar }}>
         <SearchFilter

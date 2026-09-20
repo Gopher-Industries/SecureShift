@@ -536,5 +536,30 @@
     "next": "આગળ",
     "done": "શરૂ કરો",
     "replaySetting": "એપ ટૂર ફરી જુઓ"
+  },
+  "gamification": {
+    "badges": "બેજ",
+    "earnedCount": "{{total}} માંથી {{earned}} મેળવ્યા",
+    "earned": "મેળવ્યું",
+    "progressPct": "{{pct}}% પૂર્ણ",
+    "badgeRisingStar": "ઊભરતો સિતારો",
+    "badgeRisingStarDesc": "50 નો સ્કોર મેળવો",
+    "badgeTopPerformer": "ટોપ પરફોર્મર",
+    "badgeTopPerformerDesc": "85 નો સ્કોર મેળવો",
+    "badgePunctualPro": "સમયનિષ્ઠ પ્રો",
+    "badgePunctualProDesc": "90% સમયસર ચેક-ઇન",
+    "badgeReliable": "ભરોસાપાત્ર",
+    "badgeReliableDesc": "90% શિફ્ટ પૂર્ણ કરો",
+    "badgeIncidentFree": "ઘટના-મુક્ત",
+    "badgeIncidentFreeDesc": "કોઈ ઘટના નોંધાયેલ નથી",
+    "badgeStreak7": "સતત સક્રિય",
+    "badgeStreak7Desc": "7 શિફ્ટની સમયસર શ્રેણી",
+    "leaderboard": "લીડરબોર્ડ",
+    "yourRank": "તમે #{{rank}} પર છો",
+    "leaderboardOptInTitle": "લીડરબોર્ડમાં જોડાઓ",
+    "leaderboardOptInText": "જુઓ કે તમે અન્ય ગાર્ડ્સની સરખામણીમાં ક્યાં છો. તમારું નામ ક્યારેય બતાવાતું નથી — તમે \"તમે\" તરીકે દેખાઓ છો અને બાકીના અનામી રહે છે.",
+    "leaderboardJoin": "લીડરબોર્ડમાં જોડાઓ",
+    "leaderboardLeave": "લીડરબોર્ડ છોડો",
+    "you": "તમે"
   }
 }
