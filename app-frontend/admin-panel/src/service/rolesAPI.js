@@ -35,6 +35,10 @@ export const PERMISSION_GROUPS = [
     resource: 'RBAC',
     permissions: ['rbac:read', 'rbac:write'],
   },
+  {
+    resource: 'Incident',
+    permissions: ['incident:create', 'incident:view', 'incident:update', 'incident:delete'],
+  },
 ];
 
 // Human-readable label for each permission identifier, shown in the UI.
@@ -54,6 +58,10 @@ export const PERMISSION_LABELS = {
   'branch:write': 'Manage branches',
   'rbac:read': 'View roles & permissions',
   'rbac:write': 'Manage roles & permissions',
+  'incident:create': 'Create incidents',
+  'incident:view': 'View incidents',
+  'incident:update': 'Update incidents',
+  'incident:delete': 'Delete incidents',
 };
 
 // Friendly label for a permission id, falling back to the raw id if unmapped.
@@ -91,6 +99,10 @@ const SEED_ROLES = [
       'branch:write',
       'rbac:read',
       'rbac:write',
+      'incident:create',
+      'incident:view',
+      'incident:update',
+      'incident:delete',
     ],
     inheritsFrom: null,
     isSystem: true,
@@ -113,14 +125,31 @@ const SEED_ROLES = [
   {
     name: 'employer',
     description: 'Employer role',
-    permissions: ['user:read', 'shift:read', 'shift:write', 'payment:read', 'payment:write'],
+    permissions: [
+      'user:read',
+      'shift:read',
+      'shift:write',
+      'payment:read',
+      'payment:write',
+      'incident:view',
+      'incident:update',
+      'incident:delete',
+    ],
     inheritsFrom: null,
     isSystem: true,
   },
   {
     name: 'guard',
     description: 'Guard role',
-    permissions: ['shift:read', 'shift:accept', 'shift:checkin'],
+    permissions: [
+      'shift:read',
+      'shift:accept',
+      'shift:checkin',
+      'incident:create',
+      'incident:view',
+      'incident:update',
+      'incident:delete',
+    ],
     inheritsFrom: null,
     isSystem: true,
   },

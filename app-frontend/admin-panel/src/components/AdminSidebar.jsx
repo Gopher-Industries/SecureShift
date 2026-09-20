@@ -118,6 +118,23 @@ const ShiftIcon = ({ size = 24, color = 'currentColor' }) => (
   </svg>
 );
 
+const IncidentIcon = ({ size = 24, color = 'currentColor' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
 const AuditIcon = ({ size = 24, color = 'currentColor' }) => (
   <svg
     width={size}
@@ -197,9 +214,24 @@ const SettingsIcon = ({ size = 24, color = 'currentColor' }) => (
   >
     <circle cx="12" cy="12" r="3" />
 
-    <path
-      d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V22h-2.4v-2.2a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.56-1.03H4.5v-2.4h2.34A1.7 1.7 0 0 0 8.4 10a1.7 1.7 0 0 0-.34-1.88L8 8.06l1.7-1.7.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V3h2.4v2.2a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03H23v2.4h-2.04A1.7 1.7 0 0 0 19.4 15Z"
-    />
+    <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V22h-2.4v-2.2a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.56-1.03H4.5v-2.4h2.34A1.7 1.7 0 0 0 8.4 10a1.7 1.7 0 0 0-.34-1.88L8 8.06l1.7-1.7.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V3h2.4v2.2a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03H23v2.4h-2.04A1.7 1.7 0 0 0 19.4 15Z" />
+  </svg>
+);
+
+const PayrollIcon = ({ size = 24, color = 'currentColor' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2" y="5" width="20" height="14" rx="2" />
+    <circle cx="12" cy="12" r="3" />
+    <path d="M6 12h.01M18 12h.01" />
   </svg>
 );
 
@@ -208,11 +240,14 @@ const items = [
   ['/users', 'Users', UsersIcon],
   ['/guard-verification', 'Guard Verification', GuardIcon],
   ['/shifts', 'Shifts', ShiftIcon],
+  ['/payroll', 'Payroll & Timesheets', PayrollIcon],
+  ['/incidents', 'Incident Oversight', IncidentIcon],
   ['/roles', 'Roles & Permissions', RolesIcon],
   ['/audit-logs', 'Audit Logs', AuditIcon],
   ['/messages', 'Messages', ChatIcon],
   ['/smtp-settings', 'SMTP Settings', SMTPIcon],
   ['/settings', 'General Settings', SettingsIcon],
+  ['/announcements', 'Announcements', ChatIcon],
 ];
 
 export default function AdminSidebar({ isOpen, onClose }) {
@@ -272,9 +307,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
         <button
           type="button"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={
-            collapsed ? 'Expand sidebar' : 'Collapse sidebar'
-          }
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           onClick={() => setCollapsed(!collapsed)}
           style={{
             background: 'transparent',
@@ -327,13 +360,9 @@ export default function AdminSidebar({ isOpen, onClose }) {
               style={({ isActive }) => ({
                 display: 'block',
                 padding: '10px 20px',
-                color: isActive
-                  ? colors.primaryDark
-                  : colors.white,
+                color: isActive ? colors.primaryDark : colors.white,
                 textDecoration: 'none',
-                background: isActive
-                  ? colors.bg
-                  : 'transparent',
+                background: isActive ? colors.bg : 'transparent',
               })}
             >
               <div

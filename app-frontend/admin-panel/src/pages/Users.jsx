@@ -142,6 +142,53 @@ export default function Users() {
     }
   };
 
+  // Export the selected users to a CSV file (client-side, non-destructive).
+  const exportSelected = (selected) => {
+    const header = ['Name', 'Email', 'Role', 'Joined'];
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [
+      header.join(','),
+      ...selected.map((u) =>
+        [u.name, u.email, u.role, u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '']
+          .map(escape)
+          .join(',')
+      ),
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${selected.length} user(s).`, 'success');
+  };
+
+  // Delete every selected user, then refresh the list.
+  const deleteSelected = async (selected) => {
+    try {
+      const results = await Promise.allSettled(selected.map((u) => deleteUser(u._id)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      const ok = selected.length - failed;
+      if (ok > 0) showToast(`Deleted ${ok} user(s).`, 'success');
+      if (failed > 0) showToast(`${failed} user(s) could not be deleted.`, 'error');
+      setRefreshFlag((prev) => !prev);
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Bulk delete failed.', 'error');
+    }
+  };
+
+  const bulkActions = [
+    { key: 'export', label: 'Export selected', onClick: exportSelected, clearAfter: false },
+    {
+      key: 'delete',
+      label: 'Delete selected',
+      variant: 'danger',
+      confirm: 'Delete all selected users? This cannot be undone.',
+      onClick: deleteSelected,
+    },
+  ];
+
   const handleCreate = async (form) => {
     try {
       setCreating(true);
@@ -218,6 +265,8 @@ export default function Users() {
           columns={columns}
           rows={filtered}
           empty={query || roleFilter ? 'No users match your search or filter' : 'No users found'}
+          selectable
+          bulkActions={bulkActions}
         />
       )}
 

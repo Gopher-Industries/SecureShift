@@ -3,6 +3,7 @@ import express from "express";
 import {
   createSite,
   getAllSites,
+  getSiteUtilisation,
   updateSite,
   deleteSite,
 } from "../controllers/branch.controller.js";
@@ -91,6 +92,162 @@ const router = express.Router();
  *         description: Server error
  */
 router.get("/site", auth, employerOnly, getAllSites);
+
+/**
+ * @swagger
+ * /api/v1/branch/site/utilisation:
+ *   get:
+ *     summary: Get site utilisation report
+ *     tags: [Employer]
+ *     description: Returns date-bounded shift utilisation statistics for sites owned by the logged-in employer. Inactive sites with historical shifts are included, while shifts without a site are returned separately.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: from
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         example: "2026-09-01"
+ *         description: Start date of the reporting period (inclusive).
+ *       - in: query
+ *         name: to
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         example: "2026-09-30"
+ *         description: End date of the reporting period (inclusive).
+ *     responses:
+ *       200:
+ *         description: Site utilisation report
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 from:
+ *                   type: string
+ *                   format: date
+ *                   example: "2026-09-01"
+ *                 to:
+ *                   type: string
+ *                   format: date
+ *                   example: "2026-09-30"
+ *                 sites:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       siteId:
+ *                         type: string
+ *                         example: "507f1f77bcf86cd799439012"
+ *                       name:
+ *                         type: string
+ *                         example: "Melbourne HQ"
+ *                       code:
+ *                         type: string
+ *                         example: "MEL-HQ"
+ *                       isActive:
+ *                         type: boolean
+ *                         example: true
+ *                       shiftCounts:
+ *                         type: object
+ *                         properties:
+ *                           draft:
+ *                             type: integer
+ *                             example: 0
+ *                           open:
+ *                             type: integer
+ *                             example: 2
+ *                           applied:
+ *                             type: integer
+ *                             example: 1
+ *                           assigned:
+ *                             type: integer
+ *                             example: 4
+ *                           completed:
+ *                             type: integer
+ *                             example: 3
+ *                       assignedShiftCount:
+ *                         type: integer
+ *                         example: 7
+ *                       unassignedShiftCount:
+ *                         type: integer
+ *                         example: 3
+ *                       scheduledHours:
+ *                         type: number
+ *                         format: double
+ *                         example: 58.5
+ *                 withoutSite:
+ *                   type: object
+ *                   properties:
+ *                     shiftCounts:
+ *                       type: object
+ *                       properties:
+ *                         draft:
+ *                           type: integer
+ *                           example: 0
+ *                         open:
+ *                           type: integer
+ *                           example: 1
+ *                         applied:
+ *                           type: integer
+ *                           example: 0
+ *                         assigned:
+ *                           type: integer
+ *                           example: 0
+ *                         completed:
+ *                           type: integer
+ *                           example: 0
+ *                     assignedShiftCount:
+ *                       type: integer
+ *                       example: 0
+ *                     unassignedShiftCount:
+ *                       type: integer
+ *                       example: 1
+ *                     scheduledHours:
+ *                       type: number
+ *                       format: double
+ *                       example: 4
+ *             example:
+ *               from: "2026-09-01"
+ *               to: "2026-09-30"
+ *               sites:
+ *                 - siteId: "507f1f77bcf86cd799439012"
+ *                   name: "Melbourne HQ"
+ *                   code: "MEL-HQ"
+ *                   isActive: true
+ *                   shiftCounts:
+ *                     draft: 0
+ *                     open: 2
+ *                     applied: 1
+ *                     assigned: 4
+ *                     completed: 3
+ *                   assignedShiftCount: 7
+ *                   unassignedShiftCount: 3
+ *                   scheduledHours: 58.5
+ *               withoutSite:
+ *                 shiftCounts:
+ *                   draft: 0
+ *                   open: 1
+ *                   applied: 0
+ *                   assigned: 0
+ *                   completed: 0
+ *                 assignedShiftCount: 0
+ *                 unassignedShiftCount: 1
+ *                 scheduledHours: 4
+ *       400:
+ *         description: Invalid or missing date range
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Employer only)
+ *       500:
+ *         description: Server error
+ */
+router.get("/site/utilisation", auth, employerOnly, getSiteUtilisation);
 
 /**
  * @swagger

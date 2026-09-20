@@ -1,45 +1,77 @@
 import request from "supertest";
 import express from "express";
-import jwt from "jsonwebtoken";
+import mockJwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
-import emergencyRoutes from "../src/routes/emergency.routes.js";
-import sosRoutes from "../src/routes/sos.routes.js";
-import Emergency from "../src/models/Emergency.js";
-import Shift from "../src/models/Shift.js";
+jest.unstable_mockModule("../src/models/Emergency.js", () => ({
+  default: {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    countDocuments: jest.fn(),
+  },
+}));
 
-jest.mock("../src/models/Emergency.js");
-jest.mock("../src/models/Shift.js");
+jest.unstable_mockModule("../src/models/Shift.js", () => ({
+  default: {
+    find: jest.fn(),
+  },
+}));
 
 // Mock the auth middleware to avoid database connection
-jest.mock("../src/middleware/auth.js", () => ({
-  __esModule: true,
+jest.unstable_mockModule("../src/middleware/auth.js", () => ({
   default: (req, res, next) => {
     let userId = "test-user-id";
     let role = "guard";
+
     const authHeader = req.headers.authorization;
+
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
+
       try {
-        const jwt = require("jsonwebtoken");
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const payload = token.split(".")[1];
+        const decoded = JSON.parse(
+          Buffer.from(payload, "base64url").toString("utf8"),
+        );
+
         userId = decoded.id || decoded._id || "test-user-id";
         role = decoded.role || "guard";
       } catch (e) {
-        // ignore
+        // ignore invalid token
       }
     }
-    req.user = { _id: userId, id: userId, role };
+
+    req.user = {
+      _id: userId,
+      id: userId,
+      role,
+    };
+
     next();
   },
 }));
+
+const { default: emergencyRoutes } = await import(
+  "../src/routes/emergency.routes.js"
+);
+const { default: sosRoutes } = await import(
+  "../src/routes/sos.routes.js"
+);
+const { default: Emergency } = await import(
+  "../src/models/Emergency.js"
+);
+const { default: Shift } = await import(
+  "../src/models/Shift.js"
+);
+
 jest.setTimeout(30000);
 
 process.env.JWT_SECRET = "test-secret";
 
 const makeToken = (role, id = new mongoose.Types.ObjectId().toString()) =>
-  jwt.sign({ id, role }, process.env.JWT_SECRET);
+  mockJwt.sign({ id, role }, process.env.JWT_SECRET);
 
 const chainSort = (value) => ({
   sort: jest.fn().mockResolvedValue(value),
@@ -53,7 +85,9 @@ const chainSelectLean = (value) => ({
 
 const chainEmergencyList = (value) => ({
   populate: jest.fn().mockReturnThis(),
-  sort: jest.fn().mockResolvedValue(value),
+  sort: jest.fn().mockReturnThis(),
+  skip: jest.fn().mockReturnThis(),
+  limit: jest.fn().mockResolvedValue(value),
 });
 
 const createApp = () => {
@@ -185,6 +219,7 @@ describe("Emergency SOS routes", () => {
 
     Shift.find.mockReturnValue(chainSelectLean([{ _id: shiftId }]));
     Emergency.find.mockReturnValue(chainEmergencyList([visibleSOS]));
+    Emergency.countDocuments.mockResolvedValue(1);
 
     const res = await request(createApp())
       .get("/api/v1/emergency/sos")
@@ -220,6 +255,7 @@ describe("Emergency SOS routes", () => {
     const sos = buildSOS();
 
     Emergency.find.mockReturnValue(chainEmergencyList([sos]));
+    Emergency.countDocuments.mockResolvedValue(1);
 
     const res = await request(createApp())
       .get("/api/v1/emergency/sos")
@@ -228,6 +264,186 @@ describe("Emergency SOS routes", () => {
     expect(res.statusCode).toBe(200);
     expect(Emergency.find).toHaveBeenCalledWith({});
     expect(Shift.find).not.toHaveBeenCalled();
+  });
+
+  test("SOS history returns default pagination metadata", async () => {
+    const sos = buildSOS();
+
+    Emergency.find.mockReturnValue(chainEmergencyList([sos]));
+    Emergency.countDocuments.mockResolvedValue(25);
+
+    const res = await request(createApp())
+      .get("/api/v1/emergency/sos")
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.pagination).toEqual({
+      page: 1,
+      limit: 20,
+      total: 25,
+      hasNext: true,
+    });
+  });
+
+  test("SOS history applies requested pagination and caps limit at 100", async () => {
+    const sos = buildSOS();
+
+    Emergency.find.mockReturnValue(chainEmergencyList([sos]));
+    Emergency.countDocuments.mockResolvedValue(250);
+
+    const res = await request(createApp())
+      .get("/api/v1/emergency/sos?page=2&limit=150")
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.pagination).toEqual({
+      page: 2,
+      limit: 100,
+      total: 250,
+      hasNext: true,
+    });
+  });
+
+  test("SOS history filters by status", async () => {
+    const sos = buildSOS({ status: "RESOLVED" });
+
+    Emergency.find.mockReturnValue(chainEmergencyList([sos]));
+    Emergency.countDocuments.mockResolvedValue(1);
+
+    const res = await request(createApp())
+      .get("/api/v1/emergency/sos?status=RESOLVED")
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(200);
+    expect(Emergency.find).toHaveBeenCalledWith({
+      status: "RESOLVED",
+    });
+    expect(Emergency.countDocuments).toHaveBeenCalledWith({
+      status: "RESOLVED",
+    });
+    expect(res.body.count).toBe(1);
+  });
+
+  test("SOS history rejects an invalid status", async () => {
+    const res = await request(createApp())
+      .get("/api/v1/emergency/sos?status=INVALID")
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid status");
+    expect(Emergency.find).not.toHaveBeenCalled();
+  });
+
+  test("SOS history filters by createdAt date range", async () => {
+    const sos = buildSOS();
+
+    Emergency.find.mockReturnValue(chainEmergencyList([sos]));
+    Emergency.countDocuments.mockResolvedValue(1);
+
+    const res = await request(createApp())
+      .get(
+        "/api/v1/emergency/sos?from=2026-01-01&to=2026-01-31",
+      )
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(200);
+
+    const query = Emergency.find.mock.calls[0][0];
+
+    expect(query.createdAt.$gte).toEqual(
+      new Date("2026-01-01"),
+    );
+    expect(query.createdAt.$lte).toEqual(
+      new Date("2026-01-31T23:59:59.999"),
+    );
+  });
+
+  test("SOS history rejects an invalid from date", async () => {
+    const res = await request(createApp())
+      .get("/api/v1/emergency/sos?from=not-a-date")
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("from must be a valid date");
+    expect(Emergency.find).not.toHaveBeenCalled();
+  });
+
+  test("SOS history rejects a date range where from is after to", async () => {
+    const res = await request(createApp())
+      .get(
+        "/api/v1/emergency/sos?from=2026-02-01&to=2026-01-01",
+      )
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("from must be before or equal to to");
+    expect(Emergency.find).not.toHaveBeenCalled();
+  });
+
+  test("SOS history applies skip and limit to the database query", async () => {
+    const sos = buildSOS();
+
+    Emergency.find.mockReturnValue(chainEmergencyList([sos]));
+    Emergency.countDocuments.mockResolvedValue(45);
+
+    const res = await request(createApp())
+      .get("/api/v1/emergency/sos?page=3&limit=10")
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(200);
+
+    const chain = Emergency.find.mock.results[0].value;
+
+    expect(chain.skip).toHaveBeenCalledWith(20);
+    expect(chain.limit).toHaveBeenCalledWith(10);
+  });
+
+  test("SOS history uses deterministic newest-first ordering", async () => {
+    const sos = buildSOS();
+
+    Emergency.find.mockReturnValue(chainEmergencyList([sos]));
+    Emergency.countDocuments.mockResolvedValue(1);
+
+    const res = await request(createApp())
+      .get("/api/v1/emergency/sos")
+      .set(auth("admin"));
+
+    expect(res.statusCode).toBe(200);
+
+    const chain = Emergency.find.mock.results[0].value;
+
+    expect(chain.sort).toHaveBeenCalledWith({
+      createdAt: -1,
+      _id: -1,
+    });
+  });
+
+  test("SOS history combines status and pagination filters with employer scope", async () => {
+    const employerId = new mongoose.Types.ObjectId().toString();
+    const shiftId = new mongoose.Types.ObjectId();
+    const sos = buildSOS({ shiftId, status: "RESOLVED" });
+
+    Shift.find.mockReturnValue(chainSelectLean([{ _id: shiftId }]));
+    Emergency.find.mockReturnValue(chainEmergencyList([sos]));
+    Emergency.countDocuments.mockResolvedValue(1);
+
+    const res = await request(createApp())
+      .get(
+        "/api/v1/emergency/sos?page=2&limit=10&status=RESOLVED",
+      )
+      .set(auth("employer", employerId));
+
+    expect(res.statusCode).toBe(200);
+
+    expect(Emergency.find).toHaveBeenCalledWith({
+      status: "RESOLVED",
+      shiftId: { $in: [shiftId] },
+    });
+
+    expect(Emergency.countDocuments).toHaveBeenCalledWith({
+      status: "RESOLVED",
+      shiftId: { $in: [shiftId] },
+    });
   });
 
   test("guard updates valid location through emergency alias", async () => {

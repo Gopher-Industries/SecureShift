@@ -33,10 +33,8 @@ export default function TimesheetsScreen() {
   const load = async () => {
     try {
       setError(null);
-      const [rows, shifts] = await Promise.all([
-        getAllMyTimesheets(),
-        myShifts().catch(() => [] as ShiftDto[]),
-      ]);
+      const [rows] = await Promise.all([getAllMyTimesheets()]);
+      const shifts = (await myShifts({ page: 1 })).items;
       setItems(rows);
       setShiftsById(Object.fromEntries(shifts.map((shift) => [shift._id, shift])));
     } catch (e: unknown) {
