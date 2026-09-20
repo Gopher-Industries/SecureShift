@@ -542,5 +542,30 @@
     "next": "आगे",
     "done": "शुरू करें",
     "replaySetting": "ऐप टूर फिर से देखें"
+  },
+  "gamification": {
+    "badges": "बैज",
+    "earnedCount": "{{total}} में से {{earned}} अर्जित",
+    "earned": "अर्जित",
+    "progressPct": "{{pct}}% पूरा",
+    "badgeRisingStar": "उभरता सितारा",
+    "badgeRisingStarDesc": "50 का स्कोर पाएं",
+    "badgeTopPerformer": "टॉप परफ़ॉर्मर",
+    "badgeTopPerformerDesc": "85 का स्कोर पाएं",
+    "badgePunctualPro": "समयनिष्ठ प्रो",
+    "badgePunctualProDesc": "90% समय पर चेक-इन",
+    "badgeReliable": "भरोसेमंद",
+    "badgeReliableDesc": "90% शिफ्ट पूरी करें",
+    "badgeIncidentFree": "घटना-मुक्त",
+    "badgeIncidentFreeDesc": "कोई घटना दर्ज नहीं",
+    "badgeStreak7": "लगातार सक्रिय",
+    "badgeStreak7Desc": "7 शिफ्ट की समय पर लकीर",
+    "leaderboard": "लीडरबोर्ड",
+    "yourRank": "आप #{{rank}} पर हैं",
+    "leaderboardOptInTitle": "लीडरबोर्ड में शामिल हों",
+    "leaderboardOptInText": "देखें कि आप अन्य गार्डों की तुलना में कहाँ हैं। आपका नाम कभी नहीं दिखाया जाता — आप \"आप\" के रूप में दिखते हैं और बाकी सब गुमनाम रहते हैं।",
+    "leaderboardJoin": "लीडरबोर्ड में शामिल हों",
+    "leaderboardLeave": "लीडरबोर्ड छोड़ें",
+    "you": "आप"
   }
 }
