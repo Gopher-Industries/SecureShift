@@ -354,6 +354,14 @@
     "settingsLabel": "ਐਪ ਲਾਕ (Face ID / PIN)",
     "unavailable": "ਉਪਲਬਧ ਨਹੀਂ"
   },
+  "avail": {
+    "hoursToday": "ਅੱਜ ਕੰਮ ਕੀਤੇ ਘੰਟੇ",
+    "hoursWeek": "ਇਸ ਹਫ਼ਤੇ ਕੰਮ ਕੀਤੇ ਘੰਟੇ",
+    "shiftsWeek": "ਇਸ ਹਫ਼ਤੇ ਸ਼ਿਫਟਾਂ",
+    "dayHourWarn": "ਅੱਜ ਸਿਫ਼ਾਰਸ਼ ਕੀਤੇ ਕੰਮ ਦੇ ਘੰਟਿਆਂ ਦੀ ਗਿਣਤੀ ਵੱਧ ਗਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦਿਨ ਭਰ ਆਰਾਮ ਕਰੋ।",
+    "weekShiftWarn": "ਇਸ ਹਫ਼ਤੇ ਸਿਫ਼ਾਰਸ਼ ਕੀਤੀਆਂ ਸ਼ਿਫਟਾਂ ਦੀ ਗਿਣਤੀ ਵੱਧ ਗਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਹਫ਼ਤੇ ਲਈ ਆਰਾਮ ਕਰੋ।",
+    "weekHourWarn": "ਇਸ ਹਫ਼ਤੇ ਸਿਫ਼ਾਰਸ਼ ਕੀਤੇ ਕੰਮ ਦੇ ਘੰਟਿਆਂ ਦੀ ਗਿਣਤੀ ਵੱਧ ਗਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਹਫ਼ਤੇ ਲਈ ਆਰਾਮ ਕਰੋ।"
+  },
   "performance": {
     "title": "ਮੇਰੀ ਕਾਰਗੁਜ਼ਾਰੀ",
     "scoreLabel": "ਗਾਰਡ ਸਕੋਰ",
@@ -433,5 +441,47 @@
       "people": "ਸ਼ਾਮਲ ਲੋਕ",
       "action": "ਕੀਤੀ ਕਾਰਵਾਈ"
     }
+  },
+  "onboarding": {
+    "welcomeTitle": "SecureShift ਵਿੱਚ ਤੁਹਾਡਾ ਸੁਆਗਤ ਹੈ",
+    "welcomeBody": "ਜ਼ਰੂਰੀ ਗੱਲਾਂ ਦੀ ਇੱਕ ਤੇਜ਼ ਜਾਣ-ਪਛਾਣ। ਇਸ ਵਿੱਚ ਇੱਕ ਮਿੰਟ ਤੋਂ ਵੀ ਘੱਟ ਸਮਾਂ ਲੱਗੇਗਾ — ਤੁਸੀਂ ਕਿਸੇ ਵੀ ਸਮੇਂ ਛੱਡ ਸਕਦੇ ਹੋ।",
+    "shiftsTitle": "ਸ਼ਿਫਟਾਂ ਲੱਭੋ ਅਤੇ ਅਰਜ਼ੀ ਦਿਓ",
+    "shiftsBody": "ਸ਼ਿਫਟ ਟੈਬ ਤੋਂ ਖੁੱਲ੍ਹੀਆਂ ਸ਼ਿਫਟਾਂ ਵੇਖੋ ਅਤੇ ਇੱਕ ਟੈਪ ਵਿੱਚ ਅਰਜ਼ੀ ਦਿਓ।",
+    "attendanceTitle": "ਚੈੱਕ-ਇਨ ਅਤੇ ਚੈੱਕ-ਆਊਟ",
+    "attendanceBody": "ਪਹੁੰਚਣ 'ਤੇ ਚੈੱਕ-ਇਨ ਅਤੇ ਜਾਣ ਵੇਲੇ ਚੈੱਕ-ਆਊਟ ਲਈ ਸਾਈਟ ਦਾ QR ਕੋਡ ਸਕੈਨ ਕਰੋ।",
+    "sosTitle": "ਐਮਰਜੈਂਸੀ SOS",
+    "sosBody": "ਐਮਰਜੈਂਸੀ ਵਿੱਚ ਤੇਜ਼ੀ ਨਾਲ ਅਲਰਟ ਭੇਜਣ ਲਈ SOS ਬਟਨ ਦਬਾਓ।",
+    "exploreTitle": "ਸਭ ਕੁਝ ਇੱਕੋ ਥਾਂ",
+    "exploreBody": "ਤੁਹਾਡੀਆਂ ਸ਼ਿਫਟਾਂ, ਉਪਲਬਧਤਾ, ਟਾਈਮਸ਼ੀਟਾਂ ਅਤੇ ਪ੍ਰੋਫਾਈਲ ਸਭ ਹੇਠਾਂ ਟੈਬਾਂ ਵਿੱਚ ਹਨ।",
+    "skip": "ਛੱਡੋ",
+    "back": "ਪਿੱਛੇ",
+    "next": "ਅੱਗੇ",
+    "done": "ਸ਼ੁਰੂ ਕਰੋ",
+    "replaySetting": "ਐਪ ਟੂਰ ਦੁਬਾਰਾ ਵੇਖੋ"
+  },
+  "gamification": {
+    "badges": "ਬੈਜ",
+    "earnedCount": "{{total}} ਵਿੱਚੋਂ {{earned}} ਹਾਸਲ",
+    "earned": "ਹਾਸਲ ਕੀਤਾ",
+    "progressPct": "{{pct}}% ਪੂਰਾ",
+    "badgeRisingStar": "ਉਭਰਦਾ ਸਿਤਾਰਾ",
+    "badgeRisingStarDesc": "50 ਦਾ ਸਕੋਰ ਪ੍ਰਾਪਤ ਕਰੋ",
+    "badgeTopPerformer": "ਟੌਪ ਪਰਫਾਰਮਰ",
+    "badgeTopPerformerDesc": "85 ਦਾ ਸਕੋਰ ਪ੍ਰਾਪਤ ਕਰੋ",
+    "badgePunctualPro": "ਸਮੇਂ ਦਾ ਪਾਬੰਦ",
+    "badgePunctualProDesc": "90% ਸਮੇਂ ਸਿਰ ਚੈੱਕ-ਇਨ",
+    "badgeReliable": "ਭਰੋਸੇਯੋਗ",
+    "badgeReliableDesc": "90% ਸ਼ਿਫਟਾਂ ਪੂਰੀਆਂ ਕਰੋ",
+    "badgeIncidentFree": "ਘਟਨਾ-ਰਹਿਤ",
+    "badgeIncidentFreeDesc": "ਕੋਈ ਘਟਨਾ ਦਰਜ ਨਹੀਂ",
+    "badgeStreak7": "ਲਗਾਤਾਰ ਸਰਗਰਮ",
+    "badgeStreak7Desc": "7 ਸ਼ਿਫਟਾਂ ਦੀ ਸਮੇਂ ਸਿਰ ਲੜੀ",
+    "leaderboard": "ਲੀਡਰਬੋਰਡ",
+    "yourRank": "ਤੁਸੀਂ #{{rank}} 'ਤੇ ਹੋ",
+    "leaderboardOptInTitle": "ਲੀਡਰਬੋਰਡ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ",
+    "leaderboardOptInText": "ਵੇਖੋ ਕਿ ਤੁਸੀਂ ਹੋਰ ਗਾਰਡਾਂ ਦੇ ਮੁਕਾਬਲੇ ਕਿੱਥੇ ਹੋ। ਤੁਹਾਡਾ ਨਾਮ ਕਦੇ ਨਹੀਂ ਵਿਖਾਇਆ ਜਾਂਦਾ — ਤੁਸੀਂ \"ਤੁਸੀਂ\" ਵਜੋਂ ਦਿਖਦੇ ਹੋ ਅਤੇ ਬਾਕੀ ਗੁਮਨਾਮ ਰਹਿੰਦੇ ਹਨ।",
+    "leaderboardJoin": "ਲੀਡਰਬੋਰਡ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ",
+    "leaderboardLeave": "ਲੀਡਰਬੋਰਡ ਛੱਡੋ",
+    "you": "ਤੁਸੀਂ"
   }
 }

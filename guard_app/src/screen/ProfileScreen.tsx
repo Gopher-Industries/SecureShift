@@ -181,17 +181,13 @@ export default function ProfileScreen({ navigation, route }: any) {
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: '#4F46E5' }]}>
-                {guardScore?.totalShifts ?? 0}
+                {guardScore?.breakdown?.shiftCompletion?.totalAssignedShifts ?? 0}
               </Text>
               <Text style={styles.statLabel}>{t('profile.totalShifts')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: '#facc15' }]}>
-                {guardScore?.rating
-                  ? guardScore.rating.toFixed(1)
-                  : guardScore?.score
-                    ? guardScore.score.toFixed(1)
-                    : '0.0'}
+                {guardScore?.score != null ? guardScore.score.toFixed(1) : '0.0'}
               </Text>
               <Text style={styles.statLabel}>{t('profile.rating')}</Text>
             </View>

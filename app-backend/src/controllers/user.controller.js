@@ -27,12 +27,23 @@ export const listUsers = async (req, res) => {
   }
 };
 
+const containsMongoOperators = (body) => {
+  if (!body || typeof body !== "object") return false;
+  return Object.keys(body).some((key) => key.startsWith("$"));
+};
+
 /**
  * @desc    Update logged-in user's profile
  * @route   PUT /api/v1/users/me
  * @access  Private (all roles)
  */
 export const updateMyProfile = async (req, res) => {
+  if (containsMongoOperators(req.body)) {
+    return res.status(400).json({
+      message: "MongoDB update operators are not allowed in profile update.",
+    });
+  }
+
   const fieldsToUpdate = { ...req.body };
   delete fieldsToUpdate.role; // prevent role changes
   delete fieldsToUpdate.password; // don’t allow password here
@@ -63,6 +74,12 @@ export const adminGetUserProfile = async (req, res) => {
  * @access  Private/Admin
  */
 export const adminUpdateUserProfile = async (req, res) => {
+  if (containsMongoOperators(req.body)) {
+    return res.status(400).json({
+      message: "MongoDB update operators are not allowed in profile update.",
+    });
+  }
+
   const fieldsToUpdate = { ...req.body };
   delete fieldsToUpdate.password; // separate password endpoint if needed
 
@@ -156,6 +173,12 @@ export const updateEmployerProfile = async (req, res) => {
   try {
     if (req.user.role !== "employer") {
       return res.status(403).json({ message: "Access denied." });
+    }
+
+    if (containsMongoOperators(req.body)) {
+      return res.status(400).json({
+        message: "MongoDB update operators are not allowed in profile update.",
+      });
     }
 
     const fieldsToUpdate = { ...req.body };

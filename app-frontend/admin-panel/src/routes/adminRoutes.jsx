@@ -13,6 +13,7 @@ import IncidentDetails from '../pages/IncidentDetails';
 import Roles from '../pages/Roles';
 import AuditLogs from '../pages/AuditLogs';
 import Messages from '../pages/Messages';
+import PayrollOversight from '../pages/PayrollOversight';
 import SMTPSettings from '../pages/SMTPSettings';
 import NotFound from '../pages/NotFound';
 import AccessDenied from '../pages/AccessDenied';
@@ -40,6 +41,7 @@ export default function AppRoutes() {
         <Route path="/guard-verification" element={<GuardVerification />} />
 
         <Route path="/shifts" element={<Shifts />} />
+        <Route path="/payroll" element={<PayrollOversight />} />
         <Route path="/incidents" element={<Incidents />} />
 
         <Route path="/incidents/:id" element={<IncidentDetails />} />

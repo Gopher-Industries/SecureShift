@@ -241,4 +241,112 @@ describe("User Controller API Tests", () => {
 
     expect(res.statusCode).toBe(403);
   });
+
+  /* ---------------- BE-080: BLOCK MONGODB OPERATORS ---------------- */
+  describe("BE-080: Block MongoDB Operators in Profile Update Bodies", () => {
+    // 1. PUT /api/v1/users/me (3 tests)
+    test("PUT /api/v1/users/me rejects $set operator", async () => {
+      const res = await request(app)
+        .put("/api/v1/users/me")
+        .set("Authorization", `Bearer ${guardToken}`)
+        .send({ $set: { role: "admin" } });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe(
+        "MongoDB update operators are not allowed in profile update.",
+      );
+    });
+
+    test("PUT /api/v1/users/me rejects $unset operator", async () => {
+      const res = await request(app)
+        .put("/api/v1/users/me")
+        .set("Authorization", `Bearer ${guardToken}`)
+        .send({ $unset: { password: 1 } });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe(
+        "MongoDB update operators are not allowed in profile update.",
+      );
+    });
+
+    test("PUT /api/v1/users/me allows legitimate profile update", async () => {
+      const res = await request(app)
+        .put("/api/v1/users/me")
+        .set("Authorization", `Bearer ${guardToken}`)
+        .send({ name: "Guard Legit Name" });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.name).toBe("Guard Legit Name");
+    });
+
+    // 2. PUT /api/v1/users/profile (3 tests)
+    test("PUT /api/v1/users/profile rejects $set operator", async () => {
+      const res = await request(app)
+        .put("/api/v1/users/profile")
+        .set("Authorization", `Bearer ${employerToken}`)
+        .send({ $set: { role: "admin" } });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe(
+        "MongoDB update operators are not allowed in profile update.",
+      );
+    });
+
+    test("PUT /api/v1/users/profile rejects $unset operator", async () => {
+      const res = await request(app)
+        .put("/api/v1/users/profile")
+        .set("Authorization", `Bearer ${employerToken}`)
+        .send({ $unset: { phone: 1 } });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe(
+        "MongoDB update operators are not allowed in profile update.",
+      );
+    });
+
+    test("PUT /api/v1/users/profile allows legitimate employer profile update", async () => {
+      const res = await request(app)
+        .put("/api/v1/users/profile")
+        .set("Authorization", `Bearer ${employerToken}`)
+        .send({ name: "Employer Legit Name" });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.name).toBe("Employer Legit Name");
+    });
+
+    // 3. PUT /api/v1/users/:userId (3 tests)
+    test("PUT /api/v1/users/:userId rejects $set operator", async () => {
+      const res = await request(app)
+        .put(`/api/v1/users/${guard._id}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ $set: { role: "super_admin" } });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe(
+        "MongoDB update operators are not allowed in profile update.",
+      );
+    });
+
+    test("PUT /api/v1/users/:userId rejects $unset operator", async () => {
+      const res = await request(app)
+        .put(`/api/v1/users/${guard._id}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ $unset: { email: 1 } });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe(
+        "MongoDB update operators are not allowed in profile update.",
+      );
+    });
+
+    test("PUT /api/v1/users/:userId allows legitimate admin profile update", async () => {
+      const res = await request(app)
+        .put(`/api/v1/users/${guard._id}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ name: "Admin Updated Name" });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.name).toBe("Admin Updated Name");
+    });
+  });
 });

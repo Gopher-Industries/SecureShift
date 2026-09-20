@@ -331,7 +331,13 @@
     "selectDate": "तारीख चुनें",
     "startTime": "शुरू समय",
     "endTime": "समाप्ति समय",
-    "missingInfoMsg": "कृपया तारीख, शुरू समय और समाप्ति समय चुनें।"
+    "missingInfoMsg": "कृपया तारीख, शुरू समय और समाप्ति समय चुनें।",
+    "hoursToday": "आज काम के घंटे",
+    "hoursWeek": "इस सप्ताह के घंटे",
+    "shiftsWeek": "इस सप्ताह की शिफ्ट",
+    "dayHourWarn": "आज तय काम के घंटे से ज़्यादा हो गए। कृपया आज आराम करें।",
+    "weekShiftWarn": "इस हफ़्ते शिफ्ट के बताए गए घंटों से ज़्यादा काम हो गया। कृपया इस हफ़्ते आराम करें।",
+    "weekHourWarn": "इस हफ़्ते बताए गए काम के घंटे पार हो गए। कृपया इस हफ़्ते आराम करें।"
   },
   "editProfile": {
     "title": "अपनी प्रोफ़ाइल संपादित करें",
@@ -519,5 +525,47 @@
       "people": "शामिल लोग",
       "action": "की गई कार्रवाई"
     }
+  },
+  "onboarding": {
+    "welcomeTitle": "SecureShift में आपका स्वागत है",
+    "welcomeBody": "ज़रूरी बातों का एक झटपट परिचय। इसमें एक मिनट से भी कम समय लगेगा — आप कभी भी छोड़ सकते हैं।",
+    "shiftsTitle": "शिफ्ट खोजें और आवेदन करें",
+    "shiftsBody": "शिफ्ट टैब से खुली शिफ्ट देखें और एक टैप में आवेदन करें।",
+    "attendanceTitle": "चेक-इन और चेक-आउट",
+    "attendanceBody": "पहुँचने पर चेक-इन और जाते समय चेक-आउट के लिए साइट का QR कोड स्कैन करें।",
+    "sosTitle": "आपातकालीन SOS",
+    "sosBody": "आपात स्थिति में तुरंत अलर्ट भेजने के लिए SOS बटन दबाएँ।",
+    "exploreTitle": "सब कुछ एक ही जगह",
+    "exploreBody": "आपकी शिफ्ट, उपलब्धता, टाइमशीट और प्रोफ़ाइल सभी नीचे टैब में हैं।",
+    "skip": "छोड़ें",
+    "back": "पीछे",
+    "next": "आगे",
+    "done": "शुरू करें",
+    "replaySetting": "ऐप टूर फिर से देखें"
+  },
+  "gamification": {
+    "badges": "बैज",
+    "earnedCount": "{{total}} में से {{earned}} अर्जित",
+    "earned": "अर्जित",
+    "progressPct": "{{pct}}% पूरा",
+    "badgeRisingStar": "उभरता सितारा",
+    "badgeRisingStarDesc": "50 का स्कोर पाएं",
+    "badgeTopPerformer": "टॉप परफ़ॉर्मर",
+    "badgeTopPerformerDesc": "85 का स्कोर पाएं",
+    "badgePunctualPro": "समयनिष्ठ प्रो",
+    "badgePunctualProDesc": "90% समय पर चेक-इन",
+    "badgeReliable": "भरोसेमंद",
+    "badgeReliableDesc": "90% शिफ्ट पूरी करें",
+    "badgeIncidentFree": "घटना-मुक्त",
+    "badgeIncidentFreeDesc": "कोई घटना दर्ज नहीं",
+    "badgeStreak7": "लगातार सक्रिय",
+    "badgeStreak7Desc": "7 शिफ्ट की समय पर लकीर",
+    "leaderboard": "लीडरबोर्ड",
+    "yourRank": "आप #{{rank}} पर हैं",
+    "leaderboardOptInTitle": "लीडरबोर्ड में शामिल हों",
+    "leaderboardOptInText": "देखें कि आप अन्य गार्डों की तुलना में कहाँ हैं। आपका नाम कभी नहीं दिखाया जाता — आप \"आप\" के रूप में दिखते हैं और बाकी सब गुमनाम रहते हैं।",
+    "leaderboardJoin": "लीडरबोर्ड में शामिल हों",
+    "leaderboardLeave": "लीडरबोर्ड छोड़ें",
+    "you": "आप"
   }
 }

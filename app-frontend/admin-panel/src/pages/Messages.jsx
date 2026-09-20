@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getMessages, deleteMessage, getUsers } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import Modal from '../components/Modal';
+import useAutoRefresh from '../hooks/useAutoRefresh';
 
 const PAGE_SIZE = 20;
 const CONTENT_PREVIEW_LENGTH = 80;
@@ -21,9 +22,10 @@ function personLabel(person) {
 
 // Shorten long message so they fit neatly in the table
 function previewContent(content) {
-  if (!content) return '\u2014';
+  if (!content) return '—';
+
   return content.length > CONTENT_PREVIEW_LENGTH
-    ? `${content.slice(0, CONTENT_PREVIEW_LENGTH)}\u2026`
+    ? content.slice(0, CONTENT_PREVIEW_LENGTH) + '…'
     : content;
 }
 
@@ -239,6 +241,8 @@ export default function Messages() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState('');
 
   // Stores the message selected for deletion
@@ -258,46 +262,62 @@ export default function Messages() {
   }, []);
 
   // Retrieve messages using the current page and applied filters
-  const fetchMessages = async () => {
-    try {
-      setLoading(true);
-      setError('');
+  const fetchMessages = useCallback(
+    async (manualRefresh = false, silentRefresh = false) => {
+      try {
+        if (manualRefresh) {
+          setRefreshing(true);
+        } else if (!silentRefresh) {
+          setLoading(true);
+        }
 
-      const params = {
-        page,
-        limit: PAGE_SIZE,
-        ...(appliedFilters.senderId ? { sender: appliedFilters.senderId } : {}),
-        ...(appliedFilters.receiverId ? { receiver: appliedFilters.receiverId } : {}),
-        ...(appliedFilters.conversationId ? { conversationId: appliedFilters.conversationId } : {}),
-        ...(appliedFilters.from ? { from: appliedFilters.from } : {}),
-        ...(appliedFilters.to ? { to: appliedFilters.to } : {}),
-        ...(appliedFilters.includeDeleted ? { includeDeleted: 'true' } : {}),
-      };
+        setError('');
 
-      const data = await getMessages(params);
-
-      setMessages(data.messages || []);
-
-      setPagination(
-        data.pagination || {
+        const params = {
           page,
           limit: PAGE_SIZE,
-          total: 0,
-          hasNext: false,
-        }
-      );
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to load messages');
-    } finally {
-      setLoading(false);
-    }
-  };
+          ...(appliedFilters.senderId ? { sender: appliedFilters.senderId } : {}),
+          ...(appliedFilters.receiverId ? { receiver: appliedFilters.receiverId } : {}),
+          ...(appliedFilters.conversationId
+            ? { conversationId: appliedFilters.conversationId }
+            : {}),
+          ...(appliedFilters.from ? { from: appliedFilters.from } : {}),
+          ...(appliedFilters.to ? { to: appliedFilters.to } : {}),
+          ...(appliedFilters.includeDeleted ? { includeDeleted: 'true' } : {}),
+        };
+
+        const data = await getMessages(params);
+
+        setMessages(data.messages || []);
+
+        setPagination(
+          data.pagination || {
+            page,
+            limit: PAGE_SIZE,
+            total: 0,
+            hasNext: false,
+          }
+        );
+
+        setLastUpdated(new Date());
+      } catch (err) {
+        setError(err?.response?.data?.message || 'Failed to load messages');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [page, appliedFilters]
+  );
 
   // Reload messages whenever the page or filters change
   useEffect(() => {
     fetchMessages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, appliedFilters]);
+  }, [fetchMessages]);
+
+  // Automatically refresh every 30 seconds while the page is visible.
+  // Polling is paused while the delete modal is open or a delete is in progress.
+  useAutoRefresh(() => fetchMessages(false, true), 30000, !confirmTarget && !deleting);
 
   // Apply the selected filters and reset to the first page
   const handleApplyFilters = (e) => {
@@ -410,7 +430,44 @@ export default function Messages() {
 
   return (
     <div>
-      <h1>Messages</h1>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+        }}
+      >
+        <h1>Messages</h1>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          {lastUpdated && (
+            <span style={{ fontSize: 13, color: '#777' }}>
+              Last updated{' '}
+              {lastUpdated.toLocaleTimeString([], {
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={() => fetchMessages(true)}
+            disabled={loading || refreshing || deleting}
+          >
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      </div>
 
       <p style={{ color: '#777', marginTop: -8 }}>
         View and moderate platform messages. Deleting a message hides it (soft delete).
