@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import FormField from '../components/FormField';
+import colors from '../theme/colors';
 import { getMockSettings, updateMockSettings } from '../service/mockSettingsAPI';
 
 export default function GeneralSettings() {
@@ -50,9 +54,9 @@ export default function GeneralSettings() {
   if (!settings) {
     return (
       <div style={styles.page}>
-        <div style={styles.loadingCard}>
+        <Card style={styles.loadingCard}>
           <p style={styles.loadingText}>Loading settings...</p>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -62,13 +66,11 @@ export default function GeneralSettings() {
   return (
     <div style={styles.page}>
       <div style={styles.header}>
-        <div>
-          <h1 style={styles.title}>General Settings</h1>
-          <p style={styles.subtitle}>Manage your SecureShift platform settings.</p>
-        </div>
+        <h1 style={styles.title}>General Settings</h1>
+        <p style={styles.subtitle}>Manage your SecureShift platform settings.</p>
       </div>
 
-      <div style={styles.card}>
+      <Card style={styles.card}>
         <div style={styles.cardHeader}>
           <h2 style={styles.cardTitle}>Platform Settings</h2>
           <p style={styles.cardDescription}>
@@ -77,67 +79,43 @@ export default function GeneralSettings() {
         </div>
 
         <form onSubmit={handleSave}>
-          <div style={styles.formGroup}>
-            <label htmlFor="platformName" style={styles.label}>
-              Platform Name
-            </label>
+          <FormField
+            id="platformName"
+            label="Platform Name"
+            value={settings.platformName}
+            onChange={handleChange}
+            placeholder="Enter platform name"
+            hint="The name displayed across the SecureShift platform."
+          />
 
-            <input
-              id="platformName"
-              type="text"
-              name="platformName"
-              value={settings.platformName}
-              onChange={handleChange}
-              placeholder="Enter platform name"
-              style={styles.input}
-            />
+          <FormField
+            id="supportEmail"
+            label="Support Email"
+            type="email"
+            value={settings.supportEmail}
+            onChange={handleChange}
+            placeholder="Enter support email"
+            hint="Email address admins and users can use for support."
+          />
 
-            <p style={styles.helpText}>The name displayed across the SecureShift platform.</p>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label htmlFor="supportEmail" style={styles.label}>
-              Support Email
-            </label>
-
-            <input
-              id="supportEmail"
-              type="email"
-              name="supportEmail"
-              value={settings.supportEmail}
-              onChange={handleChange}
-              placeholder="Enter support email"
-              style={styles.input}
-            />
-
-            <p style={styles.helpText}>Email address admins and users can use for support.</p>
-          </div>
-
-          <div style={styles.formGroup}>
-            <label htmlFor="timezone" style={styles.label}>
-              Timezone
-            </label>
-
-            <select
-              id="timezone"
-              name="timezone"
-              value={settings.timezone}
-              onChange={handleChange}
-              style={styles.input}
-            >
-              <option value="Australia/Melbourne">Australia/Melbourne</option>
-              <option value="Australia/Sydney">Australia/Sydney</option>
-              <option value="UTC">UTC</option>
-            </select>
-
-            <p style={styles.helpText}>Select the default timezone for the platform.</p>
-          </div>
+          <FormField
+            id="timezone"
+            label="Timezone"
+            as="select"
+            value={settings.timezone}
+            onChange={handleChange}
+            hint="Select the default timezone for the platform."
+          >
+            <option value="Australia/Melbourne">Australia/Melbourne</option>
+            <option value="Australia/Sydney">Australia/Sydney</option>
+            <option value="UTC">UTC</option>
+          </FormField>
 
           <div style={styles.maintenanceBox}>
             <div>
-              <label htmlFor="maintenanceMode" style={styles.maintenanceTitle}>
+              <span id="maintenanceModeLabel" style={styles.maintenanceTitle}>
                 Maintenance Mode
-              </label>
+              </span>
 
               <p style={styles.helpText}>
                 Turn this on when the platform is temporarily unavailable.
@@ -151,13 +129,14 @@ export default function GeneralSettings() {
                 name="maintenanceMode"
                 checked={settings.maintenanceMode}
                 onChange={handleChange}
+                aria-labelledby="maintenanceModeLabel"
                 style={styles.checkbox}
               />
 
               <span
                 style={{
                   ...styles.slider,
-                  backgroundColor: settings.maintenanceMode ? '#274b93' : '#ccc',
+                  backgroundColor: settings.maintenanceMode ? colors.primary : colors.border,
                 }}
                 aria-hidden="true"
               >
@@ -173,10 +152,12 @@ export default function GeneralSettings() {
 
           {message && (
             <div
+              role="status"
               style={{
                 ...styles.message,
-                backgroundColor: isSuccess ? '#eaf7ee' : '#fff0f0',
-                color: isSuccess ? '#217a3a' : '#b42318',
+                backgroundColor: isSuccess ? colors.white : colors.white,
+                color: isSuccess ? colors.success : colors.danger,
+                border: `1px solid ${isSuccess ? colors.success : colors.danger}`,
               }}
             >
               {message}
@@ -184,139 +165,107 @@ export default function GeneralSettings() {
           )}
 
           <div style={styles.footer}>
-            <button type="submit" style={styles.saveButton}>
-              Save Settings
-            </button>
+            <Button type="submit">Save Settings</Button>
           </div>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }
 
 const styles = {
   page: {
-    padding: '32px',
-    backgroundColor: '#f6f8fc',
+    padding: 32,
+    backgroundColor: colors.bg,
     minHeight: '100%',
   },
 
   header: {
-    marginBottom: '24px',
+    marginBottom: 24,
   },
 
   title: {
     margin: 0,
-    fontSize: '28px',
-    color: '#18284f',
+    fontSize: 28,
+    color: colors.primaryDark,
   },
 
   subtitle: {
-    marginTop: '8px',
+    marginTop: 8,
     marginBottom: 0,
-    color: '#6b7280',
-    fontSize: '15px',
+    color: colors.muted,
+    fontSize: 15,
   },
 
   card: {
-    maxWidth: '850px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '10px',
-    padding: '28px',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+    maxWidth: 850,
   },
 
   loadingCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '10px',
-    padding: '30px',
-    maxWidth: '850px',
+    maxWidth: 850,
   },
 
   loadingText: {
-    color: '#6b7280',
+    color: colors.muted,
   },
 
   cardHeader: {
-    borderBottom: '1px solid #e5e7eb',
-    paddingBottom: '20px',
-    marginBottom: '24px',
+    borderBottom: `1px solid ${colors.border}`,
+    paddingBottom: 20,
+    marginBottom: 24,
   },
 
   cardTitle: {
     margin: 0,
-    fontSize: '20px',
-    color: '#18284f',
+    fontSize: 20,
+    color: colors.primaryDark,
   },
 
   cardDescription: {
-    marginTop: '6px',
+    marginTop: 6,
     marginBottom: 0,
-    color: '#6b7280',
-    fontSize: '14px',
-  },
-
-  formGroup: {
-    marginBottom: '24px',
-  },
-
-  label: {
-    display: 'block',
-    marginBottom: '8px',
-    fontWeight: '600',
-    color: '#374151',
-    fontSize: '14px',
-  },
-
-  input: {
-    width: '100%',
-    boxSizing: 'border-box',
-    padding: '11px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    backgroundColor: '#ffffff',
+    color: colors.muted,
+    fontSize: 14,
   },
 
   helpText: {
-    marginTop: '6px',
+    marginTop: 6,
     marginBottom: 0,
-    color: '#6b7280',
-    fontSize: '13px',
+    color: colors.muted,
+    fontSize: 13,
   },
 
   maintenanceBox: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: '20px',
-    padding: '18px',
-    marginTop: '8px',
-    marginBottom: '24px',
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
+    gap: 20,
+    padding: 18,
+    marginTop: 8,
+    marginBottom: 24,
+    backgroundColor: colors.bg,
+    border: `1px solid ${colors.border}`,
+    borderRadius: 8,
   },
 
   maintenanceTitle: {
-    fontWeight: '600',
-    color: '#374151',
-    fontSize: '14px',
+    fontWeight: 600,
+    color: colors.text,
+    fontSize: 14,
   },
 
   switch: {
     position: 'relative',
     display: 'inline-block',
-    width: '42px',
-    height: '22px',
+    width: 42,
+    height: 22,
     flexShrink: 0,
   },
 
   checkbox: {
     position: 'absolute',
-    width: '42px',
-    height: '22px',
+    width: 42,
+    height: 22,
     margin: 0,
     opacity: 0,
     cursor: 'pointer',
@@ -327,46 +276,35 @@ const styles = {
     position: 'absolute',
     left: 0,
     top: 0,
-    width: '42px',
-    height: '22px',
-    borderRadius: '20px',
+    width: 42,
+    height: 22,
+    borderRadius: 20,
     cursor: 'pointer',
     transition: '0.2s',
   },
 
   sliderCircle: {
     position: 'absolute',
-    top: '2px',
-    left: '2px',
-    width: '18px',
-    height: '18px',
-    backgroundColor: '#ffffff',
+    top: 2,
+    left: 2,
+    width: 18,
+    height: 18,
+    backgroundColor: colors.white,
     borderRadius: '50%',
     transition: '0.2s',
   },
 
   message: {
     padding: '12px 14px',
-    borderRadius: '6px',
-    fontSize: '14px',
-    marginBottom: '20px',
+    borderRadius: 6,
+    fontSize: 14,
+    marginBottom: 20,
   },
 
   footer: {
     display: 'flex',
     justifyContent: 'flex-end',
-    borderTop: '1px solid #e5e7eb',
-    paddingTop: '20px',
-  },
-
-  saveButton: {
-    padding: '11px 22px',
-    backgroundColor: '#274b93',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
+    borderTop: `1px solid ${colors.border}`,
+    paddingTop: 20,
   },
 };
