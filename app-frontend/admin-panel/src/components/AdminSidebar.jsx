@@ -34,14 +34,7 @@ const DashboardIcon = ({ size = 24, color = 'currentColor' }) => (
 );
 
 const UsersIcon = ({ size = 24, color = 'currentColor' }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 512 512"
-    fill="none"
-    stroke={color}
-    strokeWidth="32"
-  >
+  <svg width={size} height={size} viewBox="0 0 512 512" fill="none" stroke={color} strokeWidth="32">
     <path
       d="M402 168c-2.93 40.67-33.1 72-66 72s-63.12-31.32-66-72c-3-42.31 26.37-72 66-72s69 30.46 66 72"
       strokeLinecap="round"
@@ -99,22 +92,9 @@ const ShiftIcon = ({ size = 24, color = 'currentColor' }) => (
       strokeLinejoin="round"
     />
 
-    <rect
-      x="3"
-      y="2"
-      width="18"
-      height="20"
-      rx="4"
-      stroke={color}
-      strokeWidth="2"
-    />
+    <rect x="3" y="2" width="18" height="20" rx="4" stroke={color} strokeWidth="2" />
 
-    <path
-      d="M8 6H16"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
+    <path d="M8 6H16" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
@@ -147,10 +127,7 @@ const AuditIcon = ({ size = 24, color = 'currentColor' }) => (
   >
     <path d="M416 221.25V416a48 48 0 0 1-48 48H144a48 48 0 0 1-48-48V96a48 48 0 0 1 48-48h98.75a32 32 0 0 1 22.62 9.37l141.26 141.26a32 32 0 0 1 9.37 22.62Z" />
 
-    <path
-      d="M256 56v120a32 32 0 0 0 32 32h120M176 288h160M176 368h160"
-      strokeLinecap="round"
-    />
+    <path d="M256 56v120a32 32 0 0 0 32 32h120M176 288h160M176 368h160" strokeLinecap="round" />
   </svg>
 );
 
@@ -266,10 +243,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
   });
 
   useEffect(() => {
-    localStorage.setItem(
-      'sidebarCollapsed',
-      JSON.stringify(collapsed)
-    );
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(collapsed));
   }, [collapsed]);
 
   const showLabels = isOpen || !collapsed;
@@ -277,9 +251,11 @@ export default function AdminSidebar({ isOpen, onClose }) {
   return (
     <>
       {isOpen && (
-        <div
+        <button
+          type="button"
           onClick={onClose}
           className="admin-sidebar-overlay"
+          aria-label="Close sidebar"
           style={{
             position: 'fixed',
             top: 0,
@@ -288,14 +264,15 @@ export default function AdminSidebar({ isOpen, onClose }) {
             bottom: 0,
             background: 'rgba(0,0,0,0.5)',
             zIndex: 40,
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
           }}
         />
       )}
 
       <aside
-        className={`admin-sidebar ${
-          isOpen ? 'admin-sidebar-open' : ''
-        }`}
+        className={`admin-sidebar ${isOpen ? 'admin-sidebar-open' : ''}`}
         style={{
           width: showLabels ? 220 : 64,
           background: colors.primaryDark,

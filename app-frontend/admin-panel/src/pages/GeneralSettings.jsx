@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  getMockSettings,
-  updateMockSettings,
-} from '../service/mockSettingsAPI';
+import { getMockSettings, updateMockSettings } from '../service/mockSettingsAPI';
 
 export default function GeneralSettings() {
   const [settings, setSettings] = useState(null);
@@ -67,9 +64,7 @@ export default function GeneralSettings() {
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>General Settings</h1>
-          <p style={styles.subtitle}>
-            Manage your SecureShift platform settings.
-          </p>
+          <p style={styles.subtitle}>Manage your SecureShift platform settings.</p>
         </div>
       </div>
 
@@ -83,8 +78,12 @@ export default function GeneralSettings() {
 
         <form onSubmit={handleSave}>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Platform Name</label>
+            <label htmlFor="platformName" style={styles.label}>
+              Platform Name
+            </label>
+
             <input
+              id="platformName"
               type="text"
               name="platformName"
               value={settings.platformName}
@@ -92,14 +91,17 @@ export default function GeneralSettings() {
               placeholder="Enter platform name"
               style={styles.input}
             />
-            <p style={styles.helpText}>
-              The name displayed across the SecureShift platform.
-            </p>
+
+            <p style={styles.helpText}>The name displayed across the SecureShift platform.</p>
           </div>
 
           <div style={styles.formGroup}>
-            <label style={styles.label}>Support Email</label>
+            <label htmlFor="supportEmail" style={styles.label}>
+              Support Email
+            </label>
+
             <input
+              id="supportEmail"
               type="email"
               name="supportEmail"
               value={settings.supportEmail}
@@ -107,68 +109,66 @@ export default function GeneralSettings() {
               placeholder="Enter support email"
               style={styles.input}
             />
-            <p style={styles.helpText}>
-              Email address admins and users can use for support.
-            </p>
+
+            <p style={styles.helpText}>Email address admins and users can use for support.</p>
           </div>
 
           <div style={styles.formGroup}>
-            <label style={styles.label}>Timezone</label>
+            <label htmlFor="timezone" style={styles.label}>
+              Timezone
+            </label>
+
             <select
+              id="timezone"
               name="timezone"
               value={settings.timezone}
               onChange={handleChange}
               style={styles.input}
             >
-              <option value="Australia/Melbourne">
-                Australia/Melbourne
-              </option>
-              <option value="Australia/Sydney">
-                Australia/Sydney
-              </option>
+              <option value="Australia/Melbourne">Australia/Melbourne</option>
+              <option value="Australia/Sydney">Australia/Sydney</option>
               <option value="UTC">UTC</option>
             </select>
-            <p style={styles.helpText}>
-              Select the default timezone for the platform.
-            </p>
+
+            <p style={styles.helpText}>Select the default timezone for the platform.</p>
           </div>
 
           <div style={styles.maintenanceBox}>
             <div>
-              <label style={styles.maintenanceTitle}>
+              <label htmlFor="maintenanceMode" style={styles.maintenanceTitle}>
                 Maintenance Mode
               </label>
+
               <p style={styles.helpText}>
                 Turn this on when the platform is temporarily unavailable.
               </p>
             </div>
 
-            <label style={styles.switch}>
+            <div style={styles.switch}>
               <input
+                id="maintenanceMode"
                 type="checkbox"
                 name="maintenanceMode"
                 checked={settings.maintenanceMode}
                 onChange={handleChange}
                 style={styles.checkbox}
               />
+
               <span
                 style={{
                   ...styles.slider,
-                  backgroundColor: settings.maintenanceMode
-                    ? '#274b93'
-                    : '#ccc',
+                  backgroundColor: settings.maintenanceMode ? '#274b93' : '#ccc',
                 }}
+                aria-hidden="true"
               >
                 <span
                   style={{
                     ...styles.sliderCircle,
-                    transform: settings.maintenanceMode
-                      ? 'translateX(20px)'
-                      : 'translateX(0)',
+                    transform: settings.maintenanceMode ? 'translateX(20px)' : 'translateX(0)',
                   }}
                 />
               </span>
-            </label>
+            </div>
           </div>
 
           {message && (
@@ -314,7 +314,13 @@ const styles = {
   },
 
   checkbox: {
-    display: 'none',
+    position: 'absolute',
+    width: '42px',
+    height: '22px',
+    margin: 0,
+    opacity: 0,
+    cursor: 'pointer',
+    zIndex: 2,
   },
 
   slider: {
