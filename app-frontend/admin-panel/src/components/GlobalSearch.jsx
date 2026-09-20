@@ -17,6 +17,45 @@ function matches(haystackParts, query) {
   return haystack.includes(query);
 }
 
+function extractUsers(result) {
+  if (result.status !== 'fulfilled') return [];
+  if (Array.isArray(result.value)) return result.value;
+  return result.value.users || result.value.data || [];
+}
+
+function extractShifts(result) {
+  if (result.status !== 'fulfilled') return [];
+  if (Array.isArray(result.value)) return result.value;
+  return result.value.shifts || result.value.data || [];
+}
+
+function buildSearchResults(usersData, shiftsData, query) {
+  const matchedUsers = usersData
+    .filter((u) => u.role !== 'guard')
+    .filter((u) => matches([u.name, u.email, u._id], query))
+    .slice(0, MAX_RESULTS_PER_GROUP);
+
+  const matchedGuards = usersData
+    .filter((u) => u.role === 'guard')
+    .filter((u) => matches([u.name, u.email, u._id], query))
+    .slice(0, MAX_RESULTS_PER_GROUP);
+
+  const matchedShifts = shiftsData
+    .filter((s) =>
+      matches(
+        [s.title, s.status, s._id, personLabel(s.createdBy), personLabel(s.acceptedBy)],
+        query
+      )
+    )
+    .slice(0, MAX_RESULTS_PER_GROUP);
+
+  return {
+    users: matchedUsers,
+    guards: matchedGuards,
+    shifts: matchedShifts,
+  };
+}
+
 // Cross-entity search. Aggregates existing list
 // endpoints client-side until a dedicated /admin/search endpoints exists.
 export default function GlobalSearch() {
@@ -38,6 +77,7 @@ export default function GlobalSearch() {
         setOpen(false);
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -58,44 +98,17 @@ export default function GlobalSearch() {
         setLoading(true);
         setError('');
 
-        const [usersResult, shiftsResult] = await Promise.allSettled([getUsers(), getShifts()]);
+        const [usersResult, shiftsResult] = await Promise.allSettled([
+          getUsers(),
+          getShifts(),
+        ]);
 
         if (!active) return;
 
-        const usersData =
-          usersResult.status === 'fulfilled'
-            ? Array.isArray(usersResult.value)
-              ? usersResult.value
-              : usersResult.value.users || usersResult.value.data || []
-            : [];
+        const usersData = extractUsers(usersResult);
+        const shiftsData = extractShifts(shiftsResult);
 
-        const shiftsData =
-          shiftsResult.status === 'fulfilled'
-            ? Array.isArray(shiftsResult.value)
-              ? shiftsResult.value
-              : shiftsResult.value.shifts || shiftsResult.value.data || []
-            : [];
-
-        const matchedUsers = usersData
-          .filter((u) => u.role !== 'guard')
-          .filter((u) => matches([u.name, u.email, u._id], q))
-          .slice(0, MAX_RESULTS_PER_GROUP);
-
-        const matchedGuards = usersData
-          .filter((u) => u.role === 'guard')
-          .filter((u) => matches([u.name, u.email, u._id], q))
-          .slice(0, MAX_RESULTS_PER_GROUP);
-
-        const matchedShifts = shiftsData
-          .filter((s) =>
-            matches(
-              [s.title, s.status, s._id, personLabel(s.createdBy), personLabel(s.acceptedBy)],
-              q
-            )
-          )
-          .slice(0, MAX_RESULTS_PER_GROUP);
-
-        setResults({ users: matchedUsers, guards: matchedGuards, shifts: matchedShifts });
+        setResults(buildSearchResults(usersData, shiftsData, q));
 
         if (usersResult.status === 'rejected' && shiftsResult.status === 'rejected') {
           setError('Search is unavailable right now.');
@@ -186,12 +199,14 @@ export default function GlobalSearch() {
           )}
 
           {!loading && error && (
-            <div style={{ padding: '10px 12px', color: colors.danger, fontSize: 14 }}>{error}</div>
+            <div style={{ padding: '10px 12px', color: colors.danger, fontSize: 14 }}>
+              {error}
+            </div>
           )}
 
           {!loading && !error && !hasAnyResults && (
             <div style={{ padding: '10px 12px', color: colors.muted, fontSize: 14 }}>
-              No matches for &quot{query}&quot;
+              No matches for &quot;{query}&quot;
             </div>
           )}
 
@@ -240,12 +255,16 @@ export default function GlobalSearch() {
                         {group.key === 'shifts' ? (
                           <>
                             <div>{item.title || 'Untitled shift'}</div>
-                            <div style={{ fontSize: 12, color: colors.muted }}>{item.status}</div>
+                            <div style={{ fontSize: 12, color: colors.muted }}>
+                              {item.status}
+                            </div>
                           </>
                         ) : (
                           <>
                             <div>{item.name}</div>
-                            <div style={{ fontSize: 12, color: colors.muted }}>{item.email}</div>
+                            <div style={{ fontSize: 12, color: colors.muted }}>
+                              {item.email}
+                            </div>
                           </>
                         )}
                       </button>
