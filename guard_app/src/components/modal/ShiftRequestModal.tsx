@@ -1,6 +1,7 @@
 // components/modal/ShiftRequestModal.tsx
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import React, { useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -14,48 +15,123 @@ import {
   View,
 } from 'react-native';
 
+import { createShiftRequest, getSwapableShifts, SwapOptionsResponse } from '../../api/shiftRequest';
+
+import type { AllShift, AppliedShift, CompletedShift } from '../../models/Shifts';
 import type { AppColors } from '../../theme/colors';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   colors: AppColors;
+  shift: AppliedShift | CompletedShift | AllShift | null;
 };
 
-export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
+export default function ShiftRequestModal({ visible, onClose, colors, shift }: Props) {
   const s = getStyles(colors);
   const { t } = useTranslation();
 
   const REQUEST_TYPES = [
-    { id: 'swap', label: t('shifts.swap') },
-    { id: 'leave', label: t('shifts.leave') },
+    { index: 0, id: 'SWAP', label: t('shifts.swap') },
+    { index: 1, id: 'LEAVE', label: t('shifts.leave') },
   ];
 
-  const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(null);
+  const [activePicker, setActivePicker] = useState<'start' | 'end' | null>(null);
   const [reason, setReason] = useState<string>('');
-  const [requestDate, setRequestDate] = useState<Date | null>(null);
-  const [requestTime, setRequestTime] = useState<Date | null>(null);
-  const [requestType, setRequestType] = useState<string>(REQUEST_TYPES[0].label);
+  const [leaveStart, setLeaveStart] = useState<Date | null>(null);
+  const [leaveEnd, setLeaveEnd] = useState<Date | null>(null);
+  const [requestType, setRequestType] = useState<number>(0);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [showSwapOptions, setShowSwapOptions] = useState<boolean>(false);
+  const [swapOptions, setSwapOptions] = useState<SwapOptionsResponse[]>([]);
+  const [swapChoice, setSwapChoice] = useState<number>(-1);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<boolean>(false);
 
-  const handleCreateRequest = () => {
-    if (requestType === REQUEST_TYPES[0].label) {
-      if (requestDate === null || requestTime === null) {
-        Alert.alert(t('shifts.alerts.missingTimeHead'), t('shifts.alerts.missingTimeMsg'));
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setSwapChoice(-1);
+
+      if (!shift) throw error;
+      const res = await getSwapableShifts(shift.id);
+      if (!res) throw error;
+      setSwapOptions(res);
+      setSwapChoice(0);
+      setError(false);
+      setLoading(false);
+    } catch (e: unknown) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => void fetchData(), [fetchData]));
+
+  const handleCreateRequest = async () => {
+    if (reason.length === 0) {
+      Alert.alert(t('shifts.alerts.missingReasonHead'), t('shifts.alerts.missingReasonMsg'));
+    }
+
+    if (requestType === 1) {
+      if (leaveStart === null || leaveEnd === null) {
+        Alert.alert(t('shifts.alerts.missingDateHead'), t('shifts.alerts.missingDateMsg'));
         return;
       }
-      if (requestDate < new Date()) {
-        Alert.alert(t('shifts.alerts.invalidTimeHead'), t('shifts.alerts.invalidTimeMsg'));
+      if (leaveStart < new Date()) {
+        Alert.alert(t('shifts.alerts.invalidDateHead'), t('shifts.alerts.invalidDateMsg'));
+        return;
+      }
+      if (leaveStart > leaveEnd) {
+        Alert.alert(t('shifts.alerts.invalidDateHead'), t('shifts.alerts.invalidDateMsg'));
         return;
       }
     }
 
-    //Send request to API
+    if (requestType === 0) {
+      if (swapChoice < 0 || swapChoice > swapOptions.length) {
+        Alert.alert(t('shifts.alerts.invalidDateHead'), t('shifts.alerts.invalidDateHead'));
+        return;
+      }
+    }
+
+    if (shift === null) return;
+
+    try {
+      if (REQUEST_TYPES[requestType].id === 'SWAP') {
+        const res = await createShiftRequest({
+          type: REQUEST_TYPES[requestType].id,
+          targetGuardId: swapOptions[swapChoice].acceptedBy._id,
+          originalShiftId: shift.id,
+          replacementShiftId: swapOptions[swapChoice]._id,
+          leaveStartDate: null,
+          leaveEndDate: null,
+          reason,
+        });
+        Alert.alert(t('shifts.alerts.requestCreated'), t('shifts.alerts.successMessage'));
+      } else if (REQUEST_TYPES[requestType].id === 'LEAVE') {
+        const res = await createShiftRequest({
+          type: REQUEST_TYPES[requestType].id,
+          targetGuardId: null,
+          originalShiftId: shift.id,
+          replacementShiftId: null,
+          leaveStartDate: leaveStart,
+          leaveEndDate: leaveEnd,
+          reason,
+        });
+        Alert.alert(t('shifts.alerts.requestCreated'), t('shifts.alerts.successMessage'));
+      } else {
+        Alert.alert(t('shifts.alerts.requestFailed'));
+      }
+    } catch {
+      Alert.alert(t('shifts.alerts.requestFailed'));
+    }
 
     onClose();
   };
 
-  const openPicker = (kind: 'date' | 'time') => {
+  const openPicker = (kind: 'start' | 'end') => {
     setActivePicker(kind);
   };
 
@@ -67,10 +143,10 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
 
     if (!selected) return;
 
-    if (activePicker === 'date') {
-      setRequestDate(selected);
-    } else if (activePicker === 'time') {
-      setRequestTime(selected);
+    if (activePicker === 'start') {
+      setLeaveStart(selected);
+    } else if (activePicker === 'end') {
+      setLeaveEnd(selected);
     }
 
     if (Platform.OS === 'android') {
@@ -78,112 +154,202 @@ export default function ShiftRequestModal({ visible, onClose, colors }: Props) {
     }
   };
 
-  const formatTime = (date: Date) => {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const mins = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${mins}`;
-  };
-
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={s.modalOverlay} onPress={onClose}>
-        <Pressable style={s.modalContent} onPress={(e) => e.stopPropagation()}>
-          <View style={s.modalHeader}>
-            <Text style={s.modalTitle}>{t('shifts.createRequest')}</Text>
-            <TouchableOpacity onPress={onClose} style={s.modalCloseBtn}>
-              <Text style={s.modalCloseText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={s.modalBody}>
-            <View style={s.modalHeaderRow}>
-              <Text style={s.modalShiftHeader}>{t('shifts.requestType')}</Text>
-            </View>
-            <TouchableOpacity style={s.dropdown} onPress={() => setShowDropdown(!showDropdown)}>
-              <Text style={requestType ? s.dropdownTextSelected : s.dropdownTextPlaceholder}>
-                {requestType || t('shifts.selectRequestType')}
-              </Text>
-              <Text style={s.dropdownIcon}>{showDropdown ? '▲' : '▼'}</Text>
-            </TouchableOpacity>
-
-            {showDropdown && (
-              <View style={s.dropdownMenu}>
-                {REQUEST_TYPES.map((request) => (
-                  <TouchableOpacity
-                    key={request.id}
-                    style={[s.dropdownItem, requestType === request.id && s.dropdownItemSelected]}
-                    onPress={() => {
-                      setRequestType(request.label);
-                      setShowDropdown(false);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        s.dropdownItemText,
-                        requestType === request.id && s.dropdownItemTextSelected,
-                      ]}
-                    >
-                      {request.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            <View style={s.modalHeaderRow}>
-              <Text style={s.modalShiftHeader}>{t('shifts.requestedTime')}</Text>
-            </View>
-            <TextInput
-              style={s.modalInput}
-              placeholder={t('shifts.reasonHint')}
-              placeholderTextColor={colors.muted}
-              keyboardType="default"
-              returnKeyType="done"
-              onChangeText={(s) => setReason(s)}
-            />
-
-            {requestType === REQUEST_TYPES[0].label && (
-              <View>
-                <View style={s.modalHeaderRow}>
-                  <Text style={s.modalShiftHeader}>{t('shifts.requestedTime')}</Text>
-                </View>
-                <View style={s.modalHeaderRow}>
-                  <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('date')}>
-                    <Text style={s.modalTimeText}>
-                      {requestDate ? requestDate.toDateString() : t('shifts.selectDate')}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('time')}>
-                    <Text style={s.modalTimeText}>
-                      {requestTime ? formatTime(requestTime) : t('shifts.selectTime')}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            <View style={s.modalRequirements}>
-              <TouchableOpacity style={s.modalButton} onPress={handleCreateRequest}>
-                <Text style={s.modalButtonText}>{t('shifts.createRequest')}</Text>
+        {!loading && (
+          <Pressable style={s.modalContent} onPress={(e) => e.stopPropagation()}>
+            <View style={s.modalHeader}>
+              <Text style={s.modalTitle}>{t('shifts.createRequest')}</Text>
+              <TouchableOpacity onPress={onClose} style={s.modalCloseBtn}>
+                <Text style={s.modalCloseText}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            {activePicker && (
-              <DateTimePicker
-                value={
-                  activePicker === 'date'
-                    ? (requestDate ?? new Date())
-                    : activePicker === 'time'
-                      ? (requestTime ?? new Date())
-                      : (requestTime ?? new Date())
-                }
-                mode={activePicker === 'date' ? 'date' : 'time'}
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handlePickerChange}
+            <View style={s.modalBody}>
+              <View style={s.modalHeaderRow}>
+                <Text style={s.modalShiftHeader}>{t('shifts.requestType')}</Text>
+              </View>
+              <TouchableOpacity style={s.dropdown} onPress={() => setShowDropdown(!showDropdown)}>
+                <Text
+                  style={
+                    REQUEST_TYPES[requestType].label
+                      ? s.dropdownTextSelected
+                      : s.dropdownTextPlaceholder
+                  }
+                >
+                  {REQUEST_TYPES[requestType].label || t('shifts.selectRequestType')}
+                </Text>
+                <Text style={s.dropdownIcon}>{showDropdown ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
+
+              {showDropdown && (
+                <View style={s.dropdownMenu}>
+                  {REQUEST_TYPES.map((request) => (
+                    <TouchableOpacity
+                      key={request.id}
+                      style={[
+                        s.dropdownItem,
+                        requestType === request.index && s.dropdownItemSelected,
+                      ]}
+                      onPress={() => {
+                        setRequestType(request.index);
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          s.dropdownItemText,
+                          requestType === request.index && s.dropdownItemTextSelected,
+                        ]}
+                      >
+                        {request.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <View style={s.modalHeaderRow}>
+                <Text style={s.modalShiftHeader}>{t('shifts.reason')}</Text>
+              </View>
+              <TextInput
+                style={s.modalInput}
+                placeholder={t('shifts.reasonHint')}
+                placeholderTextColor={colors.muted}
+                keyboardType="default"
+                returnKeyType="done"
+                onChangeText={(s) => setReason(s)}
               />
-            )}
-          </View>
-        </Pressable>
+
+              {requestType === 0 && (
+                <View style={s.modalBody}>
+                  <View style={s.modalHeaderRow}>
+                    <Text style={s.modalShiftHeader}>{t('shifts.swapShift')}</Text>
+                  </View>
+                  {error || loading || swapOptions.length === 0 ? (
+                    <TouchableOpacity style={s.dropdown}>
+                      <Text style={s.dropdownTextError}>{t('shifts.swapOptionsError')}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View>
+                      <TouchableOpacity
+                        style={s.dropdown}
+                        onPress={() => setShowSwapOptions(!showSwapOptions)}
+                      >
+                        <Text style={s.dropdownTextSelected}>
+                          {swapOptions === null || swapOptions[swapChoice] === undefined
+                            ? t('shifts.swapOptionsError')
+                            : swapOptions[swapChoice].title}
+                        </Text>
+                        <Text style={s.dropdownIcon}>{showSwapOptions ? '▲' : '▼'}</Text>
+                      </TouchableOpacity>
+                      {showSwapOptions && (
+                        <View style={s.dropdownMenu}>
+                          {swapOptions.map((choice, index) => (
+                            <TouchableOpacity
+                              key={choice._id}
+                              style={[
+                                s.dropdownItem,
+                                swapChoice === index && s.dropdownItemSelected,
+                              ]}
+                              onPress={() => {
+                                setSwapChoice(index);
+                                setShowSwapOptions(false);
+                              }}
+                            >
+                              <Text
+                                style={[
+                                  s.dropdownItemText,
+                                  requestType === index && s.dropdownItemTextSelected,
+                                ]}
+                              >
+                                {choice.title}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                      {!showSwapOptions && (
+                        <View>
+                          <View style={s.detailsRow}>
+                            <Text style={s.detailsLabel}>{t('shifts.date')}</Text>
+                            <Text style={s.detailsValue}>
+                              {new Date(swapOptions[swapChoice].date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              }) +
+                                ' ' +
+                                swapOptions[swapChoice].startTime +
+                                ' - ' +
+                                swapOptions[swapChoice].endTime}
+                            </Text>
+                          </View>
+                          <View style={s.detailsRow}>
+                            <Text style={s.detailsLabel}>{t('shifts.location')}</Text>
+                            <Text style={s.detailsValue}>
+                              {swapOptions[swapChoice].location.street}
+                            </Text>
+                          </View>
+                          <View style={s.detailsRow}>
+                            <Text style={s.detailsLabel}>{t('shifts.assignedGuard')}</Text>
+                            <Text style={s.detailsValue}>
+                              {swapOptions[swapChoice].acceptedBy.name}
+                            </Text>
+                          </View>
+                          <View style={s.detailsRow}>
+                            <Text style={s.detailsLabel}>{t('shifts.payRate')}</Text>
+                            <Text style={s.detailsValue}>
+                              {swapOptions[swapChoice].payRate + '/hour'}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {requestType === 1 && (
+                <View style={s.modalBody}>
+                  <View style={s.modalHeaderRow}>
+                    <Text style={s.modalShiftHeader}>{t('shifts.requestedTime')}</Text>
+                  </View>
+                  <View style={s.modalHeaderRow}>
+                    <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('start')}>
+                      <Text style={s.modalTimeText}>
+                        {leaveStart ? leaveStart.toDateString() : t('shifts.selectStart')}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={s.modalTimeInput} onPress={() => openPicker('end')}>
+                      <Text style={s.modalTimeText}>
+                        {leaveEnd ? leaveEnd.toDateString() : t('shifts.selectEnd')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <View style={s.modalRequirements}>
+                <TouchableOpacity style={s.modalButton} onPress={handleCreateRequest}>
+                  <Text style={s.modalButtonText}>{t('shifts.createRequest')}</Text>
+                </TouchableOpacity>
+              </View>
+
+              {activePicker && (
+                <DateTimePicker
+                  value={
+                    activePicker === 'start' ? (leaveStart ?? new Date()) : (leaveEnd ?? new Date())
+                  }
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handlePickerChange}
+                />
+              )}
+            </View>
+          </Pressable>
+        )}
       </Pressable>
     </Modal>
   );
@@ -329,6 +495,10 @@ const getStyles = (colors: AppColors) =>
       fontSize: 15,
       color: colors.muted,
     },
+    dropdownTextError: {
+      fontSize: 15,
+      color: colors.status.rejected,
+    },
     dropdownTextSelected: {
       fontSize: 15,
       color: colors.text,
@@ -337,5 +507,20 @@ const getStyles = (colors: AppColors) =>
     dropdownIcon: {
       fontSize: 12,
       color: colors.muted,
+    },
+    detailsRow: {
+      flexDirection: 'row',
+      marginBottom: 6,
+    },
+    detailsLabel: {
+      fontSize: 13,
+      color: colors.muted,
+      width: 60,
+    },
+    detailsValue: {
+      fontSize: 13,
+      color: colors.text,
+      fontWeight: '500',
+      flex: 1,
     },
   });

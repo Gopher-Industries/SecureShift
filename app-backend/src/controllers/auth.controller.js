@@ -40,7 +40,22 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
+    const allowedPublicRoles = ["employer"];
+
+    if (!role) {
+      return res.status(400).json({
+        message: "Role is required.",
+      });
+    }
+
+    if (!allowedPublicRoles.includes(role)) {
+      return res.status(400).json({
+        message: `Role '${role}' is not permitted for public registration.`,
+      });
+    }
+
     let newUser;
+
     if (role === "employer") {
       if (!ABN) {
         return res
@@ -57,9 +72,6 @@ export const register = async (req, res) => {
         address,
         ABN,
       });
-    } else {
-      // default Admin or other roles
-      newUser = new User({ name, email, password, role, phone, address });
     }
 
     await newUser.save();
@@ -76,6 +88,7 @@ export const register = async (req, res) => {
 /**
  * @desc Register a new Guard with a required license image
  * @route POST /api/v1/auth/register/guard
+
  * @access Public
  * @body  multipart/form-data with field "license" (image), plus JSON fields
  *        name, email, password, phone?, address?
@@ -164,25 +177,30 @@ export const login = async (req, res) => {
     user.otpExpiresAt = expiry;
     await user.save();
 
-    let emailSent = false;
-
     try {
       await sendOTP(user.email, otp, user.name);
-      emailSent = true;
-    } catch (err) {
-      console.error("OTP email failed:", err.message);
-    }
-
-    await req.audit.log(user._id, ACTIONS.LOGIN_SUCCESS, { step: "OTP_SENT" });
-
-    if (emailSent) {
+      await req.audit.log(user._id, ACTIONS.OTP_SENT);
       return res.status(200).json({ message: "OTP sent to your email" });
+    } catch {
+      await User.updateOne(
+        {
+          _id: user._id,
+          otp,
+          otpExpiresAt: expiry,
+        },
+        {
+          $unset: {
+            otp: "",
+            otpExpiresAt: "",
+          },
+        },
+      );
+      await req.audit.log(user._id, ACTIONS.OTP_DELIVERY_FAILED);
+      return res.status(503).json({
+        message:
+          "We could not send your verification code. Please try again later.",
+      });
     }
-
-    return res.status(200).json({
-      message: "OTP generated successfully",
-      warning: "Email failed. Check server console for OTP.",
-    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

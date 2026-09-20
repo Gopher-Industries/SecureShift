@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 
 import { getNotifications, getUnreadCount, markAsRead } from '../api/notification';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 type IconName = 'check-circle' | 'calendar-alt' | 'exclamation-circle' | 'bell';
@@ -153,11 +155,12 @@ export default function NotificationsScreen() {
       </View>
 
       {loading && page === 1 ? (
-        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+        <LoadingState />
       ) : notifications.length === 0 ? (
-        <Text style={{ textAlign: 'center', marginTop: 20, color: colors.muted }}>
-          {t('notif.empty', 'No notifications yet.')}
-        </Text>
+        <EmptyState
+          icon="notifications-outline"
+          title={t('notif.empty', 'No notifications yet.')}
+        />
       ) : (
         <FlatList
           data={notifications}

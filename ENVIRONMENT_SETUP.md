@@ -17,7 +17,7 @@ docker compose up --build
 
 `docker compose down -v` permanently deletes the local Docker MongoDB volume and its local data. Fresh clones and new users do not need this reset. After this one-time migration, normal shutdown should use `docker compose down` without `-v`.
 
-For the backend, employer frontend, and MongoDB, the canonical local Docker startup path is:
+For the backend, employer frontend, MongoDB, and Mailpit, the canonical local Docker startup path is:
 
 ```bash
 docker compose up --build
@@ -36,6 +36,12 @@ docker compose ps
 curl http://localhost:5000/api/v1/health
 ```
 
+Mailpit captures local email only; it does not send messages to external recipients. Open
+`http://127.0.0.1:8025` after attempting login, select the OTP message, and use its code to finish
+login. Its SMTP listener is exposed at `127.0.0.1:1025`. Both ports are loopback-bound by default.
+Override `MAILPIT_SMTP_HOST_PORT` or `MAILPIT_UI_HOST_PORT` in the repository `.env` only if those
+ports are already occupied.
+
 The health URL above assumes the default `BACKEND_HOST_PORT=5000`. If you override the backend host port, substitute that value in the health and Swagger URLs. For example, with `BACKEND_HOST_PORT=5001`:
 
 ```text
@@ -53,8 +59,89 @@ The Docker Compose backend uses local-only credentials supplied by `docker-compo
 MONGO_URI=mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
 PORT=5000
 NODE_ENV=development
+AUDIT_LOG_ENABLED=true
+EMAIL_ENABLED=true
+SMTP_HOST=mailpit
+SMTP_PORT=1025
+SMTP_SECURE=false
+SMTP_AUTH_REQUIRED=false
+SMTP_FROM_EMAIL=local@example.test
 ```
 
+### Backend Running Directly on the Host
+
+Start Mailpit (and MongoDB) without starting the Compose backend:
+
+```bash
+docker compose up -d mailpit mongodb
+```
+
+Copy `app-backend/.env.example` to `app-backend/.env`. Its local email defaults use
+`SMTP_HOST=localhost`, because a backend process running in WSL, Linux, or macOS reaches Mailpit
+through the loopback-bound host port. Start the backend from `app-backend`, attempt login, then open
+`http://127.0.0.1:8025`.
+
+`SMTP_HOST=mailpit` works only for the backend container on the Compose network. Do not use
+`localhost` for that container: inside it, `localhost` refers to the backend container itself.
+
+For first-time local data, temporarily set:
+
+```env
+SEED_ALLOW_LOCAL=true
+```
+
+Then run from `app-backend`:
+
+```bash
+npm run seed
+npm run dev
+```
+
+After the seed succeeds, restore `SEED_ALLOW_LOCAL=false`.
+
+`npm run seed:reset` is intentionally delete-only. It removes only the stable
+seed records and requires `SEED_RESET_CONFIRM=SecureShiftLocalReset`. It does
+not repopulate the database, so it should not be part of normal onboarding.
+
+### Local Audit Logging
+
+Set the following when local audit records should be persisted to
+`secureshift_local.auditlogs`:
+
+```env
+AUDIT_LOG_ENABLED=true
+```
+
+The OTP flow records:
+
+- `OTP_SENT` after Mailpit accepts the OTP email.
+- `LOGIN_SUCCESS` with `metadata.step: "OTP_VERIFIED"` after successful OTP
+  verification and JWT issuance.
+- `OTP_DELIVERY_FAILED` when SMTP delivery fails.
+
+Audit records do not include OTP values, JWTs, SMTP passwords, or email bodies.
+Restart the backend after changing `.env` values because environment
+configuration is loaded during startup.
+
+In MongoDB Compass, query a user with normal shell syntax:
+
+```javascript
+{ user: ObjectId("8a4d53ffcdde6d18139a6e17") }
+```
+
+Do not use the Extended JSON `$oid` form in the normal Compass query bar.
+
+### Email Configuration
+
+- `EMAIL_ENABLED=false` disables delivery. Login does not reveal or log an OTP when delivery is
+  disabled; it returns the same sanitized unavailable response used for other delivery failures.
+- `SMTP_AUTH_REQUIRED=false` is intended for local Mailpit. Leave `SMTP_USER` and `SMTP_PASS` empty;
+  the backend omits Nodemailer's `auth` option entirely.
+- Production SMTP should set `EMAIL_ENABLED=true`, `SMTP_AUTH_REQUIRED=true`, and provide both
+  `SMTP_USER` and `SMTP_PASS`. A partial credential pair is rejected.
+- Boolean settings accept only `true` or `false` (case-insensitive). `SMTP_SECURE=true` normally
+  corresponds to implicit TLS, commonly on port 465; follow the production provider's guidance.
+- `SMTP_FROM_EMAIL` is required whenever email is enabled.
 
 ## Employer Panel (React)
 
@@ -110,8 +197,8 @@ EXPO_PUBLIC_API_BASE_URL=http://YOUR_LAN_IP:5000
 
 ### Updated Files
 
-
 **Employer Panel:**
+
 - `src/lib/http.js` - New centralized Axios instance
 - `src/pages/Login.js` - Updated to use centralized instance
 - `src/pages/2FA.js` - Updated to use centralized instance

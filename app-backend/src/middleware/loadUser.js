@@ -1,6 +1,9 @@
 /**
  * Loads the full user document and attaches it to req.userDoc
  * Requires that req.user is already populated by the JWT auth middleware.
+ *
+ * Security Enhancement: Also synchronises req.user.role with the current
+ * database role to ensure consistency across middlewares.
  */
 import User from "../models/User.js";
 
@@ -15,6 +18,12 @@ const loadUser = async (req, res, next) => {
       return res.status(401).json({ message: "User not found or inactive" });
     }
     req.userDoc = userDoc;
+
+    // ensure req.user.role is consistent with the database role
+    if (req.user) {
+      req.user.role = userDoc.role;
+    }
+
     next();
   } catch (err) {
     next(err);

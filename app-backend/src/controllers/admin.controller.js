@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import Shift from "../models/Shift.js";
 import AuditLog from "../models/AuditLogs.js";
@@ -7,12 +8,12 @@ import Guard from "../models/Guard.js";
 import { sendOTP } from "../utils/sendEmail.js";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+// import { fileURLToPath } from "url";
 
 import jwt from "jsonwebtoken";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 /**
  * Generate JWT token for a user
@@ -58,6 +59,9 @@ export const adminLogin = async (req, res) => {
       name: user.name,
       role: user.role,
     });
+
+    // const envPath = path.join(process.cwd(), ".env");
+    // let envContent = "";
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -70,18 +74,76 @@ export const adminLogin = async (req, res) => {
  */
 export const getAllUsers = async (req, res) => {
   try {
-    // Fetch all users, exclude passwords for security
-    const users = await User.find({ isDeleted: { $ne: true } }).select(
-      "-password",
-    );
+    const pageRaw = req.query.page ?? "1";
+    const limitRaw = req.query.limit ?? "20";
+
+    if (!/^\d+$/.test(String(pageRaw)) || Number(pageRaw) < 1) {
+      return res.status(400).json({
+        message: "page must be a positive integer",
+      });
+    }
+
+    if (!/^\d+$/.test(String(limitRaw)) || Number(limitRaw) < 1) {
+      return res.status(400).json({
+        message: "limit must be a positive integer",
+      });
+    }
+
+    const page = Number(pageRaw);
+    const limit = Math.min(Number(limitRaw), 50);
+    const skip = (page - 1) * limit;
+
+    const { q, role } = req.query;
+
+    const allowedRoles = ["guard", "employer", "admin"];
+
+    if (role && !allowedRoles.includes(role)) {
+      return res.status(400).json({
+        message: "Invalid role filter",
+      });
+    }
+
+    const query = {
+      isDeleted: { $ne: true },
+    };
+
+    if (q && String(q).trim()) {
+      const search = String(q).trim();
+
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (role) {
+      query.role = role;
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select("-password")
+        .sort({ name: 1, email: 1, _id: 1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(query),
+    ]);
+
     await req.audit.log(req.user.id, ACTIONS.VIEW_USERS, {
-      totalUsers: users.length,
+      totalUsers: total,
     });
-    res.status(200).json({ users });
+
+    return res.status(200).json({
+      page,
+      limit,
+      total,
+      users,
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to retrieve users", error: error.message });
+    return res.status(500).json({
+      message: "Failed to retrieve users",
+      error: error.message,
+    });
   }
 };
 
@@ -111,21 +173,79 @@ export const getAuditLogs = async (req, res) => {
   try {
     const { page = 1, limit = 50, userId, action, role, from, to } = req.query;
 
+    const VALID_ROLES = ["guard", "employer", "admin"];
+    if (role && !VALID_ROLES.includes(role)) {
+      return res.status(400).json({
+        message: `Invalid role. Must be one of: ${VALID_ROLES.join(", ")}`,
+      });
+    }
+
     const query = {};
-    if (userId) query.user = userId;
     if (action) query.action = action;
-    if (role) query.role = role;
     if (from || to) query.timestamp = {};
     if (from) query.timestamp.$gte = new Date(from);
     if (to) query.timestamp.$lte = new Date(to);
 
-    const logs = await AuditLog.find(query)
-      .sort({ timestamp: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
-      .populate("user", "name email role"); // populate user info
+    let noMatch = false;
 
-    res.status(200).json({ logs });
+    if (userId && role) {
+      const usersWithRole = await User.find({
+        role,
+        isDeleted: { $ne: true },
+      }).select("_id");
+      const roleUserIds = usersWithRole.map((u) => String(u._id));
+      if (roleUserIds.includes(String(userId))) {
+        query.user = userId;
+      } else {
+        noMatch = true;
+      }
+    } else if (userId) {
+      query.user = userId;
+    } else if (role) {
+      const usersWithRole = await User.find({
+        role,
+        isDeleted: { $ne: true },
+      }).select("_id");
+      if (usersWithRole.length === 0) {
+        noMatch = true;
+      } else {
+        query.user = { $in: usersWithRole.map((u) => u._id) };
+      }
+    }
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    if (noMatch) {
+      return res.status(200).json({
+        logs: [],
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: 0,
+          hasNext: false,
+        },
+      });
+    }
+
+    const [logs, total] = await Promise.all([
+      AuditLog.find(query)
+        .sort({ timestamp: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum)
+        .populate("user", "name email role"),
+      AuditLog.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      logs,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        hasNext: pageNum * limitNum < total,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -354,7 +474,18 @@ export const deleteMessageById = async (req, res) => {
  */
 const getAllDocuments = (guard) => {
   const allDocuments = [];
-  if (guard.license && guard.license.status !== "none") {
+
+  const modernDocs = (guard.documents || []).map((doc) => {
+    const docObj = doc.toObject ? doc.toObject() : doc;
+    return {
+      ...docObj,
+      status: docObj.verificationStatus,
+    };
+  });
+
+  const hasModernLicense = modernDocs.some((d) => d.type === "license");
+
+  if (guard.license && guard.license.status !== "none" && !hasModernLicense) {
     allDocuments.push({
       type: "license",
       status: guard.license?.status,
@@ -366,11 +497,22 @@ const getAllDocuments = (guard) => {
     });
   }
 
-  if (guard.documents && Array.isArray(guard.documents)) {
-    allDocuments.push(...guard.documents);
+  allDocuments.push(...modernDocs);
+
+  const seenTypes = new Set();
+  const deduped = [];
+  for (const doc of allDocuments) {
+    if (doc.type === "license") {
+      if (!seenTypes.has("license")) {
+        seenTypes.add("license");
+        deduped.push(doc);
+      }
+    } else {
+      deduped.push(doc);
+    }
   }
 
-  return allDocuments;
+  return deduped;
 };
 
 /**
@@ -431,6 +573,11 @@ const formatDocumentForResponse = (doc) => {
   const baseDoc = {
     type: doc.type || "license",
     status: doc.status || "none",
+    id: doc._id || null,
+    imageUrl: doc.imageUrl || null,
+    rejectionReason: doc.rejectionReason || null,
+    reviewedAt: doc.reviewedAt || null,
+    verifiedBy: doc.verifiedBy || null,
   };
 
   if (doc.expiryDate) {
@@ -529,6 +676,10 @@ export const verifyGuardLicense = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+
     // Ensure it's a guard record
     const guard = await Guard.findById(id);
     if (!guard) return res.status(404).json({ message: "Guard not found" });
@@ -561,6 +712,10 @@ export const rejectGuardLicense = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body || {};
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
 
     const guard = await Guard.findById(id);
     if (!guard) return res.status(404).json({ message: "Guard not found" });
@@ -747,10 +902,9 @@ export const testSmtpSettings = async (req, res) => {
         message: "Test email sent successfully",
         note: "Check the inbox of the test email address",
       });
-    } catch (emailError) {
+    } catch {
       res.status(500).json({
-        message: "Failed to send test email",
-        error: emailError.message,
+        message: "Failed to send test email. Please verify the SMTP settings.",
       });
     }
   } catch (err) {

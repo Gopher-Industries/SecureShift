@@ -32,6 +32,13 @@
       }
     },
     "owner": "secureshift-guardapp",
-    "plugins": ["@react-native-community/datetimepicker", "expo-localization"]
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-localization",
+      [
+        "expo-local-authentication",
+        { "faceIDPermission": "Allow SecureShift to unlock the app with Face ID." }
+      ]
+    ]
   }
 }

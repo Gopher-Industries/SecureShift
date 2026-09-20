@@ -6,8 +6,9 @@ This guide explains how to run the SecureShift project locally using Docker and 
 
 - Backend (Node.js + Express)
 - Frontend (React - Employer Panel)
-- Frontend (React - Admin Panel) — currently run separately on port 3001 (not yet part of the Compose stack)
+- Frontend (React - Admin Panel) — runs on port 3001
 - Database (MongoDB)
+- Local email capture (Mailpit)
 
 ## Project Structure
 
@@ -51,7 +52,75 @@ JWT_SECRET=local-dev-jwt-secret-change-me
 
 Do not use these credentials outside local Docker onboarding, and do not commit private `.env` files.
 
-Most users do not need to configure anything before starting Docker Compose. If a default host port is already occupied, copy `.env.example` to `.env` and set only the port you need to change. For example, set `BACKEND_HOST_PORT=5001` when port 5000 is occupied. On macOS, AirPlay Receiver can sometimes use port 5000.
+Most users do not need to configure anything before starting Docker Compose. If a default host port is already occupied, copy `.env.example` to `.env` and set only the port you need to change. For example, set `BACKEND_HOST_PORT=5001` when port 5000 is occupied, or `ADMIN_FRONTEND_HOST_PORT=3002` if port 3001 is occupied. On macOS, AirPlay Receiver can sometimes use port 5000.
+
+## Recommended Backend Development Workflow
+
+For backend development, run MongoDB and Mailpit through Docker while running
+the Node.js backend directly with Nodemon.
+
+From the repository root:
+
+```bash
+docker compose up -d mongodb mailpit
+docker compose ps
+```
+
+Copy the backend environment template if you do not already have a private
+`app-backend/.env`:
+
+```bash
+cp app-backend/.env.example app-backend/.env
+```
+
+For first-time local seed data, temporarily set this value in
+`app-backend/.env`:
+
+```env
+SEED_ALLOW_LOCAL=true
+```
+
+Then run:
+
+```bash
+cd app-backend
+npm install
+npm run seed
+npm run dev
+```
+
+After seeding completes, restore:
+
+```env
+SEED_ALLOW_LOCAL=false
+```
+
+Open:
+
+- Swagger: http://localhost:5000/api-docs
+- Mailpit: http://localhost:8025
+- MongoDB Compass: connect to `localhost:27017`
+
+`npm run seed` creates or updates the deterministic local seed records.
+`npm run seed:reset` is delete-only and should not be used for normal
+onboarding.
+
+The host-run backend uses these local service addresses:
+
+```env
+AUDIT_LOG_ENABLED=true
+EMAIL_ENABLED=true
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_SECURE=false
+SMTP_AUTH_REQUIRED=false
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM_EMAIL=local@example.test
+```
+
+The Compose backend receives equivalent values from `docker-compose.yml`, but
+uses `SMTP_HOST=mailpit` because containers communicate by service name.
 
 ## Running the Project
 
@@ -70,26 +139,21 @@ docker compose up --build
 
 `docker compose down -v` permanently deletes the local Docker MongoDB volume and its local data. After this one-time migration, use `docker compose down` without `-v` for normal shutdown.
 
-To build and start all containers (backend, frontend, and MongoDB), run the following command from the root directory:
+To build and start all containers (backend, employer frontend, admin frontend, MongoDB, and Mailpit), run the following command from the root directory:
 
 ```bash
 docker compose up --build
 ```
 
-`--build` rebuilds the backend and employer frontend images when needed.
+`--build` rebuilds the backend, employer frontend, and admin frontend images when needed.
 
-### Admin Panel (run separately)
+### Admin Panel
 
-The Admin Panel is a separate React app and is **not yet part of the Compose stack** (adding a `frontend-admin` Compose service is a planned task). For now, with the backend running, start it directly:
+The Admin Panel (`frontend-admin`) now starts automatically with `docker compose up`, on its own port (3001 by default) so it never clashes with the Employer Panel.
 
-```bash
-cd app-frontend/admin-panel
-cp .env.example .env        # set REACT_APP_API_BASE_URL if the backend is not on localhost:5000
-npm install
-npm start                   # runs on http://localhost:3001 by default
-```
+Log in at `http://localhost:3001/login` with an **admin** account (backend `POST /api/v1/admin/login`); non-admin users are rejected.
 
-It defaults to port 3001 so it runs alongside the Employer Panel (3000). Log in at `http://localhost:3001/login` with an **admin** account (backend `POST /api/v1/admin/login`); non-admin users are rejected.
+If port 3001 is taken, set `ADMIN_FRONTEND_HOST_PORT` in `.env`. To run the Admin Panel outside Docker, see `app-frontend/admin-panel/README.md`.
 
 ## Verifying the Setup
 
@@ -98,8 +162,10 @@ Once Docker is running:
 - Backend health: http://localhost:5000/api/v1/health
 - Swagger Docs: http://localhost:5000/api-docs
 - Frontend (Employer Panel): http://localhost:3000
-- Frontend (Admin Panel): http://localhost:3001 (run separately — see "Admin Panel (run separately)" above)
+- Frontend (Admin Panel): http://localhost:3001
 - MongoDB: available at localhost:27017 for local tools such as MongoDB Compass
+- Mailpit inbox: http://localhost:8025
+- Mailpit SMTP: localhost:1025
 
 The backend health and Swagger URLs above assume the default `BACKEND_HOST_PORT=5000`. If you override the backend host port, substitute that value in the URLs. For example, with `BACKEND_HOST_PORT=5001`, use:
 
@@ -111,7 +177,10 @@ Validation commands:
 ```bash
 docker compose ps
 curl http://localhost:5000/api/v1/health
+curl http://localhost:3001
 ```
+
+`docker compose ps` should list `secureshift-frontend-admin` alongside the other services.
 
 On Windows, run the commands from the WSL2 distro where the repository is checked out. If `docker` is not found in WSL, enable integration in Docker Desktop: Settings -> Resources -> WSL integration.
 
@@ -133,8 +202,9 @@ docker compose down -v
 
 ## Notes
 
-- The backend waits for the MongoDB healthcheck before starting.
+- The backend waits for the MongoDB and Mailpit healthchecks before starting.
 - The Compose backend uses the Compose MongoDB service name `mongodb`.
-- The frontend uses `npm start` inside the container. Make sure your `package.json` has the correct start script.
+- Both frontends use `npm start` inside the container. Make sure your `package.json` has the correct start script.
+- The `frontend-admin` service maps its container's port 3001 to the host port set by `ADMIN_FRONTEND_HOST_PORT` (default `3001`), keeping it separate from `frontend-employer` on port 3000.
 
 ---

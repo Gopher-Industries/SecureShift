@@ -3,7 +3,7 @@ import {
   authorizePermissions,
   requireSameBranchAsTargetUser,
   requireSelfOrRoles,
-  ROLES
+  ROLES,
 } from "../src/middleware/rbac.js";
 
 import Role from "../src/models/Role.js";
@@ -17,12 +17,12 @@ describe("RBAC Middleware", () => {
 
   beforeEach(() => {
     req = {
-      user: { id: "u1", role: ROLES.EMPLOYER }
+      user: { id: "u1", role: ROLES.EMPLOYER },
     };
 
     res = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      json: jest.fn(),
     };
 
     next = jest.fn();
@@ -47,7 +47,7 @@ describe("RBAC Middleware", () => {
 
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
-        message: "Insufficient role"
+        message: "Insufficient role",
       });
     });
 
@@ -65,7 +65,10 @@ describe("RBAC Middleware", () => {
   // ---------------- authorizePermissions ----------------
   describe("authorizePermissions", () => {
     it("should allow wildcard permission", async () => {
-      Role.findOne.mockResolvedValue(null);
+      Role.findOne.mockResolvedValue({
+        permissions: ["shift:read"],
+        inheritsFrom: null,
+      });
 
       req.user.role = ROLES.SUPER_ADMIN;
 
@@ -78,7 +81,7 @@ describe("RBAC Middleware", () => {
 
     it("should allow correct permissions (DB fallback)", async () => {
       Role.findOne.mockResolvedValue({
-        permissions: ["shift:read", "shift:write"]
+        permissions: ["shift:read", "shift:write"],
       });
 
       const middleware = authorizePermissions(["shift:read"]);
@@ -89,29 +92,31 @@ describe("RBAC Middleware", () => {
     });
 
     it("should deny missing permissions", async () => {
-      Role.findOne.mockResolvedValue({
-        permissions: ["shift:read"]
+      Role.findOne.mockReturnValue({
+        lean: jest.fn().mockResolvedValue({
+          permissions: ["shift:read"],
+        }),
       });
-
       const middleware = authorizePermissions(["shift:write"]);
 
       await middleware(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
-        message: "Insufficient permissions"
+        message: "Insufficient permissions",
       });
     });
 
     it("should handle requireAny option", async () => {
       Role.findOne.mockResolvedValue({
-        permissions: ["shift:read"]
+        permissions: ["shift:read", "user:read"],
       });
 
-      const middleware = authorizePermissions(
-        ["shift:write", "shift:read"],
-        { any: true }
-      );
+      req.user.role = ROLES.EMPLOYER;
+
+      const middleware = authorizePermissions(["shift:write", "shift:read"], {
+        any: true,
+      });
 
       await middleware(req, res, next);
 
@@ -146,8 +151,12 @@ describe("RBAC Middleware", () => {
       req.user.id = "u1";
 
       User.findById
-        .mockReturnValueOnce({ select: () => ({ lean: () => ({ branch: "b1" }) }) })
-        .mockReturnValueOnce({ select: () => ({ lean: () => ({ branch: "b1" }) }) });
+        .mockReturnValueOnce({
+          select: () => ({ lean: () => ({ branch: "b1" }) }),
+        })
+        .mockReturnValueOnce({
+          select: () => ({ lean: () => ({ branch: "b1" }) }),
+        });
 
       req.params = { userId: "u2" };
 
@@ -162,8 +171,12 @@ describe("RBAC Middleware", () => {
       req.user.role = ROLES.BRANCH_ADMIN;
 
       User.findById
-        .mockReturnValueOnce({ select: () => ({ lean: () => ({ branch: "b1" }) }) })
-        .mockReturnValueOnce({ select: () => ({ lean: () => ({ branch: "b2" }) }) });
+        .mockReturnValueOnce({
+          select: () => ({ lean: () => ({ branch: "b1" }) }),
+        })
+        .mockReturnValueOnce({
+          select: () => ({ lean: () => ({ branch: "b2" }) }),
+        });
 
       req.params = { userId: "u2" };
 
@@ -194,7 +207,7 @@ describe("RBAC Middleware", () => {
       req.params = { userId: "u2" };
 
       const middleware = requireSelfOrRoles({
-        roles: [ROLES.ADMIN]
+        roles: [ROLES.ADMIN],
       });
 
       middleware(req, res, next);
@@ -208,7 +221,7 @@ describe("RBAC Middleware", () => {
       req.params = { userId: "u2" };
 
       const middleware = requireSelfOrRoles({
-        roles: [ROLES.ADMIN]
+        roles: [ROLES.ADMIN],
       });
 
       middleware(req, res, next);

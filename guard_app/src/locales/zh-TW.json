@@ -17,7 +17,8 @@
     "invalidInput": "輸入無效",
     "loginFailed": "登入失敗",
     "otpFailed": "OTP驗證失敗",
-    "otpMsgReq": "輸入您的OTP驗證碼。"
+    "otpMsgReq": "輸入您的OTP驗證碼。",
+    "sessionExpired": "您的登入已過期，請重新登入。"
   },
   "signup": {
     "title": "建立您的帳號",
@@ -52,7 +53,12 @@
     "requiredFields": "請填寫所有必填欄位",
     "tryAgain": "重試",
     "invalidName": "名字只能包含字母、空格、連字號（-）和撇號（'）。",
-    "weakPassword": "密碼至少需要 6 個字元，且需包含大寫、小寫字母、數字和特殊字元。"
+    "weakPassword": "密碼至少需要 6 個字元，且需包含大寫、小寫字母、數字和特殊字元。",
+    "crashTitle": "出錯了",
+    "crashMessage": "此頁面發生問題，你可以重試。"
+  },
+  "net": {
+    "offline": "沒有網路連線"
   },
   "home": {
     "welcome": "歡迎回來，{{name}}！",
@@ -99,7 +105,9 @@
     "markRead": "全部標為已讀"
   },
   "profile": {
+    "yourProfilePic": "你的個人資料圖片",
     "edit": "編輯",
+    "editProfile": "編輯個人資料",
     "perfSummary": "表現摘要",
     "totalShifts": "總排班數",
     "rating": "評分",
@@ -142,18 +150,42 @@
     "reason": "原因",
     "swap": "換班",
     "leave": "請假",
+    "filterRequests": "過濾換班請求",
     "selectRequestType": "選擇請求類型",
     "reasonHint": "抱歉我生病了...",
     "requestedTime": "請求時間",
-    "selectDate": "選擇日期",
-    "selectTime": "選擇時間",
+    "swapGuard": "請求守衛",
+    "guardHint": "約翰·史密斯...",
+    "swapShift": "替換班次",
+    "shiftHint": "替代班次名稱..",
+    "selectStart": "選擇起跑",
+    "selectEnd": "選擇終點",
+    "leaveStart": "離開開始",
+    "leaveEnd": "離開終點",
     "notFound": "未找到排班請求",
     "requestError": "載入請求失敗。",
+    "assignedGuard": "指定警衛:",
+    "swapOptionsError": "交換期權加載失敗",
+    "rateShift": "為此班次評分",
+    "submitRating": "送出評分",
+    "submittingRating": "送出中...",
+    "alreadyRated": "您已經為此班次評過分",
+    "selectRating": "請先選擇星級評分",
+    "ratingFailed": "無法儲存您的評分",
+    "starLabel": "{{count}} 星評分",
     "alerts": {
-      "missingTimeHead": "缺少日期或時間",
-      "missingTimeMsg": "輸入您想要將排班移動到的日期和時間。",
+      "missingReasonHead": "缺失原因",
+      "missingReasonMsg": "請輸入申請換班的原因.",
+      "missingDateHead": "缺失的日期",
+      "missingDateMsg": "輸入你想把班次移到哪個日期.",
       "invalidDateHead": "無效日期",
-      "invalidDateMsg": "選擇的日期無效"
+      "invalidDateMsg": "所選日期無效",
+      "selectShiftHead": "選擇班次",
+      "selectShiftMsg": "未選班次",
+      "requestCreated": "已建立請求",
+      "requestFailed": "申請失敗",
+      "requestSuccessful": "請求成功",
+      "successMessage": "您的申請已送達您的雇主"
     }
   },
   "timesheet": {
@@ -168,7 +200,16 @@
     "verified": "已驗證",
     "notVerified": "未驗證",
     "loading": "載入考勤中...",
-    "empty": "暫無考勤記錄。"
+    "empty": "暫無考勤記錄。",
+    "payable": "應付工時：",
+    "scheduled": "計劃工時：",
+    "actual": "實際工時：",
+    "hoursBreakdown": "工時",
+    "error": "無法載入考勤記錄。",
+    "detailError": "無法載入此考勤記錄。",
+    "retry": "重試",
+    "summary": "彙總",
+    "totalShifts": "班次數："
   },
   "tabs": {
     "home": "主頁",
@@ -185,7 +226,8 @@
     "notifications": "通知",
     "certificates": "資質認證",
     "shiftDetails": "排班詳情",
-    "shiftRequests": "排班更改請求"
+    "shiftRequests": "排班更改請求",
+    "timesheetDetails": "考勤詳情"
   },
   "docs": {
     "title": "文件概覽",
@@ -311,6 +353,7 @@
     "notifBody": "您已被分配到醫院綜合大樓班次。"
   },
   "payroll": {
+    "payroll": "薪資單",
     "period": "期間:",
     "guardID": "保安ID:",
     "site": "地點:",
@@ -370,6 +413,23 @@
     "submitting": "提交中...",
     "submitSuccess": "事件報告提交成功",
     "submitFailed": "提交事件報告失敗",
-    "cancel": "取消"
+    "cancel": "取消",
+    "attachments": "附件（選填）",
+    "addMedia": "新增照片 / 影片",
+    "addFile": "新增檔案",
+    "attachmentHint": "可以新增照片、影片、音訊或 PDF，最大 25MB。",
+    "remove": "移除",
+    "fileNotAdded": "檔案未新增",
+    "typeNotAllowed": "不支援這種檔案類型",
+    "fileTooBig": "此檔案超過 25MB",
+    "attachmentCount": "{{count}} 個附件"
+  },
+  "appLock": {
+    "prompt": "解鎖 SecureShift",
+    "lockedTitle": "SecureShift 已鎖定",
+    "lockedMessage": "請驗證身分以繼續。",
+    "unlock": "解鎖",
+    "settingsLabel": "應用程式鎖（Face ID / PIN）",
+    "unavailable": "無法使用"
   }
 }

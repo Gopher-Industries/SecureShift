@@ -1,18 +1,37 @@
-import {
+import { jest } from "@jest/globals";
+globalThis.jest = jest;
+
+// mock models
+jest.unstable_mockModule("../src/models/User.js", () => ({
+  default: {
+    findById: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule("../src/models/Message.js", () => {
+  const Message = jest.fn();
+
+  Message.find = jest.fn();
+  Message.findById = jest.fn();
+  Message.countDocuments = jest.fn();
+  Message.getUnreadCount = jest.fn();
+  Message.getConversation = jest.fn();
+  Message.markAsRead = jest.fn();
+
+  return { default: Message };
+});
+
+const {
   sendMessage,
   getInboxMessages,
   getSentMessages,
   getConversation,
   markMessageAsRead,
-  getMessageStats
-} from "../src/controllers/message.controller.js";
+  getMessageStats,
+} = await import("../src/controllers/message.controller.js");
 
-import User from "../src/models/User.js";
-import Message from "../src/models/Message.js";
-
-// mock models
-jest.mock("../src/models/User.js");
-jest.mock("../src/models/Message.js");
+const User = (await import("../src/models/User.js")).default;
+const Message = (await import("../src/models/Message.js")).default;
 
 describe("Message Controller", () => {
   let req, res, next;
@@ -22,12 +41,12 @@ describe("Message Controller", () => {
       user: { id: "user1", role: "guard" },
       body: {},
       params: {},
-      audit: { log: jest.fn() }
+      audit: { log: jest.fn() },
     };
 
     res = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      json: jest.fn(),
     };
 
     next = jest.fn();
@@ -36,23 +55,29 @@ describe("Message Controller", () => {
   // ---------------- SEND MESSAGE ----------------
   describe("sendMessage", () => {
     it("should send a message successfully", async () => {
-      req.body = { receiverId: "user2", content: "Hello" };
+      req.body = { receiverId: "user2", content: "Hello from SecureShift" };
 
-      User.findById.mockResolvedValue({ _id: "user2", role: "employer" });
+      User.findById.mockResolvedValue({
+        _id: "user2",
+        role: "employer",
+        name: "Employer Two",
+        email: "employer2@example.com",
+      });
 
-      const saveMock = jest.fn();
+      const saveMock = jest.fn().mockResolvedValue(undefined);
       const populateMock = jest.fn().mockResolvedValue({
         _id: "msg1",
-        sender: { id: "user1" },
-        receiver: { id: "user2" },
-        content: "Hello",
+        sender: { id: "user1", name: "Sender" },
+        receiver: { id: "user2", name: "receiver" },
+        content: "Hello from SecureShift",
         timestamp: new Date(),
-        isRead: false
+        isRead: false,
       });
 
       Message.mockImplementation(() => ({
         save: saveMock,
-        populate: populateMock
+        populate: populateMock,
+        content: "Hello from SecureShift",
       }));
 
       await sendMessage(req, res, next);
@@ -75,7 +100,7 @@ describe("Message Controller", () => {
     it("should return inbox messages", async () => {
       Message.find.mockReturnValue({
         populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue([{ _id: "msg1" }])
+        sort: jest.fn().mockResolvedValue([{ _id: "msg1" }]),
       });
 
       Message.getUnreadCount = jest.fn().mockResolvedValue(2);
@@ -85,6 +110,22 @@ describe("Message Controller", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalled();
     });
+
+    it("should exclude soft-deleted messages from inbox", async () => {
+      Message.find.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockResolvedValue([]),
+      });
+
+      Message.getUnreadCount = jest.fn().mockResolvedValue(0);
+
+      await getInboxMessages(req, res, next);
+
+      expect(Message.find).toHaveBeenCalledWith({
+        receiver: req.user.id,
+        isDeleted: { $ne: true },
+      });
+    });
   });
 
   // ---------------- SENT ----------------
@@ -92,12 +133,26 @@ describe("Message Controller", () => {
     it("should return sent messages", async () => {
       Message.find.mockReturnValue({
         populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue([{ _id: "msg1" }])
+        sort: jest.fn().mockResolvedValue([{ _id: "msg1" }]),
       });
 
       await getSentMessages(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it("should exclude soft-deleted messages from sent", async () => {
+      Message.find.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockResolvedValue([]),
+      });
+
+      await getSentMessages(req, res, next);
+
+      expect(Message.find).toHaveBeenCalledWith({
+        sender: req.user.id,
+        isDeleted: { $ne: true },
+      });
     });
   });
 
@@ -108,10 +163,9 @@ describe("Message Controller", () => {
 
       User.findById.mockResolvedValue({ _id: "user2", name: "John" });
 
-      Message.getConversation = jest.fn().mockResolvedValue([
-        { content: "hi" },
-        { content: "hello" }
-      ]);
+      Message.getConversation = jest
+        .fn()
+        .mockResolvedValue([{ content: "hi" }, { content: "hello" }]);
 
       Message.markAsRead = jest.fn();
 
@@ -130,7 +184,7 @@ describe("Message Controller", () => {
         _id: "msg1",
         receiver: { toString: () => "user1" },
         sender: "user2",
-        save: jest.fn()
+        save: jest.fn(),
       });
 
       await markMessageAsRead(req, res, next);

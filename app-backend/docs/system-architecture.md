@@ -122,7 +122,6 @@ Documentation is maintained alongside the codebase under `app-backend/docs`.
 
 Current documentation includes:
 
-- RBAC design (`rbac.md`)
 - verification subsystem (`verification.md`)
 - architecture documentation (this document)
 
@@ -435,13 +434,16 @@ The currently mounted backend route groups, as defined in `src/routes/index.js`,
 - `/api/v1/admin`
 - `/api/v1/availability`
 - `/api/v1/users`
-- `/api/v1/rbac`
 - `/api/v1/branch`
 - `/api/v1/attendance`
 - `/api/v1/incidents`
 - `/api/v1/notifications`
 - `/api/v1/payroll`
 - `/api/v1/equipment`
+- `/api/v1/timesheets`
+- `/api/v1/shift-requests`
+- `/api/v1/emergency`
+- `/api/v1/sos`
 
 These mounted route groups should be treated as the source of truth for currently reachable backend API areas.
 
@@ -472,9 +474,9 @@ For this reason, `src/routes/index.js` should be checked when confirming whether
 
 ### 9.4 RBAC Route Considerations
 
-The `/api/v1/rbac` route group is currently mounted, but the associated route file appears to include middleware-related logic and may not represent a clean, stable RBAC management API.
+The obsolete `/api/v1/rbac` route group has been removed because its route file incorrectly re-exported the user router rather than providing genuine RBAC management endpoints.
 
-This suggests that the RBAC route implementation requires review before being treated as a production-ready endpoint group.
+RBAC remains active through shared middleware and permission logic used by existing protected routes. The system does not currently expose a dedicated RBAC management API.
 
 ***
 

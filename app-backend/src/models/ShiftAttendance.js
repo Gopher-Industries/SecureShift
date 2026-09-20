@@ -36,6 +36,11 @@ const shiftAttendanceSchema = new mongoose.Schema(
 
 shiftAttendanceSchema.index({ siteLocation: "2dsphere" });
 
+shiftAttendanceSchema.index(
+  { shiftId: 1, guardId: 1 },
+  { unique: true, name: "unique_shift_guard" },
+);
+
 const ShiftAttendance = mongoose.model(
   "ShiftAttendance",
   shiftAttendanceSchema,

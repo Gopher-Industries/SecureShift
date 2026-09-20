@@ -1,0 +1,142 @@
+.ks-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 20px;
+  backdrop-filter: blur(2px);
+  animation: ksFadeIn 0.2s ease-out;
+}
+
+.ks-modal-container {
+  background-color: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  font-family: inherit;
+  animation: ksSlideUp 0.2s ease-out;
+}
+
+.ks-modal-header {
+  background-color: #072261;
+  color: #ffffff;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ks-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ks-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.ks-modal-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.ks-modal-body {
+  padding: 20px 24px 24px;
+}
+
+.ks-shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ks-shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.ks-shortcut-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.ks-keys-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ks-key-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-bottom: 2px solid #94a3b8;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-width: 24px;
+}
+
+.ks-key-plus {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  margin: 0 2px;
+}
+
+.ks-modal-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
+}
+
+@keyframes ksFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ksSlideUp {
+  from {
+    transform: translateY(12px);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

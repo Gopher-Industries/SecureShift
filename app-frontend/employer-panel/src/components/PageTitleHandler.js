@@ -37,6 +37,9 @@ function PageTitleHandler() {
       case '/timesheet':
         document.title = 'SecureShift - Timesheet';
         break;
+      case '/faqs':
+        document.title = 'SecureShift - Frequently Asked Questions';
+        break;
       default:
         document.title = 'SecureShift';
     }

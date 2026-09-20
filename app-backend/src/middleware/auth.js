@@ -4,6 +4,11 @@
  * Validates Bearer token in the Authorization header and attaches decoded user info to `req.user`.
  * Rejects requests with missing or invalid tokens.
  *
+ *   Security Enhancement: Always loads the current user from database to:
+ * - Reject soft-deleted users
+ * - Reject users who no longer exist
+ * - Use the current stored role for authorisation (not the stale JWT role)
+ *
  * @usage
  * app.use(auth) → for protected routes
  *
@@ -12,6 +17,7 @@
  */
 
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 /**
  * Middleware to authenticate requests using JWT token
@@ -19,7 +25,7 @@ import jwt from "jsonwebtoken";
  * @param {Object} res - Express response object
  * @param {Function} next - Express next middleware function
  */
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -30,12 +36,39 @@ const auth = (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verify the token and decode it
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: "Invalid or expired token." });
+    }
+
     const uid = decoded.id || decoded._id; // whatever you encoded in the JWT
+
+    // get the user from the database
+    const user = await User.findById(uid).select("role isDeleted");
+
+    // add a debug log to check the user object
+    // console.log('User object keys:', Object.keys(user.toObject()));
+    // console.log(`[AUTH] User ${uid} role from DB: ${user?.role}`);
+
+    // reject if user is not found or soft-deleted
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: "User account is no longer available." });
+    }
+    if (user.isDeleted) {
+      return res
+        .status(401)
+        .json({ message: "User account is no longer active." });
+    }
+
     req.user = {
       _id: uid,
       id: uid,
-      role: decoded.role,
+      role: user.role,
     };
 
     next();

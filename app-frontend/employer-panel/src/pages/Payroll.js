@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./Payroll.css";
 import http from "../lib/http";
 import translations from "../i18n/translations";
+import RefreshButton from "../components/RefreshButton";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -46,25 +47,34 @@ export default function Payroll({ language }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchPayroll = async () => {
-      setLoading(true);
-      setError("");
-      setRecords([]);
-      try {
-        const { startDate, endDate } = getMonthRange(selectedYear, selectedMonth);
-        const res = await http.get("/payroll", {
-          params: { startDate, endDate, periodType: "monthly" },
-        });
-        setRecords(res.data.records || []);
-      } catch (err) {
-        console.error("Failed to load payroll:", err);
-        setError("Failed to load payroll data. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
 
+  const fetchPayroll = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+      setRecords([]);
+    }
+    setError("");
+    try {
+      const { startDate, endDate } = getMonthRange(selectedYear, selectedMonth);
+      const res = await http.get("/payroll", {
+        params: { startDate, endDate, periodType: "monthly" },
+      });
+      setRecords(res.data.records || []);
+      setLastRefreshed(new Date());
+    } catch (err) {
+      console.error("Failed to load payroll:", err);
+      setError("Failed to load payroll data. Please try again.");
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPayroll();
   }, [selectedMonth, selectedYear]);
 
@@ -109,7 +119,12 @@ export default function Payroll({ language }) {
         {/* Page header - title + month picker */}
         <div className="payroll-header-row">
           <h1 className="payroll-title">{t.payroll}</h1>
-          <div className="payroll-period">
+          <div className="payroll-period" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <RefreshButton
+              onRefresh={() => fetchPayroll(true)}
+              isRefreshing={isRefreshing}
+              lastRefreshed={lastRefreshed}
+            />
             <span className="payroll-period-label">Pay Period</span>
             <select
               className="payroll-month-select"

@@ -51,7 +51,23 @@ export const getAttendanceByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const attendanceRecords = await getAttendanceHistoryForUser(userId);
+    const LoggedInUserId = req.user?._id || req.user?.id;
+    const userRole = req.user?.role;
+
+    if (
+      userRole === "guard" &&
+      LoggedInUserId.toString() !== userId.toString()
+    ) {
+      return res.status(403).json({
+        message:
+          "You do not have permission to access these attendance records.",
+      });
+    }
+
+    const attendanceRecords = await getAttendanceHistoryForUser(
+      userId,
+      req.user,
+    );
 
     res.status(200).json({
       message: "Attendance history retrieved successfully",

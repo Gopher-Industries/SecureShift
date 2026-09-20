@@ -1,6 +1,5 @@
 import request from "supertest";
 import express from "express";
-import mongoose from "mongoose";
 import {
   createIncident,
   updateIncident,
@@ -30,7 +29,7 @@ app.use(express.json());
 // fake auth middleware
 app.use((req, res, next) => {
   req.user = {
-    _id: new mongoose.Types.ObjectId().toString(),
+    _id: "guard123",
     role: "guard",
   };
   req.audit = mockAudit;
@@ -53,8 +52,8 @@ const mockShift = {
 
 const mockIncident = {
   _id: "incident123",
-  shiftId: "shift123",
-  guardId: "guard123",
+  shiftId: { _id: "shift123" },
+  guardId: { _id: "guard123" },
   isDeleted: false,
   save: jest.fn(),
 };
@@ -71,23 +70,27 @@ describe("Incident Controller", () => {
     Shift.findById.mockResolvedValue(mockShift);
     Incident.create.mockResolvedValue(mockIncident);
 
-    const res = await request(app)
-      .post("/incident")
-      .send({
-        shiftId: "shift123",
-        severity: "high",
-        description: "Test incident",
-      });
+    const res = await request(app).post("/incident").send({
+      shiftId: "shift123",
+      severity: "high",
+      description: "Test incident",
+    });
 
     expect(res.statusCode).toBe(201);
   });
 
   // GET SINGLE INCIDENT
   test("should get incident by id", async () => {
-    Incident.findById.mockReturnValue({
-      populate: jest.fn().mockReturnThis(),
-      populate: jest.fn().mockResolvedValue(mockIncident),
-    });
+    const mockQuery = {
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue({
+          ...mockIncident,
+          shiftId: { _id: "shift123" },
+          guardId: { _id: "guard123" },
+        }),
+      }),
+    };
+    Incident.findById.mockReturnValue(mockQuery);
 
     const res = await request(app).get("/incident/incident123");
 
@@ -96,10 +99,12 @@ describe("Incident Controller", () => {
 
   // GET INCIDENTS LIST
   test("should list incidents", async () => {
-    Incident.find.mockReturnValue({
-      populate: jest.fn().mockReturnThis(),
-      populate: jest.fn().mockResolvedValue([mockIncident]),
-    });
+    const mockQuery = {
+      populate: jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue([mockIncident]),
+      }),
+    };
+    Incident.find.mockReturnValue(mockQuery);
 
     const res = await request(app).get("/incidents");
 
@@ -110,7 +115,8 @@ describe("Incident Controller", () => {
   test("should update incident", async () => {
     Incident.findById.mockResolvedValue({
       ...mockIncident,
-      save: jest.fn(),
+      guardId: "guard123",
+      save: jest.fn().mockResolvedValue(),
     });
 
     const res = await request(app)
@@ -124,7 +130,7 @@ describe("Incident Controller", () => {
   test("should soft delete incident", async () => {
     Incident.findById.mockResolvedValue({
       ...mockIncident,
-      save: jest.fn(),
+      save: jest.fn().mockResolvedValue(),
     });
 
     const res = await request(app).delete("/incident/incident123");

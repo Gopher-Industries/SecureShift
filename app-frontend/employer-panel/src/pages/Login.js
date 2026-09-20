@@ -4,6 +4,9 @@ import logo from '../logo.png';
 import './Login.css';
 import http from '../lib/http';
 
+const ADMIN_LOGIN_URL =
+  process.env.REACT_APP_ADMIN_LOGIN_URL || 'http://localhost:3001/login';
+
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -31,11 +34,12 @@ export default function Login() {
         localStorage.setItem('token', data.token);
         if (data?.role) localStorage.setItem('userRole', data.role);
         if (data?.id) localStorage.setItem('userId', data.id);
+
         navigate('/employer-dashboard');
         return;
       }
 
-      // If backend requires OTP, keep the login UI and show OTP section below.
+      // If backend requires OTP, keep the Employer login flow unchanged.
       setOtpMode(true);
       setOtp('');
       setOtpNotice(`OTP sent to ${email}`);
@@ -56,12 +60,22 @@ export default function Login() {
     }
 
     setVerifyLoading(true);
+
     try {
-      const { data } = await http.post('/auth/verify-otp', { email, otp: otp.trim() });
+      const { data } = await http.post('/auth/verify-otp', {
+        email,
+        otp: otp.trim(),
+      });
 
       localStorage.setItem('token', data.token);
-      if (data?.role) localStorage.setItem('userRole', data.role);
-      if (data?.id) localStorage.setItem('userId', data.id);
+
+      if (data?.role) {
+        localStorage.setItem('userRole', data.role);
+      }
+
+      if (data?.id) {
+        localStorage.setItem('userId', data.id);
+      }
 
       navigate('/employer-dashboard');
     } catch (err) {
@@ -87,6 +101,7 @@ export default function Login() {
               <label className="inputLabel" htmlFor="login-email">
                 Email
               </label>
+
               <input
                 id="login-email"
                 type="email"
@@ -103,6 +118,7 @@ export default function Login() {
               <label className="inputLabel" htmlFor="login-password">
                 Password
               </label>
+
               <input
                 id="login-password"
                 type="password"
@@ -115,37 +131,63 @@ export default function Login() {
               />
             </div>
 
-            {error && !otpMode && <div className="errorMessage">{error}</div>}
-            {loginLoading && <div className="loadingMessage">Sending OTP...</div>}
+            {error && !otpMode && (
+              <div className="errorMessage">{error}</div>
+            )}
 
-            <button type="submit" className="loginButton" disabled={loginLoading || verifyLoading}>
+            {loginLoading && (
+              <div className="loadingMessage">Sending OTP...</div>
+            )}
+
+            <button
+              type="submit"
+              className="loginButton"
+              disabled={loginLoading || verifyLoading}
+            >
               {loginLoading ? 'Please wait...' : 'Log In'}
             </button>
 
-            {otpMode && otpNotice && <div className="otpNotice">{otpNotice}</div>}
+            {otpMode && otpNotice && (
+              <div className="otpNotice">{otpNotice}</div>
+            )}
           </form>
 
           {otpMode && (
-            <form onSubmit={handleVerifyOtp} className="loginForm otpForm">
+            <form
+              onSubmit={handleVerifyOtp}
+              className="loginForm otpForm"
+            >
               <div className="inputGroup">
                 <label className="inputLabel" htmlFor="login-otp">
                   Enter OTP
                 </label>
+
                 <input
                   id="login-otp"
                   type="text"
                   inputMode="numeric"
                   placeholder="Enter 6-digit OTP"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={(e) =>
+                    setOtp(
+                      e.target.value.replace(/\D/g, '').slice(0, 6)
+                    )
+                  }
                   required
                   className="formInput"
                   disabled={loginLoading || verifyLoading}
                 />
               </div>
 
-              {error && <div className="errorMessage">{error}</div>}
-              {verifyLoading && <div className="loadingMessage">Verifying OTP...</div>}
+              {error && (
+                <div className="errorMessage">{error}</div>
+              )}
+
+              {verifyLoading && (
+                <div className="loadingMessage">
+                  Verifying OTP...
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -157,9 +199,28 @@ export default function Login() {
             </form>
           )}
 
+          {/* AP-014: Admin authentication remains separate from Employer authentication. */}
+          <div className="adminSignInSection">
+            <span className="adminSignInPrompt">
+              SecureShift administrator?
+            </span>
+
+            <a
+              href={ADMIN_LOGIN_URL}
+              className="adminSignInLink"
+              aria-label="Go to SecureShift Admin sign-in"
+            >
+              Admin sign-in
+            </a>
+          </div>
+
           <div className="partnerLink">
-            <a href="/expression-of-interest" className="partnerText">
-              Want to partner with us? Submit an expression of interest!
+            <a
+              href="/expression-of-interest"
+              className="partnerText"
+            >
+              Want to partner with us? Submit an expression of
+              interest!
             </a>
           </div>
         </div>
@@ -168,7 +229,11 @@ export default function Login() {
       {/* Right side - Logo/Brand */}
       <div className="brandSection">
         <div className="logoContainer">
-          <img src={logo} alt="Secure Shift Logo" className="logoImage" />
+          <img
+            src={logo}
+            alt="Secure Shift Logo"
+            className="logoImage"
+          />
         </div>
       </div>
     </div>

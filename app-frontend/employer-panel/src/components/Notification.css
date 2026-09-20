@@ -1,0 +1,118 @@
+.global-notifications {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.global-notification {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  pointer-events: auto;
+  animation: notification-slide-in 0.2s ease-out;
+}
+
+.global-notification__icon {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.global-notification__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.global-notification__content strong {
+  font-size: 14px;
+}
+
+.global-notification__content span {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #4b5563;
+}
+
+.global-notification__close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+}
+
+.global-notification--success {
+  border-left: 4px solid #2e7d32;
+}
+
+.global-notification--success .global-notification__icon {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.global-notification--error {
+  border-left: 4px solid #c62828;
+}
+
+.global-notification--error .global-notification__icon {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.global-notification--warning {
+  border-left: 4px solid #ed6c02;
+}
+
+.global-notification--warning .global-notification__icon {
+  background: #fff3e0;
+  color: #ed6c02;
+}
+
+.global-notification--info {
+  border-left: 4px solid #1565c0;
+}
+
+.global-notification--info .global-notification__icon {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+@keyframes notification-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .global-notifications {
+    top: 16px;
+    right: 16px;
+    width: calc(100vw - 32px);
+  }
+}

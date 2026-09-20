@@ -3,11 +3,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
+  Platform,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -15,14 +16,16 @@ import {
   View,
 } from 'react-native';
 
+import { getUserAttendance, type Attendance } from '../api/attendance';
 import { getMe } from '../api/auth';
-import { applyToShift, listShifts, myShifts, type ShiftDto } from '../api/shifts';
+import { applyToShift, listShifts, myShifts, rateShift, type ShiftDto } from '../api/shifts';
 import CalendarView from '../components/calendar/CalendarView';
 import ShiftCard from '../components/card/ShiftCard';
+import EmptyState from '../components/EmptyState';
+import LoadingState from '../components/LoadingState';
 import ShiftDetailsModal from '../components/modal/ShiftDetailsModal';
 import ViewToggle from '../components/toggle/ViewToggle';
 import { useAppTheme } from '../theme';
-import { getUserAttendance } from '../api/attendance';
 
 import type { AllShift, AppliedShift, CompletedShift } from '../models/Shifts';
 import type { AppColors } from '../theme/colors';
@@ -33,10 +36,10 @@ type Props = {
   navigation: any;
 };
 
-function mapMineShifts(
+export function mapMineShifts(
   shifts: ShiftDto[],
   myUid: string,
-  attendanceRecords: any[] = [],
+  attendanceRecords: Attendance[] = [],
 ): AppliedShift[] {
   return shifts
     .filter((s) => s.status !== 'completed')
@@ -48,11 +51,9 @@ function mapMineShifts(
         ? s.applicants.map((a) => (typeof a === 'object' ? a._id : String(a)))
         : [];
 
-      const attendance = attendanceRecords.find((record) => {
-        const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
-
-        return String(recordShiftId) === String(s._id);
-      });
+      const attendance = attendanceRecords.find(
+        (record) => String(record.shiftId) === String(s._id),
+      );
 
       let status: AppliedShift['status'];
       if (s.status === 'assigned' && acceptedId === myUid) status = 'Confirmed';
@@ -70,23 +71,24 @@ function mapMineShifts(
         status,
         attendance: attendance
           ? {
-              checkInTime: attendance.clockIn ?? undefined,
-              checkOutTime: attendance.clockOut ?? undefined,
+              checkInTime: attendance.checkInTime ?? undefined,
+              checkOutTime: attendance.checkOutTime ?? undefined,
             }
           : undefined,
       };
     });
 }
 
-function mapCompleted(shifts: ShiftDto[], attendanceRecords: any[] = []): CompletedShift[] {
+export function mapCompleted(
+  shifts: ShiftDto[],
+  attendanceRecords: Attendance[] = [],
+): CompletedShift[] {
   return shifts
     .filter((s) => s.status === 'completed')
     .map((s) => {
-      const attendance = attendanceRecords.find((record) => {
-        const recordShiftId = typeof record.shift === 'object' ? record.shift?._id : record.shift;
-
-        return String(recordShiftId) === String(s._id);
-      });
+      const attendance = attendanceRecords.find(
+        (record) => String(record.shiftId) === String(s._id),
+      );
 
       return {
         id: s._id,
@@ -96,19 +98,19 @@ function mapCompleted(shifts: ShiftDto[], attendanceRecords: any[] = []): Comple
         rate: typeof s.payRate === 'number' ? `$${s.payRate}/hour` : '$—',
         date: s.date,
         time: `${s.startTime} - ${s.endTime}`,
-        rated: false,
-        rating: 0,
+        rated: s.ratedByGuard === true,
+        rating: s.guardRating ?? 0,
         attendance: attendance
           ? {
-              checkInTime: attendance.clockIn ?? undefined,
-              checkOutTime: attendance.clockOut ?? undefined,
+              checkInTime: attendance.checkInTime ?? undefined,
+              checkOutTime: attendance.checkOutTime ?? undefined,
             }
           : undefined,
       };
     });
 }
 
-function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
+export function mapAllShifts(shifts: ShiftDto[], myUid: string): AllShift[] {
   return shifts
     .filter((s) => s.status !== 'completed')
     .map((s) => {
@@ -150,15 +152,31 @@ function AllTab({ navigation }: Props) {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [applyingId, setApplyingId] = useState<string | null>(null);
 
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Available' | 'Pending' | 'Confirmed'>(
+    'All',
+  );
+
+  const [sortOption, setSortOption] = useState<'dateAsc' | 'dateDesc' | 'payAsc' | 'payDesc'>(
+    'dateAsc',
+  );
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week'>('all');
+  const [error, setError] = useState<string | null>(null);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
+
       const me = await getMe();
       const myUid = me?._id ?? me?.id ?? '';
 
-      const resp = await listShifts();
-      const mapped = mapAllShifts(resp.items, myUid);
-      setRows(mapped);
+      const resp = await listShifts(1, 50);
+      setRows(mapAllShifts(resp.items, myUid));
+    } catch (err: any) {
+      setRows([]);
+      setError(
+        err?.response?.data?.message ?? err?.message ?? 'Unable to load shifts. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -172,22 +190,109 @@ function AllTab({ navigation }: Props) {
     setRefreshing(false);
   };
 
-  const handleApply = async (shiftId: string) => {
+  const submitApplication = async (shiftId: string) => {
     try {
       setApplyingId(shiftId);
+
       await applyToShift(shiftId);
+
       Alert.alert('Success', 'Shift applied successfully');
       await fetchData();
-    } catch (error: any) {
-      Alert.alert('Apply Failed', error?.response?.data?.message ?? 'Could not apply for shift');
+    } catch (error: unknown) {
+      const apiError = error as {
+        response?: {
+          data?: {
+            message?: string;
+          };
+        };
+      };
+
+      const message = apiError.response?.data?.message ?? 'Could not apply for shift';
+
+      const normalizedMessage = message.toLowerCase();
+
+      if (
+        normalizedMessage.includes('already applied') ||
+        normalizedMessage.includes('duplicate')
+      ) {
+        Alert.alert('Already Applied', 'You have already applied for this shift.');
+      } else if (
+        normalizedMessage.includes('already taken') ||
+        normalizedMessage.includes('not available') ||
+        normalizedMessage.includes('filled') ||
+        normalizedMessage.includes('assigned')
+      ) {
+        Alert.alert('Shift Unavailable', 'This shift is no longer available.');
+      } else {
+        Alert.alert('Apply Failed', message);
+      }
     } finally {
       setApplyingId(null);
     }
   };
 
-  const filtered = rows.filter((r) =>
-    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
-  );
+  const handleApply = (shiftId: string) => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to apply for this shift?');
+
+      if (confirmed) {
+        void submitApplication(shiftId);
+      }
+
+      return;
+    }
+
+    Alert.alert('Confirm Application', 'Are you sure you want to apply for this shift?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Apply',
+        onPress: () => void submitApplication(shiftId),
+      },
+    ]);
+  };
+  const filtered = rows
+    .filter((shift) =>
+      `${shift.title} ${shift.company} ${shift.site}`
+        .toLowerCase()
+        .includes(q.trim().toLowerCase()),
+    )
+
+    .filter((shift) => statusFilter === 'All' || shift.status === statusFilter)
+    .filter((shift) => {
+      if (dateFilter === 'all') return true;
+
+      const shiftDate = new Date(shift.date);
+      const today = new Date();
+
+      shiftDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      if (dateFilter === 'today') {
+        return shiftDate.getTime() === today.getTime();
+      }
+
+      const endOfWeek = new Date(today);
+      endOfWeek.setDate(today.getDate() + 7);
+
+      return shiftDate >= today && shiftDate <= endOfWeek;
+    })
+    .sort((a, b) => {
+      if (sortOption === 'dateAsc') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+
+      if (sortOption === 'dateDesc') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }
+
+      const payA = Number(a.rate.replace(/[^0-9.]/g, '')) || 0;
+      const payB = Number(b.rate.replace(/[^0-9.]/g, '')) || 0;
+
+      return sortOption === 'payAsc' ? payA - payB : payB - payA;
+    });
 
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
@@ -202,6 +307,8 @@ function AllTab({ navigation }: Props) {
         <View style={s.searchContainer}>
           <Text style={s.searchIcon}>🔍</Text>
           <TextInput
+            accessible={true}
+            accessibilityLabel={t('shifts.search')}
             value={q}
             onChangeText={setQ}
             placeholder={t('shifts.search')}
@@ -212,9 +319,93 @@ function AllTab({ navigation }: Props) {
         <ViewToggle view={view} onViewChange={setView} colors={colors} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={colors.primary} />}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.controlsRow}
+      >
+        {(['All', 'Available', 'Pending', 'Confirmed'] as const).map((status) => (
+          <TouchableOpacity
+            key={status}
+            style={[s.controlButton, statusFilter === status && s.controlButtonActive]}
+            onPress={() => setStatusFilter(status)}
+          >
+            <Text
+              style={[s.controlButtonText, statusFilter === status && s.controlButtonTextActive]}
+            >
+              {status}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
-      {view === 'calendar' ? (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.controlsRow}
+      >
+        {[
+          { label: 'Any date', value: 'all' },
+          { label: 'Today', value: 'today' },
+          { label: 'Next 7 days', value: 'week' },
+        ].map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[s.controlButton, dateFilter === option.value && s.controlButtonActive]}
+            onPress={() => setDateFilter(option.value as 'all' | 'today' | 'week')}
+          >
+            <Text
+              style={[
+                s.controlButtonText,
+                dateFilter === option.value && s.controlButtonTextActive,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.controlsRow}
+      >
+        {[
+          { label: 'Date ↑', value: 'dateAsc' },
+          { label: 'Date ↓', value: 'dateDesc' },
+          { label: 'Pay ↑', value: 'payAsc' },
+          { label: 'Pay ↓', value: 'payDesc' },
+        ].map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[s.controlButton, sortOption === option.value && s.controlButtonActive]}
+            onPress={() =>
+              setSortOption(option.value as 'dateAsc' | 'dateDesc' | 'payAsc' | 'payDesc')
+            }
+          >
+            <Text
+              style={[
+                s.controlButtonText,
+                sortOption === option.value && s.controlButtonTextActive,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {loading && <LoadingState />}
+
+      {error ? (
+        <View style={s.errorContainer}>
+          <Text style={s.errorText}>{error}</Text>
+          <TouchableOpacity style={s.retryButton} onPress={fetchData}>
+            <Text style={s.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : view === 'calendar' ? (
         <CalendarView shifts={filtered} onShiftPress={setSelectedShift} colors={colors} />
       ) : (
         <FlatList
@@ -232,7 +423,7 @@ function AllTab({ navigation }: Props) {
             />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
+          ListEmptyComponent={<EmptyState icon="briefcase-outline" title={t('shifts.noShifts')} />}
         />
       )}
 
@@ -241,6 +432,12 @@ function AllTab({ navigation }: Props) {
         visible={selectedShift !== null}
         onClose={() => setSelectedShift(null)}
         colors={colors}
+        onApply={() => {
+          if (selectedShift) {
+            handleApply(selectedShift.id);
+          }
+        }}
+        applying={selectedShift ? applyingId === selectedShift.id : false}
       />
     </View>
   );
@@ -284,7 +481,7 @@ function AppliedTab({ navigation }: Props) {
   };
 
   const filtered = rows.filter((r) =>
-    `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
+    `${r.title} ${r.company} ${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
   const handleViewRequests = () => {
@@ -310,7 +507,7 @@ function AppliedTab({ navigation }: Props) {
         <ViewToggle view={view} onViewChange={setView} colors={colors} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={colors.primary} />}
+      {loading && <LoadingState />}
 
       {view === 'calendar' ? (
         <CalendarView shifts={filtered} onShiftPress={setSelectedShift} colors={colors} />
@@ -323,7 +520,7 @@ function AppliedTab({ navigation }: Props) {
             <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noShifts')}</Text>}
+          ListEmptyComponent={<EmptyState icon="briefcase-outline" title={t('shifts.noShifts')} />}
         />
       )}
 
@@ -379,6 +576,18 @@ function CompletedTab({ navigation }: Props) {
     `${r.title}${r.company}${r.site}`.toLowerCase().includes(q.toLowerCase()),
   );
 
+  // send the rating, then update the row so the stars stay after closing the modal
+  const handleRate = async (rating: number) => {
+    if (!selectedShift) return;
+
+    await rateShift(selectedShift.id, rating);
+
+    setRows((prev) =>
+      prev.map((row) => (row.id === selectedShift.id ? { ...row, rated: true, rating } : row)),
+    );
+    setSelectedShift((prev) => (prev ? { ...prev, rated: true, rating } : prev));
+  };
+
   const handleViewRequests = () => {
     navigation.navigate('ShiftRequests');
   };
@@ -402,7 +611,7 @@ function CompletedTab({ navigation }: Props) {
         <ViewToggle view={view} onViewChange={setView} colors={colors} />
       </View>
 
-      {loading && <ActivityIndicator size="large" color={colors.primary} />}
+      {loading && <LoadingState />}
 
       {view === 'calendar' ? (
         <CalendarView
@@ -419,7 +628,9 @@ function CompletedTab({ navigation }: Props) {
             <ShiftCard shift={item} onPress={() => setSelectedShift(item)} colors={colors} />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={s.emptyText}>{t('shifts.noCompleted')}</Text>}
+          ListEmptyComponent={
+            <EmptyState icon="checkmark-done-outline" title={t('shifts.noCompleted')} />
+          }
         />
       )}
 
@@ -428,6 +639,7 @@ function CompletedTab({ navigation }: Props) {
         visible={selectedShift !== null}
         onClose={() => setSelectedShift(null)}
         colors={colors}
+        onRate={handleRate}
       />
     </View>
   );
@@ -514,13 +726,6 @@ const getStyles = (colors: AppColors) =>
       color: colors.text,
     },
 
-    emptyText: {
-      textAlign: 'center',
-      color: colors.muted,
-      marginTop: 40,
-      fontSize: 14,
-    },
-
     requestsButton: {
       backgroundColor: colors.primary,
       borderRadius: 8,
@@ -534,5 +739,57 @@ const getStyles = (colors: AppColors) =>
       fontSize: 14,
       margin: 8,
       alignSelf: 'center',
+    },
+
+    controlsRow: {
+      gap: 8,
+      paddingBottom: 10,
+    },
+
+    controlButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+
+    controlButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+
+    controlButtonText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+
+    controlButtonTextActive: {
+      color: colors.white,
+    },
+
+    errorContainer: {
+      alignItems: 'center',
+      paddingVertical: 16,
+    },
+
+    errorText: {
+      color: '#B00020',
+      textAlign: 'center',
+      marginBottom: 10,
+    },
+
+    retryButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+
+    retryButtonText: {
+      color: colors.white,
+      fontWeight: '700',
     },
   });

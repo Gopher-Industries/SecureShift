@@ -1,0 +1,21 @@
+import Faq from "../models/Faq.js";
+
+/**
+ * Get all active FAQs sorted by display order
+ * @returns {Promise<Array>} Array of active FAQ documents
+ */
+export const getActiveFaqs = async () => {
+  try {
+    const faqs = await Faq.find({
+      isActive: true,
+    })
+      .select("_id question answer category displayOrder")
+      .sort({ displayOrder: 1, _id: 1 })
+      .lean();
+
+    return faqs;
+  } catch (error) {
+    console.error("FAQ Service Error:", error.message);
+    throw new Error(`Failed to retrieve FAQs: ${error.message}`);
+  }
+};

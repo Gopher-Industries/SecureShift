@@ -33,7 +33,7 @@ const router = express.Router();
  *                     completed:
  *                       type: integer
  *                       example: 10
- *                     cancelled:
+ *                     open:
  *                       type: integer
  *                       example: 2
  *                 recentShifts:

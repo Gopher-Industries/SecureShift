@@ -1,0 +1,62 @@
+.ss-refresh-wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.ss-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f3a8a;
+  background-color: #ffffff;
+  border: 1.5px solid #0f3a8a;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease-in-out;
+  white-space: nowrap;
+}
+
+.ss-refresh-btn:hover:not(:disabled) {
+  background-color: #0f3a8a;
+  color: #ffffff;
+}
+
+.ss-refresh-btn:hover:not(:disabled) .ss-refresh-icon {
+  stroke: #ffffff;
+}
+
+.ss-refresh-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ss-refresh-icon {
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.ss-refresh-btn.is-refreshing .ss-refresh-icon {
+  animation: ss-spin 0.9s linear infinite;
+}
+
+.ss-refresh-timestamp {
+  font-size: 11px;
+  color: #7b8699;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+@keyframes ss-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

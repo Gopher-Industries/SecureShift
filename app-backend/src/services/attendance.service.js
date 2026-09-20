@@ -10,6 +10,17 @@ const createServiceError = (message, statusCode = 400) => {
   return error;
 };
 
+const isDuplicateKeyError = (error) => {
+  return error.code === 11000 || error.code === 11001;
+};
+
+const extractDuplicateFields = (error) => {
+  if (error.keyPattern) {
+    return Object.keys(error.keyPattern).join(", ");
+  }
+  return "unknown fields";
+};
+
 export const calculateDistance = (from, to) => {
   const earthRadiusKm = 6371;
   const fromLatitudeRadians = (from.latitude * Math.PI) / 180;
@@ -136,7 +147,19 @@ export const checkInForShift = async ({
     locationVerified: true,
   });
 
-  await attendance.save();
+  try {
+    await attendance.save();
+  } catch (error) {
+    // MongoDB duplicate error
+    if (isDuplicateKeyError(error)) {
+      const fields = extractDuplicateFields(error);
+      throw createServiceError(
+        `You have already checked in for this shift. Duplicate detected on: ${fields}`,
+        409,
+      );
+    }
+    throw error;
+  }
 
   return attendance;
 };
@@ -176,10 +199,30 @@ export const checkOutForShift = async ({
   return attendance;
 };
 
-export const getAttendanceHistoryForUser = async (userId) => {
-  const attendanceRecords = await ShiftAttendance.find({
-    guardId: userId,
-  }).sort({
+/**
+ * Attendance history for one guard.
+ *
+ * An employer may only see attendance for shifts they created. That link is
+ * attendance -> shiftId -> Shift.createdBy, the same single relationship the
+ * incident listing already scopes by. Guards and admins are not narrowed here;
+ * a guard is restricted to their own records by the controller, and an admin
+ * is intended to see everything.
+ *
+ * @param {string} userId the guard whose history is being requested
+ * @param {{ _id?: string, id?: string, role?: string }} [requester] from req.user
+ */
+export const getAttendanceHistoryForUser = async (userId, requester) => {
+  const filter = { guardId: userId };
+
+  if (requester?.role === "employer") {
+    const employerId = requester._id || requester.id;
+    const ownShiftIds = await Shift.find({ createdBy: employerId }).distinct(
+      "_id",
+    );
+    filter.shiftId = { $in: ownShiftIds };
+  }
+
+  const attendanceRecords = await ShiftAttendance.find(filter).sort({
     checkInTime: -1,
   });
 

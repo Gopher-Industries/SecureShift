@@ -21,12 +21,14 @@ import ShiftRequestScreen from '../screen/ShiftRequestScreen';
 import SignupScreen from '../screen/signupscreen';
 import SplashScreen from '../screen/SplashScreen';
 import TermsScreen from '../screen/TermsScreen';
+import TimesheetDetailsScreen from '../screen/TimesheetDetailsScreen';
 import { useAppTheme } from '../theme';
+import EquipmentScreen from '../screen/EquipmentScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
   Splash: undefined;
-  Login: undefined;
+  Login: { sessionExpired?: boolean } | undefined;
   Signup: undefined;
   Documents: undefined;
   Settings: undefined;
@@ -34,6 +36,7 @@ export type RootStackParamList = {
   Payroll: undefined;
   PrivacyPolicy: undefined;
   EditProfile: undefined;
+  Equipment: undefined;
   Messages:
     | {
         context?: 'shift' | 'general';
@@ -47,6 +50,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   Certificates: undefined;
   ShiftDetails: { shift: any };
+  TimesheetDetails: { timesheetId: string };
   ShiftRequests: undefined;
   Terms: undefined;
   IncidentReports: undefined;
@@ -77,6 +81,11 @@ export default function AppNavigator() {
         contentStyle: { backgroundColor: colors.bg },
       }}
     >
+      <Stack.Screen
+        name="Equipment"
+        component={EquipmentScreen}
+        options={{ headerShown: true, title: 'Equipment' }}
+      />
       <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={LoginScreen} />
@@ -130,6 +139,11 @@ export default function AppNavigator() {
         name="ShiftDetails"
         component={ShiftDetailsScreen}
         options={{ headerShown: true, title: t('nav.shiftDetails') }}
+      />
+      <Stack.Screen
+        name="TimesheetDetails"
+        component={TimesheetDetailsScreen}
+        options={{ headerShown: true, title: t('nav.timesheetDetails') }}
       />
       <Stack.Screen
         name="ShiftRequests"
