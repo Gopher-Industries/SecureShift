@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 
 import { getStyles } from './HomeScreen.styles';
+import { RowItem, StatCard } from './home/HomeCards';
 import { fetchGuardScore, GuardScore } from '../api/guardScore';
 import { getUserProfile } from '../api/profile';
 import EmptyState from '../components/EmptyState';
@@ -25,7 +26,7 @@ import LoadingState from '../components/LoadingState';
 import http from '../lib/http';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
+import { minutesBetween, moneyForShift } from '../utils/shiftEarnings';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -39,76 +40,6 @@ type Shift = {
   payRate?: number;
 };
 type Metrics = { confirmed: number; pending: number; earnings: number; rating: number };
-
-function minutesBetween(startHHMM: string, endHHMM: string): number {
-  const [sh, sm] = startHHMM.split(':').map(Number);
-  const [eh, em] = endHHMM.split(':').map(Number);
-  const start = sh * 60 + sm;
-  const end = eh * 60 + em;
-  let duration = (end - start + 1440) % 1440;
-  if (duration === 0) duration = 1440;
-  return duration;
-}
-
-function moneyForShift(s: Shift): string | undefined {
-  if (!s.payRate || !s.startTime || !s.endTime) return undefined;
-  const hours = minutesBetween(s.startTime, s.endTime) / 60;
-  return `$${(s.payRate * hours).toFixed(0)}`;
-}
-
-const StatCard = ({
-  icon,
-  label,
-  value,
-  extraStyle,
-  colors,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  extraStyle?: object;
-  colors: AppColors;
-}) => {
-  const styles = getStyles(colors);
-
-  return (
-    <View style={[styles.statCard, extraStyle]}>
-      <View style={styles.statTop}>
-        <View style={styles.statIcon} accessible={true} accessibilityLabel={label}>
-          {icon}
-        </View>
-        <Text style={styles.statValue}>{value}</Text>
-      </View>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-};
-
-const RowItem = ({
-  title,
-  time,
-  amount,
-  highlight,
-  colors,
-}: {
-  title: string;
-  time: string;
-  amount?: string;
-  highlight?: boolean;
-  colors: AppColors;
-}) => {
-  const styles = getStyles(colors);
-
-  return (
-    <View style={[styles.rowItem, highlight && styles.rowItemHL]}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.rowTitle}>{title}</Text>
-        <Text style={styles.rowSub}>{time}</Text>
-      </View>
-      {!!amount && <Text style={styles.rowAmt}>{amount}</Text>}
-    </View>
-  );
-};
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
