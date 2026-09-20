@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   SafeAreaView,
   View,
@@ -8,380 +7,46 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 
 import { getStyles } from './MessagesScreen.styles';
-import { getMe } from '../api/auth';
-import {
-  getConversation,
-  getInboxMessages,
-  getSentMessages,
-  sendMessage as sendMessageApi,
-  type MessageDto,
-  type MessageUser,
-} from '../api/messages';
 import EmptyState from '../components/EmptyState';
 import ConversationItemComponent, {
   type ConversationItemData,
 } from '../components/list/ConversationItem';
-import MessageItem, { type MessageItemData } from '../components/list/MessageItem';
+import MessageItem from '../components/list/MessageItem';
 import LoadingState from '../components/LoadingState';
+import { useMessages, type ConversationItem, type Message } from '../hooks/useMessages';
 import { useAppTheme } from '../theme';
-import { AppColors } from '../theme/colors';
-
-import type { RootStackParamList } from '../navigation/AppNavigator';
-import type { RouteProp } from '@react-navigation/native';
-
-type Message = MessageItemData & {
-  context: 'shift' | 'general';
-  shiftTitle?: string;
-};
-
-type ConversationItem = ConversationItemData;
 
 export default function MessagesScreen() {
   const { colors } = useAppTheme();
   const styles = getStyles(colors);
 
-  const route = useRoute<RouteProp<RootStackParamList, 'Messages'>>();
-  const initialContext =
-    route.params?.context ?? (route.params?.shiftParticipantId ? 'shift' : 'general');
-  const shiftTitle = route.params?.shiftTitle ?? 'Shift conversation';
-
-  const [messagesByContext, setMessagesByContext] = useState<{
-    shift: Message[];
-    general: Message[];
-  }>({ shift: [], general: [] });
-  const [input, setInput] = useState('');
-  const [activeContext, setActiveContext] = useState<'shift' | 'general'>(initialContext);
-  const [isTyping, setIsTyping] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    name?: string;
-    role?: string;
-  } | null>(null);
-  const [shiftParticipant, setShiftParticipant] = useState<{
-    id: string;
-    name: string;
-    email?: string;
-    role?: string;
-  } | null>(null);
-  const [generalParticipant, setGeneralParticipant] = useState<{
-    id: string;
-    name: string;
-    email?: string;
-    role?: string;
-  } | null>(null);
-  const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [newRecipientId, setNewRecipientId] = useState('');
-  const [newRecipientName, setNewRecipientName] = useState('');
-
-  const contextMessages = useMemo(
-    () => messagesByContext[activeContext],
-    [messagesByContext, activeContext],
-  );
-  const activeParticipant = activeContext === 'shift' ? shiftParticipant : generalParticipant;
-
-  const getUserId = (user?: MessageUser) => user?._id ?? user?.id;
-
-  const mapDtoToMessage = (dto: MessageDto, context: 'shift' | 'general'): Message => {
-    const senderId = getUserId(dto.sender);
-    const isCurrentUser = senderId && senderId === currentUser?.id;
-    const inferredRole = dto.sender?.role ?? (isCurrentUser ? currentUser?.role : undefined);
-    const role = inferredRole === 'employer' ? 'employer' : 'guard';
-    return {
-      id: dto._id ?? `${dto.timestamp}-${senderId ?? 'unknown'}`,
-      from: role,
-      isMe: Boolean(isCurrentUser),
-      senderName: dto.sender?.name ?? dto.sender?.email ?? 'Unknown',
-      text: dto.content,
-      timestamp: dto.timestamp,
-      context,
-      shiftTitle: context === 'shift' ? shiftTitle : undefined,
-      status: isCurrentUser ? (dto.isRead ? 'read' : 'sent') : undefined,
-    };
-  };
-
-  const buildParticipantFromMessage = (msg: MessageDto, meId: string) => {
-    const senderId = getUserId(msg.sender);
-    const receiverId = getUserId(msg.receiver);
-    const isSenderMe = senderId && senderId === meId;
-    const otherUser = isSenderMe ? msg.receiver : msg.sender;
-    const otherId = getUserId(otherUser);
-    if (!otherId) return null;
-    return {
-      id: otherId,
-      name: otherUser?.name ?? otherUser?.email ?? 'Participant',
-      email: otherUser?.email,
-      role: otherUser?.role,
-    };
-  };
-
-  const buildConversationList = (inbox: MessageDto[], sent: MessageDto[], meId: string) => {
-    const byUser = new Map<string, ConversationItem & { lastTime: number }>();
-    const all = [...inbox, ...sent];
-    all.forEach((msg) => {
-      const participant = buildParticipantFromMessage(msg, meId);
-      if (!participant) return;
-      const timestamp = new Date(msg.timestamp).getTime();
-      const existing = byUser.get(participant.id);
-      const isUnread = msg.receiver && getUserId(msg.receiver) === meId && !msg.isRead;
-      const next = {
-        id: participant.id,
-        name: participant.name,
-        role: participant.role,
-        lastMessage: msg.content,
-        lastTimestamp: msg.timestamp,
-        unreadCount: (existing?.unreadCount ?? 0) + (isUnread ? 1 : 0),
-        lastTime: Math.max(existing?.lastTime ?? 0, timestamp),
-      };
-      if (!existing || timestamp >= existing.lastTime) {
-        byUser.set(participant.id, next);
-      } else {
-        byUser.set(participant.id, { ...existing, unreadCount: next.unreadCount });
-      }
-    });
-
-    return Array.from(byUser.values())
-      .sort((a, b) => b.lastTime - a.lastTime)
-      .map(({ lastTime, ...rest }) => rest);
-  };
-
-  useEffect(() => {
-    const loadParticipants = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const me = await getMe();
-        const meId = me?._id ?? me?.id;
-        if (!meId) throw new Error('Unable to determine user');
-        setCurrentUser({ id: meId, name: me?.name, role: me?.role });
-
-        if (route.params?.shiftParticipantId) {
-          setShiftParticipant({
-            id: route.params.shiftParticipantId,
-            name: route.params.shiftParticipantName ?? 'Shift participant',
-          });
-        }
-
-        if (route.params?.generalParticipantId) {
-          setGeneralParticipant({
-            id: route.params.generalParticipantId,
-            name: route.params.generalParticipantName ?? 'Conversation',
-          });
-        }
-
-        const [inbox, sent] = await Promise.all([getInboxMessages(), getSentMessages()]);
-        const list = buildConversationList(inbox, sent, meId);
-        setConversations(list);
-      } catch (e) {
-        console.error(e);
-        setError('Failed to load messages');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadParticipants();
-  }, [
-    route.params?.generalParticipantId,
-    route.params?.generalParticipantName,
-    route.params?.shiftParticipantId,
-    route.params?.shiftParticipantName,
-  ]);
-
-  useEffect(() => {
-    const loadConversation = async () => {
-      const participant = activeContext === 'shift' ? shiftParticipant : generalParticipant;
-      if (!participant?.id) {
-        setMessagesByContext((prev) => ({ ...prev, [activeContext]: [] }));
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const conversation = await getConversation(participant.id);
-        if (conversation?.participant) {
-          const { id, _id, name, email, role } = conversation.participant;
-          const normalizedParticipant = {
-            id: id ?? _id ?? participant.id,
-            name: name ?? email ?? participant.name,
-            email,
-            role,
-          };
-          if (activeContext === 'shift') {
-            setShiftParticipant(normalizedParticipant);
-          } else {
-            setGeneralParticipant(normalizedParticipant);
-          }
-        }
-        const mapped = (conversation?.messages ?? []).map((msg) =>
-          mapDtoToMessage(msg, activeContext),
-        );
-        setMessagesByContext((prev) => ({ ...prev, [activeContext]: mapped }));
-      } catch (e) {
-        console.error(e);
-        setError('Failed to load conversation');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadConversation();
-  }, [activeContext, generalParticipant?.id, shiftParticipant?.id, currentUser?.id]);
-
-  // Polling: every 2 seconds, refetch the active conversation so new messages
-  // appear without a manual refresh. Polled messages are merged into local
-  // state with id-based dedup, so the same message never renders twice.
-  // Optimistic messages still in 'sending' status are preserved until their
-  // server acknowledgment arrives via the existing sendMessage flow.
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isPollingRef = useRef(false);
-  // Used to keep the chat pinned to the newest message whenever the list
-  // content size changes (new sent message, polled-in message, initial load).
-  const messagesListRef = useRef<FlatList<Message>>(null);
-
-  useEffect(() => {
-    // Always tear down a previous interval before starting a new one so we
-    // never end up with multiple timers polling at once.
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-
-    const participant = activeContext === 'shift' ? shiftParticipant : generalParticipant;
-    if (!participant?.id || !currentUser?.id) return;
-
-    const participantId = participant.id;
-    const contextForPoll = activeContext;
-
-    const pollLatestMessages = async () => {
-      // Skip overlapping requests if a previous tick is still in flight (slow
-      // network shouldn't cause a queue of pending fetches).
-      if (isPollingRef.current) return;
-      isPollingRef.current = true;
-      try {
-        const conversation = await getConversation(participantId);
-        const polled = (conversation?.messages ?? []).map((msg) =>
-          mapDtoToMessage(msg, contextForPoll),
-        );
-
-        setMessagesByContext((prev) => {
-          const current = prev[contextForPoll];
-          // Keep optimistic messages that haven't been acknowledged yet so
-          // they don't briefly disappear between a send and the next poll.
-          const pendingLocal = current.filter((m) => m.status === 'sending');
-
-          // Dedup by id. Server messages take precedence over older local
-          // copies; pending local messages are added only if they aren't
-          // already represented by a server message with the same id.
-          const byId = new Map<string, Message>();
-          polled.forEach((m) => byId.set(m.id, m));
-          pendingLocal.forEach((m) => {
-            if (!byId.has(m.id)) byId.set(m.id, m);
-          });
-
-          const merged = Array.from(byId.values()).sort(
-            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-          );
-
-          // Bail out of the state update when the merged list is identical
-          // to the current one — prevents wasteful re-renders every 2s when
-          // there are no new messages.
-          if (
-            merged.length === current.length &&
-            merged.every((m, i) => m.id === current[i].id && m.status === current[i].status)
-          ) {
-            return prev;
-          }
-          return { ...prev, [contextForPoll]: merged };
-        });
-      } catch (e) {
-        // Background poll: log and move on. Don't surface a UI error so
-        // transient network blips don't disrupt the chat.
-        console.warn('[MessagesScreen] poll failed', e);
-      } finally {
-        isPollingRef.current = false;
-      }
-    };
-
-    pollIntervalRef.current = setInterval(pollLatestMessages, 2000);
-
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    };
-  }, [activeContext, generalParticipant?.id, shiftParticipant?.id, currentUser?.id]);
-
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-    const participant = activeContext === 'shift' ? shiftParticipant : generalParticipant;
-    if (!participant?.id) {
-      Alert.alert('No recipient', 'Select a conversation before sending.');
-      return;
-    }
-
-    const newId = Date.now().toString();
-    const newMsg: Message = {
-      id: newId,
-      from: currentUser?.role === 'employer' ? 'employer' : 'guard',
-      isMe: true,
-      senderName: currentUser?.name ?? 'You',
-      text: input.trim(),
-      timestamp: new Date().toISOString(),
-      context: activeContext,
-      shiftTitle: activeContext === 'shift' ? shiftTitle : undefined,
-      status: 'sending',
-    };
-    setMessagesByContext((prev) => ({
-      ...prev,
-      [activeContext]: [...prev[activeContext], newMsg],
-    }));
-    setInput('');
-
-    try {
-      const sent = await sendMessageApi({ receiverId: participant.id, content: newMsg.text });
-      setMessagesByContext((prev) => ({
-        ...prev,
-        [activeContext]: prev[activeContext].map((msg) =>
-          msg.id === newId
-            ? {
-                ...msg,
-                id: sent.messageId ?? msg.id,
-                timestamp: sent.timestamp ?? msg.timestamp,
-                status: sent.isRead ? 'read' : 'sent',
-              }
-            : msg,
-        ),
-      }));
-    } catch (e) {
-      console.error(e);
-      setMessagesByContext((prev) => ({
-        ...prev,
-        [activeContext]: prev[activeContext].filter((msg) => msg.id !== newId),
-      }));
-      Alert.alert('Error', 'Failed to send message');
-    }
-  };
-  // Stable handler so ConversationItem's memo isn't busted on every parent render.
-  const handleConversationPress = useCallback((conversation: ConversationItemData) => {
-    setGeneralParticipant({
-      id: conversation.id,
-      name: conversation.name,
-      role: conversation.role,
-    });
-    setActiveContext('general');
-  }, []);
+  const {
+    shiftTitle,
+    activeContext,
+    setActiveContext,
+    activeParticipant,
+    contextMessages,
+    conversations,
+    input,
+    setInput,
+    isTyping,
+    setIsTyping,
+    loading,
+    error,
+    newRecipientId,
+    setNewRecipientId,
+    newRecipientName,
+    setNewRecipientName,
+    messagesListRef,
+    sendMessage,
+    handleConversationPress,
+    handleStartConversation,
+  } = useMessages();
 
   const renderMessage = useCallback(
     ({ item }: { item: Message }) => <MessageItem message={item} />,
@@ -396,21 +61,6 @@ export default function MessagesScreen() {
   );
 
   const keyExtractor = useCallback((item: { id: string }) => item.id, []);
-
-  const handleStartConversation = () => {
-    const id = newRecipientId.trim();
-    if (!id) {
-      Alert.alert('Missing info', 'Enter a recipient ID to start a conversation.');
-      return;
-    }
-    setGeneralParticipant({
-      id,
-      name: newRecipientName.trim() || 'Conversation',
-    });
-    setActiveContext('general');
-    setNewRecipientId('');
-    setNewRecipientName('');
-  };
 
   return (
     <SafeAreaView style={styles.container}>
