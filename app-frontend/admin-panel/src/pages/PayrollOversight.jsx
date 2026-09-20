@@ -10,7 +10,7 @@ import {
   getTimesheets,
   processPayroll,
 } from '../service/adminAPI';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 import {
   approvableIds,
   canApprove,
@@ -29,50 +29,57 @@ const daysAgo = (n) => {
   return iso(d);
 };
 
-const ui = {
-  toolbar: { display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 16 },
-  field: { display: 'flex', flexDirection: 'column', gap: 4 },
-  label: { fontSize: 12, color: colors.muted, fontWeight: 600 },
-  input: {
-    border: `1px solid ${colors.border}`,
-    borderRadius: 4,
-    padding: '8px 10px',
-    fontSize: 14,
-    background: colors.white,
-    color: colors.text,
-  },
-  cards: { display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 },
-  card: {
-    background: colors.card,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    padding: '12px 16px',
-    minWidth: 130,
-  },
-  cardValue: { fontSize: 20, fontWeight: 700, color: colors.text },
-  cardLabel: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  tabs: { display: 'flex', gap: 8, marginBottom: 16 },
-};
-
-function StatusBadge({ status }) {
-  const meta = statusMeta(status);
-  return (
-    <span
-      style={{
-        background: `${meta.color}22`,
-        color: meta.color,
-        borderRadius: 12,
-        padding: '2px 10px',
-        fontSize: 12,
-        fontWeight: 700,
-      }}
-    >
-      {meta.label}
-    </span>
-  );
-}
-
 export default function PayrollOversight() {
+  const { colors } = useTheme();
+  const ui = {
+    toolbar: {
+      display: 'flex',
+      gap: 12,
+      flexWrap: 'wrap',
+      alignItems: 'flex-end',
+      marginBottom: 16,
+    },
+    field: { display: 'flex', flexDirection: 'column', gap: 4 },
+    label: { fontSize: 12, color: colors.muted, fontWeight: 600 },
+    input: {
+      border: `1px solid ${colors.border}`,
+      borderRadius: 4,
+      padding: '8px 10px',
+      fontSize: 14,
+      background: colors.white,
+      color: colors.black,
+    },
+    cards: { display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 },
+    card: {
+      background: colors.card,
+      border: `1px solid ${colors.border}`,
+      borderRadius: 8,
+      padding: '12px 16px',
+      minWidth: 130,
+    },
+    cardValue: { fontSize: 20, fontWeight: 700, color: colors.text },
+    cardLabel: { fontSize: 12, color: colors.muted, marginTop: 2 },
+    tabs: { display: 'flex', gap: 8, marginBottom: 16 },
+  };
+
+  function StatusBadge({ status }) {
+    const meta = statusMeta(status);
+    return (
+      <span
+        style={{
+          background: `${meta.color}22`,
+          color: meta.color,
+          borderRadius: 12,
+          padding: '2px 10px',
+          fontSize: 12,
+          fontWeight: 700,
+        }}
+      >
+        {meta.label}
+      </span>
+    );
+  }
+
   const { showToast } = useToast();
 
   const [startDate, setStartDate] = useState(daysAgo(30));

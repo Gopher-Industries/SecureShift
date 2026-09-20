@@ -218,7 +218,7 @@ export default function Incidents() {
               padding: '8px 14px',
               fontSize: 14,
               background: colors.white,
-              color: colors.text,
+              color: colors.black,
               cursor: 'pointer',
             }}
             onClick={() => fetchIncidents(true)}
