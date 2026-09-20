@@ -536,5 +536,30 @@
     "next": "Next",
     "done": "Get started",
     "replaySetting": "Replay app tour"
+  },
+  "gamification": {
+    "badges": "Badges",
+    "earnedCount": "{{earned}} of {{total}} earned",
+    "earned": "Earned",
+    "progressPct": "{{pct}}% there",
+    "badgeRisingStar": "Rising Star",
+    "badgeRisingStarDesc": "Reach a score of 50",
+    "badgeTopPerformer": "Top Performer",
+    "badgeTopPerformerDesc": "Reach a score of 85",
+    "badgePunctualPro": "Punctual Pro",
+    "badgePunctualProDesc": "90% on-time check-ins",
+    "badgeReliable": "Reliable",
+    "badgeReliableDesc": "Complete 90% of shifts",
+    "badgeIncidentFree": "Incident-Free",
+    "badgeIncidentFreeDesc": "No incidents on record",
+    "badgeStreak7": "On a Roll",
+    "badgeStreak7Desc": "A 7-shift on-time streak",
+    "leaderboard": "Leaderboard",
+    "yourRank": "You're #{{rank}}",
+    "leaderboardOptInTitle": "Join the leaderboard",
+    "leaderboardOptInText": "See how you rank against other guards. Your name is never shown — you appear as \"You\" and everyone else stays anonymous.",
+    "leaderboardJoin": "Join leaderboard",
+    "leaderboardLeave": "Leave leaderboard",
+    "you": "You"
   }
 }
