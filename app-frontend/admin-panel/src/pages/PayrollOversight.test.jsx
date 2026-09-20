@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PayrollOversight from './PayrollOversight';
 import { ToastProvider } from '../components/Toast';
 import * as adminAPI from '../service/adminAPI';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 jest.mock('../service/adminAPI');
 
@@ -33,7 +34,7 @@ const payrollResponse = {
 };
 
 const renderPage = () =>
-  render(
+  renderWithTheme(
     <ToastProvider>
       <PayrollOversight />
     </ToastProvider>

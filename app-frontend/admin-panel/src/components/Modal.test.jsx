@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import Modal from './Modal';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 describe('Modal', () => {
   it('uses a unique title id for each concurrently mounted modal', () => {
-    render(
+    renderWithTheme(
       <>
         <Modal open={true} title="First modal" onClose={jest.fn()}>
           First modal content

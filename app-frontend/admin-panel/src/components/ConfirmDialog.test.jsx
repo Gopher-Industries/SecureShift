@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ConfirmDialog from './ConfirmDialog';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 describe('ConfirmDialog', () => {
   it('renders nothing when open is false', () => {
-    render(
+    renderWithTheme(
       <ConfirmDialog
         open={false}
         message="Delete this user?"
@@ -17,7 +18,7 @@ describe('ConfirmDialog', () => {
   });
 
   it('renders the title, message, and default button labels when open', () => {
-    render(
+    renderWithTheme(
       <ConfirmDialog
         open={true}
         title="Delete User"
@@ -35,7 +36,7 @@ describe('ConfirmDialog', () => {
 
   it('calls onConfirm when the confirm button is clicked', async () => {
     const onConfirm = jest.fn();
-    render(
+    renderWithTheme(
       <ConfirmDialog
         open={true}
         message="Delete this user?"
@@ -52,7 +53,7 @@ describe('ConfirmDialog', () => {
 
   it('calls onCancel when the cancel button is clicked', async () => {
     const onCancel = jest.fn();
-    render(
+    renderWithTheme(
       <ConfirmDialog
         open={true}
         message="Delete this user?"
@@ -67,7 +68,7 @@ describe('ConfirmDialog', () => {
   });
 
   it('uses custom confirm/cancel labels when provided', () => {
-    render(
+    renderWithTheme(
       <ConfirmDialog
         open={true}
         message="Reject this guard's license?"

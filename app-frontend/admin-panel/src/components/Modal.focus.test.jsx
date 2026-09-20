@@ -1,11 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import Modal from './Modal';
+import { ThemeProvider } from '../theme/ThemeProvider';
 
 const modalWithFocusTarget = (onClose) => (
-  <Modal open={true} title="Focus test" onClose={onClose}>
-    <button type="button">First action</button>
-    <input aria-label="Keep focus" />
-  </Modal>
+  <ThemeProvider>
+    <Modal open={true} title="Focus test" onClose={onClose}>
+      <button type="button">First action</button>
+      <input aria-label="Keep focus" />
+    </Modal>
+  </ThemeProvider>
 );
 
 describe('Modal focus management', () => {
@@ -31,10 +34,12 @@ describe('Modal focus management', () => {
     const onClose = jest.fn();
     const renderModal = (open) => (
       <>
-        <button type="button">Open modal</button>
-        <Modal open={open} title="Restore focus" onClose={onClose}>
-          <button type="button">First action</button>
-        </Modal>
+        <ThemeProvider>
+          <button type="button">Open modal</button>
+          <Modal open={open} title="Restore focus" onClose={onClose}>
+            <button type="button">First action</button>
+          </Modal>
+        </ThemeProvider>
       </>
     );
     const { rerender } = render(renderModal(false));
@@ -50,10 +55,12 @@ describe('Modal focus management', () => {
 
   it('continues to trap tab focus within the open modal', () => {
     render(
-      <Modal open={true} title="Focus trap" onClose={jest.fn()}>
-        <button type="button">First action</button>
-        <button type="button">Last action</button>
-      </Modal>
+      <ThemeProvider>
+        <Modal open={true} title="Focus trap" onClose={jest.fn()}>
+          <button type="button">First action</button>
+          <button type="button">Last action</button>
+        </Modal>
+      </ThemeProvider>
     );
 
     const first = screen.getByRole('button', { name: 'First action' });

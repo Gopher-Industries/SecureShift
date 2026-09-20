@@ -1,11 +1,12 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Roles from './Roles';
 import { ToastProvider } from '../components/Toast';
 import { __resetRolesStore } from '../service/rolesAPI';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 const renderRoles = () =>
-  render(
+  renderWithTheme(
     <MemoryRouter>
       <ToastProvider>
         <Roles />

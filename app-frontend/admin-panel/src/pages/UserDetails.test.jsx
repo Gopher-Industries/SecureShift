@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import UserDetails from './UserDetails';
 import { deleteUser, getUser } from '../service/adminAPI';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 jest.mock('../service/adminAPI', () => ({
   getUser: jest.fn(),
@@ -32,7 +33,7 @@ describe('UserDetails', () => {
     });
     mockDeleteUser.mockResolvedValue({ message: 'User deleted successfully.' });
 
-    render(
+    renderWithTheme(
       <MemoryRouter initialEntries={['/users/user-123']}>
         <Routes>
           <Route path="/users/:id" element={<UserDetails />} />

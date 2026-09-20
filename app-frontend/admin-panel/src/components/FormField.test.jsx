@@ -1,11 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import FormField from './FormField';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 describe('FormField', () => {
   it('renders a label and input, and calls onChange when typed into', async () => {
     const onChange = jest.fn();
-    render(<FormField id="smtp-host" label="Host" value="" onChange={onChange} />);
+    renderWithTheme(<FormField id="smtp-host" label="Host" value="" onChange={onChange} />);
 
     const input = screen.getByLabelText('Host');
     expect(input).toBeInTheDocument();
@@ -15,13 +16,13 @@ describe('FormField', () => {
   });
 
   it('appends an asterisk to the label when required is true', () => {
-    render(<FormField id="email" label="Email" value="" onChange={jest.fn()} required />);
+    renderWithTheme(<FormField id="email" label="Email" value="" onChange={jest.fn()} required />);
 
     expect(screen.getByText('Email *')).toBeInTheDocument();
   });
 
   it('shows the hint text when no error is present', () => {
-    render(
+    renderWithTheme(
       <FormField
         id="smtp-host"
         label="Host"
@@ -35,7 +36,7 @@ describe('FormField', () => {
   });
 
   it('shows the error text instead of the hint when both are present', () => {
-    render(
+    renderWithTheme(
       <FormField
         id="smtp-host"
         label="Host"
@@ -51,7 +52,7 @@ describe('FormField', () => {
   });
 
   it('renders a select with its children when as="select"', () => {
-    render(
+    renderWithTheme(
       <FormField id="role" label="Role" value="admin" onChange={jest.fn()} as="select">
         <option value="admin">Admin</option>
         <option value="guard">Guard</option>
@@ -65,7 +66,9 @@ describe('FormField', () => {
   });
 
   it('renders a textarea when as="textarea"', () => {
-    render(<FormField id="notes" label="Notes" value="" onChange={jest.fn()} as="textarea" />);
+    renderWithTheme(
+      <FormField id="notes" label="Notes" value="" onChange={jest.fn()} as="textarea" />
+    );
 
     expect(screen.getByLabelText('Notes').tagName).toBe('TEXTAREA');
   });

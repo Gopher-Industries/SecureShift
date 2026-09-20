@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import AdminLogin from './AdminLogin';
 import useAdminAuth from '../hooks/useAdminAuth';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 jest.mock('../hooks/useAdminAuth');
 
@@ -33,7 +34,7 @@ describe('AdminLogin', () => {
       const mockLogin = jest.fn().mockResolvedValue({ token: 'abc', role: 'admin' });
       useAdminAuth.mockReturnValue({ login: mockLogin });
 
-      render(
+      renderWithTheme(
         <MemoryRouter>
           <AdminLogin />
         </MemoryRouter>
@@ -57,7 +58,7 @@ describe('AdminLogin', () => {
       });
       useAdminAuth.mockReturnValue({ login: mockLogin });
 
-      render(
+      renderWithTheme(
         <MemoryRouter>
           <AdminLogin />
         </MemoryRouter>
@@ -81,7 +82,7 @@ describe('AdminLogin', () => {
       );
       useAdminAuth.mockReturnValue({ login: mockLogin });
 
-      render(
+      renderWithTheme(
         <MemoryRouter>
           <AdminLogin />
         </MemoryRouter>
@@ -106,7 +107,7 @@ describe('AdminLogin', () => {
     });
 
     it('shows a session-expired message when redirected with ?sessionExpired=1', async () => {
-      render(
+      renderWithTheme(
         <MemoryRouter initialEntries={['/login?sessionExpired=1']}>
           <Routes>
             <Route path="/login" element={<AdminLogin />} />
@@ -118,7 +119,7 @@ describe('AdminLogin', () => {
     });
 
     it('shows no session-expired message on a normal visit to /login', () => {
-      render(
+      renderWithTheme(
         <MemoryRouter initialEntries={['/login']}>
           <Routes>
             <Route path="/login" element={<AdminLogin />} />
@@ -130,7 +131,7 @@ describe('AdminLogin', () => {
     });
 
     it('strips the sessionExpired query param from the URL after showing it once', async () => {
-      render(
+      renderWithTheme(
         <MemoryRouter initialEntries={['/login?sessionExpired=1']}>
           <Routes>
             <Route path="/login" element={<AdminLogin />} />
@@ -154,7 +155,7 @@ describe('AdminLogin', () => {
     const mockLogin = jest.fn();
     useAdminAuth.mockReturnValue({ login: mockLogin });
 
-    render(
+    renderWithTheme(
       <MemoryRouter>
         <AdminLogin />
       </MemoryRouter>
