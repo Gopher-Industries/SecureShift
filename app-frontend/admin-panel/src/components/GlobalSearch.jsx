@@ -98,10 +98,7 @@ export default function GlobalSearch() {
         setLoading(true);
         setError('');
 
-        const [usersResult, shiftsResult] = await Promise.allSettled([
-          getUsers(),
-          getShifts(),
-        ]);
+        const [usersResult, shiftsResult] = await Promise.allSettled([getUsers(), getShifts()]);
 
         if (!active) return;
 
@@ -199,9 +196,7 @@ export default function GlobalSearch() {
           )}
 
           {!loading && error && (
-            <div style={{ padding: '10px 12px', color: colors.danger, fontSize: 14 }}>
-              {error}
-            </div>
+            <div style={{ padding: '10px 12px', color: colors.danger, fontSize: 14 }}>{error}</div>
           )}
 
           {!loading && !error && !hasAnyResults && (
@@ -255,16 +250,12 @@ export default function GlobalSearch() {
                         {group.key === 'shifts' ? (
                           <>
                             <div>{item.title || 'Untitled shift'}</div>
-                            <div style={{ fontSize: 12, color: colors.muted }}>
-                              {item.status}
-                            </div>
+                            <div style={{ fontSize: 12, color: colors.muted }}>{item.status}</div>
                           </>
                         ) : (
                           <>
                             <div>{item.name}</div>
-                            <div style={{ fontSize: 12, color: colors.muted }}>
-                              {item.email}
-                            </div>
+                            <div style={{ fontSize: 12, color: colors.muted }}>{item.email}</div>
                           </>
                         )}
                       </button>
