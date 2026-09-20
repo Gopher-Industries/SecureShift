@@ -43,7 +43,7 @@ Employer access is limited using the shift linked to the incident. The system ch
 
 **Endpoint:** `GET /api/v1/incidents`
 
-This endpoint returns a list of incidents. Employers only receive incidents connected to shifts they created.
+This endpoint returns a list of incidents. If an employer does not provide a `shiftId`, the API returns incidents connected to all shifts created by that employer. If a `shiftId` is provided, the API applies the filter only when that shift belongs to the logged-in employer. If the supplied `shiftId` belongs to another employer, the query returns no incidents.
 
 The following optional filters can be used:
 
@@ -59,7 +59,7 @@ No request body is required.
 ### Example Request
 
 ```bash
-curl -H "Authorization: Bearer <employer-token>" "http://localhost:5000/api/v1/incidents?status=IN_REVIEW&severity=high"
+curl -H "Authorization: Bearer <employer-token>" "http://localhost:5000/api/v1/incidents?shiftId=shift123&status=IN_REVIEW&severity=high"
 ```
 
 ### Example Successful Response
@@ -223,6 +223,8 @@ The following gaps were identified:
 ## Verification Evidence
 
 The contract was checked against the incident routes, controller, model and RBAC files listed above.
+
+The employer `shiftId` filtering behaviour was rechecked after PR#636 was merged. The updated controller keeps the requested `shiftId` only when it matches one of the authenticated employer's shifts. If no `shiftId` is provided, incidents from all employer-owned shifts can be returned.
 
 The Swagger comments in `incident.routes.js` were also reviewed to confirm:
 
