@@ -3,10 +3,12 @@ import {
   register,
   login,
   verifyOTP,
+  registerGuardWithLicense,
 } from "../src/controllers/auth.controller.js";
 
 import User from "../src/models/User.js";
 import Employer from "../src/models/Employer.js";
+import Guard from "../src/models/Guard.js";
 import jwt from "jsonwebtoken";
 import { sendOTP } from "../src/utils/sendEmail.js";
 
@@ -14,6 +16,13 @@ jest.mock("../src/models/User.js");
 jest.mock("../src/models/Employer.js", () => ({
   __esModule: true,
   default: jest.fn(),
+}));
+
+jest.mock("../src/models/Guard.js", () => ({
+  __esModule: true,
+  default: {
+    create: jest.fn(),
+  },
 }));
 
 jest.mock("../src/utils/sendEmail.js");
@@ -59,11 +68,9 @@ describe("Auth Controller Tests", () => {
 
       await register(req, res);
 
-
       expect(res.status).toHaveBeenCalledWith(201);
       expect(req.audit.log).toHaveBeenCalled();
     });
-
 
     it.each(["admin", "super_admin", "branch_admin", "unknown_role"])(
       "should reject public registration for role: %s",
@@ -98,7 +105,6 @@ describe("Auth Controller Tests", () => {
         message: "Role is required.",
       });
     });
-
 
     it("should return 400 if email exists", async () => {
       req.body = {
@@ -348,6 +354,104 @@ describe("Auth Controller Tests", () => {
       await verifyOTP(req, res);
 
       expect(res.status).toHaveBeenCalledWith(401);
+    });
+  });
+  describe("registerGuardWithLicense", () => {
+    const setValidGuardRequest = (email) => {
+      req.body = {
+        name: "Test Guard",
+        email,
+        password: "Password123!",
+      };
+      req.file = {
+        filename: "test-license.jpg",
+      };
+    };
+
+    it("should reject an email already used by a guard", async () => {
+      setValidGuardRequest("guard@test.com");
+      User.findOne.mockResolvedValue({
+        email: "guard@test.com",
+        role: "guard",
+      });
+
+      await registerGuardWithLicense(req, res);
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        email: "guard@test.com",
+      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Email already registered.",
+      });
+      expect(Guard.create).not.toHaveBeenCalled();
+    });
+
+    it("should reject an email already used by an employee", async () => {
+      setValidGuardRequest("employee@test.com");
+      User.findOne.mockResolvedValue({
+        email: "employee@test.com",
+        role: "employee",
+      });
+
+      await registerGuardWithLicense(req, res);
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        email: "employee@test.com",
+      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Email already registered.",
+      });
+      expect(Guard.create).not.toHaveBeenCalled();
+    });
+
+    it("should reject an email already used by an admin", async () => {
+      setValidGuardRequest("admin@test.com");
+      User.findOne.mockResolvedValue({
+        email: "admin@test.com",
+        role: "admin",
+      });
+
+      await registerGuardWithLicense(req, res);
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        email: "admin@test.com",
+      });
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Email already registered.",
+      });
+      expect(Guard.create).not.toHaveBeenCalled();
+    });
+
+    it("should return 400 when a duplicate-key race occurs", async () => {
+      setValidGuardRequest("race@test.com");
+      User.findOne.mockResolvedValue(null);
+
+      const duplicateError = new Error("Duplicate key");
+      duplicateError.code = 11000;
+      Guard.create.mockRejectedValue(duplicateError);
+
+      await registerGuardWithLicense(req, res);
+
+      expect(Guard.create).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Email already registered.",
+      });
+    });
+
+    it("should preserve unexpected failures as 500", async () => {
+      setValidGuardRequest("new@test.com");
+      User.findOne.mockRejectedValue(new Error("Database unavailable"));
+
+      await registerGuardWithLicense(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Database unavailable",
+      });
     });
   });
 });
