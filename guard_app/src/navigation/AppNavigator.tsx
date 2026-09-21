@@ -6,11 +6,13 @@ import ActiveSOSScreen from '../screen/ActiveSOSScreen';
 import CertificatesScreen from '../screen/CertificatesScreen';
 import DocumentsScreen from '../screen/DocumentsScreen';
 import EditProfileScreen from '../screen/EditProfileScreen';
+import EquipmentScreen from '../screen/EquipmentScreen';
 import IncidentReportScreen from '../screen/IncidentReportScreen';
 import LoginScreen from '../screen/loginscreen';
 import MessagesScreen from '../screen/MessagesScreen';
 import MyPerformanceScreen from '../screen/MyPerformanceScreen';
 import NotificationsScreen from '../screen/notifications';
+import PatrolTourScreen from '../screen/PatrolTourScreen';
 import PayrollScreen from '../screen/PayrollScreen';
 import PrivacyPolicyScreen from '../screen/PrivacyPolicyScreen';
 import QRScannerScreen from '../screen/QRScannerScreen';
@@ -24,7 +26,6 @@ import SplashScreen from '../screen/SplashScreen';
 import TermsScreen from '../screen/TermsScreen';
 import TimesheetDetailsScreen from '../screen/TimesheetDetailsScreen';
 import { useAppTheme } from '../theme';
-import EquipmentScreen from '../screen/EquipmentScreen';
 
 export type RootStackParamList = {
   AppTabs: undefined;
@@ -56,8 +57,9 @@ export type RootStackParamList = {
   ShiftRequests: undefined;
   Terms: undefined;
   IncidentReports: undefined;
-  QRScanner: undefined;
+  QRScanner: { returnTo?: 'PatrolTour'; shiftId?: string } | undefined;
   ScanResult: { data: string };
+  PatrolTour: { shift: any; scannedCode?: string; scanNonce?: number };
   ActiveSOS:
     | {
         sosId?: string;
@@ -176,6 +178,11 @@ export default function AppNavigator() {
         name="ScanResult"
         component={ScanResultScreen}
         options={{ headerShown: true, title: 'Scan Result' }}
+      />
+      <Stack.Screen
+        name="PatrolTour"
+        component={PatrolTourScreen}
+        options={{ headerShown: true, title: t('patrol.title') }}
       />
       <Stack.Screen
         name="ActiveSOS"

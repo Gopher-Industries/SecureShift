@@ -23,6 +23,7 @@ import {
 
 import { useAppLock } from '../context/AppLockProvider';
 import { authenticate } from '../lib/appLock';
+import { requestTourReplay } from '../lib/onboardingStore';
 import { LocalStorage } from '../lib/localStorage';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
@@ -305,6 +306,18 @@ export default function SettingsScreen() {
                 trackColor={{ false: colors.border, true: colors.primary }}
               />
             }
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="sparkles-outline" size={18} color={colors.primary} />}
+            label={t('onboarding.replaySetting')}
+            onPress={() => {
+              // Reveal the tabs (which host the tour) then replay it.
+              navigation.goBack();
+              requestTourReplay();
+            }}
+            accessibilityLabel={t('onboarding.replaySetting')}
+            testID="settings-replay-tour"
             colors={colors}
           />
         </View>

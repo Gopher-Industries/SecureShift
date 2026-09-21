@@ -16,7 +16,7 @@ jest.mock('../../src/api/auth', () => ({
 
 jest.mock('../../src/api/shifts', () => ({
   listShifts: jest.fn(),
-  myShifts: jest.fn().mockResolvedValue([]),
+  myShifts: jest.fn().mockResolvedValue({ items: [], page: 1, limit: 20, total: 20 }),
   applyToShift: jest.fn(),
 }));
 
@@ -75,11 +75,11 @@ describe('ShiftsScreen - All tab (API mocked)', () => {
   it('lists shifts fetched from the (mocked) API with an Apply action for open shifts', async () => {
     listShifts.mockResolvedValue({ items: [openShift], page: 1, limit: 50, total: 1 });
 
-    const { findByText } = renderShiftsScreen();
+    const { findAllByText } = renderShiftsScreen();
 
-    expect(await findByText('Night Patrol')).toBeTruthy();
-    expect(await findByText('Acme Security')).toBeTruthy();
-    expect(await findByText('shifts.apply')).toBeTruthy();
+    expect((await findAllByText('Night Patrol')).length).toBeGreaterThan(0);
+    expect((await findAllByText('Acme Security')).length).toBeGreaterThan(0);
+    expect((await findAllByText('shifts.apply')).length).toBeGreaterThan(0);
   });
 
   it('applies to a shift after acknowledgement and shows a success alert', async () => {
@@ -88,7 +88,8 @@ describe('ShiftsScreen - All tab (API mocked)', () => {
 
     const screen = renderShiftsScreen();
 
-    fireEvent.press(await screen.findByText('shifts.apply'));
+    const applyButtons = await screen.findAllByText('shifts.apply');
+    fireEvent.press(applyButtons[0]);
 
     expect(await screen.findByText('Shift Acknowledgement')).toBeTruthy();
 
@@ -109,7 +110,8 @@ describe('ShiftsScreen - All tab (API mocked)', () => {
 
     const screen = renderShiftsScreen();
 
-    fireEvent.press(await screen.findByText('shifts.apply'));
+    const applyButtons = await screen.findAllByText('shifts.apply');
+    fireEvent.press(applyButtons[0]);
 
     expect(await screen.findByText('Shift Acknowledgement')).toBeTruthy();
 
@@ -126,13 +128,31 @@ describe('ShiftsScreen - All tab (API mocked)', () => {
   it('shows an error state with a Retry action when the API fetch fails', async () => {
     listShifts.mockRejectedValue({ response: { data: { message: 'Server unavailable' } } });
 
-    const { findByText } = renderShiftsScreen();
+    const { findByText, findAllByText } = renderShiftsScreen();
 
     expect(await findByText('Server unavailable')).toBeTruthy();
 
     listShifts.mockResolvedValue({ items: [openShift], page: 1, limit: 50, total: 1 });
     fireEvent.press(await findByText('Retry'));
 
-    expect(await findByText('Night Patrol')).toBeTruthy();
+    const nightPatrolShifts = await findAllByText('Night Patrol');
+    expect(nightPatrolShifts.length).toBeGreaterThan(0);
+  });
+  it('shows a recommended shifts section with a recommendation reason', async () => {
+    listShifts.mockResolvedValue({
+      items: [openShift],
+      page: 1,
+      limit: 50,
+      total: 1,
+    });
+
+    const { findByText, findAllByText } = renderShiftsScreen();
+
+    expect(await findByText('Recommended for you')).toBeTruthy();
+
+    const nightPatrolShifts = await findAllByText('Night Patrol');
+    expect(nightPatrolShifts.length).toBeGreaterThan(1);
+
+    expect(await findByText('higher pay rate')).toBeTruthy();
   });
 });

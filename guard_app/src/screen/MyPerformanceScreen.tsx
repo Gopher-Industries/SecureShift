@@ -10,8 +10,17 @@ import { getGuardScore, type GuardScoreBreakdown } from '../api/guardScore';
 import { getUserProfile } from '../api/profile';
 import EmptyState from '../components/EmptyState';
 import LoadingState from '../components/LoadingState';
+import {
+  deriveBadges,
+  deriveStreak,
+  deriveLeaderboard,
+  currentUserRank,
+  EARNED_COUNT,
+  type Badge,
+} from '../lib/gamification';
+import { getLeaderboardOptIn, setLeaderboardOptIn } from '../lib/leaderboardPrefs';
 import { useAppTheme } from '../theme';
-import { MOCK_STREAKS, MOCK_TREND } from '../utils/performanceMock';
+import { MOCK_TREND } from '../utils/performanceMock';
 
 import type { AppColors } from '../theme/colors';
 
@@ -51,6 +60,36 @@ function ScoreRow({ title, detail, score, maxPoints, colors }: ScoreRowProps) {
   );
 }
 
+function BadgeCard({ badge, colors }: { badge: Badge; colors: AppColors }) {
+  const s = getStyles(colors);
+  const { t } = useTranslation();
+  const pct = Math.round(badge.progress * 100);
+
+  return (
+    <View style={[s.badgeCard, !badge.earned && s.badgeCardLocked]}>
+      <View style={[s.badgeIcon, badge.earned ? s.badgeIconEarned : s.badgeIconLocked]}>
+        <Ionicons name={badge.icon} size={22} color={badge.earned ? colors.white : colors.muted} />
+      </View>
+      <Text style={s.badgeTitle} numberOfLines={2}>
+        {t(badge.titleKey)}
+      </Text>
+      <Text style={s.badgeDesc} numberOfLines={2}>
+        {t(badge.descKey)}
+      </Text>
+      {badge.earned ? (
+        <Text style={s.badgeEarned}>{t('gamification.earned')}</Text>
+      ) : (
+        <View style={s.badgeProgressWrap}>
+          <View style={s.badgeProgressTrack}>
+            <View style={[s.badgeProgressFill, { width: `${pct}%` }]} />
+          </View>
+          <Text style={s.badgeProgressText}>{t('gamification.progressPct', { pct })}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function MyPerformanceScreen() {
   const { colors } = useAppTheme();
   const s = getStyles(colors);
@@ -61,6 +100,13 @@ export default function MyPerformanceScreen() {
   const [score, setScore] = useState<number | null>(null);
   const [breakdown, setBreakdown] = useState<GuardScoreBreakdown | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [leaderboardOptIn, setLeaderboardOptInState] = useState(false);
+
+  const toggleLeaderboard = async () => {
+    const next = !leaderboardOptIn;
+    setLeaderboardOptInState(next);
+    await setLeaderboardOptIn(next);
+  };
 
   const load = async () => {
     try {
@@ -71,6 +117,7 @@ export default function MyPerformanceScreen() {
 
       setScore(result.score);
       setBreakdown(result.breakdown ?? null);
+      setLeaderboardOptInState(await getLeaderboardOptIn());
     } catch (e: unknown) {
       setScore(null);
       setBreakdown(null);
@@ -112,6 +159,12 @@ export default function MyPerformanceScreen() {
       </View>
     );
   }
+
+  const hasData = score != null && breakdown != null;
+  const badges = hasData ? deriveBadges(score, breakdown) : [];
+  const streak = hasData ? deriveStreak(breakdown) : null;
+  const leaderboard = hasData ? deriveLeaderboard(score, leaderboardOptIn) : null;
+  const rank = currentUserRank(leaderboard);
 
   return (
     <ScrollView
@@ -172,28 +225,86 @@ export default function MyPerformanceScreen() {
           </View>
 
           <View style={s.sectionHead}>
-            <Text style={s.sectionTitle}>{t('performance.streaks')}</Text>
-            <View style={s.sampleBadge}>
-              <Text style={s.sampleBadgeText}>{t('performance.sampleData')}</Text>
-            </View>
+            <Text style={s.sectionTitle}>{t('gamification.badges')}</Text>
+            <Text style={s.badgeCount}>
+              {t('gamification.earnedCount', {
+                earned: EARNED_COUNT(badges),
+                total: badges.length,
+              })}
+            </Text>
           </View>
+
+          <View style={s.badgeGrid}>
+            {badges.map((badge) => (
+              <BadgeCard key={badge.id} badge={badge} colors={colors} />
+            ))}
+          </View>
+
+          <Text style={s.sectionTitle}>{t('performance.streaks')}</Text>
 
           <View style={s.card}>
             <View style={s.streakRow}>
               <View style={s.streakBox}>
-                <Text style={s.streakValue}>{MOCK_STREAKS.currentStreak}</Text>
+                <Text style={s.streakValue}>{streak?.current ?? 0}</Text>
                 <Text style={s.streakLabel}>{t('performance.currentStreak')}</Text>
               </View>
               <View style={s.streakBox}>
-                <Text style={s.streakValue}>{MOCK_STREAKS.bestStreak}</Text>
+                <Text style={s.streakValue}>{streak?.best ?? 0}</Text>
                 <Text style={s.streakLabel}>{t('performance.bestStreak')}</Text>
               </View>
               <View style={s.streakBox}>
-                <Text style={s.streakValue}>{MOCK_STREAKS.onTimeThisMonth}</Text>
+                <Text style={s.streakValue}>{streak?.onTimeThisMonth ?? 0}</Text>
                 <Text style={s.streakLabel}>{t('performance.onTimeThisMonth')}</Text>
               </View>
             </View>
           </View>
+
+          <View style={s.sectionHead}>
+            <Text style={s.sectionTitle}>{t('gamification.leaderboard')}</Text>
+            {leaderboardOptIn && rank != null ? (
+              <View style={s.rankPill}>
+                <Text style={s.rankPillText}>{t('gamification.yourRank', { rank })}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {!leaderboardOptIn ? (
+            <View style={s.card}>
+              <Text style={s.optInTitle}>{t('gamification.leaderboardOptInTitle')}</Text>
+              <Text style={s.optInText}>{t('gamification.leaderboardOptInText')}</Text>
+              <TouchableOpacity
+                style={s.optInBtn}
+                onPress={toggleLeaderboard}
+                accessibilityRole="button"
+                testID="leaderboard-optin"
+              >
+                <Text style={s.optInBtnText}>{t('gamification.leaderboardJoin')}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={s.card}>
+              {(leaderboard ?? []).map((entry) => (
+                <View
+                  key={`${entry.rank}-${entry.label}`}
+                  style={[s.lbRow, entry.isCurrentUser && s.lbRowMe]}
+                >
+                  <Text style={[s.lbRank, entry.isCurrentUser && s.lbTextMe]}>#{entry.rank}</Text>
+                  <Text style={[s.lbName, entry.isCurrentUser && s.lbTextMe]}>
+                    {entry.isCurrentUser ? t('gamification.you') : entry.label}
+                  </Text>
+                  <Text style={[s.lbScore, entry.isCurrentUser && s.lbTextMe]}>{entry.score}</Text>
+                </View>
+              ))}
+              <TouchableOpacity
+                style={s.optOutBtn}
+                onPress={toggleLeaderboard}
+                accessibilityRole="button"
+                testID="leaderboard-optout"
+              >
+                <Text style={s.optOutText}>{t('gamification.leaderboardLeave')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={s.sectionHead}>
             <Text style={s.sectionTitle}>{t('performance.trend')}</Text>
@@ -451,5 +562,183 @@ const getStyles = (colors: AppColors) =>
       flex: 1,
       fontSize: 12,
       lineHeight: 18,
+    },
+
+    badgeCount: {
+      color: colors.muted,
+      fontSize: 12,
+      fontWeight: '700',
+      marginTop: 20,
+    },
+
+    badgeGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+
+    badgeCard: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderRadius: 12,
+      borderWidth: 1,
+      padding: 12,
+      marginBottom: 12,
+      width: '48%',
+    },
+
+    badgeCardLocked: {
+      opacity: 0.75,
+    },
+
+    badgeIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+
+    badgeIconEarned: {
+      backgroundColor: colors.primary,
+    },
+
+    badgeIconLocked: {
+      backgroundColor: colors.border,
+    },
+
+    badgeTitle: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+
+    badgeDesc: {
+      color: colors.muted,
+      fontSize: 12,
+      marginTop: 2,
+      lineHeight: 16,
+    },
+
+    badgeEarned: {
+      color: colors.success,
+      fontSize: 12,
+      fontWeight: '700',
+      marginTop: 8,
+    },
+
+    badgeProgressWrap: {
+      marginTop: 8,
+    },
+
+    badgeProgressTrack: {
+      backgroundColor: colors.border,
+      borderRadius: 4,
+      height: 6,
+      overflow: 'hidden',
+    },
+
+    badgeProgressFill: {
+      backgroundColor: colors.primary,
+      borderRadius: 4,
+      height: 6,
+    },
+
+    badgeProgressText: {
+      color: colors.muted,
+      fontSize: 11,
+      marginTop: 4,
+    },
+
+    rankPill: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      marginTop: 10,
+    },
+
+    rankPillText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: '700',
+    },
+
+    optInTitle: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '700',
+      marginBottom: 6,
+    },
+
+    optInText: {
+      color: colors.muted,
+      fontSize: 13,
+      lineHeight: 19,
+      marginBottom: 14,
+    },
+
+    optInBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+
+    optInBtnText: {
+      color: colors.white,
+      fontWeight: '700',
+      fontSize: 14,
+    },
+
+    lbRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+    },
+
+    lbRowMe: {
+      backgroundColor: colors.primarySoft,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      borderBottomWidth: 0,
+    },
+
+    lbRank: {
+      color: colors.muted,
+      fontSize: 14,
+      fontWeight: '700',
+      width: 44,
+    },
+
+    lbName: {
+      color: colors.text,
+      fontSize: 14,
+      flex: 1,
+    },
+
+    lbScore: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+
+    lbTextMe: {
+      color: colors.primary,
+    },
+
+    optOutBtn: {
+      alignItems: 'center',
+      paddingVertical: 12,
+      marginTop: 4,
+    },
+
+    optOutText: {
+      color: colors.muted,
+      fontSize: 13,
+      fontWeight: '600',
     },
   });

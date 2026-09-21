@@ -12,7 +12,7 @@ import TimesheetsScreen from '../../src/screen/TimeSheetsScreen';
 import { ThemeProvider } from '../../src/theme/ThemeProvider';
 
 jest.mock('../../src/api/shifts', () => ({
-  myShifts: jest.fn().mockResolvedValue([]),
+  myShifts: jest.fn().mockResolvedValue({ items: [], page: 1, limit: 20, total: 20 }),
 }));
 
 jest.mock('../../src/api/timesheets', () => ({
@@ -57,7 +57,7 @@ const timesheet = {
 describe('TimesheetsScreen (API mocked)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    myShifts.mockResolvedValue([]);
+    myShifts.mockResolvedValue({ items: [], page: 1, limit: 20, total: 20 });
   });
 
   it('renders the fetched timesheets with a summary of total/actual/payable hours', async () => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import AddAvailabilityModal from '../modal/AddAvailabilityModal';
@@ -44,9 +44,49 @@ export default function AvailabilitySimpleView({
 }: Props) {
   const styles = getStyles(colors);
 
+  const mockData = (max: number) => {
+    return Math.floor(Math.random() * max);
+  };
+
+  const hoursToday = useMemo(() => mockData(16), [16]);
+  const hoursWeek = useMemo(() => mockData(50), [50]);
+  const shiftsWeek = useMemo(() => mockData(10), [10]);
+  let mockWarning = '';
+  // Mock warning - base actual warning off of the warning given by the backend
+  if (hoursToday > 10) {
+    mockWarning = t('avail.dayHourWarn');
+  }
+  if (shiftsWeek > 7) {
+    mockWarning = t('avail.weekShiftWarn');
+  }
+  if (hoursWeek > 38) {
+    mockWarning = t('avail.weekHourWarn');
+  }
+
   return (
     <View style={styles.container}>
       {error && <Text style={styles.errorText}>{error}</Text>}
+
+      <View style={styles.insightCard}>
+        <View style={styles.insightColumn}>
+          <Text style={styles.insightTitle}>{t('avail.hoursToday')}</Text>
+          <Text style={styles.insightNumber}>{hoursToday}</Text>
+        </View>
+        <View style={styles.insightColumn}>
+          <Text style={styles.insightTitle}>{t('avail.hoursWeek')}</Text>
+          <Text style={styles.insightNumber}>{hoursWeek}</Text>
+        </View>
+        <View style={styles.insightColumn}>
+          <Text style={styles.insightTitle}>{t('avail.shiftsWeek')}</Text>
+          <Text style={styles.insightNumber}>{shiftsWeek}</Text>
+        </View>
+      </View>
+
+      {mockWarning.length > 0 && (
+        <View style={styles.warningCard}>
+          <Text style={styles.warningText}>{mockWarning}</Text>
+        </View>
+      )}
 
       <Text style={styles.sectionTitle}>{t('avail.daysAvailable')}</Text>
       <View style={styles.daysRow}>
@@ -129,6 +169,42 @@ const getStyles = (colors: AppColors) =>
       color: colors.status.rejected,
       marginBottom: 12,
     },
+    insightCard: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: 'row',
+    },
+    insightColumn: {
+      width: '33.33%',
+      alignItems: 'center',
+      flexDirection: 'column',
+    },
+    insightTitle: {
+      fontSize: 16,
+      textAlign: 'center',
+    },
+    insightNumber: {
+      color: colors.primary,
+      fontWeight: 'bold',
+    },
+    warningCard: {
+      backgroundColor: colors.status.pending,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    warningText: {
+      color: colors.white,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+
     sectionTitle: {
       fontWeight: 'bold',
       fontSize: 16,

@@ -1,3 +1,4 @@
+import { jest } from "@jest/globals";
 import request from "supertest";
 import mongoose from "mongoose";
 import {
@@ -5,19 +6,13 @@ import {
   clearDatabase,
   closeTestDatabase,
 } from "./db-helper.js";
-import app from "../src/app.js";
-import User from "../src/models/User.js";
-import Guard from "../src/models/Guard.js";
-import Admin from "../src/models/Admin.js";
-import GuardVerification from "../src/models/GuardVerification.js";
-import ManualVerification from "../src/models/ManualVerification.js";
 
-jest.mock("../src/adapters/verification/nswAdapter.js", () => ({
+jest.unstable_mockModule("../src/adapters/verification/nswAdapter.js", () => ({
   verifyNSW: jest.fn(),
 }));
 
 // Mock auth middleware to bypass JWT validation
-jest.mock("../src/middleware/auth.js", () => ({
+jest.unstable_mockModule("../src/middleware/auth.js", () => ({
   __esModule: true,
   default: (req, res, next) => {
     const userId = req.headers["x-user-id"] || "test-user-id";
@@ -32,12 +27,24 @@ jest.mock("../src/middleware/auth.js", () => ({
 }));
 
 // Mock licenceCrypto for recheck functionality
-jest.mock("../src/utils/crypto.js", () => ({
+jest.unstable_mockModule("../src/utils/crypto.js", () => ({
   encryptLicence: jest.fn().mockReturnValue("encrypted"),
   decryptLicence: jest.fn().mockReturnValue("LIC123"),
 }));
 
-import { verifyNSW } from "../src/adapters/verification/nswAdapter.js";
+const { default: app } = await import("../src/app.js");
+const { default: User } = await import("../src/models/User.js");
+const { default: Guard } = await import("../src/models/Guard.js");
+const { default: Admin } = await import("../src/models/Admin.js");
+const { default: GuardVerification } = await import(
+  "../src/models/GuardVerification.js"
+);
+const { default: ManualVerification } = await import(
+  "../src/models/ManualVerification.js"
+);
+const { verifyNSW } = await import(
+  "../src/adapters/verification/nswAdapter.js"
+);
 
 describe("Verification Controller", () => {
   let guard;
@@ -195,14 +202,36 @@ describe("Verification Controller", () => {
   });
 
   /* ---------------- RECHECK MANUAL ---------------- */
-  test("Recheck manual verification", async () => {
+  test("Recheck manual verification - target missing returns 404", async () => {
+    const nonExistentManualId = new mongoose.Types.ObjectId();
+
+    await GuardVerification.create({
+      guardId: guard._id,
+      jurisdiction: "QLD",
+      licenceNumber: "encrypted",
+      source: "manual",
+      notes: `manualId:${nonExistentManualId}`,
+      status: "pending",
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/verification/recheck/${guard._id}`)
+      .set("Authorization", adminToken)
+      .set("x-user-id", admin._id.toString())
+      .set("x-user-role", "admin");
+
+    expect(res.statusCode).toBe(404);
+    expect(res.body.message).toBe("Manual verification record not found");
+  });
+
+  test("Recheck manual verification - target exists updates status to in_review and returns 200", async () => {
     const manual = await ManualVerification.create({
       guardId: guard._id,
       status: "pending",
       jurisdiction: "QLD",
     });
 
-    const verification = await GuardVerification.create({
+    await GuardVerification.create({
       guardId: guard._id,
       jurisdiction: "QLD",
       licenceNumber: "encrypted",
@@ -217,7 +246,32 @@ describe("Verification Controller", () => {
       .set("x-user-id", admin._id.toString())
       .set("x-user-role", "admin");
 
-    expect([200, 400]).toContain(res.statusCode);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe("Manual verification set to in_review");
+    expect(res.body.manualId).toBe(manual._id.toString());
+
+    const updated = await ManualVerification.findById(manual._id);
+    expect(updated.status).toBe("in_review");
+  });
+
+  test("Recheck manual verification - missing or malformed manualId returns 400", async () => {
+    await GuardVerification.create({
+      guardId: guard._id,
+      jurisdiction: "QLD",
+      licenceNumber: "encrypted",
+      source: "manual",
+      notes: "manualId:invalid-id",
+      status: "pending",
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/verification/recheck/${guard._id}`)
+      .set("Authorization", adminToken)
+      .set("x-user-id", admin._id.toString())
+      .set("x-user-role", "admin");
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Manual verification id not found");
   });
 
   /* ---------------- VALIDATION ERROR ---------------- */
