@@ -25,51 +25,87 @@ describe('Roles & Permissions page', () => {
     expect(screen.getByText('Admin')).toBeInTheDocument();
     expect(screen.getByText('Guard')).toBeInTheDocument();
 
-    // super_admin's wildcard renders as full access, not a count
+    // Super Admin wildcard renders as full access
     expect(screen.getByText('Full access (all permissions)')).toBeInTheDocument();
-    // guard is seeded with three permissions
+
+    // Guard is seeded with seven permissions
     const guardRow = screen.getByText('Guard').closest('tr');
-    expect(within(guardRow).getByText('3 permissions')).toBeInTheDocument();
+
+    expect(within(guardRow).getByText('7 permissions')).toBeInTheDocument();
   });
 
   it('edits and persists a role’s permissions through the dialog', async () => {
     renderRoles();
 
     await screen.findByText('Guard');
-    const guardRow = screen.getByText('Guard').closest('tr');
-    fireEvent.click(within(guardRow).getByRole('button', { name: /edit permissions/i }));
 
-    const dialog = await screen.findByRole('dialog', { name: /edit guard permissions/i });
+    const guardRow = screen.getByText('Guard').closest('tr');
+
+    fireEvent.click(
+      within(guardRow).getByRole('button', {
+        name: /edit permissions/i,
+      })
+    );
+
+    const dialog = await screen.findByRole('dialog', {
+      name: /edit guard permissions/i,
+    });
+
     const checkbox = within(dialog).getByLabelText(/shift:write/);
+
     expect(checkbox).not.toBeChecked();
 
     fireEvent.click(checkbox);
-    fireEvent.click(within(dialog).getByRole('button', { name: /save changes/i }));
 
-    // dialog closes, success toast appears
+    fireEvent.click(
+      within(dialog).getByRole('button', {
+        name: /save changes/i,
+      })
+    );
+
+    // Dialog closes and success toast appears
     await waitFor(() =>
       expect(
-        screen.queryByRole('dialog', { name: /edit guard permissions/i })
+        screen.queryByRole('dialog', {
+          name: /edit guard permissions/i,
+        })
       ).not.toBeInTheDocument()
     );
+
     expect(await screen.findByText(/permissions updated for guard/i)).toBeInTheDocument();
 
-    // guard now has four permissions (persisted in the store)
+    // Guard now has eight permissions
     const updatedRow = screen.getByText('Guard').closest('tr');
-    expect(within(updatedRow).getByText('4 permissions')).toBeInTheDocument();
+
+    expect(within(updatedRow).getByText('8 permissions')).toBeInTheDocument();
   });
 
   it('does not allow editing the super_admin wildcard role', async () => {
     renderRoles();
 
     await screen.findByText('Super Admin');
-    const row = screen.getByText('Super Admin').closest('tr');
-    fireEvent.click(within(row).getByRole('button', { name: /edit permissions/i }));
 
-    const dialog = await screen.findByRole('dialog', { name: /edit super admin permissions/i });
-    expect(within(dialog).getByRole('button', { name: /save changes/i })).toBeDisabled();
-    // every permission checkbox is checked + disabled for the wildcard role
+    const row = screen.getByText('Super Admin').closest('tr');
+
+    fireEvent.click(
+      within(row).getByRole('button', {
+        name: /edit permissions/i,
+      })
+    );
+
+    const dialog = await screen.findByRole('dialog', {
+      name: /edit super admin permissions/i,
+    });
+
+    expect(
+      within(dialog).getByRole('button', {
+        name: /save changes/i,
+      })
+    ).toBeDisabled();
+
+    // Every permission checkbox is checked and disabled
     const checkboxes = within(dialog).getAllByRole('checkbox');
+
     checkboxes.forEach((box) => {
       expect(box).toBeChecked();
       expect(box).toBeDisabled();
