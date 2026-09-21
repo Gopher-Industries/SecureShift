@@ -614,4 +614,3 @@ export default function DataTable({
     </>
   );
 }
-  
