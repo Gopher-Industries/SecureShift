@@ -47,7 +47,7 @@ export default function PayrollOversight() {
       padding: '8px 10px',
       fontSize: 14,
       background: colors.white,
-      color: colors.black,
+      color: colors.text,
     },
     cards: { display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 },
     card: {

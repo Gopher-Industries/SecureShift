@@ -1,6 +1,7 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import GeneralSettings from './GeneralSettings';
 import { getMockSettings, updateMockSettings } from '../service/mockSettingsAPI';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 jest.mock('../service/mockSettingsAPI');
 
@@ -17,7 +18,7 @@ describe('GeneralSettings accessibility', () => {
   });
 
   test('all settings controls have accessible labels', async () => {
-    render(<GeneralSettings />);
+    renderWithTheme(<GeneralSettings />);
 
     await waitFor(() => {
       expect(screen.getByLabelText('Platform Name')).toBeInTheDocument();
@@ -29,7 +30,7 @@ describe('GeneralSettings accessibility', () => {
   });
 
   test('Maintenance Mode can be operated using keyboard', async () => {
-    render(<GeneralSettings />);
+    renderWithTheme(<GeneralSettings />);
 
     const checkbox = await waitFor(() =>
       screen.getByRole('checkbox', { name: 'Maintenance Mode' })

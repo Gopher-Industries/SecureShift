@@ -67,7 +67,7 @@ describe('UserDetails', () => {
       },
     });
 
-    render(
+    renderWithTheme(
       <MemoryRouter initialEntries={['/users/user-123']}>
         <Routes>
           <Route path="/users/:id" element={<UserDetails />} />

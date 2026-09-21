@@ -1,78 +1,79 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useNotificationFeed from '../hooks/useNotificationFeed';
-import colors from '../theme/colors';
-
-const styles = {
-  wrapper: {
-    position: 'relative',
-  },
-  bellButton: {
-    position: 'relative',
-    background: 'none',
-    border: 'none',
-    fontSize: 20,
-    cursor: 'pointer',
-    padding: 6,
-    color: '#18284f',
-  },
-  badge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    background: colors.danger || '#d92d20',
-    color: '#fff',
-    borderRadius: '999px',
-    fontSize: 11,
-    fontWeight: 700,
-    minWidth: 16,
-    height: 16,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '0 4px',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: '130%',
-    right: 0,
-    width: 340,
-    maxHeight: 420,
-    overflowY: 'auto',
-    background: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: 8,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-    zIndex: 1000,
-  },
-  groupHeader: {
-    padding: '10px 14px 4px',
-    fontSize: 12,
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    color: '#6b7280',
-  },
-  item: {
-    display: 'block',
-    width: '100%',
-    textAlign: 'left',
-    padding: '10px 14px',
-    background: 'none',
-    border: 'none',
-    borderBottom: '1px solid #f3f4f6',
-    cursor: 'pointer',
-    fontSize: 14,
-    color: '#18284f',
-  },
-  emptyState: {
-    padding: '24px 14px',
-    textAlign: 'center',
-    color: '#6b7280',
-    fontSize: 14,
-  },
-};
+import { useTheme } from '../theme/ThemeProvider';
 
 export default function NotificationBell() {
+  const { colors } = useTheme();
+  const styles = {
+    wrapper: {
+      position: 'relative',
+    },
+    bellButton: {
+      position: 'relative',
+      background: 'none',
+      border: 'none',
+      fontSize: 20,
+      cursor: 'pointer',
+      padding: 6,
+      color: '#18284f',
+    },
+    badge: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      background: colors.danger || '#d92d20',
+      color: '#fff',
+      borderRadius: '999px',
+      fontSize: 11,
+      fontWeight: 700,
+      minWidth: 16,
+      height: 16,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0 4px',
+    },
+    dropdown: {
+      position: 'absolute',
+      top: '130%',
+      right: 0,
+      width: 340,
+      maxHeight: 420,
+      overflowY: 'auto',
+      background: '#fff',
+      border: '1px solid #e5e7eb',
+      borderRadius: 8,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+      zIndex: 1000,
+    },
+    groupHeader: {
+      padding: '10px 14px 4px',
+      fontSize: 12,
+      fontWeight: 700,
+      textTransform: 'uppercase',
+      color: '#6b7280',
+    },
+    item: {
+      display: 'block',
+      width: '100%',
+      textAlign: 'left',
+      padding: '10px 14px',
+      background: 'none',
+      border: 'none',
+      borderBottom: '1px solid #f3f4f6',
+      cursor: 'pointer',
+      fontSize: 14,
+      color: '#18284f',
+    },
+    emptyState: {
+      padding: '24px 14px',
+      textAlign: 'center',
+      color: '#6b7280',
+      fontSize: 14,
+    },
+  };
+
   const { feed, totalCount, loading } = useNotificationFeed();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
