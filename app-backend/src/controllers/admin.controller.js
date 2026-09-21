@@ -257,17 +257,35 @@ export const getAuditLogs = async (req, res) => {
  * @access Admin only
  */
 export const purgeAuditLogs = async (req, res) => {
-  const days = parseInt(req.query.days, 10) || 30;
+  const rawDays = req.query.days;
+  let days = 30;
+
+  if (rawDays !== undefined) {
+    if (
+      typeof rawDays !== "string" ||
+      !/^[1-9]\d*$/.test(rawDays) ||
+      !Number.isSafeInteger(Number(rawDays))
+    ) {
+      return res.status(400).json({
+        message: "days must be a positive safe integer",
+      });
+    }
+
+    days = Number(rawDays);
+  }
+
   try {
     const result = await AuditLog.purgeOldLogs(days);
-    res.status(200).json({
+
+    return res.status(200).json({
       message: `Purged logs older than ${days} days`,
       deletedCount: result.deletedCount,
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Failed to purge audit logs", error: err.message });
+    return res.status(500).json({
+      message: "Failed to purge audit logs",
+      error: err.message,
+    });
   }
 };
 
