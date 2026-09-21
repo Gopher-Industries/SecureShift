@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getShifts } from '../service/adminAPI';
+import { getShifts, updateShift, approveShiftGuard, deleteShift } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
+import Modal from '../components/Modal';
+import Button from '../components/Button';
+import FormField from '../components/FormField';
+import colors from '../theme/colors';
 
-// List of status options for the filter
 const STATUS_OPTIONS = ['draft', 'open', 'applied', 'assigned', 'completed'];
-
-// Number of shifts shown per page
 const PAGE_SIZE = 20;
 
 // Columns that can be sorted by DataTable
@@ -23,14 +24,12 @@ function formatDate(d) {
   return Number.isNaN(parsed.getTime()) ? '\u2014' : parsed.toLocaleDateString();
 }
 
-// Format the shift start and end times
 function formatTimes(r) {
   if (!r.startTime && !r.endTime) return '\u2014';
 
   return `${r.startTime || '\u2014'} \u2013 ${r.endTime || '\u2014'}`;
 }
 
-// Show a person's name or email if no name exists
 function personLabel(person) {
   if (!person) return '\u2014';
 
@@ -55,8 +54,6 @@ function parseSort(searchParams) {
     direction: searchParams.get('dir') === 'desc' ? 'desc' : 'asc',
   };
 }
-
-// Read-only admin oversight of all shifts
 export default function Shifts() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -77,29 +74,25 @@ export default function Shifts() {
   }, [searchParams]);
 
   // Load all shifts when the page opens
+  const loadShifts = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Get shifts from the backend
+      const data = await getShifts();
+      const list = Array.isArray(data) ? data : data.shifts || data.data || [];
+
+      setShifts(list);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to load shifts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        setLoading(true);
-        setError('');
-
-        // Get shifts from the backend
-        const data = await getShifts();
-        const list = Array.isArray(data) ? data : data.shifts || data.data || [];
-
-        if (mounted) setShifts(list);
-      } catch (err) {
-        if (mounted) setError(err?.response?.data?.message || 'Failed to load shifts');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
+    loadShifts();
   }, []);
 
   const updateTableUrl = (updates) => {
@@ -120,6 +113,20 @@ export default function Shifts() {
       { replace: true }
     );
   };
+
+  const [editShift, setEditShift] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  const [assignShift, setAssignShift] = useState(null);
+  const [selectedGuardId, setSelectedGuardId] = useState('');
+  const [assignSaving, setAssignSaving] = useState(false);
+  const [assignError, setAssignError] = useState('');
+
+  const [cancelShift, setCancelShift] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   // Filter shifts by search text and status
   const filtered = useMemo(() => {
@@ -145,7 +152,70 @@ export default function Shifts() {
     });
   }, [shifts, query, status]);
 
-  // Column shown in the table
+  const openEdit = (shift) => {
+    setEditError('');
+    setEditForm({
+      title: shift.title || '',
+      date: shift.date ? new Date(shift.date).toISOString().slice(0, 10) : '',
+      startTime: shift.startTime || '',
+      endTime: shift.endTime || '',
+      payRate: shift.payRate ?? '',
+    });
+    setEditShift(shift);
+  };
+
+  const handleEditSave = async () => {
+    setEditSaving(true);
+    setEditError('');
+    try {
+      await updateShift(editShift._id, editForm);
+      setEditShift(null);
+      await loadShifts();
+    } catch (err) {
+      setEditError(err?.response?.data?.message || 'Failed to update shift');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const openAssign = (shift) => {
+    setAssignError('');
+    setSelectedGuardId('');
+    setAssignShift(shift);
+  };
+
+  const handleAssignConfirm = async () => {
+    if (!selectedGuardId) {
+      setAssignError('Select a guard to assign.');
+      return;
+    }
+    setAssignSaving(true);
+    setAssignError('');
+    try {
+      await approveShiftGuard(assignShift._id, selectedGuardId);
+      setAssignShift(null);
+      await loadShifts();
+    } catch (err) {
+      setAssignError(err?.response?.data?.message || 'Failed to assign guard');
+    } finally {
+      setAssignSaving(false);
+    }
+  };
+
+  const handleCancelConfirmed = async () => {
+    setCancelling(true);
+    setCancelError('');
+    try {
+      await deleteShift(cancelShift._id);
+      setCancelShift(null);
+      await loadShifts();
+    } catch (err) {
+      setCancelError(err?.response?.data?.message || 'Failed to cancel shift');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const columns = [
     { key: 'title', header: 'Title' },
     { key: 'date', header: 'Date', render: (r) => formatDate(r.date) },
@@ -153,13 +223,40 @@ export default function Shifts() {
     { key: 'status', header: 'Status' },
     { key: 'employer', header: 'Employer', render: (r) => personLabel(r.createdBy) },
     { key: 'guard', header: 'Guard', render: (r) => personLabel(r.acceptedBy) },
+    {
+      key: 'actions',
+      header: '',
+      render: (r) => (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <Button
+            variant="secondary"
+            onClick={() => openEdit(r)}
+            disabled={r.status === 'completed'}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => openAssign(r)}
+            disabled={!r.applicants?.length || r.status === 'completed'}
+          >
+            Assign
+          </Button>
+          <Button variant="danger" onClick={() => setCancelShift(r)}>
+            Cancel
+          </Button>
+        </div>
+      ),
+    },
   ];
 
-  // Display the admin shifts page
   return (
     <div>
       <h1>Shifts</h1>
-      <p style={{ color: '#777', marginTop: -8 }}>Read-only oversight of all shifts.</p>
+      <p style={{ color: '#777', marginTop: -8 }}>
+        Admin oversight of all shifts — edit details, assign a guard from applicants, or cancel a
+        shift. Creating new shifts remains employer-only.
+      </p>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <SearchFilter
@@ -206,7 +303,6 @@ export default function Shifts() {
         </select>
       </div>
 
-      {/*NEW: Show result count */}
       <p style={{ color: '#666', fontSize: '0.9rem', marginTop: 8 }}>
         Showing {filtered.length} {filtered.length === 1 ? 'shift' : 'shifts'}
       </p>
@@ -242,6 +338,104 @@ export default function Shifts() {
           }}
         />
       )}
+
+      <Modal open={!!editShift} title="Edit Shift" onClose={() => setEditShift(null)}>
+        <FormField
+          id="edit-title"
+          label="Title"
+          value={editForm.title || ''}
+          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+        />
+        <FormField
+          id="edit-date"
+          label="Date"
+          type="date"
+          value={editForm.date || ''}
+          onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+        />
+        <FormField
+          id="edit-start"
+          label="Start Time"
+          value={editForm.startTime || ''}
+          onChange={(e) => setEditForm({ ...editForm, startTime: e.target.value })}
+          placeholder="HH:MM"
+        />
+        <FormField
+          id="edit-end"
+          label="End Time"
+          value={editForm.endTime || ''}
+          onChange={(e) => setEditForm({ ...editForm, endTime: e.target.value })}
+          placeholder="HH:MM"
+        />
+        <FormField
+          id="edit-payrate"
+          label="Pay Rate"
+          type="number"
+          value={editForm.payRate ?? ''}
+          onChange={(e) => setEditForm({ ...editForm, payRate: e.target.value })}
+        />
+        {editError && <p style={{ color: colors.danger, fontSize: 13 }}>{editError}</p>}
+        <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+          <Button onClick={handleEditSave} disabled={editSaving}>
+            {editSaving ? 'Saving…' : 'Save Changes'}
+          </Button>
+          <Button variant="secondary" onClick={() => setEditShift(null)} disabled={editSaving}>
+            Cancel
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal open={!!assignShift} title="Assign Guard" onClose={() => setAssignShift(null)}>
+        <p style={{ fontSize: 13, color: colors.muted }}>
+          Select a guard from this shift&apos;s applicants to assign.
+        </p>
+        {assignShift?.applicants?.length ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {assignShift.applicants.map((a) => (
+              <label
+                key={a._id}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+              >
+                <input
+                  type="radio"
+                  name="guard"
+                  value={a._id}
+                  checked={selectedGuardId === a._id}
+                  onChange={() => setSelectedGuardId(a._id)}
+                />
+                {personLabel(a)} {a.email ? `(${a.email})` : ''}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: colors.muted, fontSize: 13 }}>No applicants for this shift.</p>
+        )}
+        {assignError && <p style={{ color: colors.danger, fontSize: 13 }}>{assignError}</p>}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Button onClick={handleAssignConfirm} disabled={assignSaving || !selectedGuardId}>
+            {assignSaving ? 'Assigning…' : 'Assign Guard'}
+          </Button>
+          <Button variant="secondary" onClick={() => setAssignShift(null)} disabled={assignSaving}>
+            Cancel
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal open={!!cancelShift} title="Cancel Shift" onClose={() => setCancelShift(null)}>
+        <p style={{ fontSize: 14 }}>
+          This will <strong>permanently delete</strong> the shift{' '}
+          <strong>&quot;{cancelShift?.title}&quot;</strong>. This action cannot be undone.
+        </p>
+        {cancelError && <p style={{ color: colors.danger, fontSize: 13 }}>{cancelError}</p>}
+        <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+          <Button variant="danger" onClick={handleCancelConfirmed} disabled={cancelling}>
+            {cancelling ? 'Cancelling…' : 'Yes, Cancel Shift'}
+          </Button>
+          <Button variant="secondary" onClick={() => setCancelShift(null)} disabled={cancelling}>
+            Keep Shift
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

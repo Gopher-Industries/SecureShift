@@ -156,8 +156,9 @@ export const getAllShifts = async (req, res) => {
   try {
     // Fetch all shifts with user references populated for clarity
     const shifts = await Shift.find()
-      .populate("createdBy", "name email role") // populate employer info
-      .populate("acceptedBy", "name email role"); // populate guard info
+  .populate("createdBy", "name email role") // populate employer info
+  .populate("acceptedBy", "name email role") // populate guard info
+  .populate("applicants", "name email role"); // populate applicant guards for admin assign UI (AP-061)
     await req.audit.log(req.user.id, ACTIONS.VIEW_SHIFTS, {
       totalShifts: shifts.length,
     });
