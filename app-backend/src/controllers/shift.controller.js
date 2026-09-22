@@ -827,7 +827,8 @@ export const getShiftById = async (req, res) => {
       });
     }
 
-    const shiftJson = typeof shift.toJSON === "function" ? shift.toJSON() : shift;
+    const shiftJson =
+      typeof shift.toJSON === "function" ? shift.toJSON() : shift;
     shiftJson.isFavourite = Boolean(
       uid && (shift.favouritedBy || []).some((f) => String(f) === String(uid)),
     );
