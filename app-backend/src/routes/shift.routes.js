@@ -15,6 +15,7 @@ import {
   getShiftById,
   deleteShift,
   duplicateShift,
+  toggleFavouriteShift,
 } from "../controllers/shift.controller.js";
 
 const router = express.Router();
@@ -594,5 +595,45 @@ router
 router
   .route("/:id/rate")
   .patch(protect, authorizeRoles("guard", "employer"), rateShift);
+
+/**
+ * @swagger
+ * /api/v1/shifts/{id}/favourite:
+ *   patch:
+ *     summary: Toggle favourite status on a shift (Employer/Admin)
+ *     description: |
+ *       Adds the requesting user to the shift's favourites if not already
+ *       favourited, or removes them if it is. Only the shift's owner
+ *       (employer) or an admin may favourite/unfavourite it.
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Shift ID
+ *     responses:
+ *       200:
+ *         description: Favourite status toggled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 isFavourite:
+ *                   type: boolean
+ *       400: { description: Invalid shift ID }
+ *       401: { description: Unauthorized }
+ *       403: { description: Forbidden (not the owner or admin) }
+ *       404: { description: Shift not found }
+ */
+router
+  .route("/:id/favourite")
+  .patch(protect, authorizeRoles("employer", "admin"), toggleFavouriteShift);
 
 export default router;

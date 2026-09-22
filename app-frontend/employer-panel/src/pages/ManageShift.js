@@ -31,9 +31,9 @@ const filterButtonStyle = { backgroundColor: 'white', border: '1px solid #e0e0e0
 const activeFilterButtonStyle = { ...filterButtonStyle, backgroundColor: '#274b93', color: 'white', border: '1px solid #274b93' };
 const sortButtonStyle = { backgroundColor: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '8px 16px', fontSize: '14px', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' };
 const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px', marginBottom: '32px' };
-const cardStyle = { backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' };
+const cardStyle = { position: 'relative', backgroundColor: 'white', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' };
 const cardHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '12px' };
-const cardTitleStyle = { margin: '0 0 4px 0', fontSize: '18px', fontWeight: '600', color: '#1E1E1E' };
+const cardTitleStyle = { margin: '0 0 4px 0', paddingRight: '44px', fontSize: '18px', fontWeight: '600', color: '#1E1E1E' };
 const priceStyle = { fontSize: '16px', fontWeight: '600', color: '#2E7D32' };
 const cardDetailsStyle = { display: 'flex', flexDirection: 'column', gap: '8px' };
 const detailRowStyle = { display: 'flex', alignItems: 'center', gap: '8px' };
@@ -43,6 +43,9 @@ const viewDetailsButtonStyle = { flex: 1, backgroundColor: '#274b93', color: 'wh
 const editButtonStyle = { width: '44px', height: '44px', backgroundColor: '#EFF4FF', border: '1px solid #c7d2fe', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4F46E5', fontSize: '18px', flexShrink: 0, transition: 'background 0.2s' };
 const deleteButtonStyle = { width: '44px', height: '44px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626', fontSize: '18px', flexShrink: 0, transition: 'background 0.2s' };
 const chatIconButtonStyle = { width: '44px', height: '44px', backgroundColor: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0 };
+const favouriteButtonStyle = { position: 'absolute', top: '12px', right: '12px', width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #e5e7eb', backgroundColor: 'rgba(255, 255, 255, 0.95)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', lineHeight: 1, boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)', transition: 'transform 0.15s ease, background-color 0.15s ease', zIndex: 2 };
+const favouriteButtonActiveStyle = { ...favouriteButtonStyle, backgroundColor: '#FFE9EE', border: '1px solid #ffb6c8' };
+const favouriteButtonPoppedStyle = { transform: 'scale(1.2)' };
 const applicantBadgeStyle = { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#274b93', fontWeight: 500, background: '#EFF4FF', borderRadius: '8px', padding: '4px 10px' };
 const applicantDotStyle = { width: '6px', height: '6px', borderRadius: '50%', background: '#274b93', display: 'inline-block' };
 const paginationStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' };
@@ -170,6 +173,7 @@ const statusDisplayMap = {
 const Filter = Object.freeze({
   All: 'All',
   Draft: 'Draft',
+  Favourites: 'Favourites',
   Completed: 'Completed',
   InProgress: 'In Progress',
   Pending: 'Pending',
@@ -225,6 +229,7 @@ const normalizeShift = (s) => ({
   applicantCount: s.applicantCount ?? (Array.isArray(s.applicants) ? s.applicants.length : 0),
   applicants: Array.isArray(s.applicants) ? s.applicants : [],
   assignedGuard: s.assignedGuard || s.acceptedBy || null,
+  isFavourite: Boolean(s.isFavourite),
 });
 
 // ─── Sub-components ───
@@ -242,6 +247,7 @@ const FilterSortSection = ({ Filter, Sort, selectedFilter, onFilterChange, sortB
   const filterLabels = {
     [Filter.All]: t.all,
     [Filter.Draft]: t.draftFilter,
+    [Filter.Favourites]: t.favouritesFilter,
     [Filter.Completed]: t.completed,
     [Filter.InProgress]: t.inProgressFilter,
     [Filter.Pending]: t.pending,
@@ -729,6 +735,8 @@ const ManageShift = ({ language }) => {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(null);
+  const [favouritePending, setFavouritePending] = useState({});
+  const [poppedFavouriteId, setPoppedFavouriteId] = useState(null);
 
   const fetchShifts = async (isManualRefresh = false) => {
     if (isManualRefresh) {
@@ -859,7 +867,12 @@ const ManageShift = ({ language }) => {
   };
 
   // Filter / sort / pagination
-  const filteredShifts = selectedFilter === Filter.All ? shifts : shifts.filter((s) => s.status === selectedFilter);
+  const filteredShifts =
+    selectedFilter === Filter.All
+      ? shifts
+      : selectedFilter === Filter.Favourites
+        ? shifts.filter((s) => s.isFavourite)
+        : shifts.filter((s) => s.status === selectedFilter);
   const sortedShifts = [...filteredShifts].sort((a, b) => {
     const keyA = (a.date || '') + ' ' + (a.startTime || '');
     const keyB = (b.date || '') + ' ' + (b.startTime || '');
@@ -883,6 +896,7 @@ const ManageShift = ({ language }) => {
   const inProgressShifts = shifts.filter((s) => s.status === 'In Progress').length;
   const pendingShifts = shifts.filter((s) => s.status === 'Pending').length;
   const draftShifts = shifts.filter((s) => s.status === 'Draft').length;
+  const favouriteShifts = shifts.filter((s) => s.isFavourite).length;
 
   const goPrevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
   const goNextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
@@ -939,6 +953,50 @@ const ManageShift = ({ language }) => {
   // ─── EDIT handler ───
   const handleEditShift = (shiftId) => {
     navigate(`/create-shift?edit=${shiftId}`);
+  };
+
+  // ─── FAVOURITE toggle handler ───
+  const handleToggleFavourite = async (shift) => {
+    const { id: shiftId, isFavourite: wasFavourite } = shift;
+    if (favouritePending[shiftId]) return; // ignore double-clicks mid-request
+
+    // Visual "pop" feedback
+    setPoppedFavouriteId(shiftId);
+    setTimeout(() => setPoppedFavouriteId((current) => (current === shiftId ? null : current)), 200);
+
+    // Optimistic update so it feels instant and doesn't block filtering/pagination
+    setShifts((prev) =>
+      prev.map((s) => (s.id === shiftId ? { ...s, isFavourite: !wasFavourite } : s))
+    );
+    setFavouritePending((prev) => ({ ...prev, [shiftId]: true }));
+
+    try {
+      const { data } = await http.patch(`/shifts/${shiftId}/favourite`);
+      const confirmedIsFavourite = typeof data?.isFavourite === 'boolean' ? data.isFavourite : !wasFavourite;
+
+      // Reconcile with server response in case of race conditions
+      setShifts((prev) =>
+        prev.map((s) => (s.id === shiftId ? { ...s, isFavourite: confirmedIsFavourite } : s))
+      );
+
+      showNotification(
+        'success',
+        confirmedIsFavourite ? 'Shift added to favourites.' : 'Shift removed from favourites.'
+      );
+    } catch (err) {
+      // Revert on failure
+      setShifts((prev) =>
+        prev.map((s) => (s.id === shiftId ? { ...s, isFavourite: wasFavourite } : s))
+      );
+      const msg = err?.response?.data?.message || 'Unable to update favourite status.';
+      showNotification('error', msg);
+    } finally {
+      setFavouritePending((prev) => {
+        const next = { ...prev };
+        delete next[shiftId];
+        return next;
+      });
+    }
   };
 
   // ─── Detail modal handlers ───
@@ -1115,6 +1173,7 @@ const ManageShift = ({ language }) => {
         <SummaryCard label={t.inProgressShiftsLabel} number={inProgressShifts} icon="/ic-lightning.svg" bg="#F6EFFF" />
         <SummaryCard label={t.pendingShiftsLabel} number={pendingShifts} icon="/ic-hourglass.svg" bg="#FBFAE2" />
         <SummaryCard label={t.draftShiftsLabel} number={draftShifts} icon="/ic-lightning.svg" bg="#F3E8FF" />
+        <SummaryCard label={t.favouriteShiftsLabel} number={favouriteShifts} icon="/ic-heart.svg" bg="#FFE9EE" />
       </div>
       <FilterSortSection
         Filter={Filter}
@@ -1133,6 +1192,20 @@ const ManageShift = ({ language }) => {
           const [datePart] = shift.dateTime?.split(' ') || [null];
           return (
             <div key={shift.id} style={cardStyle}>
+              <button
+                type="button"
+                style={{
+                  ...(shift.isFavourite ? favouriteButtonActiveStyle : favouriteButtonStyle),
+                  ...(poppedFavouriteId === shift.id ? favouriteButtonPoppedStyle : {}),
+                }}
+                onClick={(e) => { e.stopPropagation(); handleToggleFavourite(shift); }}
+                disabled={!!favouritePending[shift.id]}
+                aria-pressed={shift.isFavourite}
+                aria-label={shift.isFavourite ? `Remove ${shift.title} from favourites` : `Add ${shift.title} to favourites`}
+                title={shift.isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+              >
+                {shift.isFavourite ? '❤️' : '♡'}
+              </button>
               <div>
                 <h3 style={cardTitleStyle}>{shift.title}</h3>
                 <div style={cardHeaderStyle}>
