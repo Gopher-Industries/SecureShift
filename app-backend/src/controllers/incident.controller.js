@@ -39,7 +39,7 @@ export const createIncident = async (req, res, next) => {
       );
     }
 
-    if (!mongoose.isValidObjectId(shiftId)) {
+    if (typeof shiftId !== "string" || !mongoose.isValidObjectId(shiftId)) {
       return next(new ErrorResponse("Invalid shift ID", 400));
     }
 

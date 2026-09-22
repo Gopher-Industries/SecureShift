@@ -170,6 +170,17 @@ describe("Incident Controller", () => {
     expect(res.statusCode).toBe(400);
     expect(Shift.findById).not.toHaveBeenCalled();
   });
+    // Numeric test ID
+  test("should return 400 when creating incident with numeric shift ID", async () => {
+    const res = await request(app).post("/incident").send({
+      shiftId: 12345,
+      severity: "high",
+      description: "Test incident",
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(Shift.findById).not.toHaveBeenCalled();
+  });
 
   // CREATE - valid but nonexistent shift ID
   test("should return 404 when creating incident with nonexistent shift ID", async () => {
