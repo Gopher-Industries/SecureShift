@@ -182,9 +182,7 @@ export default function DataTable({
     const startIndex = (currentPage - 1) * pageSize;
     displayedRows = sortedRows.slice(startIndex, startIndex + pageSize);
 
-    handlePageChange = isPageControlled
-      ? (nextPage) => onPageChange?.(nextPage)
-      : setInternalPage;
+    handlePageChange = isPageControlled ? (nextPage) => onPageChange?.(nextPage) : setInternalPage;
   }
 
   useEffect(() => {
