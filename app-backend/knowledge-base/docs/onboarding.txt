@@ -200,11 +200,11 @@ docker compose up --build -d
 Wait until it completes. 
  
 9. Check containers 
-docker ps 
-Expected: 
-secureshift-backend 
-secureshift-db 
-secureshift-frontend-employer 
+docker compose ps
+Expected services:
+backend
+mongodb
+frontend-employer
  
 Testing 
 10. Backend 
@@ -228,11 +228,11 @@ Employer Panel
 Useful Docker Commands 
 See logs 
 Backend: 
-docker logs secureshift-backend 
+docker compose logs backend
 Frontend: 
-docker logs secureshift-frontend-employer 
+docker compose logs frontend-employer
 Database: 
-docker logs secureshift-db 
+docker compose logs mongodb
  
 Restart everything 
 docker compose restart 

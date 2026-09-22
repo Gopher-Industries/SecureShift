@@ -150,7 +150,7 @@ app-backend/.env. • Never post SMTP passwords in GitHub, Teams channels
 or documentation. • The seed does not bypass OTP. When email is
 disabled, use Compass or an approved development workflow to inspect
 local users and statuses. 10. Validation checklist • docker compose ps
-shows secureshift-db healthy. • Backend health returns HTTP 200 with
+shows the mongodb service healthy. • Backend health returns HTTP 200 with
 {“status”:“ok”}. • Compass connects to secureshift_local through
 localhost:27017. • npm run seed produces stable counts on repeated runs.
 • npm run seed:reset removes seeded records but preserves unrelated

@@ -1,3 +1,4 @@
+import './DataTable.css';
 import colors from '../theme/colors';
 
 const styles = {
@@ -52,6 +53,7 @@ export default function Pagination({ page, totalPages, onPageChange, totalItems,
       <div style={styles.controls}>
         <button
           type="button"
+          className="pagination-btn"
           style={{ ...styles.button, ...(canPrev ? {} : styles.buttonDisabled) }}
           disabled={!canPrev}
           onClick={() => canPrev && onPageChange(page - 1)}
@@ -63,6 +65,7 @@ export default function Pagination({ page, totalPages, onPageChange, totalItems,
         </span>
         <button
           type="button"
+          className="pagination-btn"
           style={{ ...styles.button, ...(canNext ? {} : styles.buttonDisabled) }}
           disabled={!canNext}
           onClick={() => canNext && onPageChange(page + 1)}

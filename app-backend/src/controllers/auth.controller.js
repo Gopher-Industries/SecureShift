@@ -111,7 +111,7 @@ export const registerGuardWithLicense = async (req, res) => {
     }
 
     // Uniqueness check
-    const existing = await Guard.findOne({ email });
+    const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ message: "Email already registered." });
     }
@@ -142,6 +142,10 @@ export const registerGuardWithLicense = async (req, res) => {
       user: safe,
     });
   } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(400).json({ message: "Email already registered." });
+    }
+
     // Handle a common case where address might be stringified JSON but invalid
     if (err instanceof SyntaxError) {
       return res.status(400).json({ message: "Invalid address JSON format." });

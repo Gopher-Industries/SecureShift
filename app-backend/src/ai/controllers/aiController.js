@@ -7,7 +7,16 @@ export async function chat(req, res) {
   console.log("======================================\n");
 
   try {
-    const question = req.body?.question?.trim();
+    const rawQuestion = req.body?.question;
+
+    if (typeof rawQuestion !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Question must be a string.",
+      });
+    }
+
+    const question = rawQuestion.trim();
 
     if (!question) {
       return res.status(400).json({

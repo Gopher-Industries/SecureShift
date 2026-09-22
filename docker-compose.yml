@@ -53,22 +53,28 @@ services:
     environment:
       OLLAMA_HOST: http://ollama:11434
 
-    entrypoint: ["/bin/sh", "-c"]
+    entrypoint: ["/bin/sh", "-ec"]
 
-    command: |
-      echo "Waiting for Ollama..."
+    command:
+      - |
+        echo "Waiting for Ollama..."
+        attempts=0
+        until ollama list >/dev/null 2>&1; do
+          attempts=$$((attempts + 1))
+          if [ "$$attempts" -ge 30 ]; then
+            echo "Ollama unavailable after 30 attempts." >&2
+            exit 1
+          fi
+          sleep 2
+        done
 
-      until ollama list >/dev/null 2>&1; do
-        sleep 2
-      done
+        ollama pull nomic-embed-text:latest
+        ollama pull llama3.2
 
-      echo "Pulling llama3.2..."
-      ollama pull llama3.2
-
-      echo "Pulling nomic-embed-text..."
-      ollama pull nomic-embed-text:latest
-
-      echo "Models ready."
+        models=$$(ollama list)
+        printf '%s\n' "$$models" | grep -Eq '^nomic-embed-text:latest[[:space:]]'
+        printf '%s\n' "$$models" | grep -Eq '^llama3\.2:latest[[:space:]]'
+        echo "Both Ollama models verified."
 
     restart: "no"
 
