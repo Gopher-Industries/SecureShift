@@ -133,4 +133,3 @@ describe('AdminDashboard', () => {
     expect(screen.queryByText('Dashboard data is unavailable.')).not.toBeInTheDocument();
   });
 });
-
