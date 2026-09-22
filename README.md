@@ -327,7 +327,7 @@ curl http://localhost:5000/api/v1/health
 curl http://localhost:3001
 ```
 
-`docker compose ps` should list `secureshift-frontend-admin` alongside the other services.
+`docker compose ps` should list the `frontend-admin` service alongside the other services.
 
 On Windows, run the commands from the WSL2 distro where the repository is checked out. If `docker` is not found in WSL, enable integration in Docker Desktop: Settings -> Resources -> WSL integration.
 

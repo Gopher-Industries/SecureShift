@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import http from '../lib/http';
 import Modal from '../components/Modal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
@@ -185,6 +186,11 @@ export default function AuditLogs() {
     } finally {
       setPurging(false);
     }
+  };
+
+  const closePurgeConfirm = () => {
+    if (purging) return;
+    setShowPurgeConfirm(false);
   };
 
   const getSortArrow = (key) => {
@@ -505,46 +511,24 @@ export default function AuditLogs() {
         </Modal>
       )}
 
-      {/* Purge Confirmation Modal */}
-      {showPurgeConfirm && (
-        <Modal open={true}>
-          <h2 style={{ color: '#d9534f' }}>⚠️ Confirm Purge</h2>
-
-          <p>
-            This will <strong>permanently delete</strong> all audit logs older than{' '}
-            <strong>{purgeDays} days</strong>. This action <strong>cannot be undone</strong>.
-          </p>
-
-          <p>Are you sure you want to continue?</p>
-
-          <div
-            style={{
-              display: 'flex',
-              gap: '10px',
-              marginTop: '16px',
-            }}
-          >
-            <button
-              onClick={handlePurgeConfirmed}
-              disabled={purging}
-              style={{
-                backgroundColor: '#d9534f',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              {purging ? 'Purging...' : 'Yes, Purge'}
-            </button>
-
-            <button onClick={() => setShowPurgeConfirm(false)} disabled={purging}>
-              Cancel
-            </button>
-          </div>
-        </Modal>
-      )}
+      {/* Purge Confirmation Dialog */}
+      <ConfirmDialog
+        open={showPurgeConfirm}
+        title="Confirm Purge"
+        confirmLabel={purging ? 'Purging…' : 'Yes, Purge'}
+        cancelLabel="Cancel"
+        danger
+        onConfirm={handlePurgeConfirmed}
+        onCancel={closePurgeConfirm}
+        confirmDisabled={purging}
+        cancelDisabled={purging}
+      >
+        <p style={{ margin: '4px 0 20px' }}>
+          This will <strong>permanently delete</strong> all audit logs older than{' '}
+          <strong>{purgeDays} days</strong>. This action <strong>cannot be undone</strong>.
+        </p>
+        <p style={{ margin: '4px 0 20px' }}>Are you sure you want to continue?</p>
+      </ConfirmDialog>
     </div>
   );
 }

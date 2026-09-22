@@ -291,7 +291,7 @@ export default function AdminDashboard() {
 
           {loading ? (
             <p className="admin-dashboard__state" role="status">
-              Loading dashboard data...
+              Loading dashboard data…
             </p>
           ) : failedSections.includes('Recent activity') ? (
             <p className="admin-dashboard__state admin-dashboard__state--error">
