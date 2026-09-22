@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '../components/NotificationContext';
+import ConfirmDialog from '../components/Confirmdialog';
 
 const ManageShiftDetails = () => {
   const { id } = useParams();
@@ -14,6 +15,10 @@ const ManageShiftDetails = () => {
   // Chat state
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+
+  // Confirmation state for approving an applicant
+  const [approveTarget, setApproveTarget] = useState(null);
+  const [approving, setApproving] = useState(false);
 
   // ======================
   // Fetch shift details
@@ -82,7 +87,8 @@ const ManageShiftDetails = () => {
   // ======================
   // Approve guard
   // ======================
-  const approveGuard = async (guardId) => {
+  const performApproveGuard = async (guardId) => {
+    setApproving(true);
     try {
       const token = localStorage.getItem('token');
 
@@ -101,7 +107,13 @@ const ManageShiftDetails = () => {
     } catch (err) {
       console.error(err);
       showNotification('error', 'Failed to approve applicant');
+    } finally {
+      setApproving(false);
     }
+  };
+
+  const approveGuard = (applicant) => {
+    setApproveTarget(applicant);
   };
 
   // ======================
@@ -193,7 +205,7 @@ const ManageShiftDetails = () => {
               <p style={{ margin: 0, color: '#666' }}>{applicant.email}</p>
             </div>
 
-            <button onClick={() => approveGuard(applicant._id)}>Approve</button>
+            <button onClick={() => approveGuard(applicant)}>Approve</button>
           </div>
         ))}
 
@@ -236,6 +248,24 @@ const ManageShiftDetails = () => {
         />
         <button onClick={sendMessage}>Send</button>
       </div>
+
+      <ConfirmDialog
+        isOpen={!!approveTarget}
+        title="Approve this applicant?"
+        message={
+          approveTarget
+            ? `${approveTarget.name || 'This guard'} will be assigned to "${shift.title}".`
+            : ''
+        }
+        confirmLabel="Approve"
+        busy={approving}
+        onConfirm={() => {
+          const guardId = approveTarget._id;
+          setApproveTarget(null);
+          performApproveGuard(guardId);
+        }}
+        onCancel={() => setApproveTarget(null)}
+      />
     </div>
   );
 };

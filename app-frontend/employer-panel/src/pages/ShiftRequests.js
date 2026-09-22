@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getShiftRequests, approveShiftRequest, rejectShiftRequest } from '../api/shiftRequests';
+import ConfirmDialog from '../components/Confirmdialog';
 import './ShiftRequests.css';
 
 const STATUS_FILTERS = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
@@ -93,6 +94,7 @@ export default function ShiftRequests() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [actingId, setActingId] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [approveTarget, setApproveTarget] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,16 +117,21 @@ export default function ShiftRequests() {
     load();
   }, [load]);
 
-  const handleApprove = async (request) => {
+  const performApprove = async (request) => {
     setActingId(request._id);
     try {
       await approveShiftRequest(request._id);
+      setApproveTarget(null);
       await load();
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || 'Unable to approve request.');
     } finally {
       setActingId(null);
     }
+  };
+
+  const handleApprove = (request) => {
+    setApproveTarget(request);
   };
 
   const handleReject = async (reason) => {
@@ -288,6 +295,20 @@ export default function ShiftRequests() {
           submitting={actingId === rejectTarget._id}
           onCancel={() => setRejectTarget(null)}
           onConfirm={handleReject}
+        />
+      )}
+
+      {approveTarget && (
+        <ConfirmDialog
+          isOpen
+          title="Approve this request?"
+          message={`${approveTarget.type === 'LEAVE' ? 'Leave' : 'Swap'} request from ${guardName(
+            approveTarget.requestingGuardId
+          )} will be approved.`}
+          confirmLabel="Approve"
+          busy={actingId === approveTarget._id}
+          onConfirm={() => performApprove(approveTarget)}
+          onCancel={() => setApproveTarget(null)}
         />
       )}
     </div>

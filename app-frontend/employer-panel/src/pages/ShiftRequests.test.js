@@ -58,14 +58,34 @@ test('lists pending swap and leave requests from the API', async () => {
   expect(getShiftRequests).toHaveBeenCalledWith(expect.objectContaining({ status: 'PENDING' }));
 });
 
-test('approving a request calls the approve API with its id', async () => {
+test('approving a request asks for confirmation before calling the API', async () => {
   render(<ShiftRequests />);
   await screen.findByText('Alice');
 
   const firstCard = screen.getByText('Alice').closest('.sr-card');
   fireEvent.click(within(firstCard).getByRole('button', { name: /approve/i }));
 
+  // The API must not be called until the confirmation dialog is confirmed.
+  expect(approveShiftRequest).not.toHaveBeenCalled();
+
+  const dialog = screen.getByRole('dialog', { name: /approve this request/i });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Approve' }));
+
   await waitFor(() => expect(approveShiftRequest).toHaveBeenCalledWith('r1'));
+});
+
+test('cancelling the approve confirmation does not call the API', async () => {
+  render(<ShiftRequests />);
+  await screen.findByText('Alice');
+
+  const firstCard = screen.getByText('Alice').closest('.sr-card');
+  fireEvent.click(within(firstCard).getByRole('button', { name: /approve/i }));
+
+  const dialog = screen.getByRole('dialog', { name: /approve this request/i });
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(approveShiftRequest).not.toHaveBeenCalled();
 });
 
 test('rejecting requires a reason and sends it to the reject API', async () => {
