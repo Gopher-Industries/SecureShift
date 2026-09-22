@@ -17,6 +17,7 @@ import {
 
 import EmptyState from '../components/EmptyState';
 import { useAppTheme } from '../theme';
+import { getStyles } from './DocumentsScreen.styles';
 import { AppColors } from '../theme/colors';
 
 interface UploadedDocument {
@@ -29,6 +30,10 @@ interface UploadedDocument {
   uri: string;
   uploadedAt: string;
 }
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
 
 const STORAGE_KEY = 'uploaded_documents';
 
@@ -82,15 +87,19 @@ export default function DocumentsScreen() {
 
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
+        type: ALLOWED_MIME_TYPES,
         copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
 
-        const maxSize = 10 * 1024 * 1024;
-        if (file.size && file.size > maxSize) {
+        if (!file.mimeType || !ALLOWED_MIME_TYPES.includes(file.mimeType)) {
+          Alert.alert('Invalid File Type', 'Please select a PDF, JPG, or PNG file.');
+          return;
+        }
+
+        if (file.size && file.size > MAX_FILE_SIZE) {
           Alert.alert(t('docs.fileTooLarge'), t('docs.selectFileSmaller'));
           return;
         }
@@ -125,7 +134,10 @@ export default function DocumentsScreen() {
         setSelectedDocType('');
         setShowDropdown(false);
 
-        Alert.alert('Success', 'Document uploaded successfully!');
+        Alert.alert(
+          'Document Saved',
+          'Document saved locally. Documentation API upload is not available yet.',
+        );
       }
     } catch (err) {
       console.error('Error uploading document:', err);
@@ -299,217 +311,3 @@ export default function DocumentsScreen() {
     </View>
   );
 }
-
-const getStyles = (colors: AppColors) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.bg,
-    },
-    content: {
-      flex: 1,
-      padding: 16,
-    },
-
-    infoCard: {
-      backgroundColor: colors.primarySoft,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 24,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    infoText: {
-      fontSize: 14,
-      color: colors.text,
-      lineHeight: 20,
-    },
-
-    label: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 8,
-    },
-    dropdown: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 8,
-      padding: 14,
-      marginBottom: 24,
-    },
-    dropdownTextPlaceholder: {
-      fontSize: 15,
-      color: colors.muted,
-    },
-    dropdownTextSelected: {
-      fontSize: 15,
-      color: colors.text,
-      fontWeight: '500',
-    },
-    dropdownIcon: {
-      fontSize: 12,
-      color: colors.muted,
-    },
-    dropdownMenu: {
-      backgroundColor: colors.card,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-      marginTop: -20,
-      marginBottom: 24,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 5,
-      maxHeight: 340,
-    },
-    dropdownItem: {
-      padding: 14,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    dropdownItemSelected: {
-      backgroundColor: colors.primarySoft,
-    },
-    dropdownItemText: {
-      fontSize: 15,
-      color: colors.text,
-    },
-    dropdownItemTextSelected: {
-      color: colors.primary,
-      fontWeight: '600',
-    },
-
-    uploadArea: {
-      backgroundColor: colors.card,
-      borderWidth: 2,
-      borderColor: colors.border,
-      borderStyle: 'dashed',
-      borderRadius: 12,
-      padding: 32,
-      alignItems: 'center',
-      marginBottom: 32,
-    },
-    uploadAreaDisabled: {
-      opacity: 0.5,
-    },
-    uploadIconContainer: {
-      width: 64,
-      height: 64,
-      backgroundColor: colors.primarySoft,
-      borderRadius: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 12,
-    },
-    uploadIcon: {
-      fontSize: 28,
-      color: colors.muted,
-    },
-    uploadText: {
-      fontSize: 15,
-      fontWeight: '500',
-      color: colors.text,
-      marginBottom: 4,
-    },
-    uploadSubtext: {
-      fontSize: 13,
-      color: colors.muted,
-    },
-
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.text,
-      marginBottom: 16,
-    },
-    documentsList: {
-      gap: 12,
-      paddingBottom: 20,
-    },
-    documentCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    documentIconContainer: {
-      width: 48,
-      height: 48,
-      backgroundColor: colors.primarySoft,
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 12,
-    },
-    documentIcon: {
-      fontSize: 24,
-    },
-    documentInfo: {
-      flex: 1,
-    },
-    documentName: {
-      fontSize: 15,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 2,
-    },
-    documentType: {
-      fontSize: 13,
-      color: colors.primary,
-      marginBottom: 4,
-    },
-    documentMeta: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    documentMetaText: {
-      fontSize: 12,
-      color: colors.muted,
-    },
-    documentMetaDot: {
-      fontSize: 12,
-      color: colors.muted,
-      marginHorizontal: 6,
-    },
-
-    localBadge: {
-      backgroundColor: colors.yellowSoft,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 12,
-      marginRight: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    localBadgeText: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: colors.status.pending,
-    },
-
-    deleteButton: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    deleteButtonText: {
-      fontSize: 20,
-      color: colors.muted,
-    },
-  });

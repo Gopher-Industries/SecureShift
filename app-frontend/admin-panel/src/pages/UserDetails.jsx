@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getUser, deleteUser } from '../service/adminAPI';
 import LoadingComponent from '../components/LoadingComponent';
+import ConfirmDialog from '../components/ConfirmDialog';
 import colors from '../theme/colors';
 
 function formatAddress(address) {
@@ -31,6 +32,7 @@ export default function UserDetails() {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -58,7 +60,6 @@ export default function UserDetails() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this user? This action cannot be undone.')) return;
     try {
       setDeleting(true);
       setError('');
@@ -67,7 +68,13 @@ export default function UserDetails() {
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to delete user');
       setDeleting(false);
+      setConfirmOpen(false);
     }
+  };
+
+  const closeConfirm = () => {
+    if (deleting) return;
+    setConfirmOpen(false);
   };
 
   return (
@@ -126,7 +133,7 @@ export default function UserDetails() {
               </div>
 
               <button
-                onClick={handleDelete}
+                onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
                 style={{
                   marginTop: 16,
@@ -145,6 +152,19 @@ export default function UserDetails() {
           ) : null}
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete this user?"
+        message="This action cannot be undone."
+        confirmLabel={deleting ? 'Deleting…' : 'Delete'}
+        cancelLabel="Cancel"
+        danger
+        onConfirm={handleDelete}
+        onCancel={closeConfirm}
+        confirmDisabled={deleting}
+        cancelDisabled={deleting}
+      />
     </div>
   );
 }

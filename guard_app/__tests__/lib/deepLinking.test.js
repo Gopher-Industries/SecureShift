@@ -27,6 +27,17 @@ const flushPromises = async (times = 5) => {
   }
 };
 
+function mockShiftPages({ current = [], past = [] } = {}) {
+  myShifts.mockImplementation((params) =>
+    Promise.resolve({
+      items: params?.status === 'past' ? past : current,
+      page: params?.page ?? 1,
+      limit: 20,
+      total: params?.status === 'past' ? past.length : current.length,
+    }),
+  );
+}
+
 function makeNavigation({ ready = true, currentRoute = 'AppTabs' } = {}) {
   return {
     isReady: jest.fn(() => ready),
@@ -38,9 +49,7 @@ function makeNavigation({ ready = true, currentRoute = 'AppTabs' } = {}) {
 describe('resolveDeepLinkTarget', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    myShifts.mockImplementation((status) =>
-      Promise.resolve(status === 'past' ? [pastShift] : [assignedShift]),
-    );
+    mockShiftPages({ current: [assignedShift], past: [pastShift] });
   });
 
   it('routes a shift-approved payload to ShiftDetails with the resolved shift', async () => {
@@ -126,9 +135,7 @@ describe('resolveDeepLinkTarget', () => {
 describe('navigateFromNotificationData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    myShifts.mockImplementation((status) =>
-      Promise.resolve(status === 'past' ? [] : [assignedShift]),
-    );
+    mockShiftPages({ current: [assignedShift] });
   });
 
   it('navigates straight to the resolved screen once navigation is ready', async () => {
@@ -177,9 +184,7 @@ describe('navigateFromNotificationData', () => {
 describe('registerNotificationDeepLinking', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    myShifts.mockImplementation((status) =>
-      Promise.resolve(status === 'past' ? [] : [assignedShift]),
-    );
+    mockShiftPages({ current: [assignedShift] });
     Notifications.addNotificationResponseReceivedListener.mockReturnValue({
       remove: jest.fn(),
     });

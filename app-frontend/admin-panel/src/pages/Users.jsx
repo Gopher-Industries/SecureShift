@@ -7,7 +7,7 @@ import { useToast } from '../components/Toast';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
-import Modal from '../components/Modal';
+import ConfirmDialog from '../components/ConfirmDialog';
 import colors from '../theme/colors';
 
 // First working admin data view — end-to-end integration with GET /admin/users.
@@ -142,6 +142,58 @@ export default function Users() {
     }
   };
 
+  const closeDeleteConfirm = () => {
+    if (deleting) return;
+    setDel(null);
+  };
+
+  // Export the selected users to a CSV file (client-side, non-destructive).
+  const exportSelected = (selected) => {
+    const header = ['Name', 'Email', 'Role', 'Joined'];
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [
+      header.join(','),
+      ...selected.map((u) =>
+        [u.name, u.email, u.role, u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '']
+          .map(escape)
+          .join(',')
+      ),
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${selected.length} user(s).`, 'success');
+  };
+
+  // Delete every selected user, then refresh the list.
+  const deleteSelected = async (selected) => {
+    try {
+      const results = await Promise.allSettled(selected.map((u) => deleteUser(u._id)));
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      const ok = selected.length - failed;
+      if (ok > 0) showToast(`Deleted ${ok} user(s).`, 'success');
+      if (failed > 0) showToast(`${failed} user(s) could not be deleted.`, 'error');
+      setRefreshFlag((prev) => !prev);
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Bulk delete failed.', 'error');
+    }
+  };
+
+  const bulkActions = [
+    { key: 'export', label: 'Export selected', onClick: exportSelected, clearAfter: false },
+    {
+      key: 'delete',
+      label: 'Delete selected',
+      variant: 'danger',
+      confirm: 'Delete all selected users? This cannot be undone.',
+      onClick: deleteSelected,
+    },
+  ];
+
   const handleCreate = async (form) => {
     try {
       setCreating(true);
@@ -218,6 +270,8 @@ export default function Users() {
           columns={columns}
           rows={filtered}
           empty={query || roleFilter ? 'No users match your search or filter' : 'No users found'}
+          selectable
+          bulkActions={bulkActions}
         />
       )}
 
@@ -237,40 +291,23 @@ export default function Users() {
         onSubmit={() => {}}
       />
 
-      <Modal open={del} title="Confirm Delete" onClose={() => setDel(null)}>
-        <p
-          style={{
-            margin: '4px 0',
-          }}
-        >
+      <ConfirmDialog
+        open={Boolean(del)}
+        title="Delete this user?"
+        confirmLabel={deleting ? 'Deleting…' : 'Delete'}
+        cancelLabel="Cancel"
+        danger
+        onConfirm={handleDelete}
+        onCancel={closeDeleteConfirm}
+        confirmDisabled={deleting}
+        cancelDisabled={deleting}
+      >
+        <p style={{ margin: '4px 0' }}>
           <strong>{del?.name}</strong> — {del?.email}
         </p>
-
-        <p
-          style={{
-            margin: '4px 0',
-          }}
-        >
-          Role: {del?.role}
-        </p>
-
-        <p>Are you sure you want to delete this user?</p>
-
-        <Button
-          variant="danger"
-          onClick={handleDelete}
-          disabled={deleting}
-          style={{
-            marginRight: 8,
-          }}
-        >
-          {deleting ? 'Deleting…' : 'Delete'}
-        </Button>
-
-        <Button variant="secondary" onClick={() => setDel(null)} disabled={deleting}>
-          Cancel
-        </Button>
-      </Modal>
+        <p style={{ margin: '4px 0' }}>Role: {del?.role}</p>
+        <p style={{ margin: '4px 0 20px' }}>Are you sure you want to delete this user?</p>
+      </ConfirmDialog>
     </div>
   );
 }

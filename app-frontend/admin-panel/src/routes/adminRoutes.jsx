@@ -1,17 +1,41 @@
+import Announcements from '../pages/Announcements';
+
 import { Routes, Route, Navigate } from 'react-router-dom';
+
 import ProtectedRoute from './ProtectedRoute';
+
 import AdminLayout from '../layouts/AdminLayout';
+
 import AdminLogin from '../pages/AdminLogin';
+
 import AdminDashboard from '../pages/AdminDashboard';
+
 import Users from '../pages/Users';
+
 import UserDetails from '../pages/UserDetails';
+
 import GuardVerification from '../pages/GuardVerification';
+
 import Shifts from '../pages/Shifts';
+
+import Incidents from '../pages/Incidents';
+
+import IncidentDetails from '../pages/IncidentDetails';
+
 import Roles from '../pages/Roles';
+
 import AuditLogs from '../pages/AuditLogs';
+
 import Messages from '../pages/Messages';
+
+import PayrollOversight from '../pages/PayrollOversight';
+
 import SMTPSettings from '../pages/SMTPSettings';
+
+import GeneralSettings from '../pages/GeneralSettings';
+
 import NotFound from '../pages/NotFound';
+
 import AccessDenied from '../pages/AccessDenied';
 
 export default function AppRoutes() {
@@ -27,28 +51,23 @@ export default function AppRoutes() {
         }
       >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
         <Route path="/dashboard" element={<AdminDashboard />} />
-
         <Route path="/users" element={<Users />} />
-
         <Route path="/users/:id" element={<UserDetails />} />
-
         <Route path="/guard-verification" element={<GuardVerification />} />
-
         <Route path="/shifts" element={<Shifts />} />
-
+        <Route path="/payroll" element={<PayrollOversight />} />
+        <Route path="/incidents" element={<Incidents />} />
+        <Route path="/incidents/:id" element={<IncidentDetails />} />
         <Route path="/roles" element={<Roles />} />
-
         <Route path="/audit-logs" element={<AuditLogs />} />
-
         <Route path="/messages" element={<Messages />} />
-
         <Route path="/smtp-settings" element={<SMTPSettings />} />
+        <Route path="/settings" element={<GeneralSettings />} />
+        <Route path="/announcements" element={<Announcements />} />
       </Route>
 
       <Route path="/access-denied" element={<AccessDenied />} />
-
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

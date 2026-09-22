@@ -1,4 +1,5 @@
 import { AxiosError } from 'axios';
+import { format } from 'date-fns';
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -7,17 +8,83 @@ import {
   exportPayrollPdf,
   getPayrollSummary,
   PayrollPeriodType,
+  PayrollRecord,
   PayrollResponse,
 } from '../api/payroll';
+import PayrollTrendChart from '../components/chart/PayrollTrendChart';
 import EmptyState from '../components/EmptyState';
 import LoadingState from '../components/LoadingState';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_CHART_PERIODS = 6;
+
+type TrendPoint = {
+  label: string;
+  hours: number;
+  overtime: number;
+  earnings: number;
+};
+
+function toNumber(value?: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function round2(value: number) {
+  return Math.round(value * 100) / 100;
+}
 
 function fmtHours(value?: number) {
-  return Number(value ?? 0).toFixed(2);
+  return toNumber(value).toFixed(2);
+}
+
+function fmtMoney(value?: number) {
+  return `$${toNumber(value).toFixed(2)}`;
+}
+
+// periodStart comes back as UTC, so read the date part instead of the local one
+function periodLabel(record: PayrollRecord) {
+  const isoDay = String(record.periodStart ?? '').slice(0, 10);
+  const parts = isoDay.split('-');
+
+  if (parts.length !== 3) return isoDay;
+
+  const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+
+  if (Number.isNaN(date.getTime())) return isoDay;
+
+  return format(date, record.periodType === 'monthly' ? "MMM ''yy" : 'd MMM');
+}
+
+function buildTrend(records: PayrollRecord[]): TrendPoint[] {
+  const byPeriod = new Map<string, TrendPoint>();
+
+  for (const record of records) {
+    const key = String(record.periodStart ?? '').slice(0, 10);
+    const point = byPeriod.get(key) ?? {
+      label: periodLabel(record),
+      hours: 0,
+      overtime: 0,
+      earnings: 0,
+    };
+
+    point.hours += toNumber(record.totalPayableHours);
+    point.overtime += toNumber(record.totalOvertimeHours);
+    point.earnings += toNumber(record.totalAmount);
+    byPeriod.set(key, point);
+  }
+
+  return Array.from(byPeriod.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([, point]) => ({
+      label: point.label,
+      hours: round2(point.hours),
+      overtime: round2(point.overtime),
+      earnings: round2(point.earnings),
+    }))
+    .slice(-MAX_CHART_PERIODS);
 }
 
 function getDefaultStartDate() {
@@ -43,6 +110,14 @@ export default function PayrollScreen() {
   const [exportingPdf, setExportingPdf] = useState(false);
 
   const params = { startDate, endDate, periodType };
+  const records = payroll?.payroll ?? [];
+  const trend = buildTrend(records);
+  const completedShifts = records.reduce(
+    (total, record) => total + (record.entries?.length ?? 0),
+    0,
+  );
+  const pendingPeriods = records.filter((record) => record.status === 'PENDING').length;
+  const chartLabels = trend.map((point) => point.label);
 
   const validateFilters = () => {
     if (!startDate || !endDate) {
@@ -118,10 +193,11 @@ export default function PayrollScreen() {
 
             <h2>Summary</h2>
             <ul>
-              <li>Completed Shifts: ${payroll.summary.totalCompletedShifts}</li>
-              <li>Total Hours: ${fmtHours(payroll.summary.totalHours)}</li>
-              <li>Overtime Hours: ${fmtHours(payroll.summary.totalOvertimeHours)}</li>
-              <li>Pending Approval: ${payroll.summary.totalPendingApproval}</li>
+              <li>Completed Shifts: ${completedShifts}</li>
+              <li>Total Hours: ${fmtHours(payroll.summary?.totalPayableHours)}</li>
+              <li>Overtime Hours: ${fmtHours(payroll.summary?.totalOvertimeHours)}</li>
+              <li>Total Earnings: ${fmtMoney(payroll.summary?.totalAmount)}</li>
+              <li>Pending Approval: ${pendingPeriods}</li>
             </ul>
 
             <h2>Period Breakdown</h2>
@@ -131,17 +207,19 @@ export default function PayrollScreen() {
                 <th>Shifts</th>
                 <th>Total Hours</th>
                 <th>Overtime</th>
-                <th>Pending</th>
+                <th>Earnings</th>
+                <th>Status</th>
               </tr>
-              ${(payroll.periods ?? [])
+              ${records
                 .map(
-                  (period) => `
+                  (record) => `
                     <tr>
-                      <td>${period.periodLabel}</td>
-                      <td>${period.totalShifts}</td>
-                      <td>${fmtHours(period.totalHours)}</td>
-                      <td>${fmtHours(period.overtimeHours)}</td>
-                      <td>${period.pendingApproval}</td>
+                      <td>${periodLabel(record)}</td>
+                      <td>${record.entries?.length ?? 0}</td>
+                      <td>${fmtHours(record.totalPayableHours)}</td>
+                      <td>${fmtHours(record.totalOvertimeHours)}</td>
+                      <td>${fmtMoney(record.totalAmount)}</td>
+                      <td>${record.status}</td>
                     </tr>
                   `,
                 )
@@ -223,22 +301,66 @@ export default function PayrollScreen() {
       {loading ? <LoadingState rows={2} /> : null}
 
       {payroll ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Summary</Text>
+        <>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Summary</Text>
 
-          <Text style={styles.summaryText}>
-            Completed Shifts: {payroll.summary.totalCompletedShifts}
-          </Text>
-          <Text style={styles.summaryText}>
-            Total Hours: {fmtHours(payroll.summary.totalHours)}
-          </Text>
-          <Text style={styles.summaryText}>
-            Overtime Hours: {fmtHours(payroll.summary.totalOvertimeHours)}
-          </Text>
-          <Text style={styles.summaryText}>
-            Pending Approval: {payroll.summary.totalPendingApproval}
-          </Text>
-        </View>
+            <Text style={styles.summaryText}>Completed Shifts: {completedShifts}</Text>
+            <Text style={styles.summaryText}>
+              Total Hours: {fmtHours(payroll.summary?.totalPayableHours)}
+            </Text>
+            <Text style={styles.summaryText}>
+              Overtime Hours: {fmtHours(payroll.summary?.totalOvertimeHours)}
+            </Text>
+            <Text style={styles.summaryText}>
+              Total Earnings: {fmtMoney(payroll.summary?.totalAmount)}
+            </Text>
+            <Text style={styles.summaryText}>Pending Approval: {pendingPeriods}</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Earnings insights</Text>
+
+            {trend.length ? (
+              <>
+                <Text style={styles.trendNote}>
+                  {trend.length === 1
+                    ? 'Showing 1 payroll period.'
+                    : `Showing the last ${trend.length} payroll periods.`}
+                </Text>
+
+                <PayrollTrendChart
+                  title="Earnings"
+                  labels={chartLabels}
+                  values={trend.map((point) => point.earnings)}
+                  kind="line"
+                  yAxisLabel="$"
+                  emptyMessage="No earnings recorded for these periods."
+                />
+
+                <PayrollTrendChart
+                  title="Hours worked"
+                  labels={chartLabels}
+                  values={trend.map((point) => point.hours)}
+                  kind="bar"
+                  yAxisSuffix="h"
+                  emptyMessage="No hours recorded for these periods."
+                />
+
+                <PayrollTrendChart
+                  title="Overtime hours"
+                  labels={chartLabels}
+                  values={trend.map((point) => point.overtime)}
+                  kind="bar"
+                  yAxisSuffix="h"
+                  emptyMessage="No overtime in these periods."
+                />
+              </>
+            ) : (
+              <Text style={styles.summaryText}>No payroll periods found for this date range.</Text>
+            )}
+          </View>
+        </>
       ) : (
         <EmptyState title="No payroll summary generated yet." />
       )}
@@ -352,5 +474,10 @@ const getStyles = (colors: AppColors) =>
       color: colors.text,
       fontWeight: '700',
       marginBottom: 8,
+    },
+    trendNote: {
+      color: colors.muted,
+      fontWeight: '600',
+      marginBottom: 14,
     },
   });

@@ -29,8 +29,11 @@ function stringOrUndefined(value: unknown): string | undefined {
 
 async function findShiftById(shiftId: string): Promise<ShiftDto | null> {
   try {
-    const [current, past] = await Promise.all([myShifts(), myShifts('past')]);
-    return [...current, ...past].find((shift) => shift._id === shiftId) ?? null;
+    const [current, past] = await Promise.all([
+      myShifts({ page: 1 }),
+      myShifts({ page: 1, status: 'past' }),
+    ]);
+    return [...current.items, ...past.items].find((shift) => shift._id === shiftId) ?? null;
   } catch (error) {
     console.warn('Deep link: failed to look up shift', error);
     return null;

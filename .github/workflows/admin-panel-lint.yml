@@ -1,17 +1,17 @@
-name: Admin Panel Lint
+name: Admin Panel CI
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'app-frontend/admin-panel/**'
-      - '.github/workflows/admin-panel-lint.yml'
+      - "app-frontend/admin-panel/**"
+      - ".github/workflows/admin-panel-lint.yml"
   push:
     branches:
-      - '**'          # run on pushes to any branch in your fork
+      - "**" # run on pushes to any branch in your fork
     paths:
-      - 'app-frontend/admin-panel/**'
-      - '.github/workflows/admin-panel-lint.yml'
+      - "app-frontend/admin-panel/**"
+      - ".github/workflows/admin-panel-lint.yml"
   workflow_dispatch: {} # allow manual runs from the Actions tab
 
 jobs:
@@ -39,3 +39,27 @@ jobs:
         run: npm run lint
       - name: Run Prettier check
         run: npm run format:check
+  test:
+    name: Run Jest tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-frontend/admin-panel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app-frontend/admin-panel/package-lock.json
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+      - name: Run Jest check
+        run: npm test -- --watchAll=false
+        env:
+          CI: true
