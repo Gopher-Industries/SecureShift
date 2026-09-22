@@ -50,15 +50,10 @@ Remaining pages are placeholders wired into navigation, to be built in Sprint 2.
 
 ## Docker (optional)
 
-Add a service to the root `docker-compose.yml` mirroring `frontend-employer`, e.g.:
+The root `docker-compose.yml` already includes the `frontend-admin` service. From the repository root:
 
-```yaml
-frontend-admin:
-  build: { context: ./app-frontend/admin-panel }
-  container_name: secureshift-frontend-admin
-  ports: ['${ADMIN_FRONTEND_HOST_PORT:-3001}:3000']
-  environment:
-    REACT_APP_API_BASE_URL: http://localhost:${BACKEND_HOST_PORT:-5000}/api/v1
-  command: npm start
-  networks: [secureshift]
+```bash
+docker compose up -d frontend-admin
+docker compose logs frontend-admin
+docker compose ps
 ```

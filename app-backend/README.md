@@ -410,7 +410,7 @@ is loaded during application startup.
 To inspect recent OTP audit records:
 
 ```bash
-docker exec secureshift-db mongosh \
+docker compose exec mongodb mongosh \
   "mongodb://secureshift_app:secureshift_app_password@localhost:27017/secureshift_local?authSource=secureshift_local" \
   --quiet \
   --eval '
