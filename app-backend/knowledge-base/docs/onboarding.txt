@@ -1,3 +1,8 @@
+SecureShift frontend onboarding
+Current setup instructions are in sections 3 and 6 and the root README.md.
+Other team/process descriptions below are historical trimester handover context;
+feature completion, priorities, blockers, and PR targets must be rechecked.
+
 
  
 Secure Shift  
@@ -40,36 +45,11 @@ Employer creates a shift → Guard receives notification → Guard accepts shift
 in using the mobile app → Attendance is recorded automatically → Payroll is generated digitally. 
  
 3.Project Architecture 
-The project consists of three major components: 
-Frontend Panel 
-The Frontend Panel is developed using React and serves as the web interface for the SecureShift platform. 
-Currently, the frontend consists of the Employer Panel, which allows employers to manage: 
-• Guards  
-• Shifts  
-• Payroll  
-• Timesheets  
-• Incident Reports  
-• Equipment  
-• Notifications  
-• Daily Activity Tracking  
-• Reports  
-This trimester, one of our primary objectives is to develop the new Admin Panel. The Admin Panel will 
-provide administrators with a dedicated interface to manage the overall system, including users, roles, 
-platform settings, monitoring, and other administrative functions. The frontend team will be responsible 
-for designing, implementing, and integrating this new panel with the existing backend APIs. 
-Current Focus: Employer Panel (Existing) 
-Trimester 2 Goal: Design and develop the new Admin Panel while continuing to maintain and enhance 
-the Employer Panel. 
-This wording clearly explains the current state of the project and highlights what the new frontend team 
-will be working on. 
-Backend 
-Developed using Node.js and Express. 
-Provides REST APIs, authentication, business logic, and database communication. 
-Guard Mobile App 
-Developed using React Native. 
-Allows guards to apply for shifts, check in/out, report incidents, receive notifications, and 
-communicate with employers. 
-All three systems communicate through the backend APIs. 
+The current monorepo contains app-backend (Express API),
+app-frontend/employer-panel (React, host port 3000),
+app-frontend/admin-panel (React, host port 3001), and guard_app (Expo mobile).
+The backend defaults to host port 5000, with overrides such as 5001.
+Both web panels and the Guard App share the backend API.
  
 4.Technology Stack 
 Technology Purpose 
@@ -110,150 +90,75 @@ Most frontend tasks involve creating user interfaces, integrating APIs, handling
 validating forms, and improving user experience. 
  
 6.Development Environment Setup 
-Before writing any code, complete the following steps. 
-Step 1 
-Clone both repositories. 
-• Frontend Repository  
-• Backend Repository  
-Step 2 
-Install: 
-• Node.js  
-• Docker Desktop  
-• Visual Studio Code  
-• Git  
-Step 3 
-Run the project using Docker. 
-Verify that: 
-• MongoDB starts successfully  
-• Backend runs without errors  
-• Frontend loads correctly  
-• Login page is accessible  
-Important: Many issues experienced by previous teams were caused by incomplete Docker 
-setup. Ensure your environment is working before beginning development. 
-Video Link- How to get project in to your locals- 2026-07-12 10-47-12.mkv 
-Part2- 
-https://1drv.ms/v/c/4916f816167acfd5/IQATx7k7xjEGRJSCV19Wpr2EARx_9Kbl5IcberniYdFI
-Gto?e=9BaD0U 
- 
-1. Clone the repository 
-Open PowerShell: 
-cd "C:\Users\..................\SIT378_SIT782 - Team Project B - Execution and Delivery" 
-Clone: 
+The repository-root README.md is the canonical full-stack quickstart.
+Clone the monorepo once:
+
 git clone https://github.com/Gopher-Industries/SecureShift.git 
-Go into the project: 
 cd SecureShift 
  
-2. Create your own branch 
-Check branches: 
-git branch 
-Update main: 
-git checkout main 
-git pull origin main 
-Create your branch: 
-git checkout -b frontend/………………. 
-Confirm: 
-git branch 
-You should see: 
-* frontend/………… 
-  main 
+First-time setup requires Docker with Compose, not private credentials or a
+backend .env. Optional root .env port overrides are documented in .env.example.
  
-Backend Setup 
-3. Go to backend folder 
-cd app-backend 
-Check files: 
-dir 
+docker compose up --build -d
+docker compose ps -a
+docker compose logs ollama-models ai-indexer
  
-4. Create .env 
-Create a file: 
-app-backend/.env 
-Add: 
-MONGO_URI= 
-PORT= 
-JWT_SECRET= 
-SMTP_HOST= 
-SMTP_PORT= 
-SMTP_SECURE=  
-Save. 
-Docker Setup 
-5. Go back to project root 
-Cd .. 
-You should be here: 
-SecureShift 
-Check: 
-dir 
-You should see: 
-docker-compose.yml 
-app-backend 
-app-frontend 
+Services: backend, mongodb, mailpit, frontend-employer, frontend-admin, ollama,
+ollama-models, ai-indexer. ollama-models and ai-indexer are one-shot jobs;
+Exited (0) means success. Models: nomic-embed-text:latest and llama3.2:latest.
+The backend does not wait for indexing.
+
+After successful indexing, ensure the backend loads the regenerated vectors:
+
+If the backend is already running:
+docker compose restart backend
+
+If the backend is not currently running:
+docker compose up -d backend
+
+Check backend health:
+curl http://localhost:5000/api/v1/health
  
-6. Check Docker is installed 
-docker --version 
-docker compose version 
- 
-7. Stop old containers (if already running) 
-Because you already have containers: 
+Backend HTTP 200 does not guarantee AI/index readiness. Vectors load at startup.
+Compose Ollama is not published to the host. See the root README for host AI
+requirements and indexing all three TXT sources: backend_onboarding_v1.1.txt,
+onboarding.txt, guard_app_onboarding.txt. To rebuild after source updates:
+
+docker compose run --rm ai-indexer
+
+After successful indexing, ensure the backend loads the regenerated vectors:
+
+If the backend is already running:
+docker compose restart backend
+
+If the backend is not currently running:
+docker compose up -d backend
+
+Vector regeneration for this documentation handover is deferred until review.
+Open employer http://localhost:3000, admin http://localhost:3001, Swagger
+http://localhost:5000/api-docs. Substitute 5001 if the backend port is overridden.
+MongoDB uses host port 27017. Mailpit SMTP/UI use 1025/8025; read local login OTP
+messages at http://localhost:8025. Mailpit requires no private SMTP credentials.
+
+For normal daily restart:
+
+docker compose up -d
+docker compose ps -a
+
+Check one-shot logs if indexing runs again. After success, use the restart/start
+commands above to load regenerated vectors.
+Normal shutdown, preserving data, models and uploads:
+
 docker compose down 
  
-8. Build and start containers 
-Run: 
-docker compose up --build -d 
-Wait until it completes. 
+WARNING: docker compose down -v deletes MongoDB data, downloaded Ollama models,
+and uploads. It is not routine cleanup.
  
-9. Check containers 
-docker compose ps
-Expected services:
-backend
-mongodb
-frontend-employer
- 
-Testing 
-10. Backend 
-Open: 
-http://localhost:5000 
-If you see: 
-Cannot GET / 
-that is OK. 
- 
-11. Swagger API 
-Open: 
-http://localhost:5000/api-docs 
-You should see API documentation. 
- 
-12. Frontend 
-Open: 
-http://localhost:3000 
-You should see: 
-Employer Panel 
- 
-Useful Docker Commands 
-See logs 
-Backend: 
-docker compose logs backend
-Frontend: 
-docker compose logs frontend-employer
-Database: 
-docker compose logs mongodb
- 
-Restart everything 
-docker compose restart 
- 
-Stop everything 
-docker compose down 
- 
-After making code changes 
-docker compose up --build -d 
- 
-Git workflow after changes 
-Check changes: 
-git status 
-Add: 
-git add . 
-Commit: 
-git commit -m "Setup local environment" 
-Push your branch: 
-git push origin frontend/………… 
- 
- 
+Use the component READMEs for host development. Backend Node minimum is
+>=22.13.0; use npm ci. Runtime validation: Node v22.13.1; stable backend CI:
+npm run test:ci, 5 suites, 91/91 passing tests in the handover snapshot.
+Normal seed commands and optional destructive reset commands are separate in
+app-backend/README.md. Never run a reset as part of routine setup.
  
 7.Understanding the Frontend Project Structure 
 You will mainly work within the following folders: 
@@ -329,7 +234,7 @@ To maintain consistency across the project:
 • Write meaningful commit messages.  
 • Keep Pull Requests focused on one feature.  
  
-11.Current Project Status 
+11.Historical Project Status
 The previous team completed significant development across the project. 
 Employer Panel 
 Completed: 
@@ -347,7 +252,7 @@ Completed:
 • Bug Fixes  
 • Security Improvements  
  
-12.Current Priorities for This Trimester 
+12.Historical Priorities for the Handover Trimester
 As the new Frontend Team, our priorities include: 
 • Completing remaining backend integrations.  
 • Implementing newly designed Figma pages.  
@@ -358,7 +263,7 @@ As the new Frontend Team, our priorities include:
 • Supporting AI feature integration.  
 • Improving overall user experience.  
  
-13.Known Issues 
+13.Historical Known Issues
 Some issues remain from the previous trimester. 
 Guard Page 
 Currently blocked due to a backend Role-Based Access Control (RBAC) issue. 
@@ -409,4 +314,4 @@ application.
 Every contribution, whether it is a new feature, a bug fix, or a code improvement, plays an 
 important role in the success of the project. 
 On behalf of the Frontend Team, welcome to SecureShift. We look forward to working with you 
-and wish you a successful and enjoyable trimester. 
+and wish you a successful and enjoyable trimester.

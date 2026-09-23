@@ -1,70 +1,39 @@
-# Getting Started with Create React App
+# SecureShift Employer Panel
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React web client in the SecureShift monorepo. Follow the
+[root full-stack quickstart](../../README.md) for Compose setup, local accounts,
+Mailpit OTP, and AI indexing. Default URL: http://localhost:3000; the Admin Panel
+is separate on port 3001.
 
-## Available Scripts
+## Host development
 
-In the project directory, you can run:
+Start the backend first. From the repository root:
 
-### `npm start`
+```bash
+cd app-frontend/employer-panel
+npm ci
+npm start
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Use Node 22.13+ for a shared local toolchain. On first setup, create a local `.env`
+if needed with your backend URL:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```env
+REACT_APP_API_BASE_URL=http://localhost:5000/api/v1
+```
 
-### `npm test`
+Use port 5001 if the backend is configured that way. Restart the frontend after
+environment changes. Compose supplies this value automatically; it needs no
+private credentials. Read local login OTP messages at http://localhost:8025.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+For daily host startup, run `npm start` here. Available checks include `npm test`
+(interactive React test runner) and `npm run build` (production build).
 
-### `npm run build`
+The AI assistant requires both Ollama models and a completed index; backend HTTP
+200 alone is insufficient. Compose Ollama is not published to the host. Follow
+the root README for AI readiness.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+After successful indexing, ensure the backend loads the regenerated vectors:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- If already running: `docker compose restart backend`
+- If not currently running: `docker compose up -d backend`
