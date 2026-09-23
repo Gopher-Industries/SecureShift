@@ -1,151 +1,33 @@
 # SecureShift Backend
 
-The backend service for **SecureShift**, a shift management platform connecting employers with security guards. This Node.js API powers the authentication, shift coordination, and messaging system across the Guard App, Employer Panel, and Admin Dashboard.
+Express API for the Guard App, Employer Panel, and Admin Panel in this monorepo.
+The entry points are `server.js` and `app.js`; implementation lives under `src/`
+(routes, controllers, services, models, middleware, and configuration).
 
----
+## Local setup
 
-## 🧩 Tech Stack
+Use the [root README](../README.md) for the canonical full-stack Compose setup.
+Compose supplies local credentials and Mailpit; no private `.env` is required.
+For host development use Node >=22.13.0, copy `.env.example` to `.env` only on
+first setup, and run `npm ci`. Follow [host environment setup](../ENVIRONMENT_SETUP.md)
+for MongoDB, Mailpit, and port overrides, then run `npm run dev` here.
 
-- **Node.js** + **Express.js**
-- **MongoDB** via Mongoose (local Docker MongoDB for development; external MongoDB where configured)
-- **JWT Authentication** with 2FA support
-- **RESTful API**
-- **Swagger UI** for API documentation
-- **Dockerized** for container deployment
-- **Cloud Deployment** (GCP / DockerHub / Kubernetes)
-- **Notifications** (Guard shift updates & messaging)
+Default health: http://localhost:5000/api/v1/health; Swagger:
+http://localhost:5000/api-docs. Use 5001 if configured instead of 5000.
+Read employer/guard OTP messages in Mailpit at http://localhost:8025.
+Disabling email does not reveal or log an OTP fallback.
 
----
+Compose Ollama is internal and is not published to the host. Host AI needs a
+separately reachable Ollama server and `OLLAMA_HOST`; both
+`nomic-embed-text:latest` and `llama3.2:latest` must be available.
+HTTP 200 from the backend does not establish AI/index readiness. Follow the
+[root indexing workflow](../README.md#knowledge-base-updates); vectors load at
+backend startup.
 
-## 📦 Project Structure
+After successful indexing, ensure the backend loads the regenerated vectors:
 
-```
-/secureshift-backend
-├── controllers/        # Route logic
-├── models/             # Mongoose schemas
-├── routes/             # API endpoints
-├── middleware/         # Auth, error handlers
-├── utils/              # Helpers (e.g., notifications)
-├── config/             # DB and env setup
-├── swagger.js          # Swagger UI setup
-├── Dockerfile          # Container setup
-├── .dockerignore       # Docker exclusions
-├── .env                # Environment variables (ignored)
-├── server.js           # Entry point
-├── app.js              # Express config & middleware
-```
-
----
-
-## 🚀 Setup Instructions
-
-### 1. Open the backend directory
-
-Clone the SecureShift monorepo using the team repository, then run:
-
-```bash
-cd SecureShift/app-backend
-```
-
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-### 3. Add environment variables
-
-Create a `.env` file in the root:
-
-```env
-# MONGO_URI is REQUIRED. The backend will not start without it.
-MONGO_URI=
-JWT_SECRET=
-LICENCE_ENC_KEY=
-AUDIT_LOG_ENABLED=true
-EMAIL_ENABLED=true
-SMTP_HOST=
-SMTP_PORT=
-SMTP_SECURE=
-SMTP_AUTH_REQUIRED=true
-SMTP_USER=
-SMTP_PASS=
-SMTP_FROM_EMAIL=
-```
-
-For production SMTP, keep `SMTP_AUTH_REQUIRED=true` and configure `SMTP_USER` and `SMTP_PASS`
-together. The backend rejects missing or partial authenticated credentials.
-
-### Local OTP email with Mailpit
-
-The repository Docker Compose stack includes Mailpit, a local SMTP inbox that does not deliver
-messages externally.
-
-- Full Compose stack: the backend is preconfigured with `SMTP_HOST=mailpit`,
-  `SMTP_PORT=1025`, and `SMTP_AUTH_REQUIRED=false`.
-- Backend running directly on WSL, Linux, or macOS: copy `.env.example` to `.env`; it uses
-  `SMTP_HOST=localhost`. Start the dependencies with
-  `docker compose up -d mailpit mongodb` from the repository root.
-- Open `http://127.0.0.1:8025`, attempt login, and read the OTP from the captured message.
-
-Local Mailpit configuration deliberately leaves `SMTP_USER` and `SMTP_PASS` empty. When
-`SMTP_AUTH_REQUIRED=false`, the Nodemailer transport has no `auth` property. When
-`EMAIL_ENABLED=false`, the backend does not attempt SMTP delivery and never returns or logs the OTP
-as a fallback.
-
-### 4. Start the server
-
-```bash
-npm start
-```
-
-Visit: [http://localhost:5000/api-docs](http://localhost:5000/api-docs) for Swagger UI.
-
----
-
-## 🐳 Docker Usage
-
-### Build the image
-
-```bash
-docker build -t musahx/secureshift-backend .
-```
-
-### Run the container
-
-```bash
-docker run -p 5000:5000 --env-file .env musahx/secureshift-backend
-```
-
-### Push to Docker Hub
-
-```bash
-docker push musahx/secureshift-backend
-```
-
-### Run Docker Compose
-
-```bash
-docker compose build
-docker compose up
-```
-
-> Replace `musahx` with your DockerHub username.
-
----
-
-## 📘 API Documentation
-
-API is documented using **Swagger UI**.  
-Once the server is running, open:
-
-```
-http://localhost:5000/api-docs
-```
-
-You can explore, test, and understand the structure of all API endpoints there.
-
----
+- If already running: `docker compose restart backend`
+- If not currently running: `docker compose up -d backend`
 
 ## 🔐 Features
 
@@ -263,10 +145,12 @@ already reached a terminal status.
 ## 🧪 Testing
 
 ```bash
-npm run test
+npm run test:ci
 ```
 
-Unit and integration tests are managed via Jest (or Mocha/Chai if used).
+Tests use Jest. Runtime validation was recorded at Node v22.13.1.
+The stable handover snapshot was 5 suites, 91/91 tests passing; this is historical
+validation, not a fresh test run for the documentation cleanup.
 
 ### CI tests
 
@@ -275,6 +159,8 @@ Pull requests run the following stable, database-free backend suites:
 - `tests/env.config.test.js`
 - `tests/seed.safety.test.js`
 - `src/tests/services/fatigue.service.test.js`
+- `src/tests/services/analytics.service.test.js`
+- `tests/analytics.rbac.test.js`
 
 Run the same allowlist locally with `npm run test:ci`. The complete legacy suite is intentionally
 not a required pull request gate while some suites have known database, environment, and ESM
@@ -355,7 +241,6 @@ Then run from `app-backend`:
 
 ```bash
 npm run seed
-SEED_RESET_CONFIRM=SecureShiftLocalReset npm run seed:reset
 ```
 
 ### Seed alongside Docker Compose
@@ -371,11 +256,29 @@ From the repository root, run one-off backend containers with the required seed 
 
 ```bash
 docker compose run --rm -e SEED_ALLOW_LOCAL=true backend npm run seed
-docker compose run --rm -e SEED_ALLOW_LOCAL=true -e SEED_RESET_CONFIRM=SecureShiftLocalReset backend npm run seed:reset
 ```
 
 The seed is idempotent and uses stable ObjectIds. Running it again updates the same local records.
-Reset deletes only those stable seed IDs and requires the exact confirmation value shown above.
+Restore `SEED_ALLOW_LOCAL=false` after host seeding.
+
+### Destructive seed reset (optional, not onboarding)
+
+Reset deletes only stable seed IDs; it does not repopulate the database.
+Choose one command only when intentionally deleting seed records.
+
+Host backend, from `app-backend`:
+
+```bash
+SEED_ALLOW_LOCAL=true SEED_RESET_CONFIRM=SecureShiftLocalReset npm run seed:reset
+```
+
+Compose, from the repository root:
+
+```bash
+docker compose run --rm -e SEED_ALLOW_LOCAL=true -e SEED_RESET_CONFIRM=SecureShiftLocalReset backend npm run seed:reset
+```
+
+### Seeded accounts
 
 All test accounts use the local-only password `SecureShift1!`:
 
@@ -429,11 +332,12 @@ SecureShift supports two development database workflows.
 
 Use the local MongoDB database for normal development, automated/local testing, seed/reset operations, and Docker Compose.
 
-Activate the local backend environment:
+For first-time host setup, copy the public local template (do not overwrite an
+existing `.env`; save your local configuration privately before switching):
 
 ```bash
 cd app-backend
-cp .env.local .env
+cp .env.example .env
 ```
 
 Start local MongoDB if required:
@@ -448,7 +352,9 @@ Then start the backend:
 npm run dev
 ```
 
-### Shared integration testing
+### Optional shared integration testing
+
+This separate team workflow is not required for ordinary local setup.
 
 Use the shared Atlas integration database only when multiple developers or clients need to work with the same records, such as Guard App registration followed by Admin Panel verification.
 
@@ -492,7 +398,9 @@ Do not:
 - run local seed/reset commands against Atlas;
 - run destructive database tests against the shared integration database.
 
-Switch back to local development with:
+If you saved your local configuration as `.env.local` before switching, restore it
+with the following commands. Otherwise recreate `.env` from `.env.example` and
+reapply your local overrides:
 
 ```bash
 cp .env.local .env

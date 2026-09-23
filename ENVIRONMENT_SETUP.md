@@ -2,81 +2,51 @@
 
 This document explains the local development environment variables for SecureShift.
 
-## Docker Compose Local Setup
+## Docker Compose local setup
 
-### One-Time Migration for Existing Docker Users
+Follow the [canonical full-stack quickstart](README.md) for first-time setup,
+daily restart, all eight services, AI readiness, and destructive-reset warnings.
+Compose is self-contained: ordinary local setup needs no private credentials.
+The root `.env` is optional and only overrides published host ports.
 
-If you previously ran the old SecureShift Docker Compose setup, reset your local Docker database once before starting this updated stack. This PR changes the local MongoDB database name and credentials, and existing `mongo-data` volumes retain the old users. MongoDB init scripts, including `mongo-init.js`, do not rerun against an existing volume.
+Default host ports are backend 5000, employer 3000, admin 3001, MongoDB 27017,
+and Mailpit SMTP/UI 1025/8025. Use `BACKEND_HOST_PORT=5001` if 5000 is occupied.
+Mailpit ports are bound to loopback. Compose supplies the backend configuration;
+`app-backend/.env.example` is for a host-run backend only.
 
-Run this once:
-
-```bash
-docker compose down -v
-docker compose up --build
-```
-
-`docker compose down -v` permanently deletes the local Docker MongoDB volume and its local data. Fresh clones and new users do not need this reset. After this one-time migration, normal shutdown should use `docker compose down` without `-v`.
-
-For the backend, employer frontend, MongoDB, and Mailpit, the canonical local Docker startup path is:
-
-```bash
-docker compose up --build
-```
-
-Prerequisites:
-
-- Windows 11: Docker Desktop with WSL2 integration enabled for the distro that contains this repository.
-- macOS: Docker Desktop. Apple Silicon is supported through Docker Desktop's multi-architecture image handling.
-- Linux: Docker Engine with the Docker Compose plugin, where practical.
-
-Validation commands:
-
-```bash
-docker compose ps
-curl http://localhost:5000/api/v1/health
-```
-
-Mailpit captures local email only; it does not send messages to external recipients. Open
-`http://127.0.0.1:8025` after attempting login, select the OTP message, and use its code to finish
-login. Its SMTP listener is exposed at `127.0.0.1:1025`. Both ports are loopback-bound by default.
-Override `MAILPIT_SMTP_HOST_PORT` or `MAILPIT_UI_HOST_PORT` in the repository `.env` only if those
-ports are already occupied.
-
-The health URL above assumes the default `BACKEND_HOST_PORT=5000`. If you override the backend host port, substitute that value in the health and Swagger URLs. For example, with `BACKEND_HOST_PORT=5001`:
-
-```text
-Health: http://localhost:5001/api/v1/health
-Swagger: http://localhost:5001/api-docs
-```
-
-Use `docker compose down` to stop containers while keeping the local MongoDB data. Use `docker compose down -v` only when you intentionally want to delete the local database volume.
-
-Most users do not need to configure anything before starting Docker Compose. If a default host port is already occupied, copy `.env.example` to `.env` and set only the port you need to change. For example, set `BACKEND_HOST_PORT=5001` when port 5000 is occupied. On macOS, AirPlay Receiver can sometimes use port 5000.
-
-The Docker Compose backend uses local-only credentials supplied by `docker-compose.yml`. Docker Compose does not read `app-backend/.env.example`; use that template only when running the backend directly outside Docker.
-
-```bash
-MONGO_URI=mongodb://secureshift_app:secureshift_app_password@mongodb:27017/secureshift_local?authSource=secureshift_local
-PORT=5000
-NODE_ENV=development
-AUDIT_LOG_ENABLED=true
-EMAIL_ENABLED=true
-SMTP_HOST=mailpit
-SMTP_PORT=1025
-SMTP_SECURE=false
-SMTP_AUTH_REQUIRED=false
-SMTP_FROM_EMAIL=local@example.test
-```
+Mailpit is the standard local email/OTP workflow: attempt login, open
+http://localhost:8025, and use the captured OTP. No external email is sent.
 
 ### Backend Running Directly on the Host
 
-Start Mailpit (and MongoDB) without starting the Compose backend:
+Use Node >=22.13.0 (runtime validation: v22.13.1). Stop any Compose backend
+with `docker compose stop backend` before using the same port on the host.
+Start Mailpit and MongoDB from the repository root:
 
 ```bash
 docker compose up -d mailpit mongodb
+docker compose ps -a
 ```
 
-Copy `app-backend/.env.example` to `app-backend/.env`. Its local email defaults use
+For first-time host setup (do not overwrite an existing `.env`):
+
+```bash
+cp app-backend/.env.example app-backend/.env
+cd app-backend
+npm ci
+```
+
+Set `PORT=5001` in that file if host port 5000 is occupied. Root Compose port
+overrides do not configure a host Node process. Adjust the MongoDB URI and
+`SMTP_PORT` if their published ports were overridden. Compose Ollama is not
+published to the host: host AI requires a separately reachable Ollama server,
+`OLLAMA_HOST`, and both `nomic-embed-text:latest` and `llama3.2:latest` models.
+There is no automatic host AI access. See the root README for indexing and the
+Compose backend restart/start commands. After successful indexing, start the host
+backend with `npm run dev` (stop it first if running) to load regenerated vectors.
+
+The backend template contains local development values; no private credentials
+are needed for this local workflow. Its local email defaults use
 `SMTP_HOST=localhost`, because a backend process running in WSL, Linux, or macOS reaches Mailpit
 through the loopback-bound host port. Start the backend from `app-backend`, attempt login, then open
 `http://127.0.0.1:8025`.
@@ -94,10 +64,13 @@ Then run from `app-backend`:
 
 ```bash
 npm run seed
-npm run dev
 ```
 
-After the seed succeeds, restore `SEED_ALLOW_LOCAL=false`.
+After the seed succeeds, restore `SEED_ALLOW_LOCAL=false`, then start the backend:
+
+```bash
+npm run dev
+```
 
 `npm run seed:reset` is intentionally delete-only. It removes only the stable
 seed records and requires `SEED_RESET_CONFIRM=SecureShiftLocalReset`. It does
@@ -145,7 +118,7 @@ Do not use the Extended JSON `$oid` form in the normal Compass query bar.
 
 ## Employer Panel (React)
 
-The employer panel uses React environment variables. Create a `.env` file in the `app-frontend/employer-panel/` directory:
+For host development only (Compose sets this automatically), the employer panel uses React environment variables. Create a `.env` file in the `app-frontend/employer-panel/` directory:
 
 ```bash
 # API Configuration
@@ -195,23 +168,10 @@ EXPO_PUBLIC_API_BASE_URL=http://YOUR_LAN_IP:5000
 - Do not include `/api/v1` because the app appends it automatically.
 - See `guard_app/.env.example` for the template.
 
-### Updated Files
+## Host application workflow
 
-**Employer Panel:**
-
-- `src/lib/http.js` - New centralized Axios instance
-- `src/pages/Login.js` - Updated to use centralized instance
-- `src/pages/2FA.js` - Updated to use centralized instance
-- `src/pages/createShift.js` - Updated to use centralized instance
-- `src/pages/ExpressionOfInterest.js` - Updated to use centralized instance
-- `package.json` - Added axios dependency
-- `.env.example` - Created for reference
-
-## Usage
-
-1. Copy the respective `.env.example` files to `.env` in each application directory
-2. Update the API base URL if your backend runs on a different port
-3. Install dependencies: `npm install` in each application directory
-4. Start the applications as usual
-
-The centralized Axios instances will automatically handle authentication and error management.
+Use the component README for installation and startup (`npm ci` installs locked
+dependencies). Keep existing `.env` values when revisiting setup. Start the host
+backend daily with `npm run dev` from `app-backend`; use Mailpit for OTP.
+The stable backend check is `npm run test:ci`: the handover snapshot recorded
+5 suites and 91/91 passing tests at Node v22.13.1.

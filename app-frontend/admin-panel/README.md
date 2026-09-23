@@ -3,12 +3,20 @@
 Web admin console for SecureShift, built with Create React App (react-scripts 5), React 19,
 react-router v7 and Axios — mirroring the Employer Panel conventions.
 
-## Getting started
+Use the [root full-stack quickstart](../../README.md) for Compose setup and
+Mailpit OTP. The backend defaults to port 5000; use 5001 in your API URL if
+configured. No private credentials are required for local Compose.
+
+## Host development
+
+Run these from the repository root after starting the backend. Copy the template
+only on first setup; set `REACT_APP_API_BASE_URL` to your backend's `/api/v1` URL.
+Use Node 22.13+ for a shared local toolchain (backend minimum: 22.13.0).
 
 ```bash
 cd app-frontend/admin-panel
 cp .env.example .env        # set REACT_APP_API_BASE_URL if not localhost:5000
-npm install
+npm ci
 npm start                   # runs on http://localhost:3001 (default; set via cross-env)
 ```
 
@@ -30,7 +38,9 @@ src/
 └─ lib/          http (Axios instance, token attach, 401 handler)
 ```
 
-## Sprint 1 status (foundation)
+## Historical Sprint 1 status (foundation)
+
+This is an earlier handover snapshot, not the current implementation inventory.
 
 Built: project structure, admin-only auth + protected routing, dashboard nav shell,
 shared API client, and one working data view (**Users** → `GET /admin/users`).
@@ -55,5 +65,5 @@ The root `docker-compose.yml` already includes the `frontend-admin` service. Fro
 ```bash
 docker compose up -d frontend-admin
 docker compose logs frontend-admin
-docker compose ps
+docker compose ps -a
 ```
