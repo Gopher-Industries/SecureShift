@@ -1,5 +1,6 @@
 import Incident from "../models/Incident.js";
 import Shift from "../models/Shift.js";
+import mongoose from "mongoose";
 import { ErrorResponse } from "../utils/errorResponse.js";
 import { ACTIONS } from "../middleware/logger.js";
 import path from "path";
@@ -38,7 +39,12 @@ export const createIncident = async (req, res, next) => {
       );
     }
 
+    if (typeof shiftId !== "string" || !mongoose.isValidObjectId(shiftId)) {
+      return next(new ErrorResponse("Invalid shift ID", 400));
+    }
+
     const shift = await Shift.findById(shiftId);
+
     if (!shift) {
       return next(new ErrorResponse("Shift not found", 404));
     }
@@ -75,6 +81,9 @@ export const createIncident = async (req, res, next) => {
 // UPDATE INCIDENT
 export const updateIncident = async (req, res, next) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return next(new ErrorResponse("Invalid Incident ID", 400));
+    }
     const incident = await Incident.findById(req.params.id);
 
     if (!incident || incident.isDeleted) {
@@ -145,6 +154,9 @@ export const updateIncident = async (req, res, next) => {
 // GET SINGLE INCIDENT
 export const getIncident = async (req, res, next) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return next(new ErrorResponse("Invalid Incident ID", 400));
+    }
     const incident = await Incident.findById(req.params.id)
       .populate("shiftId")
       .populate("guardId");
@@ -229,6 +241,9 @@ export const getIncidents = async (req, res, next) => {
 // SOFT DELETE
 export const deleteIncident = async (req, res, next) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return next(new ErrorResponse("Invalid Incident ID", 400));
+    }
     const incident = await Incident.findById(req.params.id);
 
     if (!incident || incident.isDeleted) {
