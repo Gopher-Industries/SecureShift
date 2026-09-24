@@ -8,7 +8,6 @@ import reviewsData from "./reviewsData";
 
 /* ---------------- ICONS ---------------- */
 
-
 /* --- icons --- */
 const IconCalendar = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -142,7 +141,14 @@ const IconGrid = (props) => (
 
 const IconList = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
-    <rect x="3" y="4" width="18" height="3" rx="1" fill="currentColor" />
+    <rect
+      x="3"
+      y="4"
+      width="18"
+      height="3"
+      rx="1"
+      fill="currentColor"
+    />
     <rect
       x="3"
       y="10.5"
@@ -159,7 +165,6 @@ const IconList = (props) => (
       rx="1"
       fill="currentColor"
     />
-
   </svg>
 );
 
@@ -190,7 +195,6 @@ const IconDownload = (props) => (
       strokeWidth="2"
       strokeLinecap="round"
     />
-
   </svg>
 );
 
@@ -218,7 +222,6 @@ const formatLocation = (location) => {
     return location;
   }
 
-
   return [
     location.street,
     location.suburb,
@@ -239,7 +242,6 @@ const formatShiftDate = (value) => {
   if (/^\d{2}-\d{2}-\d{4}$/.test(value)) {
     return value;
   }
-
 
   const parsed = new Date(value);
 
@@ -262,7 +264,6 @@ const parseIncidentDateTime = (incident) => {
   }
 
   const timeMatch = String(incident.time).match(
-
     /(\d{1,2}):(\d{2})\s*(AM|PM)/i
   );
 
@@ -281,7 +282,6 @@ const parseIncidentDateTime = (incident) => {
   if (meridian === "AM" && hours === 12) {
     hours = 0;
   }
-
 
   baseDate.setHours(hours, minutes, 0, 0);
 
@@ -303,7 +303,6 @@ const getShiftStatusCategory = (shift) => {
     tone.includes("completed") ||
     text.includes("completed")
   ) {
-
     return "Completed";
   }
 
@@ -683,13 +682,11 @@ export default function EmployerDashboard() {
    */
   useEffect(() => {
     const fetchFatigue = async () => {
-
       try {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
           `${process.env.REACT_APP_API_BASE_URL}/shifts/fatigue`,
-
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -712,7 +709,6 @@ export default function EmployerDashboard() {
           err.message ||
             "Failed to load fatigue dashboard."
         );
-
       } finally {
         setFatigueLoading(false);
       }
@@ -797,7 +793,6 @@ export default function EmployerDashboard() {
     const start =
       (currentPage - 1) * pageSize;
 
-
     return filteredShifts.slice(
       start,
       start + pageSize
@@ -831,7 +826,6 @@ export default function EmployerDashboard() {
       Completed: shifts.filter(
         (s) =>
           getShiftStatusCategory(s) === "Completed"
-
       ).length,
     };
   }, [shifts]);
@@ -844,7 +838,6 @@ export default function EmployerDashboard() {
   const filteredIncidents = useMemo(() => {
     const normalizedQuery =
       incidentQuery.trim().toLowerCase();
-
 
     return incidents
       .filter((incident) => {
@@ -860,7 +853,6 @@ export default function EmployerDashboard() {
             .toLowerCase()
             .includes(normalizedQuery) ||
           safePdfValue(incident.description, "")
-
             .toLowerCase()
             .includes(normalizedQuery);
 
@@ -1319,7 +1311,6 @@ export default function EmployerDashboard() {
   const getTranslatedPriority = (
     priority
   ) => {
-
     if (!priority) return "";
 
     const priorityMap = {
@@ -1332,7 +1323,6 @@ export default function EmployerDashboard() {
       priorityMap[
         String(priority).toLowerCase()
       ] || priority
-
     );
   };
 
@@ -1348,7 +1338,6 @@ export default function EmployerDashboard() {
   };
 
   const getTranslatedFilterLabel = (filter) => {
-
     const filterMap = {
       All: t("all"),
       High: t("high"),
@@ -1532,72 +1521,72 @@ export default function EmployerDashboard() {
               )}
 
               {!loading &&
-                  !error &&
-                  filteredShifts.length === 0 && (
-                    <div className="ss-empty-state">
-                      {t("noShifts")}
-                    </div>
-                  )}
+                !error &&
+                filteredShifts.length === 0 && (
+                  <div className="ss-empty-state">
+                    {t("noShifts")}
+                  </div>
+                )}
 
-                {!loading &&
-                  !error &&
-                  paginatedShifts.map((shift) => (
-                    <div
-                      className="ss-table__row"
-                      key={shift.id}
-                    >
-                      <div className="ss-shift-col">
-                        <div className="ss-shift-title">
-                          {shift.title}
-                        </div>
-
-                        <div className="ss-shift-location">
-                          {shift.location}
-                        </div>
+              {!loading &&
+                !error &&
+                paginatedShifts.map((shift) => (
+                  <div
+                    className="ss-table__row"
+                    key={shift.id}
+                  >
+                    <div className="ss-shift-col">
+                      <div className="ss-shift-title">
+                        {shift.title}
                       </div>
 
-                      <div>
-                        <span
-                          className={`ss-badge ss-badge--priority-${String(
-                            shift.priority
-                          ).toLowerCase()}`}
-                        >
-                          {getTranslatedPriority(
-                            shift.priority
-                          )}
-                        </span>
-                      </div>
-
-                      <div className="ss-datetime-col">
-                        <div className="ss-datetime-line">
-                          <IconCalendar className="ss-ico" />
-                          {shift.date}
-                        </div>
-
-                        <div className="ss-datetime-line">
-                          <IconClock className="ss-ico" />
-                          {shift.time}
-                        </div>
-                      </div>
-
-                      <div className="ss-pay-col">
-                        ${shift.payRate}
-                        {t("perHour")}
-                      </div>
-
-                      <div>
-                        <span
-                          className={`ss-badge ss-badge--status-${String(
-                            shift.status.tone
-                          ).toLowerCase()}`}
-                        >
-                          {getTranslatedStatus(
-                            shift.status.text
-                          )}
-                        </span>
+                      <div className="ss-shift-location">
+                        {shift.location}
                       </div>
                     </div>
-                  ))}
+
+                    <div>
+                      <span
+                        className={`ss-badge ss-badge--priority-${String(
+                          shift.priority
+                        ).toLowerCase()}`}
+                      >
+                        {getTranslatedPriority(
+                          shift.priority
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="ss-datetime-col">
+                      <div className="ss-datetime-line">
+                        <IconCalendar className="ss-ico" />
+                        {shift.date}
+                      </div>
+
+                      <div className="ss-datetime-line">
+                        <IconClock className="ss-ico" />
+                        {shift.time}
+                      </div>
+                    </div>
+
+                    <div className="ss-pay-col">
+                      ${shift.payRate}
+                      {t("perHour")}
+                    </div>
+
+                    <div>
+                      <span
+                        className={`ss-badge ss-badge--status-${String(
+                          shift.status.tone
+                        ).toLowerCase()}`}
+                      >
+                        {getTranslatedStatus(
+                          shift.status.text
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ))}
 
               {!loading &&
                 !error &&
@@ -1720,17 +1709,16 @@ export default function EmployerDashboard() {
                   </div>
                 </div>
               ))}
-
             </div>
           )}
 
           {/* Pagination */}
           <div className="ss-pagination">
             <div className="ss-pagination__meta">
-              {t('showing', {
+              {t("showing", {
                 start: showingStart,
                 end: showingEnd,
-                total: filteredShifts.length
+                total: filteredShifts.length,
               })}
             </div>
 
@@ -1739,7 +1727,6 @@ export default function EmployerDashboard() {
                 type="button"
                 className="ss-page-btn"
                 disabled={currentPage === 1}
-
                 onClick={() =>
                   setCurrentPage((prev) =>
                     Math.max(1, prev - 1)
@@ -1752,7 +1739,6 @@ export default function EmployerDashboard() {
 
               {Array.from(
                 { length: totalPages },
-
                 (_, index) => index + 1
               ).map((page) => (
                 <button
@@ -1802,9 +1788,9 @@ export default function EmployerDashboard() {
           </h2>
 
           <p className="ss-section-subtitle">
-            {t('pendingIncidents', {
+            {t("pendingIncidents", {
               count: incidentSummary.pending,
-              total: incidentSummary.total
+              total: incidentSummary.total,
             })}
           </p>
         </div>
@@ -1817,12 +1803,14 @@ export default function EmployerDashboard() {
               value={incidentQuery}
               onChange={(e) =>
                 setIncidentQuery(e.target.value)
-
               }
             />
+
             <select
               value={incidentStatusFilter}
-              onChange={(e) => setIncidentStatusFilter(e.target.value)}
+              onChange={(e) =>
+                setIncidentStatusFilter(e.target.value)
+              }
             >
               <option value="All">
                 {t("allStatuses")}
@@ -1836,9 +1824,12 @@ export default function EmployerDashboard() {
                 {t("resolved")}
               </option>
             </select>
+
             <select
               value={incidentSeverityFilter}
-              onChange={(e) => setIncidentSeverityFilter(e.target.value)}
+              onChange={(e) =>
+                setIncidentSeverityFilter(e.target.value)
+              }
             >
               <option value="All">
                 {t("allSeverities")}
@@ -1856,9 +1847,12 @@ export default function EmployerDashboard() {
                 {t("low")}
               </option>
             </select>
+
             <select
               value={incidentSort}
-              onChange={(e) => setIncidentSort(e.target.value)}
+              onChange={(e) =>
+                setIncidentSort(e.target.value)
+              }
             >
               <option value="Newest">
                 {t("sortNewest")}
@@ -1878,12 +1872,8 @@ export default function EmployerDashboard() {
               type="button"
               onClick={() => {
                 setIncidentQuery("");
-                setIncidentStatusFilter(
-                  "All"
-                );
-                setIncidentSeverityFilter(
-                  "All"
-                );
+                setIncidentStatusFilter("All");
+                setIncidentSeverityFilter("All");
                 setIncidentSort("Newest");
               }}
             >
@@ -1915,7 +1905,6 @@ export default function EmployerDashboard() {
 
           <div className="ss-incident-list">
             {filteredIncidents.length === 0 && (
-
               <div className="ss-empty-state">
                 {t("noIncidents")}
               </div>
@@ -2032,34 +2021,45 @@ export default function EmployerDashboard() {
 
         {/* REVIEWS */}
 
+        <div className="ss-review-actions">
+          <button
+            className="ss-mini-arrow"
+            onClick={() =>
+              scrollByAmount(
+                reviewScroller,
+                -300
+              )
+            }
+            type="button"
+            aria-label={t("previous")}
+          >
+            ‹
+          </button>
 
-              <div className="ss-review-actions">
-        <button
-          className="ss-mini-arrow"
-          onClick={() => scrollByAmount(reviewScroller, -300)}
-          type="button"
-          aria-label={t("previous")}
-        >
-          ‹
-        </button>
+          <button
+            className="ss-view-all-reviews-btn"
+            type="button"
+            onClick={() =>
+              navigate("/all-reviews")
+            }
+          >
+            {t("viewAllReviews")}
+          </button>
 
-        <button
-          className="ss-view-all-reviews-btn"
-          type="button"
-          onClick={() => navigate("/all-reviews")}
-        >
-          {t("viewAllReviews")}
-        </button>
-
-        <button
-          className="ss-mini-arrow"
-          onClick={() => scrollByAmount(reviewScroller, 300)}
-          type="button"
-          aria-label={t("next")}
-        >
-          ›
-        </button>
-      </div>
+          <button
+            className="ss-mini-arrow"
+            onClick={() =>
+              scrollByAmount(
+                reviewScroller,
+                300
+              )
+            }
+            type="button"
+            aria-label={t("next")}
+          >
+            ›
+          </button>
+        </div>
 
         <div className="ss-dashboard-card ss-dashboard-card--reviews">
           <div
@@ -2093,7 +2093,6 @@ export default function EmployerDashboard() {
                       <Star
                         key={k}
                         filled={k < r.stars}
-
                       />
                     )
                   )}
@@ -2129,7 +2128,6 @@ export default function EmployerDashboard() {
               e.stopPropagation()
             }
             style={{ maxWidth: "700px" }}
-
           >
             <div className="create-shift-header">
               <div>
@@ -2139,7 +2137,6 @@ export default function EmployerDashboard() {
                     {safePdfValue(
                       selectedIncident.id
                     )}
-
                   </span>
                   )
                 </h1>
@@ -2158,7 +2155,6 @@ export default function EmployerDashboard() {
                     time:
                       selectedIncident.time ||
                       "--",
-
                   })}
                 </p>
               </div>
@@ -2198,7 +2194,6 @@ export default function EmployerDashboard() {
                   {safePdfValue(
                     selectedIncident.guard
                   )}
-
                 </div>
               </div>
 
@@ -2256,7 +2251,6 @@ export default function EmployerDashboard() {
                 {safePdfValue(
                   selectedIncident.description
                 )}
-
               </div>
             </div>
 
@@ -2360,7 +2354,6 @@ export default function EmployerDashboard() {
                 Download PDF
               </button>
 
-
               <button
                 className="primary"
                 type="button"
@@ -2394,7 +2387,6 @@ export default function EmployerDashboard() {
               <button
                 className="secondary"
                 type="button"
-
                 style={{
                   color: "#666",
                 }}
@@ -2406,7 +2398,6 @@ export default function EmployerDashboard() {
               </button>
             </div>
           </div>
-
         </div>
       )}
     </div>

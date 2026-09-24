@@ -1,0 +1,136 @@
+/* =========================
+   Company Profile Page
+   ========================= */
+
+.cp-container {
+  padding: 20px;
+  background: var(--background);
+  color: var(--text-primary);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* ── Header ── */
+
+.cp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cp-app-icon {
+  width: 80px;
+}
+
+.cp-company-name {
+  font-size: 38px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.cp-title {
+  margin-top: 16px;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 50px;
+  color: var(--text-primary);
+}
+
+/* ── Form layout ── */
+
+.cp-form-columns {
+  display: flex;
+  gap: 50px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.cp-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.cp-field-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.cp-field-row--start {
+  align-items: start;
+}
+
+.cp-field-label {
+  width: 150px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.cp-field-content {
+  flex: 1;
+}
+
+.cp-field-error {
+  color: #c62828;
+  font-size: 12px;
+}
+
+/* ── Button group ── */
+
+.cp-button-group {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 100px;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+
+.cp-button {
+  min-width: 120px;
+  text-align: center;
+  border-radius: 110px;
+  background-color: #284b93;
+  color: white;
+  font-weight: bold;
+  padding: 50px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 768px) {
+  .cp-form-columns {
+    gap: 28px;
+  }
+
+  .cp-button-group {
+    gap: 40px;
+  }
+
+  .cp-button {
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cp-container {
+    padding: 14px;
+  }
+
+  .cp-company-name {
+    font-size: 28px;
+  }
+
+  .cp-field-label {
+    width: 120px;
+    font-size: 14px;
+  }
+}
