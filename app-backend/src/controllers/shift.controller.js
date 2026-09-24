@@ -494,6 +494,11 @@ export const listAvailableShifts = async (req, res) => {
           : 0,
         hasApplicants:
           Array.isArray(shift.applicants) && shift.applicants.length > 0,
+        isFavourite: Boolean(
+          uid &&
+            Array.isArray(shift.favouritedBy) &&
+            shift.favouritedBy.some((f) => String(f) === String(uid)),
+        ),
       };
     });
 
@@ -822,7 +827,71 @@ export const getShiftById = async (req, res) => {
       });
     }
 
-    return res.json(shift);
+    const shiftJson =
+      typeof shift.toJSON === "function" ? shift.toJSON() : shift;
+    shiftJson.isFavourite = Boolean(
+      uid && (shift.favouritedBy || []).some((f) => String(f) === String(uid)),
+    );
+
+    return res.json(shiftJson);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
+/**
+ * PATCH /api/v1/shifts/:id/favourite  (employer/admin)
+ * Toggles the requesting user's favourite status on a shift.
+ * body: none required
+ */
+export const toggleFavouriteShift = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+
+    const uid = req.user?._id || req.user?.id;
+    if (!uid) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const shift = await Shift.findById(id);
+    if (!shift) {
+      return res.status(404).json({ message: "Shift not found" });
+    }
+
+    const isOwner = String(shift.createdBy) === String(uid);
+    const isAdmin = req.user?.role === "admin";
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        message: "Not allowed to favourite this shift",
+      });
+    }
+
+    const alreadyFavourited = (shift.favouritedBy || []).some(
+      (f) => String(f) === String(uid),
+    );
+
+    const updatedShift = await Shift.findByIdAndUpdate(
+      id,
+      alreadyFavourited
+        ? { $pull: { favouritedBy: uid } }
+        : { $addToSet: { favouritedBy: uid } },
+      { new: true },
+    );
+
+    await req.audit?.log(
+      req.user?._id,
+      alreadyFavourited ? "SHIFT_UNFAVOURITED" : "SHIFT_FAVOURITED",
+      { shiftId: updatedShift._id, title: updatedShift.title },
+    );
+
+    return res.json({
+      id: updatedShift._id,
+      isFavourite: !alreadyFavourited,
+    });
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }

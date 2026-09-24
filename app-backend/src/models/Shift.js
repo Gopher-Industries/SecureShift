@@ -164,6 +164,16 @@ const shiftSchema = new Schema(
     },
 
     // Canonical historical name
+    // Users (employers) who have marked this shift as a favourite
+    favouritedBy: {
+      type: [{ type: Schema.Types.ObjectId, ref: "User" }],
+      default: [],
+      validate: {
+        validator: (arr) => Array.isArray(arr) && arr.every(Boolean),
+        message: "favouritedBy cannot contain null/undefined",
+      },
+    },
+
     acceptedBy: { type: Schema.Types.ObjectId, ref: "User", index: true },
 
     // Creator
@@ -199,6 +209,23 @@ shiftSchema.pre("save", function (next) {
     this.applicants = this.applicants.filter(Boolean);
   } else {
     this.applicants = [];
+  }
+  next();
+});
+
+// Clean favouritedBy (dedupe + drop nullish entries)
+shiftSchema.pre("save", function (next) {
+  if (Array.isArray(this.favouritedBy)) {
+    const seen = new Set();
+    this.favouritedBy = this.favouritedBy.filter((id) => {
+      if (!id) return false;
+      const key = String(id);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  } else {
+    this.favouritedBy = [];
   }
   next();
 });
