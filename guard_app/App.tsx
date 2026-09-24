@@ -13,6 +13,7 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 import OfflineBanner from './src/components/OfflineBanner';
 import SyncStatusBanner from './src/components/SyncStatusBanner';
 import AppLockProvider from './src/context/AppLockProvider';
+import { registerNotificationDeepLinking } from './src/lib/deepLinking';
 import { attach401Handler } from './src/lib/http';
 import {
   registerPushTokenIfNeeded,
@@ -56,8 +57,13 @@ function AppContent() {
       }
     });
 
+    // Deep-links a tapped notification to its shift/incident/message, from
+    // both a cold start and while the app is running in the background.
+    const notificationResponseSubscription = registerNotificationDeepLinking(navigationRef);
+
     return () => {
       subscription?.remove();
+      notificationResponseSubscription.remove();
     };
   }, []);
 
