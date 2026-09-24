@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getIncidents } from '../service/adminAPI';
 import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
@@ -39,15 +39,49 @@ const statusLabel = {
   RESOLVED: 'Resolved',
 };
 
+const INCIDENT_SORT_KEYS = ['description', 'guard', 'severity', 'status', 'recordedAt'];
+
+function parsePage(value) {
+  const page = Number.parseInt(value, 10);
+
+  return Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function parseSort(searchParams) {
+  const key = searchParams.get('sort');
+
+  if (!INCIDENT_SORT_KEYS.includes(key)) {
+    return { key: null, direction: 'asc' };
+  }
+
+  return {
+    key,
+    direction: searchParams.get('dir') === 'desc' ? 'desc' : 'asc',
+  };
+}
+
 export default function Incidents() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
-  const [severityFilter, setSeverityFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+
+  const [query, setQuery] = useState(() => searchParams.get('q') || '');
+  const [severityFilter, setSeverityFilter] = useState(() => searchParams.get('severity') || '');
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || '');
+  const [sortConfig, setSortConfig] = useState(() => parseSort(searchParams));
+  const [page, setPage] = useState(() => parsePage(searchParams.get('page')));
+
+  useEffect(() => {
+    setQuery(searchParams.get('q') || '');
+    setSeverityFilter(searchParams.get('severity') || '');
+    setStatusFilter(searchParams.get('status') || '');
+    setSortConfig(parseSort(searchParams));
+    setPage(parsePage(searchParams.get('page')));
+  }, [searchParams]);
 
   const fetchIncidents = useCallback(
     async (manualRefresh = false, silentRefresh = false) => {
@@ -61,6 +95,7 @@ export default function Incidents() {
         setError('');
 
         const params = {};
+
         if (severityFilter) params.severity = severityFilter;
         if (statusFilter) params.status = statusFilter;
 
@@ -85,10 +120,31 @@ export default function Incidents() {
 
   useAutoRefresh(() => fetchIncidents(false, true), 30000);
 
+  const updateTableUrl = (updates) => {
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+
+        Object.entries(updates).forEach(([key, value]) => {
+          if (value === '' || value === null || value === undefined) {
+            next.delete(key);
+          } else {
+            next.set(key, String(value));
+          }
+        });
+
+        return next;
+      },
+      { replace: true }
+    );
+  };
+
   const filtered = incidents.filter((i) => {
     if (!query) return true;
+
     const guardName = i.guardId?.name || '';
     const shiftLabel = i.shiftId?._id || i.shiftId || '';
+
     return `${guardName} ${i.description} ${shiftLabel}`
       .toLowerCase()
       .includes(query.toLowerCase());
@@ -113,7 +169,12 @@ export default function Incidents() {
       key: 'severity',
       header: 'Severity',
       render: (r) => (
-        <span style={{ color: severityBadge[r.severity] || colors.text, fontWeight: 600 }}>
+        <span
+          style={{
+            color: severityBadge[r.severity] || colors.text,
+            fontWeight: 600,
+          }}
+        >
           {r.severity}
         </span>
       ),
@@ -171,14 +232,32 @@ export default function Incidents() {
       <div style={{ ...ui.toolbar }}>
         <SearchFilter
           value={query}
-          onChange={setQuery}
+          onChange={(value) => {
+            setQuery(value);
+            setPage(1);
+
+            updateTableUrl({
+              q: value,
+              page: null,
+            });
+          }}
           placeholder="Search by guard or description…"
         />
 
         <select
           style={ui.select}
           value={severityFilter}
-          onChange={(e) => setSeverityFilter(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+
+            setSeverityFilter(value);
+            setPage(1);
+
+            updateTableUrl({
+              severity: value,
+              page: null,
+            });
+          }}
         >
           <option value="">All Severities</option>
           <option value="low">Low</option>
@@ -189,7 +268,17 @@ export default function Incidents() {
         <select
           style={ui.select}
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+
+            setStatusFilter(value);
+            setPage(1);
+
+            updateTableUrl({
+              status: value,
+              page: null,
+            });
+          }}
         >
           <option value="">All Statuses</option>
           <option value="SUBMITTED">Submitted</option>
@@ -211,6 +300,25 @@ export default function Incidents() {
               ? 'No incidents match your search or filter'
               : 'No incidents found'
           }
+          controlledSortConfig={sortConfig}
+          onSortChange={(nextSort) => {
+            setSortConfig(nextSort);
+            setPage(1);
+
+            updateTableUrl({
+              sort: nextSort.key,
+              dir: nextSort.direction,
+              page: null,
+            });
+          }}
+          controlledPage={page}
+          onPageChange={(nextPage) => {
+            setPage(nextPage);
+
+            updateTableUrl({
+              page: nextPage > 1 ? nextPage : null,
+            });
+          }}
         />
       )}
     </div>
