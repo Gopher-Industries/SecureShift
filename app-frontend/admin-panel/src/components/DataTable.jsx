@@ -486,6 +486,7 @@ export default function DataTable({
                           font: 'inherit',
                           fontWeight: 'inherit',
                           cursor: 'pointer',
+                          color: colors.text,
                         }}
                       >
                         {c.header}

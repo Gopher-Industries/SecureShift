@@ -47,7 +47,7 @@ export default function PayrollOversight() {
       padding: '8px 10px',
       fontSize: 14,
       background: colors.white,
-      color: colors.text,
+      color: colors.black,
     },
     cards: { display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 },
     card: {
@@ -329,7 +329,7 @@ export default function PayrollOversight() {
       {loading ? (
         <LoadingComponent />
       ) : error ? (
-        <p style={{ color: colors.danger }}>{error}</p>
+        <p style={{ color: colors.error }}>{error}</p>
       ) : tab === 'payroll' ? (
         <DataTable
           columns={payrollColumns}

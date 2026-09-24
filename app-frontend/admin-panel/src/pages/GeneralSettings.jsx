@@ -21,7 +21,7 @@ export default function GeneralSettings() {
     title: {
       margin: 0,
       fontSize: 28,
-      color: colors.primaryDark,
+      color: colors.primary,
     },
 
     subtitle: {
@@ -52,7 +52,7 @@ export default function GeneralSettings() {
     cardTitle: {
       margin: 0,
       fontSize: 20,
-      color: colors.primaryDark,
+      color: colors.primary,
     },
 
     cardDescription: {

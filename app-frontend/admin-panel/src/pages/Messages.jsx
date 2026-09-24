@@ -439,7 +439,7 @@ export default function Messages() {
           }}
         >
           {lastUpdated && (
-            <span style={{ fontSize: 13, color: '#777' }}>
+            <span style={{ fontSize: 13, color: colors.muted }}>
               Last updated{' '}
               {lastUpdated.toLocaleTimeString([], {
                 hour: 'numeric',
