@@ -16,7 +16,7 @@ export const createEquipment = async (req, res) => {
 
     const { name, assignedTo, status } = req.body;
 
-    if (!name || name.trim() === "") {
+    if (typeof name !== "string" || name.trim() === "") {
       return res.status(400).json({ message: "Equipment name is required." });
     }
 
