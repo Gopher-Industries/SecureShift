@@ -20,6 +20,10 @@ export const rejectGuardLicense = (id, body) =>
   http.patch(`/admin/guards/${id}/license/reject`, body).then((r) => r.data);
 
 // Oversight
+export const updateShift = (id, body) => http.patch(`/shifts/${id}`, body).then((r) => r.data);
+export const approveShiftGuard = (id, guardId, keepOthers = false) =>
+  http.put(`/shifts/${id}/approve`, { guardId, keepOthers }).then((r) => r.data);
+export const deleteShift = (id) => http.delete(`/shifts/${id}`).then((r) => r.data);
 export const getShifts = (params) => http.get('/admin/shifts', { params }).then((r) => r.data);
 export const getAuditLogs = (params) =>
   http.get('/admin/audit-logs', { params }).then((r) => r.data);
