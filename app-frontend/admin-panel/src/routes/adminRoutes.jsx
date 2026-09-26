@@ -1,4 +1,5 @@
 import Announcements from '../pages/Announcements';
+import EmailTemplates from '../pages/EmailTemplates';
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -69,6 +70,7 @@ export default function AppRoutes() {
         <Route path="/smtp-settings" element={<SMTPSettings />} />
         <Route path="/settings" element={<GeneralSettings />} />
         <Route path="/announcements" element={<Announcements />} />
+        <Route path="/email-templates" element={<EmailTemplates />} />
       </Route>
 
       <Route path="/access-denied" element={<AccessDenied />} />
