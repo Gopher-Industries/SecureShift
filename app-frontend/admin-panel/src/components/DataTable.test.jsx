@@ -1,6 +1,7 @@
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DataTable from './DataTable';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 const columns = [{ key: 'name', header: 'Name' }];
 const rows = [
@@ -11,14 +12,14 @@ const rows = [
 
 describe('DataTable bulk actions / multi-select', () => {
   it('renders no selection UI when selectable is not set', () => {
-    render(<DataTable columns={columns} rows={rows} />);
+    renderWithTheme(<DataTable columns={columns} rows={rows} />);
     expect(screen.queryByLabelText(/select all/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/select row/i)).not.toBeInTheDocument();
   });
 
   it('selecting a row reveals the bulk bar and passes the row to the action', async () => {
     const onExport = jest.fn();
-    render(
+    renderWithTheme(
       <DataTable
         columns={columns}
         rows={rows}
@@ -38,13 +39,13 @@ describe('DataTable bulk actions / multi-select', () => {
   });
 
   it('select-all selects every row on the page', async () => {
-    render(<DataTable columns={columns} rows={rows} selectable bulkActions={[]} />);
+    renderWithTheme(<DataTable columns={columns} rows={rows} selectable bulkActions={[]} />);
     await userEvent.click(screen.getByLabelText('Select all rows on this page'));
     expect(screen.getByText('3 selected')).toBeInTheDocument();
   });
 
   it('shows an indeterminate select-all when only some rows are selected', async () => {
-    render(<DataTable columns={columns} rows={rows} selectable bulkActions={[]} />);
+    renderWithTheme(<DataTable columns={columns} rows={rows} selectable bulkActions={[]} />);
     await userEvent.click(screen.getByLabelText('Select row 1'));
     const selectAll = screen.getByLabelText('Select all rows on this page');
     expect(selectAll.indeterminate).toBe(true);
@@ -53,7 +54,7 @@ describe('DataTable bulk actions / multi-select', () => {
 
   it('calls onSelectionChange with the selected rows', async () => {
     const onSelectionChange = jest.fn();
-    render(
+    renderWithTheme(
       <DataTable columns={columns} rows={rows} selectable onSelectionChange={onSelectionChange} />
     );
     await userEvent.click(screen.getByLabelText('Select row 2'));
@@ -61,7 +62,7 @@ describe('DataTable bulk actions / multi-select', () => {
   });
 
   it('Clear resets the selection', async () => {
-    render(<DataTable columns={columns} rows={rows} selectable bulkActions={[]} />);
+    renderWithTheme(<DataTable columns={columns} rows={rows} selectable bulkActions={[]} />);
     await userEvent.click(screen.getByLabelText('Select all rows on this page'));
     expect(screen.getByText('3 selected')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Clear' }));

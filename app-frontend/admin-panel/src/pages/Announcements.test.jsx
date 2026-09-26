@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Announcements from './Announcements';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 describe('Announcements', () => {
   beforeEach(() => {
@@ -8,7 +9,7 @@ describe('Announcements', () => {
   });
 
   it('shows the selected audience in the confirmation dialog', async () => {
-    render(<Announcements />);
+    renderWithTheme(<Announcements />);
 
     await userEvent.type(screen.getByLabelText(/title/i), 'Test Announcement');
     await userEvent.type(screen.getByLabelText(/message/i), 'This is a test.');
@@ -22,7 +23,7 @@ describe('Announcements', () => {
   });
 
   it('records a completed mock send in the history and resets the form', async () => {
-    render(<Announcements />);
+    renderWithTheme(<Announcements />);
 
     await userEvent.type(screen.getByLabelText(/title/i), 'Test Announcement');
     await userEvent.type(screen.getByLabelText(/message/i), 'This is a test.');

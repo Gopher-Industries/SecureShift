@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUsers, getShifts } from '../service/adminAPI';
 import useDebouncedValue from '../hooks/useDebouncedValue';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 const MIN_QUERY_LENGTH = 2;
 const MAX_RESULTS_PER_GROUP = 5;
@@ -59,6 +59,8 @@ function buildSearchResults(usersData, shiftsData, query) {
 // Cross-entity search. Aggregates existing list
 // endpoints client-side until a dedicated /admin/search endpoints exists.
 export default function GlobalSearch() {
+  const { colors } = useTheme();
+
   const navigate = useNavigate();
   const containerRef = useRef(null);
 
@@ -180,7 +182,7 @@ export default function GlobalSearch() {
             top: 'calc(100% + 4px)',
             left: 0,
             right: 0,
-            background: colors.white,
+            background: colors.card,
             border: `1px solid ${colors.border}`,
             borderRadius: 6,
             boxShadow: '0 4px 12px rgba(16,24,40,0.12)',
@@ -196,7 +198,7 @@ export default function GlobalSearch() {
           )}
 
           {!loading && error && (
-            <div style={{ padding: '10px 12px', color: colors.danger, fontSize: 14 }}>{error}</div>
+            <div style={{ padding: '10px 12px', color: colors.error, fontSize: 14 }}>{error}</div>
           )}
 
           {!loading && !error && !hasAnyResults && (

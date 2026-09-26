@@ -4,6 +4,7 @@ import DataTable from '../components/DataTable';
 import LoadingComponent from '../components/LoadingComponent';
 import ConfirmDialog from '../components/ConfirmDialog';
 import useAutoRefresh from '../hooks/useAutoRefresh';
+import { useTheme } from '../theme/ThemeProvider';
 
 const PAGE_SIZE = 20;
 const CONTENT_PREVIEW_LENGTH = 80;
@@ -40,6 +41,7 @@ function UserTypeahead({
   onClear,
   inputRef,
 }) {
+  const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
 
   const matches = useMemo(() => {
@@ -60,7 +62,7 @@ function UserTypeahead({
           display: 'flex',
           flexDirection: 'column',
           fontSize: 12,
-          color: '#555',
+          color: colors.muted,
         }}
       >
         {label}
@@ -75,9 +77,9 @@ function UserTypeahead({
             style={{
               flex: 1,
               padding: '6px 8px',
-              border: '1px solid #ccc',
+              border: `1px solid ${colors.borderMuted}`,
               borderRadius: 4,
-              background: selectedId ? '#eef6ff' : '#fff',
+              background: selectedId ? colors.selected : colors.white,
             }}
           />
 
@@ -100,10 +102,10 @@ function UserTypeahead({
             margin: 0,
             padding: 4,
             listStyle: 'none',
-            background: '#fff',
-            border: '1px solid #ccc',
+            background: colors.card,
+            border: `1px solid ${colors.borderMuted}`,
             borderRadius: 4,
-            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
           }}
         >
           {matches.map((u) => (
@@ -120,7 +122,7 @@ function UserTypeahead({
                   cursor: 'pointer',
                 }}
               >
-                {personLabel(u)} <span style={{ color: '#999' }}>({u.role})</span>
+                {personLabel(u)} <span style={{ color: colors.muted }}>({u.role})</span>
               </button>
             </li>
           ))}
@@ -184,14 +186,14 @@ function useKeyboardShortcuts({ searchInputRef, onClearFilters, onApplyFilters }
 
 // Keyboard shortcuts indicator component
 function KeyboardShortcuts() {
+  const { colors } = useTheme();
   return (
     <div
       style={{
         fontSize: 11,
-        color: '#999',
+        color: colors.mutedLight,
         marginTop: 8,
         padding: '4px 8px',
-        background: '#f5f5f5',
         borderRadius: '4px',
         display: 'inline-block',
         marginBottom: 8,
@@ -207,6 +209,8 @@ function KeyboardShortcuts() {
 
 // Admin page for viewing, filtering and moderating messages
 export default function Messages() {
+  const { colors } = useTheme();
+
   // Stores the filters currently applied to the message list
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
 
@@ -397,7 +401,7 @@ export default function Messages() {
       header: '',
       render: (r) =>
         r.isDeleted ? (
-          <span style={{ color: '#999' }}>{'\u2014'}</span>
+          <span style={{ color: colors.mutedLight }}>{'\u2014'}</span>
         ) : (
           <button type="button" onClick={() => openDeleteConfirm(r)}>
             Delete
@@ -435,7 +439,7 @@ export default function Messages() {
           }}
         >
           {lastUpdated && (
-            <span style={{ fontSize: 13, color: '#777' }}>
+            <span style={{ fontSize: 13, color: colors.muted }}>
               Last updated{' '}
               {lastUpdated.toLocaleTimeString([], {
                 hour: 'numeric',
@@ -454,7 +458,7 @@ export default function Messages() {
         </div>
       </div>
 
-      <p style={{ color: '#777', marginTop: -8 }}>
+      <p style={{ color: colors.muted, marginTop: -8 }}>
         View and moderate platform messages. Deleting a message hides it (soft delete).
       </p>
 
@@ -533,7 +537,7 @@ export default function Messages() {
             display: 'flex',
             flexDirection: 'column',
             fontSize: 12,
-            color: '#555',
+            color: colors.muted,
           }}
         >
           Conversation ID
@@ -548,7 +552,7 @@ export default function Messages() {
             placeholder="conversation id"
             style={{
               padding: '6px 8px',
-              border: '1px solid #ccc',
+              border: `1px solid ${colors.borderMuted}`,
               borderRadius: 4,
             }}
           />
@@ -559,7 +563,7 @@ export default function Messages() {
             display: 'flex',
             flexDirection: 'column',
             fontSize: 12,
-            color: '#555',
+            color: colors.muted,
           }}
         >
           From
@@ -574,7 +578,7 @@ export default function Messages() {
             }
             style={{
               padding: '6px 8px',
-              border: '1px solid #ccc',
+              border: `1px solid ${colors.borderMuted}`,
               borderRadius: 4,
             }}
           />
@@ -585,7 +589,7 @@ export default function Messages() {
             display: 'flex',
             flexDirection: 'column',
             fontSize: 12,
-            color: '#555',
+            color: colors.muted,
           }}
         >
           To
@@ -600,7 +604,7 @@ export default function Messages() {
             }
             style={{
               padding: '6px 8px',
-              border: '1px solid #ccc',
+              border: `1px solid ${colors.borderMuted}`,
               borderRadius: 4,
             }}
           />
@@ -638,7 +642,7 @@ export default function Messages() {
       {loading ? (
         <LoadingComponent label={'Loading messages\u2026'} />
       ) : error ? (
-        <p style={{ color: '#c00' }}>{error}</p>
+        <p style={{ color: colors.error }}>{error}</p>
       ) : (
         <>
           <DataTable
@@ -675,7 +679,7 @@ export default function Messages() {
               gap: 10,
             }}
           >
-            <p style={{ margin: 0, color: '#555' }}>
+            <p style={{ margin: 0, color: colors.text }}>
               From <strong>{personLabel(confirmTarget.sender)}</strong> to{' '}
               <strong>{personLabel(confirmTarget.receiver)}</strong>
               {': '}
@@ -686,7 +690,7 @@ export default function Messages() {
               style={{
                 margin: 0,
                 fontSize: 13,
-                color: '#777',
+                color: colors.muted,
               }}
             >
               This hides the message from users but keeps it in the database (soft delete).
@@ -697,7 +701,7 @@ export default function Messages() {
                 display: 'flex',
                 flexDirection: 'column',
                 fontSize: 12,
-                color: '#555',
+                color: colors.muted,
               }}
             >
               Reason (optional)
@@ -707,13 +711,13 @@ export default function Messages() {
                 rows={2}
                 style={{
                   padding: '6px 8px',
-                  border: '1px solid #ccc',
+                  border: `1px solid ${colors.borderMuted}`,
                   borderRadius: 4,
                 }}
               />
             </label>
 
-            {deleteError && <p style={{ color: '#c00', margin: 0 }}>{deleteError}</p>}
+            {deleteError && <p style={{ color: colors.error, margin: 0 }}>{deleteError}</p>}
           </div>
         )}
       </ConfirmDialog>

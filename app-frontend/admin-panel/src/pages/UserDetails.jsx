@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getUser, deleteUser } from '../service/adminAPI';
 import LoadingComponent from '../components/LoadingComponent';
 import ConfirmDialog from '../components/ConfirmDialog';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 function formatAddress(address) {
   if (!address) return '—';
@@ -16,15 +16,16 @@ function formatDate(value) {
   return value ? new Date(value).toLocaleString() : '—';
 }
 
-const row = {
-  display: 'flex',
-  gap: 8,
-  padding: '10px 0',
-  borderBottom: `1px solid ${colors.border}`,
-};
-const label = { width: 140, color: colors.muted, fontWeight: 600 };
-
 export default function UserDetails() {
+  const { colors } = useTheme();
+  const row = {
+    display: 'flex',
+    gap: 8,
+    padding: '10px 0',
+    borderBottom: `1px solid ${colors.border}`,
+  };
+  const label = { width: 140, color: colors.muted, fontWeight: 600 };
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -92,7 +93,7 @@ export default function UserDetails() {
         <p style={{ color: colors.danger }}>User not found.</p>
       ) : (
         <>
-          {error ? <p style={{ color: colors.danger }}>{error}</p> : null}
+          {error ? <p style={{ color: colors.error }}>{error}</p> : null}
           {user ? (
             <div
               style={{

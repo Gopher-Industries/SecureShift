@@ -1,4 +1,4 @@
-﻿import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+﻿import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 import {
@@ -9,12 +9,13 @@ import {
   getShifts,
   getUsers,
 } from '../service/adminAPI';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 jest.mock('../service/adminAPI');
 jest.mock('../components/TrendChart', () => () => null);
 
 const renderDashboard = () =>
-  render(
+  renderWithTheme(
     <MemoryRouter>
       <AdminDashboard />
     </MemoryRouter>

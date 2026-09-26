@@ -7,7 +7,7 @@ import SearchFilter from '../components/SearchFilter';
 import Modal from '../components/Modal';
 import Button from '../components/Button';
 import FormField from '../components/FormField';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 const STATUS_OPTIONS = ['draft', 'open', 'applied', 'assigned', 'completed'];
 const PAGE_SIZE = 20;
@@ -55,6 +55,8 @@ function parseSort(searchParams) {
   };
 }
 export default function Shifts() {
+  const { colors } = useTheme();
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [shifts, setShifts] = useState([]);
@@ -253,7 +255,7 @@ export default function Shifts() {
   return (
     <div>
       <h1>Shifts</h1>
-      <p style={{ color: '#777', marginTop: -8 }}>
+      <p style={{ color: colors.muted, marginTop: -8 }}>
         Admin oversight of all shifts — edit details, assign a guard from applicants, or cancel a
         shift. Creating new shifts remains employer-only.
       </p>
@@ -288,9 +290,13 @@ export default function Shifts() {
           }}
           style={{
             padding: '8px 12px',
-            border: '1px solid #ccc',
+            border: `1px solid ${colors.border}`,
             borderRadius: 4,
             marginBottom: 16,
+            fontSize: 14,
+            background: colors.card,
+            color: colors.text,
+            cursor: 'pointer',
           }}
         >
           <option value="">All statuses</option>
@@ -303,14 +309,14 @@ export default function Shifts() {
         </select>
       </div>
 
-      <p style={{ color: '#666', fontSize: '0.9rem', marginTop: 8 }}>
+      <p style={{ color: colors.muted, fontSize: '0.9rem', marginTop: 8 }}>
         Showing {filtered.length} {filtered.length === 1 ? 'shift' : 'shifts'}
       </p>
 
       {loading ? (
         <LoadingComponent label={'Loading shifts…'} />
       ) : error ? (
-        <p style={{ color: '#c00' }}>{error}</p>
+        <p style={{ color: colors.error }}>{error}</p>
       ) : (
         <DataTable
           columns={columns}

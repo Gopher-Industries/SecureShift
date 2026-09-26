@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Card from './Card';
 import Button from './Button';
 import FormField from './FormField';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 const STORAGE_KEY = 'auditLogRetentionPolicy';
 const SHORT_RETENTION_THRESHOLD = 7; // days — warn if below this
@@ -10,6 +10,8 @@ const SHORT_RETENTION_THRESHOLD = 7; // days — warn if below this
 // AP-041: Retention-policy UI. Mock-persisted to localStorage for now —
 // no backend scheduler yet. Wiring to a real backend scheduler is a follow-up.
 export default function RetentionPolicy() {
+  const { colors } = useTheme();
+
   const [days, setDays] = useState('90');
   const [autoPurgeEnabled, setAutoPurgeEnabled] = useState(false);
   const [savedPolicy, setSavedPolicy] = useState(null);
@@ -116,14 +118,14 @@ export default function RetentionPolicy() {
       {showShortRetentionWarning && (
         <div
           style={{
-            background: '#fff5f5',
-            border: `1px solid #e0a0a0`,
+            background: colors.dangerBg,
+            border: `1px solid ${colors.dangerBorder}`,
             borderRadius: 6,
             padding: '10px 12px',
             marginTop: 8,
           }}
         >
-          <p style={{ margin: '0 0 8px', fontSize: 13 }}>
+          <p style={{ margin: '0 0 8px', fontSize: 13, color: colors.black }}>
             ⚠️ {days} day{days === '1' ? '' : 's'} is a very short retention period — logs will be
             eligible for deletion almost immediately once enforcement is wired up. Are you sure?
           </p>

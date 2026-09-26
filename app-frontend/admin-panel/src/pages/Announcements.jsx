@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import FormField from '../components/FormField';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeProvider';
 
 const STORAGE_KEY = 'broadcastAnnouncementHistory';
 
@@ -14,6 +14,8 @@ const AUDIENCES = [
 ];
 
 export default function Announcements() {
+  const { colors } = useTheme();
+
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [audience, setAudience] = useState('all');

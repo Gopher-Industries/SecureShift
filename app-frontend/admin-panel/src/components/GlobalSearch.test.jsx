@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import GlobalSearch from './GlobalSearch';
 import { getUsers, getShifts } from '../service/adminAPI';
+import { renderWithTheme } from '../theme/renderWithTheme';
 
 jest.mock('../service/adminAPI', () => ({
   getUsers: jest.fn(),
@@ -18,7 +19,7 @@ function DummyShifts() {
 }
 
 function renderWithRoutes() {
-  return render(
+  return renderWithTheme(
     <MemoryRouter initialEntries={['/dashboard']}>
       <Routes>
         <Route path="/dashboard" element={<GlobalSearch />} />

@@ -2,10 +2,147 @@ import { useEffect, useState } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import FormField from '../components/FormField';
-import colors from '../theme/colors';
 import { getMockSettings, updateMockSettings } from '../service/mockSettingsAPI';
+import { useTheme } from '../theme/ThemeProvider';
 
 export default function GeneralSettings() {
+  const { colors } = useTheme();
+  const styles = {
+    page: {
+      padding: 32,
+      backgroundColor: colors.bg,
+      minHeight: '100%',
+    },
+
+    header: {
+      marginBottom: 24,
+    },
+
+    title: {
+      margin: 0,
+      fontSize: 28,
+      color: colors.primary,
+    },
+
+    subtitle: {
+      marginTop: 8,
+      marginBottom: 0,
+      color: colors.muted,
+      fontSize: 15,
+    },
+
+    card: {
+      maxWidth: 850,
+    },
+
+    loadingCard: {
+      maxWidth: 850,
+    },
+
+    loadingText: {
+      color: colors.muted,
+    },
+
+    cardHeader: {
+      borderBottom: `1px solid ${colors.border}`,
+      paddingBottom: 20,
+      marginBottom: 24,
+    },
+
+    cardTitle: {
+      margin: 0,
+      fontSize: 20,
+      color: colors.primary,
+    },
+
+    cardDescription: {
+      marginTop: 6,
+      marginBottom: 0,
+      color: colors.muted,
+      fontSize: 14,
+    },
+
+    helpText: {
+      marginTop: 6,
+      marginBottom: 0,
+      color: colors.muted,
+      fontSize: 13,
+    },
+
+    maintenanceBox: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 20,
+      padding: 18,
+      marginTop: 8,
+      marginBottom: 24,
+      backgroundColor: colors.bg,
+      border: `1px solid ${colors.border}`,
+      borderRadius: 8,
+    },
+
+    maintenanceTitle: {
+      fontWeight: 600,
+      color: colors.text,
+      fontSize: 14,
+    },
+
+    switch: {
+      position: 'relative',
+      display: 'inline-block',
+      width: 42,
+      height: 22,
+      flexShrink: 0,
+    },
+
+    checkbox: {
+      position: 'absolute',
+      width: 42,
+      height: 22,
+      margin: 0,
+      opacity: 0,
+      cursor: 'pointer',
+      zIndex: 2,
+    },
+
+    slider: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      width: 42,
+      height: 22,
+      borderRadius: 20,
+      cursor: 'pointer',
+      transition: '0.2s',
+    },
+
+    sliderCircle: {
+      position: 'absolute',
+      top: 2,
+      left: 2,
+      width: 18,
+      height: 18,
+      backgroundColor: colors.white,
+      borderRadius: '50%',
+      transition: '0.2s',
+    },
+
+    message: {
+      padding: '12px 14px',
+      borderRadius: 6,
+      fontSize: 14,
+      marginBottom: 20,
+    },
+
+    footer: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      borderTop: `1px solid ${colors.border}`,
+      paddingTop: 20,
+    },
+  };
+
   const [settings, setSettings] = useState(null);
   const [message, setMessage] = useState('');
 
@@ -172,139 +309,3 @@ export default function GeneralSettings() {
     </div>
   );
 }
-
-const styles = {
-  page: {
-    padding: 32,
-    backgroundColor: colors.bg,
-    minHeight: '100%',
-  },
-
-  header: {
-    marginBottom: 24,
-  },
-
-  title: {
-    margin: 0,
-    fontSize: 28,
-    color: colors.primaryDark,
-  },
-
-  subtitle: {
-    marginTop: 8,
-    marginBottom: 0,
-    color: colors.muted,
-    fontSize: 15,
-  },
-
-  card: {
-    maxWidth: 850,
-  },
-
-  loadingCard: {
-    maxWidth: 850,
-  },
-
-  loadingText: {
-    color: colors.muted,
-  },
-
-  cardHeader: {
-    borderBottom: `1px solid ${colors.border}`,
-    paddingBottom: 20,
-    marginBottom: 24,
-  },
-
-  cardTitle: {
-    margin: 0,
-    fontSize: 20,
-    color: colors.primaryDark,
-  },
-
-  cardDescription: {
-    marginTop: 6,
-    marginBottom: 0,
-    color: colors.muted,
-    fontSize: 14,
-  },
-
-  helpText: {
-    marginTop: 6,
-    marginBottom: 0,
-    color: colors.muted,
-    fontSize: 13,
-  },
-
-  maintenanceBox: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 20,
-    padding: 18,
-    marginTop: 8,
-    marginBottom: 24,
-    backgroundColor: colors.bg,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-  },
-
-  maintenanceTitle: {
-    fontWeight: 600,
-    color: colors.text,
-    fontSize: 14,
-  },
-
-  switch: {
-    position: 'relative',
-    display: 'inline-block',
-    width: 42,
-    height: 22,
-    flexShrink: 0,
-  },
-
-  checkbox: {
-    position: 'absolute',
-    width: 42,
-    height: 22,
-    margin: 0,
-    opacity: 0,
-    cursor: 'pointer',
-    zIndex: 2,
-  },
-
-  slider: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: 42,
-    height: 22,
-    borderRadius: 20,
-    cursor: 'pointer',
-    transition: '0.2s',
-  },
-
-  sliderCircle: {
-    position: 'absolute',
-    top: 2,
-    left: 2,
-    width: 18,
-    height: 18,
-    backgroundColor: colors.white,
-    borderRadius: '50%',
-    transition: '0.2s',
-  },
-
-  message: {
-    padding: '12px 14px',
-    borderRadius: 6,
-    fontSize: 14,
-    marginBottom: 20,
-  },
-
-  footer: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    borderTop: `1px solid ${colors.border}`,
-    paddingTop: 20,
-  },
-};

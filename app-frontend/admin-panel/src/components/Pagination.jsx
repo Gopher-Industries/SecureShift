@@ -1,34 +1,5 @@
 import './DataTable.css';
-import colors from '../theme/colors';
-
-const styles = {
-  wrap: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 16,
-    fontSize: 13,
-    color: colors.muted,
-  },
-  controls: { display: 'flex', alignItems: 'center', gap: 8 },
-  button: {
-    background: colors.white,
-    color: colors.text,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 6,
-    padding: '6px 12px',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  },
-  pageInfo: { color: colors.text, fontWeight: 600 },
-};
+import { useTheme } from '../theme/ThemeProvider';
 
 // Reusable pager for table/list pages (Users, Audit Logs, Shifts, etc.).
 // Parent owns the current page state; this component is presentational
@@ -37,6 +8,36 @@ const styles = {
 // Usage:
 //   <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 export default function Pagination({ page, totalPages, onPageChange, totalItems, pageSize }) {
+  const { colors } = useTheme();
+  const styles = {
+    wrap: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: 12,
+      marginTop: 16,
+      fontSize: 13,
+      color: colors.muted,
+    },
+    controls: { display: 'flex', alignItems: 'center', gap: 8 },
+    button: {
+      background: colors.card,
+      color: colors.text,
+      border: `1px solid ${colors.border}`,
+      borderRadius: 6,
+      padding: '6px 12px',
+      fontSize: 13,
+      fontWeight: 600,
+      cursor: 'pointer',
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+      cursor: 'not-allowed',
+    },
+    pageInfo: { color: colors.text, fontWeight: 600 },
+  };
+
   if (!totalPages || totalPages <= 1) return null;
 
   const canPrev = page > 1;
