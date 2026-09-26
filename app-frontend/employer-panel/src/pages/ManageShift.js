@@ -4,6 +4,7 @@ import http from '../lib/http';
 import translations from "../i18n/translations";
 import RefreshButton from '../components/RefreshButton';
 import { useNotification } from '../components/NotificationContext';
+import ConfirmDialog from '../components/Confirmdialog';
 
 // ─── STYLES (defined first) ───
 const getStatusTagStyle = (status) => ({
@@ -405,8 +406,8 @@ const ApplicantsPanel = ({ shift, applicantAction, onApprove, onReject }) => {
                   : isRejected ? <span style={rejectedPillStyle}>✗ Rejected</span>
                     : (
                       <>
-                        <button style={approveButtonStyle} onClick={() => onApprove(gid)} disabled={action === 'approving'}>{action === 'approving' ? '...' : 'Approve'}</button>
-                        <button style={rejectButtonStyle} onClick={() => onReject(gid)} disabled={action === 'rejecting'}>{action === 'rejecting' ? '...' : 'Reject'}</button>
+                        <button style={approveButtonStyle} onClick={() => onApprove(applicant)} disabled={action === 'approving'}>{action === 'approving' ? '...' : 'Approve'}</button>
+                        <button style={rejectButtonStyle} onClick={() => onReject(applicant)} disabled={action === 'rejecting'}>{action === 'rejecting' ? '...' : 'Reject'}</button>
                       </>
                     )}
               </div>
@@ -730,6 +731,11 @@ const ManageShift = ({ language }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(null);
 
+  // Shared confirmation dialog state — used by delete / approve / reject /
+  // remove-equipment so we don't need a separate modal per action.
+  const [confirmState, setConfirmState] = useState(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+
   const fetchShifts = async (isManualRefresh = false) => {
     if (isManualRefresh) {
       setIsRefreshing(true);
@@ -771,10 +777,22 @@ const ManageShift = ({ language }) => {
     setNewEqQty(1);
   };
 
-  const removeEquipment = (id) => {
+  const performRemoveEquipment = (id) => {
     const item = equipmentList.find((i) => i.id === id);
     if (item) setEqAuditLog((prev) => [...prev, { text: `${item.name} removed from list`, color: '#888780', time: fmtTime(new Date()) }]);
     setEquipmentList((prev) => prev.filter((i) => i.id !== id));
+    setConfirmState(null);
+  };
+
+  const removeEquipment = (id) => {
+    const item = equipmentList.find((i) => i.id === id);
+    setConfirmState({
+      title: 'Remove this item?',
+      message: `${item?.name || 'This item'} will be removed from the equipment list for this shift.`,
+      confirmLabel: 'Remove',
+      tone: 'danger',
+      onConfirm: () => performRemoveEquipment(id),
+    });
   };
 
   const setCondition = (id, cond) => {
@@ -923,17 +941,30 @@ const ManageShift = ({ language }) => {
   };
 
   // ─── DELETE handler ───
-  const handleDeleteShift = async (shiftId) => {
-    if (!window.confirm('Are you sure you want to delete this shift? This action cannot be undone.')) return;
+  const performDeleteShift = async (shiftId) => {
+    setConfirmBusy(true);
     try {
       await http.delete(`/shifts/${shiftId}`);
       setShifts((prev) => prev.filter((s) => s.id !== shiftId));
       showNotification('success', 'Shift deleted successfully.');
+      setConfirmState(null);
     } catch (err) {
       const msg = err?.response?.data?.message || 'Failed to delete shift';
       showNotification('error', msg);
       console.error('Delete error:', err);
+    } finally {
+      setConfirmBusy(false);
     }
+  };
+
+  const handleDeleteShift = (shift) => {
+    setConfirmState({
+      title: 'Delete this shift?',
+      message: `"${shift.title}" will be permanently deleted. This action cannot be undone.`,
+      confirmLabel: 'Delete shift',
+      tone: 'danger',
+      onConfirm: () => performDeleteShift(shift.id),
+    });
   };
 
   // ─── EDIT handler ───
@@ -1059,9 +1090,10 @@ const ManageShift = ({ language }) => {
   };
 
   // Approval workflow
-  const handleApproveGuard = async (guardId) => {
+  const performApproveGuard = async (guardId) => {
     if (!selectedShift) return;
     setApplicantAction((prev) => ({ ...prev, [guardId]: 'approving' }));
+    setConfirmBusy(true);
     try {
       const { data } = await http.put(`/shifts/${selectedShift.id}/approve`, { guardId });
       const approvedGuard = selectedShift.applicants.find((a) => (a._id || a.id) === guardId);
@@ -1070,25 +1102,53 @@ const ManageShift = ({ language }) => {
       setSelectedShift(updatedShift);
       setApplicantAction((prev) => ({ ...prev, [guardId]: 'approved' }));
       showNotification('success', 'Guard approved. Shift is now In Progress.');
+      setConfirmState(null);
     } catch (err) {
       showNotification('error', err?.response?.data?.message || 'Failed to approve guard');
       setApplicantAction((prev) => ({ ...prev, [guardId]: undefined }));
+    } finally {
+      setConfirmBusy(false);
     }
   };
 
-  const handleRejectGuard = async (guardId) => {
+  const handleApproveGuard = (applicant) => {
+    const guardId = applicant._id || applicant.id;
+    setConfirmState({
+      title: 'Approve this guard?',
+      message: `${applicant.name || 'This guard'} will be assigned to the shift. Other applicants will stay unassigned.`,
+      confirmLabel: 'Approve',
+      onConfirm: () => performApproveGuard(guardId),
+    });
+  };
+
+  const performRejectGuard = async (guardId) => {
     if (!selectedShift) return;
     setApplicantAction((prev) => ({ ...prev, [guardId]: 'rejecting' }));
+    setConfirmBusy(true);
     try {
       const updatedApplicants = selectedShift.applicants.filter((a) => (a._id || a.id) !== guardId);
       const updatedShift = { ...selectedShift, applicants: updatedApplicants, applicantCount: updatedApplicants.length };
       setShifts((prev) => prev.map((s) => (s.id === updatedShift.id ? updatedShift : s)));
       setSelectedShift(updatedShift);
       setApplicantAction((prev) => { const n = { ...prev }; delete n[guardId]; return n; });
+      setConfirmState(null);
     } catch (err) {
       showNotification('error', err?.response?.data?.message || 'Failed to reject guard');
       setApplicantAction((prev) => ({ ...prev, [guardId]: undefined }));
+    } finally {
+      setConfirmBusy(false);
     }
+  };
+
+  const handleRejectGuard = (applicant) => {
+    const guardId = applicant._id || applicant.id;
+    setConfirmState({
+      title: 'Reject this applicant?',
+      message: `${applicant.name || 'This guard'} will be removed from the applicant list for this shift.`,
+      confirmLabel: 'Reject',
+      tone: 'danger',
+      onConfirm: () => performRejectGuard(guardId),
+    });
   };
 
   const showApplicantsTab = selectedShift?.status === Filter.Open || selectedShift?.status === Filter.Pending;
@@ -1166,11 +1226,11 @@ const ManageShift = ({ language }) => {
                   {shift.status === 'Draft' && (
                     <>
                       <button style={editButtonStyle} onClick={() => handleEditShift(shift.id)} title="Edit draft">✏️</button>
-                      <button style={deleteButtonStyle} onClick={() => handleDeleteShift(shift.id)} title="Delete draft">🗑️</button>
+                      <button style={deleteButtonStyle} onClick={() => handleDeleteShift(shift)} title="Delete draft">🗑️</button>
                     </>
                   )}
                   {shift.status !== 'Draft' && (
-                    <button style={deleteButtonStyle} onClick={() => handleDeleteShift(shift.id)} title="Delete shift">🗑️</button>
+                    <button style={deleteButtonStyle} onClick={() => handleDeleteShift(shift)} title="Delete shift">🗑️</button>
                   )}
                   {shift.status === 'In Progress' && (
                     <button style={chatIconButtonStyle} onClick={() => openChatModal(shift)} title="Open shift chat">
@@ -1415,6 +1475,17 @@ const ManageShift = ({ language }) => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!confirmState}
+        title={confirmState?.title}
+        message={confirmState?.message}
+        confirmLabel={confirmState?.confirmLabel}
+        tone={confirmState?.tone}
+        busy={confirmBusy}
+        onConfirm={confirmState?.onConfirm}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 };
