@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminNavbar from '../components/AdminNavbar';
 import ViewAsBanner from '../components/ViewAsBanner';
+import CommandPalette from '../components/CommandPalette';
 import './AdminLayout.css';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -28,6 +29,7 @@ export default function AdminLayout() {
           <Outlet />
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

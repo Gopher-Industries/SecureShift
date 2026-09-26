@@ -1,13 +1,14 @@
 import { screen, waitFor } from '@testing-library/react';
+import { renderWithTheme } from '../theme/renderWithTheme';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import GlobalSearch from './GlobalSearch';
-import { getUsers, getShifts } from '../service/adminAPI';
-import { renderWithTheme } from '../theme/renderWithTheme';
+import { getUsers, getShifts, getIncidents } from '../service/adminAPI';
 
 jest.mock('../service/adminAPI', () => ({
   getUsers: jest.fn(),
   getShifts: jest.fn(),
+  getIncidents: jest.fn(),
 }));
 
 function DummyUserDetails() {
@@ -38,6 +39,7 @@ describe('GlobalSearch', () => {
       { _id: 'g1', name: 'Grace Hopper', email: 'grace@example.com', role: 'guard' },
     ]);
     getShifts.mockResolvedValue([{ _id: 's1', title: 'Night Watch — Ada Site', status: 'open' }]);
+    getIncidents.mockResolvedValue([]);
   });
 
   it('does not search until the minimum query length is reached', async () => {
