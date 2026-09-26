@@ -248,6 +248,7 @@ const items = [
   ['/smtp-settings', 'SMTP Settings', SMTPIcon],
   ['/settings', 'General Settings', SettingsIcon],
   ['/announcements', 'Announcements', ChatIcon],
+  ['/email-templates', 'Email Templates', ChatIcon],
 ];
 
 export default function AdminSidebar({ isOpen, onClose }) {
