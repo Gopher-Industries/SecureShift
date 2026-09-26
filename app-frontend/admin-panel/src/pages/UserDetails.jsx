@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getUser, deleteUser } from '../service/adminAPI';
+import { getUser, deleteUser, getAuditLogs, getShifts } from '../service/adminAPI';
 import LoadingComponent from '../components/LoadingComponent';
 import ConfirmDialog from '../components/ConfirmDialog';
+import Card from '../components/Card';
+import Pagination from '../components/Pagination';
 import { useTheme } from '../theme/ThemeProvider';
 
 function formatAddress(address) {
@@ -15,6 +17,8 @@ function formatAddress(address) {
 function formatDate(value) {
   return value ? new Date(value).toLocaleString() : '—';
 }
+
+const AUDIT_PAGE_SIZE = 10;
 
 export default function UserDetails() {
   const { colors } = useTheme();
@@ -34,6 +38,16 @@ export default function UserDetails() {
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditLoading, setAuditLoading] = useState(true);
+  const [auditError, setAuditError] = useState('');
+
+  const [shifts, setShifts] = useState([]);
+  const [shiftsLoading, setShiftsLoading] = useState(true);
+  const [shiftsError, setShiftsError] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -78,6 +92,50 @@ export default function UserDetails() {
     setConfirmOpen(false);
   };
 
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setAuditLoading(true);
+        setAuditError('');
+        const data = await getAuditLogs({ userId: id, page: auditPage, limit: AUDIT_PAGE_SIZE });
+        if (!mounted) return;
+        setAuditLogs(data.logs || []);
+        setAuditTotal(data.pagination?.total ?? data.logs?.length ?? 0);
+      } catch (err) {
+        if (mounted) setAuditError(err?.response?.data?.message || 'Failed to load activity');
+      } finally {
+        if (mounted) setAuditLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [id, auditPage]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setShiftsLoading(true);
+        setShiftsError('');
+        const data = await getShifts();
+        const list = Array.isArray(data) ? data : data.shifts || data.data || [];
+        const mine = list.filter((s) => s.createdBy?._id === id || s.acceptedBy?._id === id);
+        if (mounted) setShifts(mine);
+      } catch (err) {
+        if (mounted) setShiftsError(err?.response?.data?.message || 'Failed to load shifts');
+      } finally {
+        if (mounted) setShiftsLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
+  const auditTotalPages = Math.max(1, Math.ceil(auditTotal / AUDIT_PAGE_SIZE));
+
   return (
     <div>
       <h1>User Details</h1>
@@ -95,6 +153,7 @@ export default function UserDetails() {
         <>
           {error ? <p style={{ color: colors.error }}>{error}</p> : null}
           {user ? (
+            <>
             <div
               style={{
                 background: colors.card,
@@ -150,6 +209,100 @@ export default function UserDetails() {
                 {deleting ? 'Deleting…' : 'Delete User'}
               </button>
             </div>
+
+              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                <Card style={{ flex: '1 1 380px', minWidth: 320 }}>
+                  <h3 style={{ marginTop: 0 }}>Recent Activity</h3>
+                  {auditLoading ? (
+                    <p style={{ color: colors.muted, fontSize: 14 }}>Loading activity…</p>
+                  ) : auditError ? (
+                    <p style={{ color: colors.danger, fontSize: 14 }}>{auditError}</p>
+                  ) : auditLogs.length === 0 ? (
+                    <p style={{ color: colors.muted, fontSize: 14 }}>
+                      No audit activity recorded for this user yet.
+                    </p>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {auditLogs.map((log) => (
+                          <div
+                            key={log._id}
+                            style={{
+                              borderBottom: `1px solid ${colors.border}`,
+                              paddingBottom: 8,
+                            }}
+                          >
+                            <div style={{ fontSize: 13, fontWeight: 600 }}>{log.action}</div>
+                            <div style={{ fontSize: 12, color: colors.muted }}>
+                              {formatDate(log.timestamp)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <Pagination
+                        page={auditPage}
+                        totalPages={auditTotalPages}
+                        totalItems={auditTotal}
+                        pageSize={AUDIT_PAGE_SIZE}
+                        onPageChange={setAuditPage}
+                      />
+                      <Link
+                        to={`/audit-logs?userId=${id}`}
+                        style={{
+                          fontSize: 13,
+                          color: colors.primary,
+                          display: 'inline-block',
+                          marginTop: 8,
+                        }}
+                      >
+                        View full audit log for this user &rarr;
+                      </Link>
+                    </>
+                  )}
+                </Card>
+
+                <Card style={{ flex: '1 1 380px', minWidth: 320 }}>
+                  <h3 style={{ marginTop: 0 }}>Shifts</h3>
+                  {shiftsLoading ? (
+                    <p style={{ color: colors.muted, fontSize: 14 }}>Loading shifts…</p>
+                  ) : shiftsError ? (
+                    <p style={{ color: colors.danger, fontSize: 14 }}>{shiftsError}</p>
+                  ) : shifts.length === 0 ? (
+                    <p style={{ color: colors.muted, fontSize: 14 }}>
+                      No shifts associated with this user.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {shifts.slice(0, 10).map((s) => (
+                        <Link
+                          key={s._id}
+                          to={`/shifts?q=${encodeURIComponent(s.title || s._id)}`}
+                          style={{
+                            borderBottom: `1px solid ${colors.border}`,
+                            paddingBottom: 8,
+                            color: colors.text,
+                            textDecoration: 'none',
+                            display: 'block',
+                          }}
+                        >
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>
+                            {s.title || 'Untitled shift'}
+                          </div>
+                          <div style={{ fontSize: 12, color: colors.muted }}>
+                            {s.status} · {formatDate(s.date)}
+                          </div>
+                        </Link>
+                      ))}
+                      {shifts.length > 10 && (
+                        <span style={{ fontSize: 12, color: colors.muted }}>
+                          Showing 10 of {shifts.length} shifts.
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              </div>
+            </>
           ) : null}
         </>
       )}
