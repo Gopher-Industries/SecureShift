@@ -234,6 +234,23 @@ const LightModeIcon = ({ size = 12, color = 'currentColor' }) => (
   </svg>
 );
 
+const TwoFactorIcon = ({ size = 24, color = 'currentColor' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    <circle cx="12" cy="16" r="1.5" />
+  </svg>
+);
+
 const items = [
   ['/dashboard', 'Dashboard', DashboardIcon],
   ['/users', 'Users', UsersIcon],
@@ -247,6 +264,7 @@ const items = [
   ['/messages', 'Messages', ChatIcon],
   ['/smtp-settings', 'SMTP Settings', SMTPIcon],
   ['/settings', 'General Settings', SettingsIcon],
+  ['/two-factor', 'Two-Factor Auth', TwoFactorIcon],
   ['/announcements', 'Announcements', ChatIcon],
   ['/email-templates', 'Email Templates', ChatIcon],
 ];
