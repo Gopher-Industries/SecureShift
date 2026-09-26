@@ -1,6 +1,6 @@
 import Button from '../components/Button';
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getUsers, deleteUser, createEmployer } from '../service/adminAPI';
 import UserFormModal from '../components/UserFormModal';
 import { useToast } from '../components/Toast';
@@ -9,6 +9,7 @@ import LoadingComponent from '../components/LoadingComponent';
 import SearchFilter from '../components/SearchFilter';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../theme/ThemeProvider';
+import { useViewAs } from '../context/ViewAsContext';
 
 // First working admin data view — end-to-end integration with GET /admin/users.
 const USER_SORT_KEYS = ['name', 'email', 'role', 'createdAt'];
@@ -54,6 +55,14 @@ export default function Users() {
   };
 
   const { showToast } = useToast();
+  const { startViewAs } = useViewAs();
+  const navigate = useNavigate();
+
+  const handleViewAs = (user) => {
+    startViewAs({ id: user._id, name: user.name, role: user.role });
+    showToast(`Now viewing as ${user.name} (${user.role}) — read-only.`, 'info');
+    navigate(`/users/${user._id}`);
+  };
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [addOpen, setAddOpen] = useState(false);
@@ -168,6 +177,10 @@ export default function Users() {
         >
           <Button variant="secondary" onClick={() => setEditUser(r)}>
             Edit
+          </Button>
+
+          <Button variant="secondary" onClick={() => handleViewAs(r)}>
+            View As
           </Button>
 
           <Button variant="danger" onClick={() => setDel(r)}>
