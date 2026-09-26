@@ -237,6 +237,7 @@ const LightModeIcon = ({ size = 12, color = 'currentColor' }) => (
 const items = [
   ['/dashboard', 'Dashboard', DashboardIcon],
   ['/users', 'Users', UsersIcon],
+  ['/employers', 'Employers', UsersIcon],
   ['/guard-verification', 'Guard Verification', GuardIcon],
   ['/shifts', 'Shifts', ShiftIcon],
   ['/payroll', 'Payroll & Timesheets', PayrollIcon],
