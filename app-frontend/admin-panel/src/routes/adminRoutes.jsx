@@ -26,6 +26,7 @@ import Incidents from '../pages/Incidents';
 import IncidentDetails from '../pages/IncidentDetails';
 
 import Roles from '../pages/Roles';
+import TwoFactorSettings from '../pages/TwoFactorSettings';
 
 import AuditLogs from '../pages/AuditLogs';
 
@@ -65,6 +66,7 @@ export default function AppRoutes() {
         <Route path="/incidents" element={<Incidents />} />
         <Route path="/incidents/:id" element={<IncidentDetails />} />
         <Route path="/roles" element={<Roles />} />
+        <Route path="/two-factor" element={<TwoFactorSettings />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/smtp-settings" element={<SMTPSettings />} />
