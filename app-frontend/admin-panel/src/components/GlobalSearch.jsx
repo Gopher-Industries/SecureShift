@@ -1,131 +1,37 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUsers, getShifts } from '../service/adminAPI';
-import useDebouncedValue from '../hooks/useDebouncedValue';
+import useEntitySearch from '../hooks/useEntitySearch';
 import { useTheme } from '../theme/ThemeProvider';
 
 const MIN_QUERY_LENGTH = 2;
-const MAX_RESULTS_PER_GROUP = 5;
 
-function personLabel(person) {
-  if (!person) return '';
-  return person.name || person.email || '';
-}
-
-function matches(haystackParts, query) {
-  const haystack = haystackParts.filter(Boolean).join(' ').toLowerCase();
-  return haystack.includes(query);
-}
-
-function extractUsers(result) {
-  if (result.status !== 'fulfilled') return [];
-  if (Array.isArray(result.value)) return result.value;
-  return result.value.users || result.value.data || [];
-}
-
-function extractShifts(result) {
-  if (result.status !== 'fulfilled') return [];
-  if (Array.isArray(result.value)) return result.value;
-  return result.value.shifts || result.value.data || [];
-}
-
-function buildSearchResults(usersData, shiftsData, query) {
-  const matchedUsers = usersData
-    .filter((u) => u.role !== 'guard')
-    .filter((u) => matches([u.name, u.email, u._id], query))
-    .slice(0, MAX_RESULTS_PER_GROUP);
-
-  const matchedGuards = usersData
-    .filter((u) => u.role === 'guard')
-    .filter((u) => matches([u.name, u.email, u._id], query))
-    .slice(0, MAX_RESULTS_PER_GROUP);
-
-  const matchedShifts = shiftsData
-    .filter((s) =>
-      matches(
-        [s.title, s.status, s._id, personLabel(s.createdBy), personLabel(s.acceptedBy)],
-        query
-      )
-    )
-    .slice(0, MAX_RESULTS_PER_GROUP);
-
-  return {
-    users: matchedUsers,
-    guards: matchedGuards,
-    shifts: matchedShifts,
-  };
-}
-
-// Cross-entity search. Aggregates existing list
-// endpoints client-side until a dedicated /admin/search endpoints exists.
+// Cross-entity search input. Fetch/match logic lives in useEntitySearch,
+// shared with the Command Palette (AP-057).
 export default function GlobalSearch() {
   const { colors } = useTheme();
-
   const navigate = useNavigate();
   const containerRef = useRef(null);
 
   const [raw, setRaw] = useState('');
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [results, setResults] = useState({ users: [], guards: [], shifts: [] });
 
-  const query = useDebouncedValue(raw.trim(), 300);
+  const { results, loading, error, query } = useEntitySearch(raw);
 
-  // Close the dropdown on outside click.
   useEffect(() => {
     function handleClickOutside(ev) {
       if (containerRef.current && !containerRef.current.contains(ev.target)) {
         setOpen(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (query.length < MIN_QUERY_LENGTH) {
-      setResults({ users: [], guards: [], shifts: [] });
-      setLoading(false);
-      setError('');
-      return;
-    }
-
-    let active = true;
-    const q = query.toLowerCase();
-
-    (async () => {
-      try {
-        setLoading(true);
-        setError('');
-
-        const [usersResult, shiftsResult] = await Promise.allSettled([getUsers(), getShifts()]);
-
-        if (!active) return;
-
-        const usersData = extractUsers(usersResult);
-        const shiftsData = extractShifts(shiftsResult);
-
-        setResults(buildSearchResults(usersData, shiftsData, q));
-
-        if (usersResult.status === 'rejected' && shiftsResult.status === 'rejected') {
-          setError('Search is unavailable right now.');
-        }
-      } catch {
-        if (active) setError('Search is unavailable right now.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [query]);
-
   const hasAnyResults =
-    results.users.length > 0 || results.guards.length > 0 || results.shifts.length > 0;
+    results.users.length > 0 ||
+    results.guards.length > 0 ||
+    results.shifts.length > 0 ||
+    results.incidents.length > 0;
 
   const showDropdown = open && query.length >= MIN_QUERY_LENGTH;
 
@@ -134,6 +40,7 @@ export default function GlobalSearch() {
       { key: 'users', label: 'Users', items: results.users },
       { key: 'guards', label: 'Guards', items: results.guards },
       { key: 'shifts', label: 'Shifts', items: results.shifts },
+      { key: 'incidents', label: 'Incidents', items: results.incidents },
     ],
     [results]
   );
@@ -147,8 +54,19 @@ export default function GlobalSearch() {
   function goToShift(shift) {
     setOpen(false);
     setRaw('');
-    // No shift detail page yet, so deep-link into the filtered shifts list.
     navigate(`/shifts?q=${encodeURIComponent(shift.title || shift._id)}`);
+  }
+
+  function goToIncident(incident) {
+    setOpen(false);
+    setRaw('');
+    navigate(`/incidents?q=${encodeURIComponent(incident.title || incident._id)}`);
+  }
+
+  function goToItem(group, item) {
+    if (group === 'shifts') return goToShift(item);
+    if (group === 'incidents') return goToIncident(item);
+    return goToPerson(item);
   }
 
   return (
@@ -182,7 +100,7 @@ export default function GlobalSearch() {
             top: 'calc(100% + 4px)',
             left: 0,
             right: 0,
-            background: colors.card,
+            background: colors.white,
             border: `1px solid ${colors.border}`,
             borderRadius: 6,
             boxShadow: '0 4px 12px rgba(16,24,40,0.12)',
@@ -198,7 +116,7 @@ export default function GlobalSearch() {
           )}
 
           {!loading && error && (
-            <div style={{ padding: '10px 12px', color: colors.error, fontSize: 14 }}>{error}</div>
+            <div style={{ padding: '10px 12px', color: colors.danger, fontSize: 14 }}>{error}</div>
           )}
 
           {!loading && !error && !hasAnyResults && (
@@ -233,9 +151,7 @@ export default function GlobalSearch() {
                         type="button"
                         role="option"
                         aria-selected="false"
-                        onClick={() =>
-                          group.key === 'shifts' ? goToShift(item) : goToPerson(item)
-                        }
+                        onClick={() => goToItem(group.key, item)}
                         style={{
                           display: 'block',
                           width: '100%',
@@ -249,9 +165,9 @@ export default function GlobalSearch() {
                         }}
                         onMouseDown={(e) => e.preventDefault()}
                       >
-                        {group.key === 'shifts' ? (
+                        {group.key === 'shifts' || group.key === 'incidents' ? (
                           <>
-                            <div>{item.title || 'Untitled shift'}</div>
+                            <div>{item.title || 'Untitled'}</div>
                             <div style={{ fontSize: 12, color: colors.muted }}>{item.status}</div>
                           </>
                         ) : (
