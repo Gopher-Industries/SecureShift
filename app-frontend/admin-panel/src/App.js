@@ -3,7 +3,8 @@ import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './routes/adminRoutes';
 import { ToastProvider, useToast } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
-import { attach401Handler, attachErrorToastHandler } from './lib/http';
+import { attach401Handler, attachErrorToastHandler, attachViewAsWriteBlocker } from './lib/http';
+import { ViewAsProvider } from './context/ViewAsContext';
 
 // Auto-logout on 401 responses
 attach401Handler(() => {
@@ -20,13 +21,24 @@ function ErrorToastBridge() {
   return null;
 }
 
+function ViewAsWriteBlockerBridge() {
+  const { showToast } = useToast();
+  useEffect(() => {
+    attachViewAsWriteBlocker(showToast);
+  }, [showToast]);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
         <ErrorToastBridge />
+        <ViewAsWriteBlockerBridge />
         <ErrorBoundary>
-          <AppRoutes />
+          <ViewAsProvider>
+            <AppRoutes />
+          </ViewAsProvider>
         </ErrorBoundary>
       </ToastProvider>
     </BrowserRouter>
