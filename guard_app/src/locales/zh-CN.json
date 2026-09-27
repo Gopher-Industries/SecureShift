@@ -106,6 +106,27 @@
     "empty": "暂无通知。",
     "markRead": "全部标为已读"
   },
+  "notifPrefs": {
+    "title": "通知偏好",
+    "subtitle": "选择您要接收的通知类型。",
+    "masterOff": "通知已关闭。请先在上方开启通知，再选择类别。",
+    "categories": {
+      "shiftAssignments": {
+        "title": "班次分配"
+      },
+      "shiftUpdates": {
+        "title": "班次更新"
+      },
+      "messages": {
+        "title": "消息"
+      },
+      "incidents": {
+        "title": "事件"
+      }
+    },
+    "testEachCategory": "为每个类别发送测试通知",
+    "testBody": "这是此类别的测试通知。"
+  },
   "profile": {
     "yourProfilePic": "你的个人资料图片",
     "edit": "编辑",

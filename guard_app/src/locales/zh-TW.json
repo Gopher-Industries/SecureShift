@@ -106,6 +106,27 @@
     "empty": "暫無通知。",
     "markRead": "全部標為已讀"
   },
+  "notifPrefs": {
+    "title": "通知偏好",
+    "subtitle": "選擇您要接收的通知類型。",
+    "masterOff": "通知已關閉。請先在上方開啟通知，再選擇類別。",
+    "categories": {
+      "shiftAssignments": {
+        "title": "班次指派"
+      },
+      "shiftUpdates": {
+        "title": "班次更新"
+      },
+      "messages": {
+        "title": "訊息"
+      },
+      "incidents": {
+        "title": "事件"
+      }
+    },
+    "testEachCategory": "為每個類別傳送測試通知",
+    "testBody": "這是此類別的測試通知。"
+  },
   "profile": {
     "yourProfilePic": "你的個人資料圖片",
     "edit": "編輯",
