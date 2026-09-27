@@ -106,6 +106,27 @@
     "empty": "No notifications yet.",
     "markRead": "Mark all as read"
   },
+  "notifPrefs": {
+    "title": "Notification Preferences",
+    "subtitle": "Choose which notifications you receive.",
+    "masterOff": "Notifications are turned off. Turn them on above to choose categories.",
+    "categories": {
+      "shiftAssignments": {
+        "title": "Shift assignments"
+      },
+      "shiftUpdates": {
+        "title": "Shift updates"
+      },
+      "messages": {
+        "title": "Messages"
+      },
+      "incidents": {
+        "title": "Incidents"
+      }
+    },
+    "testEachCategory": "Test notification for each category",
+    "testBody": "This is a test notification for this category."
+  },
   "profile": {
     "yourProfilePic": "Your profile picture",
     "edit": "Edit",

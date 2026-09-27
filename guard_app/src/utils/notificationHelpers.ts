@@ -1,13 +1,20 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { shouldDeliverNotification } from '../lib/notificationPreferences';
+
+// Muted categories (Settings > Notification preferences) are dropped here, so
+// they neither show a banner nor play a sound while the app is running.
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const deliver = await shouldDeliverNotification(notification.request.content.data);
+    return {
+      shouldShowBanner: deliver,
+      shouldShowList: deliver,
+      shouldPlaySound: deliver,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 export async function setUpNotifications() {
@@ -36,12 +43,17 @@ export async function setUpNotifications() {
   return true;
 }
 
-export async function showLocalNotification(title: string, body: string) {
+export async function showLocalNotification(
+  title: string,
+  body: string,
+  data?: Record<string, unknown>,
+) {
   await Notifications.scheduleNotificationAsync({
     content: {
       title,
       body,
       sound: true,
+      data,
     },
     trigger: null, // Show immediately
   });

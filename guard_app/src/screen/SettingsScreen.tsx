@@ -23,8 +23,16 @@ import {
 
 import { useAppLock } from '../context/AppLockProvider';
 import { authenticate } from '../lib/appLock';
-import { requestTourReplay } from '../lib/onboardingStore';
 import { LocalStorage } from '../lib/localStorage';
+import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  NOTIFICATIONS_ENABLED_STORAGE_KEY,
+  getNotificationPreferences,
+  setNotificationPreference,
+  type NotificationCategory,
+  type NotificationPreferences,
+} from '../lib/notificationPreferences';
+import { requestTourReplay } from '../lib/onboardingStore';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAppTheme } from '../theme';
 import { AppColors } from '../theme/colors';
@@ -34,8 +42,19 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 // Keep this in sync with your ProfileScreen storage key
 const PROFILE_STORAGE_KEY = '@guard_profile_v1';
-const NOTIFICATIONS_STORAGE_KEY = '@guard_notifications_enabled';
 const CANVAS_PADDING = 20;
+
+const NOTIFICATION_CATEGORY_ROWS: {
+  category: NotificationCategory;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  // Representative backend type, used by the Beta "test each category" row.
+  sampleType: string;
+}[] = [
+  { category: 'shiftAssignments', icon: 'briefcase-outline', sampleType: 'SHIFT_APPROVED' },
+  { category: 'shiftUpdates', icon: 'calendar-outline', sampleType: 'SHIFT_UPDATED' },
+  { category: 'messages', icon: 'chatbubble-ellipses-outline', sampleType: 'MESSAGE' },
+  { category: 'incidents', icon: 'warning-outline', sampleType: 'INCIDENT_REPORTED' },
+];
 
 function Row({
   icon,
@@ -98,6 +117,9 @@ export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(
+    DEFAULT_NOTIFICATION_PREFERENCES,
+  );
   const [langModalVisible, setLangModalVisible] = useState(false);
   const appLock = useAppLock();
 
@@ -114,7 +136,7 @@ export default function SettingsScreen() {
   useEffect(() => {
     const loadNotificationPreference = async () => {
       try {
-        const savedValue = await AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+        const savedValue = await AsyncStorage.getItem(NOTIFICATIONS_ENABLED_STORAGE_KEY);
 
         if (savedValue !== null) {
           setNotificationsEnabled(savedValue === 'true');
@@ -125,12 +147,35 @@ export default function SettingsScreen() {
     };
 
     void loadNotificationPreference();
+    void getNotificationPreferences().then(setNotificationPrefs);
   }, []);
+
+  const handleToggleCategory = async (category: NotificationCategory, value: boolean) => {
+    const previous = notificationPrefs;
+    setNotificationPrefs({ ...previous, [category]: value });
+    try {
+      setNotificationPrefs(await setNotificationPreference(category, value));
+    } catch (error) {
+      console.error('Failed to save notification category preference:', error);
+      setNotificationPrefs(previous);
+      Alert.alert('Error', 'Unable to update notification preference.');
+    }
+  };
+
+  const sendCategoryTestNotifications = async () => {
+    for (const { category, sampleType } of NOTIFICATION_CATEGORY_ROWS) {
+      await showLocalNotification(
+        t(`notifPrefs.categories.${category}.title`),
+        t('notifPrefs.testBody'),
+        { type: sampleType, data: {} },
+      );
+    }
+  };
 
   const handleToggleNotifications = async (value: boolean) => {
     try {
       setNotificationsEnabled(value);
-      await AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, String(value));
+      await AsyncStorage.setItem(NOTIFICATIONS_ENABLED_STORAGE_KEY, String(value));
 
       Alert.alert(
         'Notifications',
@@ -321,6 +366,32 @@ export default function SettingsScreen() {
             colors={colors}
           />
         </View>
+        <View style={styles.card} testID="notif-prefs-card">
+          <Text style={styles.cardTitle}>{t('notifPrefs.title')}</Text>
+          <Text style={styles.cardSubtitle}>
+            {notificationsEnabled ? t('notifPrefs.subtitle') : t('notifPrefs.masterOff')}
+          </Text>
+          {NOTIFICATION_CATEGORY_ROWS.map(({ category, icon }) => (
+            <Row
+              key={category}
+              icon={<Ionicons name={icon} size={18} color={colors.primary} />}
+              label={t(`notifPrefs.categories.${category}.title`)}
+              right={
+                <Switch
+                  value={notificationsEnabled && notificationPrefs[category]}
+                  disabled={!notificationsEnabled}
+                  onValueChange={(value) => void handleToggleCategory(category, value)}
+                  thumbColor={Platform.OS === 'android' ? colors.white : undefined}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  accessibilityLabel={t(`notifPrefs.categories.${category}.title`)}
+                  testID={`notif-pref-${category}`}
+                />
+              }
+              colors={colors}
+            />
+          ))}
+        </View>
+
         <View style={styles.card} testID="beta-card">
           <Text style={styles.cardTitle}>Beta</Text>
           <Row
@@ -335,6 +406,13 @@ export default function SettingsScreen() {
             onPress={async () => {
               await showLocalNotification(t('homeExtras.notifTitle'), t('homeExtras.notifBody'));
             }}
+            colors={colors}
+          />
+          <Row
+            icon={<Ionicons name="notifications-circle-outline" size={18} color={colors.primary} />}
+            label={t('notifPrefs.testEachCategory')}
+            onPress={() => void sendCategoryTestNotifications()}
+            testID="settings-test-notif-categories"
             colors={colors}
           />
         </View>
@@ -440,6 +518,7 @@ const getStyles = (colors: AppColors) =>
       fontWeight: '800',
       marginBottom: 8,
     },
+    cardSubtitle: { color: colors.muted, fontSize: 12, marginBottom: 2 },
     footer: { alignItems: 'center', marginTop: 8 },
     logoutBtn: {
       alignItems: 'center',
