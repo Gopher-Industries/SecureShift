@@ -163,6 +163,27 @@ const IconList = (props) => (
   </svg>
 );
 
+const IconPin = ({ filled = false, ...props }) => (
+  <svg viewBox="0 0 24 24" {...props}>
+    <path
+      d="M9 3h6l-1 5 3 3v2H7v-2l3-3-1-5Z"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    <line
+      x1="12"
+      y1="13"
+      x2="12"
+      y2="21"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const IconUser = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
     <circle cx="12" cy="8" r="4" fill="currentColor" />
@@ -319,15 +340,51 @@ const getShiftStatusCategory = (shift) => {
   return "All";
 };
 
-const safePdfValue = (value, fallback = "Not provided") => {
-  if (value === null || value === undefined || value === "") {
-    return fallback;
+const getPinnedIncidentStorageKey = () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      const userIdentifier =
+        user?._id || user?.id || user?.email || "default";
+
+      return `secureshift:pinned-incidents:${userIdentifier}`;
+    }
+  } catch (error) {
+    console.warn(
+      "Could not read user information for pinned incidents.",
+      error
+    );
   }
 
-  return String(value);
+  return "secureshift:pinned-incidents:default";
 };
 
-/* ---------------- COMPONENT ---------------- */
+const loadPinnedIncidentIds = () => {
+  try {
+    const storedValue = localStorage.getItem(
+      getPinnedIncidentStorageKey()
+    );
+
+    if (!storedValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(storedValue);
+
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter((id) => typeof id === "string")
+      : [];
+  } catch (error) {
+    console.warn(
+      "Could not load pinned incident reports.",
+      error
+    );
+
+    return [];
+  }
+};
 
 export default function EmployerDashboard() {
   const { t } = useTranslation();
@@ -364,6 +421,10 @@ export default function EmployerDashboard() {
   const [incidentSeverityFilter, setIncidentSeverityFilter] =
     useState("All");
   const [incidentSort, setIncidentSort] = useState("Newest");
+
+  const [pinnedIncidentIds, setPinnedIncidentIds] =
+    useState(loadPinnedIncidentIds);
+  const [pinError, setPinError] = useState("");
 
   const [expandedGuard, setExpandedGuard] = useState(null);
 
@@ -879,6 +940,13 @@ export default function EmployerDashboard() {
         );
       })
       .sort((a, b) => {
+        const aPinned = pinnedIncidentIds.includes(a.id);
+        const bPinned = pinnedIncidentIds.includes(b.id);
+
+        if (aPinned !== bPinned) {
+          return aPinned ? -1 : 1;
+        }
+
         if (incidentSort === "Newest") {
           return (
             parseIncidentDateTime(b) -
@@ -908,6 +976,7 @@ export default function EmployerDashboard() {
     incidentSeverityFilter,
     incidentSort,
     incidentStatusFilter,
+    pinnedIncidentIds,
   ]);
 
   const incidentSummary = useMemo(() => {
@@ -938,6 +1007,35 @@ export default function EmployerDashboard() {
    * INCIDENT ACTIONS
    * ---------------------------------------------------------
    */
+  const isIncidentPinned = (incidentId) =>
+    pinnedIncidentIds.includes(incidentId);
+
+  const toggleIncidentPin = (incidentId) => {
+    const currentlyPinned = isIncidentPinned(incidentId);
+
+    const nextPinnedIncidentIds = currentlyPinned
+      ? pinnedIncidentIds.filter((id) => id !== incidentId)
+      : [...pinnedIncidentIds, incidentId];
+
+    try {
+      localStorage.setItem(
+        getPinnedIncidentStorageKey(),
+        JSON.stringify(nextPinnedIncidentIds)
+      );
+
+      setPinnedIncidentIds(nextPinnedIncidentIds);
+      setPinError("");
+    } catch (error) {
+      console.error(
+        "Unable to persist incident pin state.",
+        error
+      );
+
+      setPinError(
+        "Unable to save the pinned report status. Please try again."
+      );
+    }
+  };
 
   const updateIncident = (
     id,
@@ -1912,6 +2010,15 @@ export default function EmployerDashboard() {
               {t("showingResults")}
             </span>
           </div>
+
+          {pinError && (
+            <div
+              className="ss-pin-error"
+              role="alert"
+            >
+              {pinError}
+            </div>
+          )}
 
           <div className="ss-incident-list">
             {filteredIncidents.length === 0 && (
